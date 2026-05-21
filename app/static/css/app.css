@@ -2160,17 +2160,15 @@ hr {
   .tiny-input {
     width: 52px;
   }
-
-  .editable-email {
+.editable-email {
     display: inline-block !important;
+    direction: ltr !important;
+    text-align: left !important;
     max-width: none !important;
-    white-space: normal !important;
-    word-break: break-all !important;
+    white-space: nowrap !important;   /* إجبار الإيميل على البقاء في سطر واحد مستقيم بداخل الكارت */
     overflow: visible !important;
-    text-overflow: clip !important;
     vertical-align: middle;
   }
-
   .student-avatar {
     display: none !important;
   }
@@ -2673,15 +2671,14 @@ hr {
   font-weight: 600;
   cursor: pointer;
   display: inline-block;
-  vertical-align: middle;
+  direction: ltr;
+  text-align: left;
   padding: 3px 6px;
   border-radius: 6px;
   border: 1px dashed transparent;
   transition: all 0.2s ease;
-  max-width: 160px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: none;
+  white-space: nowrap;            /* منع الإيميل تماماً من الانقسام أو النزول لسطر جديد */
 }
 
 .editable-email:not(.editing):hover {

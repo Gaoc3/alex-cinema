@@ -67,7 +67,6 @@ const I18N = {
     actionConfirm: 'تأكيد',
     actionCancel: 'إلغاء',
     switchSemester: 'تبديل الكورس',
-
     dashboardSections: 'أقسام الداشبورد',
     dashboardSectionsHint: 'تنقّل سريع بين كل الأجزاء',
     navOverview: 'نظرة عامة',
@@ -83,12 +82,10 @@ const I18N = {
     navGradebookTip: 'متابعة سجل الدرجات',
     navNotificationsTip: 'إشعارات فتح الروابط',
     quickStudentsList: 'قائمة الطلبة السريعة',
-
     badgeStudents: 'شؤون الطلبة',
     badgeGradingSetup: 'ضبط التقييم',
     badgePublishing: 'النشر',
     badgeGradebook: 'السجل الأكاديمي',
-
     studentNamePlaceholder: 'اسم الطالب',
     studentEmailPlaceholder: 'البريد الإلكتروني (اختياري)',
     searchStudentPlaceholder: 'بحث سريع باسم الطالب',
@@ -96,10 +93,8 @@ const I18N = {
     filterAll: 'جميع الطلبة',
     filterPassing: 'الناجحين (≥ 50%)',
     filterFailing: 'الراسبين / المكملين (< 50%)',
-
     heroTitle: 'لوحة متابعة المقرر: {subject}',
     heroSubtitle: 'مرحبًا دكتور {doctor} — إدارة الدرجات ونشر النتائج من واجهة موحدة',
-
     statusReady: 'النظام جاهز.',
     statusStudentAdded: 'تمت إضافة الطالب بنجاح.',
     statusImportDone: 'تم الاستيراد: جديد {created} | تحديث {updated} | متجاوز {skipped}',
@@ -111,7 +106,6 @@ const I18N = {
     statusStudentDeleted: 'تم حذف الطالب بنجاح.',
     statusPublished: 'تم نشر الدرجات بنجاح.',
     statusNotifCleaned: 'تم تنظيف الإشعارات القديمة.',
-
     notifEmpty: 'لا توجد إشعارات.',
     tableStudent: 'الطالب',
     tableEmail: 'البريد الإلكتروني',
@@ -121,7 +115,6 @@ const I18N = {
     badgePublished: 'منشور',
     confirmDelete: 'هل أنت متأكد من حذف الطالب؟',
     confirmDeleteComp: 'هل أنت متأكد من حذف هذا العنصر؟ سيتم حذف درجات الطلبة المرتبطة به أيضاً!',
-
     course1: 'الكورس الأول',
     course2: 'الكورس الثاني',
     courseworkTitle: 'السعي',
@@ -185,7 +178,6 @@ const I18N = {
     actionConfirm: 'Confirm',
     actionCancel: 'Cancel',
     switchSemester: 'Switch Semester',
-
     dashboardSections: 'Dashboard Sections',
     dashboardSectionsHint: 'Quick navigation across all sections',
     navOverview: 'Overview',
@@ -201,12 +193,10 @@ const I18N = {
     navGradebookTip: 'Track all student grades',
     navNotificationsTip: 'View opening alerts',
     quickStudentsList: 'Quick Students List',
-
     badgeStudents: 'Students Affairs',
     badgeGradingSetup: 'Assessment Setup',
     badgePublishing: 'Publishing',
     badgeGradebook: 'Academic Gradebook',
-
     studentNamePlaceholder: 'Student name',
     studentEmailPlaceholder: 'Email (optional)',
     searchStudentPlaceholder: 'Search by student name',
@@ -214,10 +204,8 @@ const I18N = {
     filterAll: 'All Students',
     filterPassing: 'Passing (≥ 50%)',
     filterFailing: 'Failing (< 50%)',
-
     heroTitle: 'Course Monitoring Dashboard: {subject}',
     heroSubtitle: 'Welcome, Dr. {doctor} — Manage grading and results publishing through one unified interface',
-
     statusReady: 'System is ready.',
     statusStudentAdded: 'Student added successfully.',
     statusImportDone: 'Import complete: created {created} | updated {updated} | skipped {skipped}',
@@ -229,7 +217,6 @@ const I18N = {
     statusStudentDeleted: 'Student deleted successfully.',
     statusPublished: 'Grades published successfully.',
     statusNotifCleaned: 'Old notifications were cleared.',
-
     notifEmpty: 'No notifications available.',
     tableStudent: 'Student',
     tableEmail: 'Email',
@@ -239,7 +226,6 @@ const I18N = {
     badgePublished: 'Published',
     confirmDelete: 'Are you sure you want to delete this student?',
     confirmDeleteComp: 'Are you sure you want to delete this component? All associated student scores will also be deleted!',
-
     course1: 'Semester 1',
     course2: 'Semester 2',
     courseworkTitle: 'Coursework',
@@ -318,12 +304,6 @@ async function api(url, options = {}) {
   return payload;
 }
 
-/**
- * Custom Professional Confirmation Modal
- * @param {string} title - Modal heading
- * @param {string} message - Modal body text
- * @returns {Promise<boolean>}
- */
 function showConfirm(title, message) {
   return new Promise((resolve) => {
     const modal = document.getElementById('customModal');
@@ -380,7 +360,6 @@ function applyStaticTranslations() {
   });
 }
 
-// منظومة الفلترة والبحث المتقدمة لسجل الدرجات
 function updateGradebookFilters() {
   const gradebookSearchInput = document.getElementById('gradebookSearchInput');
   if (!gradebookSearchInput) {
@@ -621,7 +600,7 @@ function applyLanguage(lang, animate = false) {
       renderStats();
       renderComponentsBuilder();
       renderPublishOptions();
-      updateGradebookFilters(); // تفعيل نظام البحث والفرز المحدث
+      updateGradebookFilters();
       renderStudentsQuickList();
     } else {
       document.getElementById('semesterSelection').style.display = 'flex';
@@ -910,10 +889,10 @@ function renderGradeTable() {
         <td class="student-info-cell" style="padding: 12px 16px;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <div class="student-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-strong)); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; box-shadow: 0 4px 10px color-mix(in oklab, var(--primary) 30%, transparent);">${initials}</div>
-            <div>
-              <div style="font-weight: 800; color: var(--text); font-size: 15px; margin-bottom: 2px;">${row.student.full_name}</div>
-              <div class="editable-email" title="${row.student.email || ''} (انقر للتعديل)" onclick="startEditEmail(this, ${row.student.id}, '${row.student.full_name.replace(/'/g, "\\'")}')">${row.student.email || 'لا يوجد بريد'}</div>
-            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: right; width: 100%;">
+  <div style="font-weight: 800; color: var(--text); font-size: 15px; white-space: nowrap;">${row.student.full_name}</div>
+  <div class="editable-email" title="${row.student.email || ''} (انقر للتعديل)" onclick="startEditEmail(this, ${row.student.id}, '${row.student.full_name.replace(/'/g, "\\'")}')">${row.student.email || 'لا يوجد بريد'}</div>
+</div>
           </div>
         </td>
         ${scoreInputs}
@@ -1203,7 +1182,6 @@ document.querySelectorAll('.gateway-card').forEach(card => {
   });
 });
 
-// ربط مستمعي الأحداث لمنظومة البحث الفائقة لضمان سرعة الاستجابة المباشرة (Real-time Filtering)
 document.addEventListener('input', (e) => {
   if (e.target && e.target.id === 'gradebookSearchInput') {
     updateGradebookFilters();
