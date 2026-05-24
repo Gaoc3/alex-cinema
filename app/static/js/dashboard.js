@@ -1101,8 +1101,16 @@ addStudentForm?.addEventListener('submit', async (e) => {
 
 const searchInput = document.getElementById('searchInput');
 searchInput?.addEventListener('input', (e) => {
-  const value = e.target.value.trim().toLowerCase();
-  state.rows = !value ? [...state.fullRows] : state.fullRows.filter(r => r.student.full_name.toLowerCase().includes(value));
+  const rawQuery = e.target.value;
+  const normalizedQuery = normalizeText(rawQuery);
+  const queryTerms = normalizedQuery.split(' ').filter(term => term.length > 0);
+
+  state.rows = queryTerms.length === 0 
+    ? [...state.fullRows] 
+    : state.fullRows.filter(row => {
+        const normalizedName = normalizeText(row.student.full_name);
+        return queryTerms.every(term => normalizedName.includes(term));
+      });
   renderGradeTable();
 });
 
