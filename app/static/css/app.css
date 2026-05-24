@@ -2770,8 +2770,16 @@ html[dir="ltr"] .student-selection-box .check-card.student-choice-card {
   line-height: 1.2;
   color: var(--muted);
   opacity: 0.92;
-  direction: ltr;
+  text-align: start;
   unicode-bidi: plaintext;
+}
+
+html[dir="rtl"] .student-choice-email {
+  text-align: right;
+}
+
+html[dir="ltr"] .student-choice-email {
+  text-align: left;
 }
 
 .publish-settings-stack {

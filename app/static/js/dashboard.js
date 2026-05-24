@@ -887,7 +887,7 @@ function renderPublishOptions() {
       <label class="check-card student-choice-card">
         <span class="student-choice-content">
           <span class="student-choice-name" title="${escapeHtml(row.student.full_name)}">${escapeHtml(row.student.full_name)}</span>
-          <span class="student-choice-email" dir="ltr" title="${escapeHtml(row.student.email || t('noEmailAddress'))}">${escapeHtml(row.student.email || t('noEmailAddress'))}</span>
+          <span class="student-choice-email" dir="${state.lang === 'ar' ? 'rtl' : 'ltr'}" title="${escapeHtml(row.student.email || t('noEmailAddress'))}">${escapeHtml(row.student.email || t('noEmailAddress'))}</span>
         </span>
         <input type="checkbox" name="student_ids" value="${row.student.id}" aria-label="${escapeHtml(row.student.full_name)} ${escapeHtml(row.student.email || t('noEmailAddress'))}" />
       </label>
