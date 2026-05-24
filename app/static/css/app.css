@@ -300,6 +300,26 @@ body > main {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, visibility 0.3s;
 }
 
+html[dir="rtl"] .topbar {
+  direction: rtl !important;
+  flex-direction: row !important;
+}
+
+html[dir="ltr"] .topbar {
+  direction: ltr !important;
+  flex-direction: row !important;
+}
+
+html[dir="rtl"] .brand-wrap {
+  direction: rtl !important;
+  flex-direction: row !important;
+}
+
+html[dir="ltr"] .brand-wrap {
+  direction: ltr !important;
+  flex-direction: row !important;
+}
+
 .panel-card {
   background: var(--panel-bg);
 }
