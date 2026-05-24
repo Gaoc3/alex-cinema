@@ -2905,6 +2905,12 @@ tbody tr, .notif-item {
 }
 
 #notifDropdown {
+  --notif-bg: rgba(255, 255, 255, 0.95) !important;
+  --notif-border: rgba(0, 0, 0, 0.08) !important;
+  --notif-shadow: 0 16px 36px -8px rgba(2, 6, 23, 0.15), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  --notif-item-hover: rgba(0, 0, 0, 0.02) !important;
+  --notif-head-bg: rgba(0, 0, 0, 0.02) !important;
+
   position: absolute !important;
   top: 100% !important;
   width: 340px !important;
@@ -2913,13 +2919,14 @@ tbody tr, .notif-item {
   -webkit-overflow-scrolling: touch !important;
   margin-top: 12px !important;
   z-index: 1000 !important;
-  box-shadow: 0 16px 40px color-mix(in oklab, var(--text) 8%, transparent) !important;
-  border: 1px solid color-mix(in oklab, var(--primary) 12%, var(--line)) !important;
+  box-shadow: var(--notif-shadow) !important;
+  border: 1px solid var(--notif-border) !important;
   padding: 0 !important;
   inset-inline-end: 0 !important;
   border-radius: 20px !important;
-  background: var(--card) !important;
-  backdrop-filter: var(--glass-blur) !important;
+  background: var(--notif-bg) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
   opacity: 0 !important;
   visibility: hidden !important;
   transform: translateY(12px) scale(0.95) !important;
@@ -2933,6 +2940,18 @@ tbody tr, .notif-item {
   opacity: 1 !important;
   visibility: visible !important;
   transform: translateY(0) scale(1) !important;
+}
+
+/* Unified dark mode variable overrides for the dropdown */
+html[data-theme="dark"] #notifDropdown,
+[data-theme="dark"] #notifDropdown,
+.dark-mode #notifDropdown,
+.dark #notifDropdown {
+  --notif-bg: rgba(18, 20, 35, 0.98) !important;
+  --notif-border: rgba(255, 255, 255, 0.06) !important;
+  --notif-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
+  --notif-item-hover: rgba(255, 255, 255, 0.03) !important;
+  --notif-head-bg: rgba(255, 255, 255, 0.02) !important;
 }
 
 /* ========== NOTIFICATION BELL ANIMATIONS ========== */
