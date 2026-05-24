@@ -138,26 +138,7 @@ def publish_grades(
         for row in rows:
             row.published = True
 
-        if payload.force_new_token and not payload.send_email:
-            db.execute(delete(PublicationToken).where(PublicationToken.student_id == st.id))
-
-            token = create_token()
-            expires_at = now + timedelta(days=settings.qr_expiry_days)
-            token_row = PublicationToken(student_id=st.id, token=token, expires_at=expires_at)
-            db.add(token_row)
-
-            base_url = _resolve_public_base_url(request)
-            grade_url = f"{base_url}/grade/{token}"
-            sent.append({
-                "student": st.full_name,
-                "email": st.email or "",
-                "status": "generated",
-                "detail": "QR regenerated",
-                "grade_url": grade_url,
-            })
-            continue
-
-        if not payload.send_email:
+        if not payload.send_email and not payload.force_new_token:
             continue
 
         if not st.email:
