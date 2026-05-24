@@ -107,6 +107,8 @@ const I18N = {
     statusPublished: 'تم نشر الدرجات بنجاح.',
     statusNotifCleaned: 'تم تنظيف الإشعارات القديمة.',
     notifEmpty: 'لا توجد إشعارات.',
+    notifEmptyTitle: 'علبة الوارد فارغة',
+    notifEmptyDesc: 'سجلّك خالي من التنبيهات والإشعارات في الوقت الحالي.',
     tableStudent: 'الطالب',
     tableEmail: 'البريد الإلكتروني',
     tableActions: 'الإجراءات',
@@ -218,6 +220,8 @@ const I18N = {
     statusPublished: 'Grades published successfully.',
     statusNotifCleaned: 'Old notifications were cleared.',
     notifEmpty: 'No notifications available.',
+    notifEmptyTitle: 'Inbox is empty',
+    notifEmptyDesc: 'Your inbox is clear of any notifications at the moment.',
     tableStudent: 'Student',
     tableEmail: 'Email',
     tableActions: 'Actions',
@@ -487,7 +491,15 @@ function renderNotifications() {
   }
 
   if (notificationsList.length === 0) {
-    listEl.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--muted); font-size: 13px;">${t('notifEmpty')}</div>`;
+    listEl.innerHTML = `
+      <div style="padding: 36px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: color-mix(in oklab, var(--primary) 8%, transparent); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 4px; border: 1px dashed color-mix(in oklab, var(--primary) 20%, transparent);">
+          🔔
+        </div>
+        <div style="font-weight: 800; font-size: 14px; color: var(--text);">${t('notifEmptyTitle')}</div>
+        <div style="font-size: 12px; color: var(--muted); max-width: 220px; line-height: 1.5; margin: 0 auto;">${t('notifEmptyDesc')}</div>
+      </div>
+    `;
     return;
   }
 
