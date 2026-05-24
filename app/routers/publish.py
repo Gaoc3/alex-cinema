@@ -126,7 +126,8 @@ def publish_grades(
         token_row = PublicationToken(student_id=st.id, token=token, expires_at=expires_at)
         db.add(token_row)
 
-        grade_url = f"{settings.public_base_url.rstrip('/')}/grade/{token}"
+        base_url = str(request.base_url).rstrip('/')
+        grade_url = f"{base_url}/grade/{token}"
         qr_base64 = make_qr_base64(grade_url)
         ok, detail = send_grade_qr_email(
             to_email=st.email,
