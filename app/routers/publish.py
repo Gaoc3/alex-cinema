@@ -23,6 +23,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 @router.post("/api/publish")
 def publish_grades(
+    request: Request,
     payload: PublishRequest,
     doctor: Doctor = Depends(get_current_doctor),
     db: Session = Depends(get_tenant_db),
