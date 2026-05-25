@@ -3119,7 +3119,7 @@ html[dir="ltr"] .student-choice-email {
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  display: flex !important;
+  display: flex;
   align-items: center !important;
   justify-content: center !important;
   z-index: 99999 !important;
