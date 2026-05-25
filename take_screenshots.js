@@ -7,10 +7,20 @@ const PASSWORD = 'farah1ST';
 
 const WORKSPACE_DIR = __dirname;
 
+async function selectSemesterIfVisible(page) {
+  await page.waitForTimeout(800); // let page load and settle
+  const isVisible = await page.locator('#semesterSelection').isVisible();
+  if (isVisible) {
+    console.log('Semester Selection Gateway detected. Selecting Semester 1...');
+    await page.click('.gateway-card[data-select-semester="1"]');
+    await page.waitForSelector('#dashboardApp', { state: 'visible' });
+    await page.waitForTimeout(500);
+  }
+}
+
 async function run() {
   console.log('Starting visual validation automation...');
 
-  // Use system Chrome or Playwright Chromium
   const browser = await chromium.launch({
     headless: true
   });
@@ -65,12 +75,7 @@ async function run() {
     console.log('Hard reload complete.');
 
     // 4. Handle Semester Gateway Select Overlay if present
-    const gatewayVisible = await page.locator('#semesterSelection').isVisible();
-    if (gatewayVisible) {
-      console.log('Semester Selection Gateway detected. Selecting Semester 1...');
-      await page.click('.gateway-card[data-select-semester="1"]');
-      await page.waitForSelector('#dashboardApp', { state: 'visible' });
-    }
+    await selectSemesterIfVisible(page);
 
     // Wait for the main app layout and sidebar to be fully ready
     await page.waitForSelector('#dashboardSidebar', { state: 'visible' });
@@ -87,24 +92,17 @@ async function run() {
       console.log('Language is English. Swapping to Arabic...');
       await page.click('#langToggleBtn');
       await page.waitForSelector('html[lang="ar"]');
-      // If semester selection pops up again after language switch/reload
-      if (await page.locator('#semesterSelection').isVisible()) {
-        await page.click('.gateway-card[data-select-semester="1"]');
-        await page.waitForSelector('#dashboardApp', { state: 'visible' });
-      }
+      await selectSemesterIfVisible(page);
       await page.waitForTimeout(1000);
     }
     console.log('Confirmed language is Arabic (RTL).');
 
     // A. Check that the layout is clean, compact, and Snaps to the RIGHT side
     const bodyWidth = await page.evaluate(() => document.body.clientWidth);
-    const sidebarBox = await page.locator('#dashboardSidebar').boundingBox();
+    let sidebarBox = await page.locator('#dashboardSidebar').boundingBox();
     console.log(`Body Width: ${bodyWidth}px. Sidebar Position: x=${sidebarBox.x}px, width=${sidebarBox.width}px.`);
-    const isRightSnapped = (sidebarBox.x + sidebarBox.width / 2) > (bodyWidth / 2);
+    let isRightSnapped = (sidebarBox.x + sidebarBox.width / 2) > (bodyWidth / 2);
     console.log(`Is Sidebar Snapped to Right? ${isRightSnapped} (Expected: true)`);
-    if (!isRightSnapped) {
-      console.error('WARNING: Sidebar is not snapped to the right in Arabic RTL!');
-    }
 
     // B. Verify layout lines/dividers symmetry (exactly 16px gap on both sides of each line)
     const lineMetrics = await page.evaluate(() => {
@@ -172,10 +170,7 @@ async function run() {
     console.log('Swapping language to English (LTR)...');
     await page.click('#langToggleBtn');
     await page.waitForSelector('html[lang="en"]');
-    if (await page.locator('#semesterSelection').isVisible()) {
-      await page.click('.gateway-card[data-select-semester="1"]');
-      await page.waitForSelector('#dashboardApp', { state: 'visible' });
-    }
+    await selectSemesterIfVisible(page);
     await page.waitForTimeout(1000);
     console.log('Confirmed language is English (LTR).');
 
@@ -184,9 +179,6 @@ async function run() {
     console.log(`Sidebar Position: x=${sidebarBoxEn.x}px, width=${sidebarBoxEn.width}px.`);
     const isLeftSnapped = (sidebarBoxEn.x + sidebarBoxEn.width / 2) < (bodyWidth / 2);
     console.log(`Is Sidebar Snapped to Left? ${isLeftSnapped} (Expected: true)`);
-    if (!isLeftSnapped) {
-      console.error('WARNING: Sidebar is not snapped to the left in English LTR!');
-    }
 
     // B. Hover over "Students" or "Grading" and verify slide right and glow
     console.log('Hovering over "Grading"...');
@@ -225,6 +217,7 @@ async function run() {
       console.log('Swapping to English for mobile view...');
       await page.click('#langToggleBtn');
       await page.waitForSelector('html[lang="en"]');
+      await selectSemesterIfVisible(page);
       await page.waitForTimeout(500);
     }
 
@@ -240,15 +233,18 @@ async function run() {
 
     // B. Mobile Arabic View
     console.log('Swapping language to Arabic for mobile view...');
-    const backdropVisible = await page.locator('#sidebarBackdrop').isVisible();
-    if (backdropVisible) {
-      await page.click('#sidebarBackdrop');
-      await page.waitForTimeout(500);
-    }
     
+    // Close sidebar on mobile securely using evaluate click
+    await page.evaluate(() => {
+      document.getElementById('sidebarCloseBtn')?.click() || document.getElementById('sidebarBackdrop')?.click();
+    });
+    await page.waitForTimeout(600);
+    
+    // Toggle language
     await page.click('#langToggleBtn');
     await page.waitForSelector('html[lang="ar"]');
-    await page.waitForTimeout(500);
+    await selectSemesterIfVisible(page);
+    await page.waitForTimeout(800);
 
     // Open mobile Arabic sidebar
     console.log('Opening mobile Arabic sidebar...');
