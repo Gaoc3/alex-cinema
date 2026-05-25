@@ -2378,11 +2378,11 @@ hr {
   #notifDropdown {
     position: absolute !important;
     top: 100% !important;
-    left: 12px !important;
-    right: 12px !important;
-    width: auto !important;
-    max-width: none !important;
-    inset-inline-end: auto !important;
+    left: auto !important;
+    right: auto !important;
+    width: 290px !important;
+    max-width: calc(100vw - 32px) !important;
+    inset-inline-end: -40px !important; /* Adjust for mobile/zoomed screens */
     inset-inline-start: auto !important;
     box-shadow: 0 12px 32px rgba(2, 6, 23, 0.18) !important;
     border-radius: 18px !important;
@@ -3327,6 +3327,7 @@ tbody tr, .notif-item {
   position: absolute !important;
   top: 100% !important;
   width: 290px !important;
+  max-width: calc(100vw - 32px) !important; /* Prevent cutoff on small screens/zoom */
   max-height: 380px !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
@@ -3336,6 +3337,7 @@ tbody tr, .notif-item {
   border: 1px solid var(--notif-border) !important;
   padding: 0 !important;
   inset-inline-end: 0 !important;
+  inset-inline-start: auto !important; /* Ensure it sticks to the end */
   border-radius: 16px !important;
   background: var(--notif-bg) !important;
   backdrop-filter: blur(20px) !important;
@@ -3607,12 +3609,12 @@ html[data-theme="dark"] #notifDropdown > div:first-child,
   #notifDropdown {
     position: absolute !important;
     top: 100% !important;
-    left: 12px !important;
-    right: 12px !important;
-    inset-inline-start: 12px !important;
-    inset-inline-end: 12px !important;
-    width: auto !important;
-    max-width: none !important;
+    left: auto !important;
+    right: auto !important;
+    inset-inline-end: -40px !important; /* Adjust for mobile */
+    inset-inline-start: auto !important;
+    width: 290px !important;
+    max-width: calc(100vw - 32px) !important;
     box-shadow: 0 12px 32px rgba(2, 6, 23, 0.25) !important;
     border-radius: 14px !important;
     max-height: 320px !important;
