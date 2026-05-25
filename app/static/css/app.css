@@ -2303,23 +2303,7 @@ hr {
     padding: 6px 12px;
   }
 
-  .notification-wrapper {
-    margin-inline-start: 0 !important;
-    position: static !important; /* تحرير الأيقونة على الموبايل */
-  }
-
-  #notifDropdown {
-    position: absolute !important;
-    top: 100% !important;
-    left: 12px !important;
-    right: 12px !important;
-    width: auto !important;
-    max-width: none !important;
-    inset-inline-end: auto !important;
-    inset-inline-start: auto !important;
-    box-shadow: 0 12px 32px rgba(2, 6, 23, 0.18) !important;
-    border-radius: 18px !important;
-  }
+  /* Handled adaptively by the 1024px responsive notifications query at the bottom of the file */
 
   .brand-sub {
     display: none;
@@ -3534,26 +3518,7 @@ html[data-theme="dark"] #notifDropdown > div:first-child,
     font-size: 14px !important;
   }
 
-  .notification-wrapper {
-    position: static !important;
-  }
-  #notifDropdown {
-    position: absolute !important;
-    top: 100% !important;
-    left: 12px !important;
-    right: 12px !important;
-    inset-inline-start: 12px !important;
-    inset-inline-end: 12px !important;
-    width: auto !important;
-    max-width: none !important;
-    box-shadow: 0 12px 32px rgba(2, 6, 23, 0.25) !important;
-    border-radius: 14px !important;
-    max-height: 320px !important;
-  }
-
-  #notifDropdown > div:first-child {
-    padding: 8px 12px !important;
-  }
+  /* Handled adaptively by the 1024px responsive notifications query at the bottom of the file */
 }
 
 html.auth-loading .auth-card {
@@ -3885,15 +3850,28 @@ html[dir="rtl"] #notifDropdown {
   margin: 0 auto !important;
 }
 
-/* Mobile Center-Alignment for Notifications Dropdown */
-@media (max-width: 768px) {
+/* --- Fully Adaptive Viewport Edge-Alignment for Narrow Screen Resolutions (Tablets & Mobile <= 1024px) --- */
+@media (max-width: 1024px) {
+  .notification-wrapper {
+    position: static !important;
+  }
+  
   #notifDropdown {
-    left: 12px !important;
-    right: 12px !important;
-    inset-inline-start: 12px !important;
-    inset-inline-end: 12px !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 16px !important;
+    right: 16px !important;
+    inset-inline-start: 16px !important;
+    inset-inline-end: 16px !important;
     width: auto !important;
     max-width: none !important;
+    box-shadow: var(--notif-shadow) !important;
+    border-radius: 18px !important;
+    max-height: 320px !important;
     transform-origin: top center !important;
+  }
+  
+  #notifDropdown > div:first-child {
+    padding: 8px 12px !important;
   }
 }
