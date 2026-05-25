@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import os
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+def is_postgresql() -> bool:
+    db_url = os.getenv("MAIN_DB_URL", "sqlite:///./data/main.db")
+    return db_url.startswith("postgres://") or db_url.startswith("postgresql://")
 
 
 class MainBase(DeclarativeBase):
@@ -29,6 +35,8 @@ class Student(TenantBase):
     __tablename__ = "students"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    if is_postgresql():
+        doctor_id: Mapped[int] = mapped_column(Integer, ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
     full_name: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -38,9 +46,14 @@ class Student(TenantBase):
 
 class GradeComponent(TenantBase):
     __tablename__ = "grade_components"
-    __table_args__ = (UniqueConstraint("component_key", name="uq_component_key"),)
+    if is_postgresql():
+        __table_args__ = (UniqueConstraint("doctor_id", "component_key", name="uq_doctor_component_key"),)
+    else:
+        __table_args__ = (UniqueConstraint("component_key", name="uq_component_key"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    if is_postgresql():
+        doctor_id: Mapped[int] = mapped_column(Integer, ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
     component_key: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     label: Mapped[str] = mapped_column(String(120), nullable=False)
     semester: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
@@ -52,7 +65,10 @@ class GradeComponent(TenantBase):
 class GradingPolicy(TenantBase):
     __tablename__ = "grading_policy"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    if is_postgresql():
+        doctor_id: Mapped[int] = mapped_column(Integer, ForeignKey("doctors.id", ondelete="CASCADE"), primary_key=True)
+    else:
+        id: Mapped[int] = mapped_column(Integer, primary_key=True)
     coursework_total_max: Mapped[float] = mapped_column(Float, nullable=False, default=50)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -62,6 +78,8 @@ class StudentScore(TenantBase):
     __table_args__ = (UniqueConstraint("student_id", "component_key", name="uq_student_component"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    if is_postgresql():
+        doctor_id: Mapped[int] = mapped_column(Integer, ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
     student_id: Mapped[int] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
     component_key: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     score: Mapped[float] = mapped_column(Float, nullable=False)
@@ -75,6 +93,8 @@ class PublicationToken(TenantBase):
     __tablename__ = "publication_tokens"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    if is_postgresql():
+        doctor_id: Mapped[int] = mapped_column(Integer, ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
     student_id: Mapped[int] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
     token: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
@@ -87,7 +107,10 @@ class Notification(TenantBase):
     __tablename__ = "notifications"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    if is_postgresql():
+        doctor_id: Mapped[int] = mapped_column(Integer, ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
     event_type: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     payload_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+
