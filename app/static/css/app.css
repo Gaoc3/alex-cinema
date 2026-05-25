@@ -2190,9 +2190,10 @@ hr {
     position: fixed;
     top: 16px !important;
     width: min(300px, 78vw) !important;
-    height: calc(100dvh - 32px) !important;
+    height: fit-content !important;
+    max-height: calc(100dvh - 32px) !important;
     border-radius: 24px !important;
-    padding: 20px 16px !important;
+    padding: 24px 20px !important;
     border: 1px solid var(--card-border) !important;
     z-index: 40;
     opacity: 0;
@@ -2200,6 +2201,20 @@ hr {
                 opacity 0.24s ease,
                 box-shadow 0.34s ease;
     will-change: transform, opacity;
+  }
+
+  .sidebar-nav {
+    gap: 16px !important;
+    margin-top: 16px !important;
+  }
+
+  .nav-btn {
+    padding: 16px 20px !important;
+    font-size: 14.5px !important;
+  }
+
+  .nav-btn-logout-premium {
+    padding: 16px 20px !important;
   }
 
   html[dir="rtl"] .sidebar-card {
