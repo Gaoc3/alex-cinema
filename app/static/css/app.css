@@ -1065,19 +1065,23 @@ html[dir="rtl"] .sidebar-close:focus-visible {
 .nav-btn > * {
   position: relative;
   z-index: 1;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* Sleek direction-aware horizontal hover slide and glow effect */
-.nav-btn:hover {
+/* Sleek direction-aware horizontal hover slide of text/icon elements only (container box remains stable to prevent border clipping) */
+.nav-btn:hover > * {
   transform: translateX(6px) !important;
+}
+
+html[dir="rtl"] .nav-btn:hover > * {
+  transform: translateX(-6px) !important;
+}
+
+.nav-btn:hover {
   color: var(--btn-theme) !important;
   border-color: color-mix(in oklab, var(--btn-theme) 28%, transparent) !important;
   background: linear-gradient(135deg, color-mix(in oklab, var(--btn-theme) 12%, var(--card)), color-mix(in oklab, var(--btn-theme) 4%, var(--card))) !important;
   box-shadow: 0 10px 25px -10px color-mix(in oklab, var(--btn-theme) 30%, transparent) !important;
-}
-
-html[dir="rtl"] .nav-btn:hover {
-  transform: translateX(-6px) !important;
 }
 
 .nav-btn:hover::before {
