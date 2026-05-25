@@ -3852,16 +3852,54 @@ html[dir="rtl"] #notifDropdown {
   margin: 0 auto !important;
 }
 
-/* --- Fully Adaptive Viewport Edge-Alignment for Narrow Screen Resolutions (Tablets & Mobile <= 1024px) --- */
+/* --- Fully Adaptive Viewport Edge-Alignment & High-Performance Scrolling for Tablets & Mobile (<= 1024px) --- */
 @media (max-width: 1024px) {
-  .notification-wrapper {
-    position: static !important;
+  /* 1. Global deactivation of expensive real-time backdrop-filters to achieve buttery-smooth 60/120fps scrolling on mobile GPUs */
+  * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  
+  /* 2. Raise base background opacities to maintain a rich, premium solid glass card look without the blur */
+  .card,
+  #notifDropdown {
+    background: color-mix(in oklab, var(--card) 96%, transparent) !important;
   }
   
   .topbar-actions {
+    background: color-mix(in oklab, var(--topbar-island-bg) 96%, transparent) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     transform: none !important;
+  }
+
+  /* 3. Force hardware GPU-accelerated layers on scrolling containers to bypass CPU repaints */
+  .table-wrap,
+  .sidebar-body,
+  .dashboard-main {
+    transform: translate3d(0, 0, 0) !important;
+    backface-visibility: hidden !important;
+    perspective: 1000px !important;
+    will-change: scroll-position !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* 4. Disable hover translations and transforms on touch dragging to avoid frame drops */
+  .panel-card:hover,
+  .stat-card:hover,
+  .nav-btn:hover,
+  .sidebar-close:hover {
+    transform: none !important;
+    box-shadow: var(--shadow-soft) !important;
+  }
+  
+  .nav-btn:hover > * {
+    transform: none !important;
+  }
+
+  /* 5. Center and align notifications window edge-to-edge with 16px screen padding */
+  .notification-wrapper {
+    position: static !important;
   }
   
   html[dir="ltr"] #notifDropdown,
@@ -3903,15 +3941,17 @@ html[dir="ltr"] .topbar {
   padding-inline-end: max(24px, calc((100% - 1440px) / 2)) !important;
 }
 
-/* 2. توحيد اتجاه فتح الإشعارات للداخل في الجهتين حتى تظهر كاملة ولا تُقص */
-html[dir="ltr"] #notifDropdown {
-  inset-inline-start: 0 !important;
-  inset-inline-end: auto !important;
-  transform-origin: top left !important;
-}
+/* 2. توحيد اتجاه فتح الإشعارات للداخل في الجهتين للشاشات الكبيرة لتجنب التداخل والقص */
+@media (min-width: 1025px) {
+  html[dir="ltr"] #notifDropdown {
+    inset-inline-start: 0 !important;
+    inset-inline-end: auto !important;
+    transform-origin: top left !important;
+  }
 
-html[dir="rtl"] #notifDropdown {
-  inset-inline-start: 0 !important;
-  inset-inline-end: auto !important;
-  transform-origin: top right !important;
+  html[dir="rtl"] #notifDropdown {
+    inset-inline-start: 0 !important;
+    inset-inline-end: auto !important;
+    transform-origin: top right !important;
+  }
 }
