@@ -3885,3 +3885,53 @@ html[dir="rtl"] #notifDropdown {
     padding: 8px 12px !important;
   }
 }
+
+/* ========================================================
+   إعادة ضبط محاذاة القائمة والداشبورد للغة العربية (RTL)
+=========================================================== */
+
+html[dir="rtl"] {
+    /* التأكد من أن اتجاه النصوص والتخطيط يبدأ من اليمين */
+    text-align: right;
+}
+
+/* 1. إعادة تموضع القائمة الجانبية بالكامل */
+html[dir="rtl"] .sidebar {
+    left: auto !important;             /* إلغاء الالتصاق باليسار */
+    right: 0 !important;               /* الالتصاق التام باليمين */
+    border-right: none !important;     /* إلغاء الحدود اليمنى */
+    border-left: 1px solid var(--border-color, #e5e7eb) !important; /* وضع الحدود من اليسار */
+    
+    /* إذا كانت القائمة مخفية وتظهر بالانزلاق، نعكس اتجاه الانزلاق */
+    transform: translateX(100%) !important; 
+}
+
+/* 2. عند فتح القائمة الجانبية في العربية */
+html[dir="rtl"] .sidebar.open,
+html[dir="rtl"] .sidebar.visible {
+    transform: translateX(0) !important;
+}
+
+/* 3. إزاحة الداشبورد والمحتوى الرئيسي ليصبح مائلاً إلى الجانب بشكل صحيح */
+html[dir="rtl"] .page-wrap,
+html[dir="rtl"] .main-content,
+html[dir="rtl"] .dashboard-container {
+    margin-left: 0 !important;         /* إلغاء الإزاحة اليسارية الإنجليزية */
+    margin-right: 260px !important;    /* إزاحة المحتوى بمقدار عرض القائمة الجانبية من اليمين */
+}
+
+/* 4. تعديل الأيقونات والنصوص داخل القائمة لتتناسب مع الاتجاه الجديد */
+html[dir="rtl"] .sidebar-link i,
+html[dir="rtl"] .sidebar-item i {
+    margin-right: 0 !important;
+    margin-left: 10px !important;      /* إعطاء مسافة للأيقونة من اليسار بدلاً من اليمين */
+}
+
+/* 5. إذا كان الموقع متجاوباً على الهواتف ويكون الداشبورد كامل العرض */
+@media (max-width: 768px) {
+    html[dir="rtl"] .page-wrap,
+    html[dir="rtl"] .main-content,
+    html[dir="rtl"] .dashboard-container {
+        margin-right: 0 !important;    /* إلغاء الإزاحة على الشاشات الصغيرة */
+    }
+}
