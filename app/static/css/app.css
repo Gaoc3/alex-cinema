@@ -3815,8 +3815,8 @@ html[dir="ltr"] #notifDropdown {
 }
 
 html[dir="rtl"] #notifDropdown {
-  inset-inline-end: 0 !important;
-  inset-inline-start: auto !important;
+  inset-inline-start: 0 !important;   /* تم التعديل هنا لتبدأ المحاذاة من الداخل */
+  inset-inline-end: auto !important;  /* تم التعديل هنا */
   transform-origin: top right !important;
 }
 
