@@ -2330,11 +2330,7 @@ hr {
     padding: 12px;
   }
 
-  .sidebar-card {
-    width: min(330px, 90vw);
-    border-radius: 0 !important;
-    padding: 14px 10px !important;
-  }
+
 
   .hero-card h1 {
     font-size: 22px;
