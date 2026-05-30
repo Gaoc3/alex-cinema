@@ -1725,8 +1725,7 @@ body {
     mask-image: radial-gradient(white, black);
     transform: translateZ(0);
     box-shadow: 0 25px 75px rgba(0, 0, 0, 0.75), 
-                0 0 50px rgba(124, 58, 237, 0.18), 
-                inset 0 0 0 1px rgba(255, 255, 255, 0.06); /* Clean inner border without aliasing gap */
+                0 0 50px rgba(124, 58, 237, 0.15); /* Completely borderless for seamless edges */
     background: #080612;
 }
 .hero-slider-wrapper {
