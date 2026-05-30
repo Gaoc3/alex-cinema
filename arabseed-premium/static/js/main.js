@@ -667,15 +667,19 @@ async function loadSeasonData(url, seasonTitle) {
             elements.modalType.innerText = "مسلسل";
             state.seasons = details.seasons;
             
+            // Smart title: update modal title to clean series base name (no episode/season noise)
+            if (details.title) {
+                // Use selectedItem title if it's already clean, otherwise use API title
+                const cleanTitle = state.selectedItem.title || details.title;
+                elements.modalTitleText.innerText = cleanTitle;
+            }
+            
             // Render the seasons buttons
             renderSeasons(details.seasons);
             elements.modalSeasonsSection.style.display = 'block';
             
-            // Identify active season or default to first
-            let activeSeason = details.seasons.find(s => s.active || s.episodes.some(ep => ep.active));
-            if (!activeSeason) {
-                activeSeason = details.seasons[0];
-            }
+            // Always default to the first season for a clean full-series browsing experience
+            const activeSeason = details.seasons[0];
             
             // Highlight the active season button
             highlightActiveSeason(activeSeason.title);
@@ -685,8 +689,8 @@ async function loadSeasonData(url, seasonTitle) {
             renderEpisodes(activeSeason.episodes, activeSeason.title);
             elements.modalEpisodesSection.style.display = 'block';
             
-            // Identify active episode or default to first
-            const activeEp = activeSeason.episodes.find(ep => ep.active) || activeSeason.episodes[0];
+            // Default to the first episode of the first season
+            const activeEp = activeSeason.episodes[0];
             if (activeEp) {
                 highlightActiveEpisode(activeEp.url);
                 
