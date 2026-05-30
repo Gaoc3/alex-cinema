@@ -223,7 +223,7 @@ function renderCarousels(categories) {
         
         row.innerHTML = `
             <div class="category-header">
-                <h3><i class="fa-solid fa-compact-disc text-red-500 animate-spin-slow"></i> ${cat.category}</h3>
+                <h3><i class="fa-solid fa-compact-disc animate-spin-slow" style="color: var(--accent-violet);"></i> ${cat.category}</h3>
             </div>
             <div class="category-slider-container">
                 <button class="slider-arrow arrow-left" onclick="window.scrollSlider('${categoryId}', -350)"><i class="fa-solid fa-chevron-left"></i></button>
