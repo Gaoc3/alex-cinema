@@ -64,8 +64,6 @@ const elements = {
     playerTitleDisplay: document.getElementById('player-title-display'),
     playerRenderArea: document.getElementById('player-render-area'),
     playerServerBadge: document.getElementById('player-server-badge'),
-    playerQualityWrapper: document.getElementById('player-quality-wrapper'),
-    playerQualitySelect: document.getElementById('player-quality-select'),
     
     // Navigation Buttons
     navHomeBtn: document.getElementById('nav-home-btn'),
