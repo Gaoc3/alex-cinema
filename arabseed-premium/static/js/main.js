@@ -218,6 +218,8 @@ async function openDetailsModal(item) {
     // Loading State
     elements.modalStoryText.innerText = "جاري تصفح قصة العرض واستخراج التفاصيل الكلية...";
     elements.modalEpisodesSection.style.display = 'none';
+    elements.modalQuickPlayBtn.style.display = 'none';
+    state.bestServer = null;
     elements.modalServersList.innerHTML = '';
     elements.serversLoader.style.display = 'block';
     
@@ -306,6 +308,18 @@ async function fetchStreamingServers(url, displayTitle) {
         if (data.servers && data.servers.length > 0) {
             state.activeServerList = data.servers;
             renderServers(data.servers, displayTitle);
+            
+            // Automatically select the BEST server (prefer direct, then fallback to first)
+            const bestServer = data.servers.find(s => s.type === 'direct') || data.servers[0];
+            state.bestServer = bestServer;
+            
+            // Show and configure the Quick Play button
+            elements.modalQuickPlayBtn.style.display = 'flex';
+            elements.modalQuickPlayBtn.onclick = () => {
+                if (state.bestServer) {
+                    launchPlayer(state.bestServer, displayTitle);
+                }
+            };
         } else {
             elements.modalServersList.innerHTML = `<p class="error-text"><i class="fa-solid fa-triangle-exclamation"></i> عذراً، لا توجد سيرفرات بث آمنة متوفرة حالياً لهذا العرض.</p>`;
         }
