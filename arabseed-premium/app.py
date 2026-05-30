@@ -173,7 +173,7 @@ def extract_direct_mp4(embed_url: str) -> str:
         'Referer': 'https://m.asd.ink/'
     }
     try:
-        r = requests.get(embed_url, headers=headers, timeout=10)
+        r = requests.get(embed_url, headers=headers, timeout=15)
         r.raise_for_status()
         
         soup = BeautifulSoup(r.text, 'html.parser')
@@ -329,6 +329,121 @@ def resolve_cinemana_stream(cinemana_url: str) -> list:
         print(f"Error resolving direct Cinemana stream: {e}")
         
     return []
+
+def resolve_arabseed_stream(title: str, is_series: bool, season_str: str, episode_str: str) -> list:
+    """
+    Searches ArabSeed for the matching movie or series episode,
+    extracts high-speed watch servers, and decodes direct MP4 links if possible.
+    """
+    if not title:
+        return []
+        
+    print(f"🔄 Hybrid Resolver: Searching ArabSeed for title='{title}', is_series={is_series}, season='{season_str}', episode='{episode_str}'...")
+    
+    try:
+        # Initialize ArabSeedAPI client dynamically to use updated mirror logic
+        from arabseed_scraper import ArabSeedAPI
+        arabseed_api = ArabSeedAPI()
+        
+        # Check connectivity and get working mirror
+        if not arabseed_api.auto_fallback_mirror():
+            print("❌ Hybrid Resolver: Failed to connect to any ArabSeed mirrors.")
+            return []
+            
+        base_title = clean_for_search(title)
+        results = arabseed_api.search(base_title)
+        if not results:
+            print(f"⚠️ Hybrid Resolver: No search results found on ArabSeed for '{base_title}'.")
+            return []
+            
+        target_url = ""
+        
+        if is_series:
+            target_season = parse_season_num(season_str)
+            target_episode = parse_episode_num(episode_str)
+            
+            for r in results:
+                r_title = r.get('title', '')
+                r_type = r.get('type', '')
+                
+                # Verify if this is a series or anime
+                is_r_series = "مسلسل" in r_title or "انمي" in r_title or "مسلسل" in r_type.lower() or "أنمي" in r_type.lower()
+                if not is_r_series:
+                    continue
+                    
+                r_season = parse_season_num(r_title)
+                if r_season == target_season:
+                    # Found matching series season! Fetch episodes list
+                    try:
+                        details = arabseed_api.get_details(r['url'])
+                        if details.get('is_series'):
+                            for ep in details.get('episodes', []):
+                                ep_num = parse_episode_num(ep['title'])
+                                if ep_num == target_episode:
+                                    target_url = ep['url']
+                                    print(f"✅ Hybrid Resolver: Matched episode page -> {target_url}")
+                                    break
+                        if target_url:
+                            break
+                    except Exception as details_err:
+                        print(f"❌ Hybrid Resolver: Error fetching series details for {r_title}: {details_err}")
+        else:
+            # Movie match
+            for r in results:
+                r_title = r.get('title', '')
+                r_type = r.get('type', '')
+                is_r_series = "مسلسل" in r_title or "حلقة" in r_title or "مسلسل" in r_type.lower() or "أنمي" in r_type.lower()
+                if is_r_series:
+                    continue
+                
+                target_url = r['url']
+                print(f"✅ Hybrid Resolver: Matched movie page -> {target_url}")
+                break
+                
+        if not target_url:
+            print("⚠️ Hybrid Resolver: Failed to match any items on ArabSeed.")
+            return []
+            
+        # Get watch links from ArabSeed target watch page
+        watch_servers = arabseed_api.get_watch_links(target_url)
+        formatted_servers = []
+        
+        for idx, w in enumerate(watch_servers):
+            server_name = w.get('server', f'سيرفر مشاهدة {idx+1}')
+            direct_link = w.get('direct_link', '')
+            if not direct_link or direct_link == 'about:blank':
+                continue
+                
+            # If it's a reviewrate embed, try to extract the direct MP4
+            if "reviewrate.net" in direct_link:
+                try:
+                    print(f"🔓 Hybrid Resolver: Attempting to extract direct MP4 from {direct_link}...")
+                    mp4_url = extract_direct_mp4(direct_link)
+                    if mp4_url:
+                        print(f"🚀 Hybrid Resolver: Successfully extracted direct MP4 URL -> {mp4_url}")
+                        formatted_servers.append({
+                            'type': 'direct',
+                            'server': f'🚀 سيرفر عرب سيد السريع 1080p (خالٍ من التقطيع)',
+                            'url': mp4_url,
+                            'original_url': direct_link
+                        })
+                        continue
+                except Exception as extract_err:
+                    print(f"❌ Hybrid Resolver: Error extracting direct MP4: {extract_err}")
+            
+            # Fallback as embed iframe player
+            formatted_servers.append({
+                'type': 'embed',
+                'server': f'🚀 سيرفر عرب سيد البديل {server_name} (جودة عالية)',
+                'url': direct_link,
+                'original_url': direct_link
+            })
+            
+        return formatted_servers
+        
+    except Exception as e:
+        print(f"❌ Hybrid Resolver Error: {e}")
+        return []
 
 # ============================================================================
 # Caching System (Thread-Safe Memory Cache)
@@ -749,25 +864,45 @@ def api_watch():
     """
     Direct Cinemana stream playback. Resolves Cinemana watch URL
     directly to HLS streams and returns them.
+    Supports hybrid ArabSeed watch resolution for blazing-fast buffer-free streaming.
     """
     url = request.args.get('url', '').strip()
     if not url:
         return jsonify({'error': 'URL is required.'}), 400
         
+    title = request.args.get('title', '').strip()
+    is_series = request.args.get('is_series', 'false').lower() == 'true'
+    season = request.args.get('season', '').strip()
+    episode = request.args.get('episode', '').strip()
+    
     try:
-        cache_key = f"watch_{url}"
+        cache_key = f"watch_{url}_{title}_{is_series}_{season}_{episode}"
         cached_val = app_cache.get(cache_key)
         if cached_val:
             return jsonify(cached_val)
             
-        servers = resolve_cinemana_stream(url)
-        if not servers:
-            servers = [{
+        # 1. Resolve Cinemana HLS stream options
+        cinemana_servers = resolve_cinemana_stream(url)
+        
+        # 2. Resolve ArabSeed high-speed premium stream options (if title is provided)
+        arabseed_servers = []
+        if title:
+            try:
+                arabseed_servers = resolve_arabseed_stream(title, is_series, season, episode)
+            except Exception as hybrid_err:
+                print(f"❌ Error in hybrid resolver: {hybrid_err}")
+                
+        # 3. Merge servers (ArabSeed high-speed premium options first)
+        merged_servers = arabseed_servers + cinemana_servers
+        
+        if not merged_servers:
+            merged_servers = [{
                 'type': 'direct',
                 'server': '⚠️ عذراً، هذا العرض غير متوفر حالياً للبث المباشر',
                 'url': 'about:blank'
             }]
-        res = {'servers': servers}
+            
+        res = {'servers': merged_servers}
         app_cache.set(cache_key, res, ttl=300) # Cache watch streams for 5 minutes
         return jsonify(res)
     except Exception as e:
