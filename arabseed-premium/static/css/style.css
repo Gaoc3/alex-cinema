@@ -29,6 +29,10 @@
     
     --font-ar: 'Cairo', sans-serif;
     --font-en: 'Inter', sans-serif;
+    
+    /* Plyr custom color variables mapping */
+    --plyr-color-main: var(--accent-violet);
+    --plyr-video-progress-buffered-background: rgba(255, 255, 255, 0.15);
 }
 
 /* Global Reset & Base Setup */
@@ -1231,12 +1235,6 @@ body {
 /* Custom Neon Progress Bar */
 .plyr__progress__container {
     padding: 0 4px !important;
-}
-.plyr__progress input[type="range"]::-webkit-slider-runnable-track {
-    background: rgba(255,255,255,0.1) !important;
-}
-.plyr__progress input[type="range"] {
-    background: transparent !important;
 }
 
 /* Pulsing Center Play Button */
