@@ -1015,33 +1015,56 @@ function launchPlayer(server, title) {
     // Bind Advanced Keyboard control listener in CAPTURING phase
     window.addEventListener('keydown', handleKeyboardShortcuts, true);
     
-    // Double click gesture actions (Seek Back, Seek Forward, Fullscreen) in CAPTURING phase
-    state.playerDblClickListener = (e) => {
-        // If double click was on controls overlay, do nothing
-        if (e.target.closest('.plyr__controls')) return;
+    // Single Click & Double Click gesture actions inside a unified Click handler in CAPTURING phase
+    state.clickTimer = null;
+    state.playerClickListener = (e) => {
+        // If click was on controls overlay or settings menus, let them work normally
+        if (e.target.closest('.plyr__controls') || e.target.closest('.plyr__menu')) return;
         
         e.preventDefault();
         e.stopPropagation();
         
-        const rect = elements.playerRenderArea.getBoundingClientRect();
-        const tapX = e.clientX - rect.left;
-        const widthPercent = (tapX / rect.width) * 100;
-        
-        if (widthPercent > 65) {
-            // Double click on right: Fast Forward 10s
-            state.activePlayer.currentTime = Math.min(state.activePlayer.duration || 0, state.activePlayer.currentTime + 10);
-            showCenterIndicator('fa-solid fa-forward-step');
-        } else if (widthPercent < 35) {
-            // Double click on left: Seek back 10s
-            state.activePlayer.currentTime = Math.max(0, state.activePlayer.currentTime - 10);
-            showCenterIndicator('fa-solid fa-backward-step');
+        if (state.clickTimer) {
+            // Double Click Gesture Detected!
+            clearTimeout(state.clickTimer);
+            state.clickTimer = null;
+            
+            const rect = elements.playerRenderArea.getBoundingClientRect();
+            const tapX = e.clientX - rect.left;
+            const widthPercent = (tapX / rect.width) * 100;
+            
+            if (widthPercent > 65) {
+                // Double click on right: Fast Forward 10s
+                state.activePlayer.currentTime = Math.min(state.activePlayer.duration || 0, state.activePlayer.currentTime + 10);
+                showCenterIndicator('fa-solid fa-forward-step');
+            } else if (widthPercent < 35) {
+                // Double click on left: Seek back 10s
+                state.activePlayer.currentTime = Math.max(0, state.activePlayer.currentTime - 10);
+                showCenterIndicator('fa-solid fa-backward-step');
+            } else {
+                // Double click in middle: Toggle Fullscreen
+                state.activePlayer.fullscreen.toggle();
+            }
         } else {
-            // Double click in middle: Toggle Fullscreen
-            state.activePlayer.fullscreen.toggle();
+            // Wait for 250ms to distinguish from double click
+            state.clickTimer = setTimeout(() => {
+                state.clickTimer = null;
+                
+                // Single Click Toggle Play/Pause
+                if (state.activePlayer) {
+                    if (state.activePlayer.paused) {
+                        state.activePlayer.play().catch(()=>{});
+                        showCenterIndicator('fa-solid fa-play');
+                    } else {
+                        state.activePlayer.pause();
+                        showCenterIndicator('fa-solid fa-pause');
+                    }
+                }
+            }, 250);
         }
     };
     
-    elements.playerRenderArea.addEventListener('dblclick', state.playerDblClickListener, true);
+    elements.playerRenderArea.addEventListener('click', state.playerClickListener, true);
     
     // Setup next episode autoplay
     setupAutoplayNext(server.url);
@@ -1065,9 +1088,14 @@ function closePlayerModal() {
     // Unbind Keyboard shortcuts in CAPTURING phase
     window.removeEventListener('keydown', handleKeyboardShortcuts, true);
     
-    if (state.playerDblClickListener) {
-        elements.playerRenderArea.removeEventListener('dblclick', state.playerDblClickListener, true);
-        state.playerDblClickListener = null;
+    if (state.clickTimer) {
+        clearTimeout(state.clickTimer);
+        state.clickTimer = null;
+    }
+    
+    if (state.playerClickListener) {
+        elements.playerRenderArea.removeEventListener('click', state.playerClickListener, true);
+        state.playerClickListener = null;
     }
     
     if (state.activePlayer) {

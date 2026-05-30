@@ -1246,10 +1246,11 @@ body {
     width: 65px !important;
     height: 65px !important;
     border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    transform: translate(-50%, -50%) !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 .plyr__control--overlaid:hover {
-    transform: scale(1.1) !important;
+    transform: translate(-50%, -50%) scale(1.1) !important;
     box-shadow: 0 0 35px rgba(124, 58, 237, 0.85) !important;
 }
 .plyr__control--overlaid svg {
