@@ -835,31 +835,58 @@ function loadPlayerSource(server, startTime = 0, autoplay = true) {
     }
 }
 
-function showCenterIndicator(iconClass) {
+function showCenterIndicator(iconClass, persistent = false) {
     const indicator = document.getElementById('player-center-indicator');
     if (!indicator) return;
     
     // Set the icon
     indicator.innerHTML = `<i class="${iconClass}"></i>`;
     
+    // Clear any pending hide timer
+    if (state.indicatorTimeout) {
+        clearTimeout(state.indicatorTimeout);
+        state.indicatorTimeout = null;
+    }
+    
     // Reset animation classes
     indicator.classList.remove('trigger-anim');
     indicator.style.display = 'flex';
     
-    // Force reflow
-    void indicator.offsetWidth;
+    if (persistent) {
+        // Persistent mode: stays visible (used for paused state play icon)
+        indicator.classList.remove('trigger-anim');
+        indicator.style.opacity = '1';
+        return;
+    }
     
-    // Trigger animation
+    // Brief flash mode: animate and auto-hide
+    void indicator.offsetWidth;
     indicator.classList.add('trigger-anim');
     
-    // Hide it after 500ms when animation completes
-    if (state.indicatorTimeout) {
-        clearTimeout(state.indicatorTimeout);
-    }
     state.indicatorTimeout = setTimeout(() => {
         indicator.style.display = 'none';
         indicator.classList.remove('trigger-anim');
     }, 500);
+}
+
+function hideCenterIndicator() {
+    const indicator = document.getElementById('player-center-indicator');
+    if (!indicator) return;
+    if (state.indicatorTimeout) {
+        clearTimeout(state.indicatorTimeout);
+        state.indicatorTimeout = null;
+    }
+    indicator.style.display = 'none';
+    indicator.classList.remove('trigger-anim');
+}
+
+function syncPlayPauseIndicator() {
+    if (!state.activePlayer) return;
+    if (state.activePlayer.paused) {
+        showCenterIndicator('fa-solid fa-play', true);
+    } else {
+        hideCenterIndicator();
+    }
 }
 
 function handleKeyboardShortcuts(e) {
@@ -894,10 +921,8 @@ function handleKeyboardShortcuts(e) {
         case 'KeyK': // Toggle Play/Pause
             if (state.activePlayer.paused) {
                 state.activePlayer.play().catch(()=>{});
-                showCenterIndicator('fa-solid fa-play');
             } else {
                 state.activePlayer.pause();
-                showCenterIndicator('fa-solid fa-pause');
             }
             break;
             
@@ -1093,7 +1118,7 @@ function launchPlayer(server, title) {
     // Initialize Plyr with native settings menu quality options
     state.activePlayer = new Plyr(video, {
         controls: [
-            'play-large', 'play', 'progress', 'current-time', 'duration',
+            'play', 'progress', 'current-time', 'duration',
             'mute', 'volume', 'settings', 'pip', 'fullscreen'
         ],
         settings: ['quality', 'speed'],
@@ -1182,10 +1207,8 @@ function launchPlayer(server, title) {
                 if (state.activePlayer) {
                     if (state.activePlayer.paused) {
                         state.activePlayer.play().catch(()=>{});
-                        showCenterIndicator('fa-solid fa-play');
                     } else {
                         state.activePlayer.pause();
-                        showCenterIndicator('fa-solid fa-pause');
                     }
                 }
             }, 250);
@@ -1193,6 +1216,10 @@ function launchPlayer(server, title) {
     };
     
     elements.playerRenderArea.addEventListener('click', state.playerClickListener, true);
+    
+    // Listen to Plyr play/pause events to sync the center indicator
+    state.activePlayer.on('play', () => syncPlayPauseIndicator());
+    state.activePlayer.on('pause', () => syncPlayPauseIndicator());
     
     // Block native dblclick events on video viewport in capturing phase to prevent Plyr overlay takeovers
     state.playerDblClickListener = (e) => {
