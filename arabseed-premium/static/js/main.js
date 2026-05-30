@@ -591,13 +591,12 @@ function closeDetailsModal() {
 // Immersive Cinema Player Modal Handlers
 // ============================================================================
 
-// ============================================================================
-// Immersive Cinema Player Modal Handlers
-// ============================================================================
-
 // LocalStorage key helper
 function getProgressKey(url) {
-    return `function loadPlayerSource(server, startTime = 0, autoplay = true) {
+    return `alex_cinema_progress_${url}`;
+}
+
+function loadPlayerSource(server, startTime = 0, autoplay = true) {
     state.currentPlayingServer = server;
     elements.playerServerBadge.innerText = server.server;
     
@@ -715,6 +714,33 @@ function getProgressKey(url) {
         };
         video.addEventListener('loadedmetadata', onLoaded);
     }
+}
+
+function showCenterIndicator(iconClass) {
+    const indicator = document.getElementById('player-center-indicator');
+    if (!indicator) return;
+    
+    // Set the icon
+    indicator.innerHTML = `<i class="${iconClass}"></i>`;
+    
+    // Reset animation classes
+    indicator.classList.remove('trigger-anim');
+    indicator.style.display = 'flex';
+    
+    // Force reflow
+    void indicator.offsetWidth;
+    
+    // Trigger animation
+    indicator.classList.add('trigger-anim');
+    
+    // Hide it after 500ms when animation completes
+    if (state.indicatorTimeout) {
+        clearTimeout(state.indicatorTimeout);
+    }
+    state.indicatorTimeout = setTimeout(() => {
+        indicator.style.display = 'none';
+        indicator.classList.remove('trigger-anim');
+    }, 500);
 }
 
 function handleKeyboardShortcuts(e) {
@@ -933,10 +959,10 @@ function launchPlayer(server, title) {
             qualityOptions.push(parseInt(qMatch[1]));
         }
     });
-    qualityOptions.sort((a, b) => b - a);
+    const uniqueQualityOptions = [...new Set(qualityOptions)].sort((a, b) => b - a);
     
     const initialQMatch = server.server.match(/(\d+)/);
-    const defaultQuality = initialQMatch ? parseInt(initialQMatch[1]) : (qualityOptions[0] || 1080);
+    const defaultQuality = initialQMatch ? parseInt(initialQMatch[1]) : (uniqueQualityOptions[0] || 1080);
     
     // Initialize Plyr with native settings menu quality options
     state.activePlayer = new Plyr(video, {
@@ -948,7 +974,7 @@ function launchPlayer(server, title) {
         speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
         quality: {
             default: defaultQuality,
-            options: qualityOptions,
+            options: uniqueQualityOptions,
             forced: true,
             onChange: (newQuality) => {
                 const currentQMatch = state.currentPlayingServer ? state.currentPlayingServer.server.match(/(\d+)/) : null;
@@ -992,6 +1018,9 @@ function launchPlayer(server, title) {
     const viewport = elements.playerRenderArea.parentElement;
     if (viewport) {
         viewport.ondblclick = (e) => {
+            // If double click was on controls overlay, do nothing
+            if (e.target.closest('.plyr__controls')) return;
+            
             const rect = viewport.getBoundingClientRect();
             const tapX = e.clientX - rect.left;
             const widthPercent = (tapX / rect.width) * 100;
@@ -1051,25 +1080,5 @@ function closePlayerModal() {
     state.currentPlayingServer = null;
     elements.playerRenderArea.innerHTML = '';
     elements.playerModal.style.display = 'none';
-}ydown', handleKeyboardShortcuts);
-    
-    if (state.activePlayer) {
-        state.activePlayer.destroy();
-        state.activePlayer = null;
-    }
-    
-    if (state.hlsInstance) {
-        state.hlsInstance.destroy();
-        state.hlsInstance = null;
-    }
-    
-    const viewport = elements.playerRenderArea.parentElement;
-    if (viewport) {
-        viewport.ondblclick = null;
-    }
-    
-    elements.playerQualityWrapper.style.display = 'none';
-    elements.playerQualitySelect.onchange = null;
-    elements.playerRenderArea.innerHTML = '';
-    elements.playerModal.style.display = 'none';
 }
+
