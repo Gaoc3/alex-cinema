@@ -185,7 +185,7 @@ class CinemanaAPI:
 
     def get_details(self, watch_url: str) -> Dict[str, Any]:
         """
-        Scrapes the Cinemana watch page to retrieve description and other episodes in the season.
+        Scrapes the Cinemana watch page to retrieve description, seasons, and episodes.
         """
         try:
             r = self.session.get(watch_url, timeout=15)
@@ -215,62 +215,73 @@ class CinemanaAPI:
                         description = text.replace("القصة", "", 1).strip()
                         break
                         
-            # 2. Scrape related episodes (scrollbar row)
-            episodes = []
+            # 2. Parse seasons and episodes (highly organized season-wrapper divs)
+            seasons = []
+            is_series = False
             
-            # A show is classified as a series if title keywords match
-            is_series = any(x in title for x in ["مسلسل", "الحلقة", "حلقة", "الموسم"])
+            season_triggers = soup.find_all(class_='season-trigger')
+            season_wrappers = soup.find_all(class_='season-wrapper')
             
-            scroll_div = soup.find('div', class_=re.compile(r'overflow-x-auto|snap-x|no-scrollbar'))
-            if scroll_div:
-                scroll_episodes = []
-                for a in scroll_div.find_all('a', href=True):
-                    if 'watch=' in a['href']:
-                        parsed = self.parse_card(a)
-                        if parsed:
-                            ep_title = parsed['title']
-                            active = a['href'].rstrip('/') == watch_url.rstrip('/')
-                            
-                            # If scroll elements explicitly mention episodes, it's a series
-                            if any(x in ep_title for x in ["الحلقة", "حلقة", "الموسم"]):
-                                is_series = True
+            if season_triggers and len(season_triggers) == len(season_wrappers):
+                is_series = True
+                for i, trigger in enumerate(season_triggers):
+                    s_title = trigger.get_text(strip=True)
+                    # Check if active
+                    active_season = 'bg-red-600' in trigger.get('class', []) or 'block' in season_wrappers[i].get('class', [])
+                    
+                    # Find episodes inside this season wrapper
+                    episodes = []
+                    ep_anchors = season_wrappers[i].find_all('a', href=True)
+                    for a in ep_anchors:
+                        if 'watch=' in a['href']:
+                            ep_href = a['href']
+                            if ep_href.startswith('/'):
+                                ep_href = self.base_url + ep_href
                                 
-                            scroll_episodes.append({
-                                "title": ep_title,
-                                "url": parsed['url'],
-                                "active": active
+                            ep_text = a.get_text(strip=True)
+                            # Convert EP8 -> الحلقة 8
+                            ep_match = re.search(r'EP\s*(\d+)', ep_text, re.IGNORECASE)
+                            display_title = f"الحلقة {ep_match.group(1)}" if ep_match else ep_text
+                            
+                            active_ep = ep_href.rstrip('/') == watch_url.rstrip('/')
+                            
+                            episodes.append({
+                                "title": display_title,
+                                "url": ep_href,
+                                "active": active_ep
                             })
                             
-                if is_series:
-                    for ep in scroll_episodes:
-                        ep_title = ep['title']
-                        ep_match = re.search(r'(الحلقة\s+\d+|حلقة\s+\d+)', ep_title)
-                        display_title = ep_match.group(1) if ep_match else ep_title
+                    # Sort episodes logically (lowest episode first)
+                    if episodes:
+                        def extract_ep_num(ep):
+                            m = re.search(r'\d+', ep['title'])
+                            return int(m.group()) if m else 0
+                        episodes = sorted(episodes, key=extract_ep_num)
                         
-                        episodes.append({
-                            "title": display_title,
-                            "url": ep['url'],
-                            "active": ep['active']
-                        })
-                            
-            if not episodes and is_series:
-                episodes.append({
-                    "title": "الحلقة الحالية",
-                    "url": watch_url,
-                    "active": True
-                })
-
-            if episodes:
-                def extract_ep_num(ep):
-                    m = re.search(r'\d+', ep['title'])
-                    return int(m.group()) if m else 0
-                episodes = sorted(episodes, key=extract_ep_num)
-
+                    seasons.append({
+                        "title": s_title,
+                        "active": active_season,
+                        "episodes": episodes
+                    })
+            else:
+                # Check title for series keywords if no season-wrappers are present (e.g. single season series)
+                is_series = any(x in title for x in ["مسلسل", "الحلقة", "حلقة", "الموسم"])
+                if is_series:
+                    seasons.append({
+                        "title": "الموسم الأول",
+                        "active": True,
+                        "episodes": [{
+                            "title": "الحلقة الحالية",
+                            "url": watch_url,
+                            "active": True
+                        }]
+                    })
+                    
             return {
                 "title": title,
                 "description": description,
                 "is_series": is_series,
-                "episodes": episodes
+                "seasons": seasons
             }
         except Exception as e:
             print(f"Error scraping details for {watch_url}: {e}")
@@ -278,7 +289,7 @@ class CinemanaAPI:
                 "title": "غير معروف",
                 "description": "فشل تحميل التفاصيل من سينمانا.",
                 "is_series": False,
-                "episodes": []
+                "seasons": []
             }
 
 if __name__ == '__main__':
@@ -287,7 +298,3 @@ if __name__ == '__main__':
     print("Fetching homepage categories...")
     cats = api.get_homepage_categories()
     print("Found categories:", len(cats))
-    for c in cats:
-        print(f"  Category: {c['category']} ({len(c['cards'])} cards)")
-        for card in c['cards'][:2]:
-            print(f"    - {card['title']} | URL: {card['url']} | Poster: {card['poster']}")
