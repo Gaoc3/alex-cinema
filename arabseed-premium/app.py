@@ -330,6 +330,7 @@ def resolve_cinemana_stream(cinemana_url: str) -> list:
 # Caching System (Thread-Safe Memory Cache)
 # ============================================================================
 import time
+import threading
 from threading import Lock
 import concurrent.futures
 
@@ -401,46 +402,21 @@ def calculate_match_score(item_title: str, query: str) -> int:
 def fetch_slide_title(slide, session):
     """Fetches the watch page to extract the actual title of the slide."""
     try:
-        r = session.get(slide['url'], timeout=4)
-        if r.status_code == 200:
-            soup = BeautifulSoup(r.text, 'html.parser')
-            title_el = soup.find('h1') or soup.find('h2') or soup.title
-            if title_el:
-                title = title_el.get_text(strip=True)
-                title = title.replace("– افلام ومسلسلات | قنوات بث", "").replace("سينمانا شبكتي ⭐️", "").strip()
-                slide['title'] = title
-                is_special = "special" in title.lower() or "سبيشال" in title or "خاص" in title or "فيلم" in title
-                if not is_special:
-                    if any(x in title for x in ["مسلسل", "حلقة", "حلقه", "الحلقة", "الحلقه", "الموسم"]) or "انمي" in title.lower() or "أنمي" in title:
-                        slide['type'] = "مسلسل"
-    except Exception as e:
-        print(f"Error fetching slide title: {e}")
-
-@app.route('/')
-def home():
-    """Renders the main single page web interface."""
-    return render_template('index.html')
-
-@app.route('/api/cache/clear')
+        r = session.get(slide['url'], t@app.route('/api/cache/clear')
 def api_cache_clear():
-    """Manually flushes the entire backend memory cache."""
+    """Manually flushes and triggers background pre-warming of the cache."""
     app_cache.clear()
+    # Trigger an immediate background warm thread without blocking the response!
+    threading.Thread(target=trigger_single_warm, daemon=True).start()
     return jsonify({
         'status': 'success',
-        'message': 'تم تحديث وتطهير ذاكرة التخزين المؤقت (Cache) بالكامل بنجاح!'
+        'message': 'تم تحديث وتطهير ذاكرة التخزين المؤقت (Cache) بالكامل بنجاح! جاري جلب البيانات بالخلفية...'
     })
 
-@app.route('/api/home')
-def api_home():
-    """Retrieve beautiful horizontal categorized carousels and sliding featured Hero items."""
+def get_home_data_fresh():
+    """Fetch home categories and slides synchronously."""
     try:
-        cache_key = "home_data"
-        cached_val = app_cache.get(cache_key)
-        if cached_val:
-            return jsonify(cached_val)
-            
         categories = cinemana_api.get_homepage_categories()
-        # Deduplicate series episodes in home carousels
         for cat in categories:
             deduped_cards = []
             seen_bases = set()
@@ -488,7 +464,6 @@ def api_home():
                             "quality": "1080p FHD"
                         })
                         
-                    # Fetch slide titles in parallel
                     if slides:
                         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                             executor.map(lambda s: fetch_slide_title(s, cinemana_api.session), slides)
@@ -501,23 +476,16 @@ def api_home():
             'category': 'الرئيسية'
         }
         
-        # Safe-guard: Only cache if we actually have categories/slides!
         if categories or slides:
-            app_cache.set(cache_key, res, ttl=900)
-            
-        return jsonify(res)
+            app_cache.set("home_data", res, ttl=1800)
+        return res
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error getting fresh home data: {e}")
+        return {'categories': [], 'slides': [], 'category': 'الرئيسية'}
 
-@app.route('/api/movies')
-def api_movies():
-    """Scrapes pages 1-4 in parallel to expand movies library."""
+def get_movies_data_fresh():
+    """Fetch pages 1-4 in parallel for movies listing."""
     try:
-        cache_key = "movies_data"
-        cached_val = app_cache.get(cache_key)
-        if cached_val:
-            return jsonify(cached_val)
-            
         urls = [f"https://cinemana.cc/movies/page/{p}/" for p in [1, 2, 3, 4]]
         results = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
@@ -535,24 +503,16 @@ def api_movies():
             'results': results,
             'category': 'الأفلام'
         }
-        
-        # Safe-guard: Only cache if results list is not empty!
         if results:
-            app_cache.set(cache_key, res, ttl=600)
-            
-        return jsonify(res)
+            app_cache.set("movies_data", res, ttl=1200)
+        return res
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error getting fresh movies data: {e}")
+        return {'results': [], 'category': 'الأفلام'}
 
-@app.route('/api/series')
-def api_series():
-    """Scrapes pages 1-4 in parallel and deduplicates series episodes."""
+def get_series_data_fresh():
+    """Fetch pages 1-4 in parallel and deduplicate for series listing."""
     try:
-        cache_key = "series_data"
-        cached_val = app_cache.get(cache_key)
-        if cached_val:
-            return jsonify(cached_val)
-            
         urls = [f"https://cinemana.cc/series/page/{p}/" for p in [1, 2, 3, 4]]
         results = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
@@ -566,7 +526,6 @@ def api_series():
                 except Exception as e:
                     print(f"Error parallel scraping series: {e}")
                     
-        # Deduplicate episodes in series catalog
         deduped_results = []
         seen_bases = set()
         for r in results:
@@ -583,23 +542,16 @@ def api_series():
             'results': deduped_results,
             'category': 'المسلسلات'
         }
-        
         if deduped_results:
-            app_cache.set(cache_key, res, ttl=600)
-            
-        return jsonify(res)
+            app_cache.set("series_data", res, ttl=1200)
+        return res
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error getting fresh series data: {e}")
+        return {'results': [], 'category': 'المسلسلات'}
 
-@app.route('/api/anime')
-def api_anime():
-    """Scrapes pages 1-4 in parallel and deduplicates anime episodes."""
+def get_anime_data_fresh():
+    """Fetch pages 1-4 in parallel and deduplicate for anime listing."""
     try:
-        cache_key = "anime_data"
-        cached_val = app_cache.get(cache_key)
-        if cached_val:
-            return jsonify(cached_val)
-            
         urls = [f"https://cinemana.cc/watch=category/أنمي/page/{p}/" for p in [1, 2, 3, 4]]
         results = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
@@ -613,7 +565,6 @@ def api_anime():
                 except Exception as e:
                     print(f"Error parallel scraping anime: {e}")
                     
-        # Deduplicate episodes in anime catalog
         deduped_results = []
         seen_bases = set()
         for r in results:
@@ -630,13 +581,65 @@ def api_anime():
             'results': deduped_results,
             'category': 'عالم الأنمي'
         }
-        
         if deduped_results:
-            app_cache.set(cache_key, res, ttl=600)
-            
-        return jsonify(res)
+            app_cache.set("anime_data", res, ttl=1200)
+        return res
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error getting fresh anime data: {e}")
+        return {'results': [], 'category': 'عالم الأنمي'}
+
+def warm_caching_worker():
+    """Continuous daemon background cache warmer executing every 10 minutes."""
+    print("✨ Starting Background Cache Warmer...")
+    # Warm immediately on startup!
+    trigger_single_warm()
+    while True:
+        time.sleep(600)
+        print("🔄 Pre-fetching and warming backend caches in background...")
+        trigger_single_warm()
+
+def trigger_single_warm():
+    """Executes a single pre-warming pass across all dynamic cache elements."""
+    try:
+        get_home_data_fresh()
+        get_movies_data_fresh()
+        get_series_data_fresh()
+        get_anime_data_fresh()
+        print("✅ Background cache warming completed successfully!")
+    except Exception as e:
+        print(f"❌ Error during background cache warming: {e}")
+
+@app.route('/api/home')
+def api_home():
+    """Retrieve beautiful horizontal categorized carousels and sliding featured Hero items."""
+    cached_val = app_cache.get("home_data")
+    if cached_val:
+        return jsonify(cached_val)
+    return jsonify(get_home_data_fresh())
+
+@app.route('/api/movies')
+def api_movies():
+    """Scrapes pages 1-4 in parallel to expand movies library."""
+    cached_val = app_cache.get("movies_data")
+    if cached_val:
+        return jsonify(cached_val)
+    return jsonify(get_movies_data_fresh())
+
+@app.route('/api/series')
+def api_series():
+    """Scrapes pages 1-4 in parallel and deduplicates series episodes."""
+    cached_val = app_cache.get("series_data")
+    if cached_val:
+        return jsonify(cached_val)
+    return jsonify(get_series_data_fresh())
+
+@app.route('/api/anime')
+def api_anime():
+    """Scrapes pages 1-4 in parallel and deduplicates anime episodes."""
+    cached_val = app_cache.get("anime_data")
+    if cached_val:
+        return jsonify(cached_val)
+    return jsonify(get_anime_data_fresh())
 
 @app.route('/api/search')
 def api_search():
@@ -671,6 +674,37 @@ def api_search():
             r_type = r.get('type', 'فيلم')
             is_special = "special" in title.lower() or "سبيشال" in title or "خاص" in title or "فيلم" in title
             if not is_special and (r_type == 'مسلسل' or any(x in title for x in ["مسلسل", "الحلقة", "الحلقه", "حلقة", "حلقه", "الموسم"])):
+                base = clean_for_search(title).lower().strip()
+                if base in seen_bases:
+                    continue
+                seen_bases.add(base)
+                r['title'] = clean_display_title(title, 'مسلسل')
+                r['type'] = 'مسلسل'
+            deduped_results.append(r)
+            
+        # Rank results intelligently based on relevance score
+        scored_results = []
+        for r in deduped_results:
+            score = calculate_match_score(r['title'], query)
+            scored_results.append((score, r))
+            
+        # Sort descending by score, maintaining stable order for equal scores
+        scored_results.sort(key=lambda x: x[0], reverse=True)
+        final_results = [item for score, item in scored_results]
+        
+        res = {
+            'results': final_results,
+            'category': f"البحث عن: {query}"
+        }
+        
+        if final_results:
+            app_cache.set(cache_key, res, ttl=300)
+            
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/details') if not is_special and (r_type == 'مسلسل' or any(x in title for x in ["مسلسل", "الحلقة", "الحلقه", "حلقة", "حلقه", "الموسم"])):
                 base = clean_for_search(title).lower().strip()
                 if base in seen_bases:
                     continue
