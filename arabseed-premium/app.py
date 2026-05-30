@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Aura Cinema - Premium Ad-Free Web Portal Backend
-------------------------------------------------
-A Flask server that integrates the ArabSeed scraping engine and acts as a transparent
-HTTP Range-compliant video stream proxy to bypass 403 blocks and popups.
+Cinemana Premium - Premium Ad-Free Web Portal Backend
+-----------------------------------------------------
+A Flask server that integrates the Shabakaty Cinemana scraping engine and resolves
+high-quality, ad-free video streams transparently via ArabSeed search matching.
+Acts as a transparent Range-compliant video stream proxy to bypass 403 blocks and popups.
 """
 
 import os
@@ -22,14 +23,91 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 try:
     from arabseed_scraper import ArabSeedAPI
 except ImportError:
-    # Fallback if path structure differs
     sys.path.append(os.getcwd())
     from arabseed_scraper import ArabSeedAPI
 
+# Import Cinemana Scraper
+from cinemana_scraper import CinemanaAPI
+
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
-# Initialize ArabSeed Scraper API
+# Initialize Scrapers
 api = ArabSeedAPI()
+cinemana_api = CinemanaAPI()
+
+# Arabic numbers mapping to digits for robust season/episode matching
+ARABIC_NUMBERS = {
+    "الاول": 1, "الأول": 1, "الأولى": 1, "الاولى": 1, "الاولي": 1, "اول": 1, "أول": 1,
+    "الثاني": 2, "الثانية": 2, "ثاني": 2, "ثانية": 2,
+    "الثالث": 3, "الثالثة": 3, "ثالث": 3, "ثالثة": 3,
+    "الرابع": 4, "الرابعة": 4, "رابع": 4, "رابعة": 4,
+    "الخامس": 5, "الخامسة": 5, "خامس": 5, "خامسة": 5,
+    "السادس": 6, "السادسة": 6, "سادس": 6, "سادسة": 6,
+    "السابع": 7, "السابعة": 7, "سابع": 7, "سابعة": 7,
+    "الثامن": 8, "الثامنة": 8, "ثامن": 8, "ثامنة": 8,
+    "التاسع": 9, "التاسعة": 9, "تاسع": 9, "تاسعة": 9,
+    "العاشر": 10, "العاشرة": 10, "عاشر": 10, "عاشرة": 10,
+    "الحادي عشر": 11, "الثاني عشر": 12, "الثالث عشر": 13, "الرابع عشر": 14, "الخامس عشر": 15
+}
+
+def parse_season_num(title: str) -> int:
+    """Parses season number from Arabic/English title string."""
+    m = re.search(r'الموسم\s+([\u0600-\u06FF\w\d]+)', title)
+    if m:
+        val = m.group(1).strip()
+        if val.isdigit():
+            return int(val)
+        if val in ARABIC_NUMBERS:
+            return ARABIC_NUMBERS[val]
+            
+    m = re.search(r'(\d+)(?:st|nd|rd|th)?\s+Season', title, re.IGNORECASE)
+    if m:
+        return int(m.group(1))
+        
+    m = re.search(r'Season\s+(\d+)', title, re.IGNORECASE)
+    if m:
+        return int(m.group(1))
+        
+    return 1 # Default to Season 1
+
+def parse_episode_num(title: str) -> int:
+    """Parses episode number from Arabic title string."""
+    m = re.search(r'(?:الحلقة|حلقة)\s+(\d+)', title)
+    if m:
+        return int(m.group(1))
+        
+    m = re.search(r'(?:الحلقة|حلقة)\s+([\u0600-\u06FF]+)', title)
+    if m:
+        val = m.group(1).strip()
+        if val in ARABIC_NUMBERS:
+            return ARABIC_NUMBERS[val]
+            
+    m = re.search(r'الحلقة\s+(\d+)\s+والاخيرة', title)
+    if m:
+        return int(m.group(1))
+        
+    # General last resort: look for lonely digits
+    m = re.search(r'\b(\d+)\b', title)
+    if m:
+        return int(m.group(1))
+        
+    return 1 # Default to Episode 1
+
+def clean_for_search(title: str) -> str:
+    """Cleans up Cinemana title to base name for ArabSeed searches."""
+    t = title
+    # Remove Season and Episode details
+    t = re.sub(r'الموسم\s+[\u0600-\u06FF\w\d]+', '', t)
+    t = re.sub(r'(?:الحلقة|حلقة)\s+[\u0600-\u06FF\d]+', '', t)
+    t = re.sub(r'والاخيرة', '', t)
+    t = re.sub(r'والأخيرة', '', t)
+    # Remove standard quality/translation badges
+    t = re.sub(r'\b(?:مترجم|مترجمة|مدبلج|مدبلجة|بلوراي|كامل|كاملة|HD|FHD|WEB-DL|وب-دل|4th Season)\b', '', t, flags=re.IGNORECASE)
+    # Remove leading prefixes
+    t = re.sub(r'^(?:فيلم|مسلسل|أنمي|انمي|اونا)\s+', '', t).strip()
+    # Clean punctuation
+    t = re.sub(r'[-\s/|–]+', ' ', t).strip()
+    return t
 
 def extract_direct_mp4(embed_url: str) -> str:
     """
@@ -129,288 +207,121 @@ def extract_mp4_from_download(download_url: str) -> str:
         
     return ""
 
-def scrape_listing_page(url: str) -> list:
+def resolve_hybrid_stream(cinemana_url: str) -> list:
     """
-    Scrapes any standard listing page (like category pages or homepages) on ArabSeed
-    and returns standard structured catalog items, resolving relative URLs correctly.
+    Takes a Cinemana watch page URL, scrapes its details/title,
+    searches ArabSeed for the matching item, resolves the correct
+    season/episode, and extracts the direct 1080p ad-free stream.
     """
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': api.base_url + '/'
-    }
     try:
-        r = requests.get(url, headers=headers, timeout=12)
-        r.raise_for_status()
+        # 1. Scrape details from Cinemana
+        details = cinemana_api.get_details(cinemana_url)
+        cinemana_title = details.get('title', '')
+        is_series = details.get('is_series', False)
         
-        soup = BeautifulSoup(r.text, "html.parser")
-        blocks = soup.find_all(class_="movie__block")
+        print(f"Hybrid Resolving: '{cinemana_title}' (Series: {is_series})")
         
-        results = []
-        for block in blocks:
-            href = block.get("href")
-            if not href:
-                continue
-                
-            url_item = href
-            if url_item.startswith('/'):
-                url_item = api.base_url + url_item
-                
-            img_tag = block.find("img")
-            poster = ""
-            if img_tag:
-                poster = img_tag.get("data-src") or img_tag.get("src") or ""
-                
-            title_tag = block.find(class_="post__name") or block.find("h3")
-            title = title_tag.get_text(strip=True) if title_tag else "غير معروف"
-            
-            rating_tag = block.find(class_="post__ratings") or block.find(class_="rating")
-            rating = rating_tag.get_text(strip=True) if rating_tag else "N/A"
-            
-            quality_tag = block.find(class_="badge__quality") or block.find(class_="quality")
-            quality = quality_tag.get_text(strip=True) if quality_tag else "FHD"
-            
-            # Detect Media Type from title/URL
-            media_type = "فيلم"
-            if "مسلسل" in title or "s1" in url_item.lower() or "s2" in url_item.lower() or "season" in url_item.lower() or "eps" in url_item.lower():
-                media_type = "مسلسل"
-            elif "اغنية" in title.lower() or "أغنية" in title or "track" in url_item.lower():
-                media_type = "موسيقى"
-                
-            results.append({
-                "title": title,
-                "url": url_item,
-                "poster": poster,
-                "rating": rating,
-                "quality": quality,
-                "type": media_type
-            })
-            
-        return results
-    except Exception as e:
-        print(f"Error scraping listing page {url}: {e}")
-        return []
-
-def parse_series_info(title: str):
-    """
-    Parses base series title and season name from any ArabSeed title.
-    """
-    t = title
-    
-    # Extract season if present
-    season_name = "الموسم الأول" # Default
-    season_match = re.search(r'(الموسم\s+(?:\d+|[\u0600-\u06FF]+))', t)
-    
-    if season_match:
-        season_name = season_match.group(1)
-        base_title = t[:season_match.start()].strip()
-    else:
-        ep_match = re.search(r'\s+(?:الحلقة|حلقة)\b', t)
-        if ep_match:
-            base_title = t[:ep_match.start()].strip()
-        else:
-            base_title = t
-            
-    # Clean base title from quality/translation badges
-    badges = [
-        "مترجم", "مترجمة", "مدبلج", "مدبلجة", "بلوراي", "كامل", "كاملة", "HD", "FHD", "WEB-DL", "وب-دل", "وب ديل"
-    ]
-    badges_pattern = r'\b(?:' + '|'.join(badges) + r')\b'
-    base_title = re.sub(badges_pattern, '', base_title, flags=re.IGNORECASE)
-    base_title = re.sub(r'[-\s/|]+', ' ', base_title).strip()
-    
-    return base_title, season_name
-
-def clean_series_title(title: str) -> str:
-    """
-    Cleans series titles by stripping episode numbers, quality badges, and season names.
-    """
-    base_title, _ = parse_series_info(title)
-    return base_title
-
-def group_results(results: list) -> list:
-    """
-    Groups scattered series episodes and seasons under a single series card.
-    Every grouped series card contains a 'seasons' list mapping season names to URLs.
-    """
-    grouped = {}
-    for item in results:
-        title = item.get('title', '')
-        media_type = item.get('type', 'فيلم')
+        # 2. Clean title for searching ArabSeed
+        season_num = parse_season_num(cinemana_title)
+        ep_num = parse_episode_num(cinemana_title)
         
-        is_series = "مسلسل" in title or "حلقة" in title or media_type == "مسلسل" or "الموسم" in title
+        # If it is a series and we have other episodes, find the active episode index
+        if is_series and details.get('episodes'):
+            for ep in details['episodes']:
+                if ep.get('active'):
+                    ep_num = parse_episode_num(ep.get('title', ''))
+                    break
+        
+        # Clean title to base name
+        base_title = clean_for_search(cinemana_title)
+        print(f"Cleaned search keyword: '{base_title}', Season: {season_num}, Episode: {ep_num}")
+        
+        # 3. Search ArabSeed
+        api.auto_fallback_mirror()
+        results = api.search(base_title)
+        if not results and len(base_title.split()) > 2:
+            # Fallback: search just first 2 words
+            short_title = " ".join(base_title.split()[:2])
+            print(f"No results. Retrying with shorter keyword: '{short_title}'")
+            results = api.search(short_title)
+            
+        if not results:
+            print("No matching title found on ArabSeed.")
+            return []
+            
+        target_url = ""
         
         if is_series:
-            base_title, season_name = parse_series_info(title)
-            
-            # If we haven't seen this series base title before, create its group
-            if base_title not in grouped:
-                item['title_original'] = title
-                item['title'] = base_title
-                item['type'] = 'مسلسل'
-                item['seasons'] = [{'title': season_name, 'url': item.get('url'), 'quality': item.get('quality')}]
-                grouped[base_title] = item
-            else:
-                existing_item = grouped[base_title]
+            # Look for the matching season page on ArabSeed
+            matched_season_url = ""
+            for r in results:
+                r_title = r.get('title', '')
+                r_type = r.get('type', 'فيلم')
                 
-                # Check if this season already exists in the seasons list
-                season_exists = False
-                for s in existing_item['seasons']:
-                    if s['title'] == season_name:
-                        season_exists = True
-                        
-                        # Prioritize higher quality URLs for the same season
-                        def get_quality_score(q_str):
-                            score = 0
-                            q_lower = q_str.lower()
-                            if '1080' in q_lower or 'fhd' in q_lower:
-                                score = 3
-                            elif '720' in q_lower or 'hd' in q_lower:
-                                score = 2
-                            elif '480' in q_lower or 'sd' in q_lower:
-                                score = 1
-                            return score
-                            
-                        if get_quality_score(item.get('quality', '')) > get_quality_score(s.get('quality', '')):
-                            s['url'] = item.get('url')
-                            s['quality'] = item.get('quality')
+                is_r_series = "مسلسل" in r_title or "حلقة" in r_title or "الموسم" in r_title or "مسلسل" in r_type.lower()
+                if not is_r_series:
+                    continue
+                    
+                r_season = parse_season_num(r_title)
+                if r_season == season_num:
+                    matched_season_url = r.get('url', '')
+                    print(f"Matched ArabSeed Season {season_num} page: {r_title} -> {matched_season_url}")
+                    break
+                    
+            if not matched_season_url:
+                # Fallback to first available series page in results
+                for r in results:
+                    if "مسلسل" in r.get('title', '') or "حلقة" in r.get('title', ''):
+                        matched_season_url = r.get('url', '')
+                        print(f"Fallback to first available ArabSeed series page: {r.get('title')} -> {matched_season_url}")
                         break
                         
-                if not season_exists:
-                    existing_item['seasons'].append({
-                        'title': season_name,
-                        'url': item.get('url'),
-                        'quality': item.get('quality')
-                    })
+            if matched_season_url:
+                as_details = api.get_details(matched_season_url)
+                if as_details.get('is_series') and as_details.get('episodes'):
+                    # Match the exact episode
+                    matched_ep_url = ""
+                    for ep in as_details['episodes']:
+                        ep_title = ep.get('title', '')
+                        as_ep_num = parse_episode_num(ep_title)
+                        if as_ep_num == ep_num:
+                            matched_ep_url = ep.get('url', '')
+                            print(f"Matched ArabSeed Episode {ep_num} URL: {ep_title} -> {matched_ep_url}")
+                            break
+                            
+                    if not matched_ep_url:
+                        # Fallback to the active or first episode
+                        for ep in as_details['episodes']:
+                            if ep.get('active') or not matched_ep_url:
+                                matched_ep_url = ep.get('url', '')
+                                
+                    if matched_ep_url:
+                        target_url = matched_ep_url
         else:
-            grouped[title] = item
-            
-    # For all grouped series, sort their seasons in a clean logical order (newest season first)
-    for base_title, item in grouped.items():
-        if 'seasons' in item:
-            def extract_season_num(s_title):
-                s_name = s_title.replace("الموسم", "").strip()
-                mapping = {
-                    "الاول": 1, "الأول": 1, "الأولى": 1, "الاولى": 1, "الاولي": 1,
-                    "الثاني": 2, "الثانية": 2, "الثالث": 3, "الثالثة": 3,
-                    "الرابع": 4, "الرابعة": 4, "الخامس": 5, "الخامسة": 5,
-                    "السادس": 6, "السادسة": 6, "السابع": 7, "السابعة": 7,
-                    "الثامن": 8, "الثامنة": 8, "التاسع": 9, "التاسعة": 9,
-                    "العاشر": 10, "العاشرة": 10
-                }
-                if s_name in mapping:
-                    return mapping[s_name]
-                num_match = re.search(r'\d+', s_name)
-                if num_match:
-                    return int(num_match.group())
-                return 0
+            # Movie: look for the closest movie title match on ArabSeed
+            for r in results:
+                r_type = r.get('type', 'فيلم')
+                if "مسلسل" not in r.get('title', '') and "حلقة" not in r.get('title', '') and "مسلسل" not in r_type:
+                    target_url = r.get('url', '')
+                    print(f"Matched ArabSeed Movie URL: {r.get('title')} -> {target_url}")
+                    break
+            if not target_url:
+                # Fallback to first result
+                target_url = results[0].get('url', '')
+                print(f"Movie fallback to first result: {results[0].get('title')} -> {target_url}")
                 
-            item['seasons'] = sorted(item['seasons'], key=lambda s: extract_season_num(s['title']), reverse=True)
+        if not target_url:
+            return []
             
-    return list(grouped.values())
-
-@app.route('/')
-def home():
-    """Renders the main single page web interface."""
-    return render_template('index.html')
-
-@app.route('/api/search')
-def api_search():
-    """
-    Searches ArabSeed for movies/series or routes directly to category pages
-    if special navigation query flags are present, and groups scattered episodes.
-    """
-    query = request.args.get('q', '').strip()
-    if not query:
-        return jsonify({'error': 'Search query is required.'}), 400
-        
-    try:
-        # Check connection/fallback to working mirror
-        api.auto_fallback_mirror()
-        
-        # Route to direct category pages if special flags are sent
-        if query == '__home__':
-            target_url = f"{api.base_url}/main10/"
-            results = scrape_listing_page(target_url)
-            category_title = "الرئيسية"
-        elif query == '__movies__':
-            target_url = f"{api.base_url}/movies-3/"
-            results = scrape_listing_page(target_url)
-            category_title = "أحدث الأفلام"
-        elif query == '__series__':
-            urls = [
-                f"{api.base_url}/category/foreign-series-7/",
-                f"{api.base_url}/category/arabic-series-14/",
-                f"{api.base_url}/category/turkish-series-2/",
-                f"{api.base_url}/category/cartoon-series/"
-            ]
-            from concurrent.futures import ThreadPoolExecutor
-            all_results = []
-            
-            def scrape_and_assign_type(url):
-                res = scrape_listing_page(url)
-                for item in res:
-                    item['type'] = 'مسلسل'
-                return res
-                
-            with ThreadPoolExecutor(max_workers=len(urls)) as executor:
-                futures = [executor.submit(scrape_and_assign_type, url) for url in urls]
-                for f in futures:
-                    try:
-                        all_results.extend(f.result())
-                    except Exception as exc:
-                        print(f"Error executing task for series scraping: {exc}")
-                        
-            results = all_results
-            category_title = "أحدث المسلسلات المضافة"
-        else:
-            # Standard search
-            results = api.search(query)
-            category_title = f"البحث عن: {query}"
-            
-        # Group scattered series episodes into unified series/season cards
-        results = group_results(results)
-        
-        return jsonify({
-            'results': results, 
-            'mirror': api.base_url,
-            'category': category_title
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/details')
-def api_details():
-    """Fetches details and episode list for a specific movie/series URL."""
-    url = request.args.get('url', '').strip()
-    if not url:
-        return jsonify({'error': 'URL is required.'}), 400
-        
-    try:
-        details = api.get_details(url)
-        return jsonify(details)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/watch')
-def api_watch():
-    """
-    Fetches streaming and download links, automatically extracts raw CDN streams from preferred servers 
-    (prioritizing direct 1080p download links and watch servers), and formats them for Plyr.js.
-    """
-    url = request.args.get('url', '').strip()
-    if not url:
-        return jsonify({'error': 'URL is required.'}), 400
-        
-    try:
+        # 4. Extract direct player streams from the matched ArabSeed URL
         formatted_players = []
         
-        # 1. Fetch download links to search for high-speed direct 1080p reviewrate streams
+        # 4.1 Download links extraction (1080p direct reviewsrate)
         try:
-            download_links = api.get_download_links(url)
+            download_links = api.get_download_links(target_url)
             for dl in download_links:
                 direct_link = dl.get('direct_link', '')
                 quality = dl.get('quality', '')
-                # We specifically look for reviewrate.net or direct download links with 1080p quality
                 if 'reviewrate.net' in direct_link and '1080' in quality:
                     cdn_url = extract_mp4_from_download(direct_link)
                     if cdn_url:
@@ -421,40 +332,129 @@ def api_watch():
                             'url': f'/api/stream?url={encoded_cdn}',
                             'original_url': cdn_url
                         })
-                        # Stop after adding the best 1080p link to keep it clean
                         break
         except Exception as dl_err:
-            print(f"Error fetching download links for streaming extraction: {dl_err}")
+            print(f"Error fetching download links in hybrid resolution: {dl_err}")
             
-        # 2. Fetch standard watch links
-        watch_links = api.get_watch_links(url)
-        for idx, wl in enumerate(watch_links):
-            direct_link = wl.get('direct_link', '')
-            server_name = wl.get('server', f'سيرفر {idx+1}')
+        # 4.2 Watch links extraction
+        try:
+            watch_links = api.get_watch_links(target_url)
+            for idx, wl in enumerate(watch_links):
+                direct_link = wl.get('direct_link', '')
+                server_name = wl.get('server', f'سيرفر {idx+1}')
+                
+                if 'reviewrate.net' in direct_link or 'play.php' in direct_link:
+                    cdn_url = extract_direct_mp4(direct_link)
+                    if cdn_url:
+                        encoded_cdn = urllib.parse.quote(cdn_url)
+                        formatted_players.append({
+                            'type': 'direct',
+                            'server': f'✨ {server_name} (خالٍ من الإعلانات)',
+                            'url': f'/api/stream?url={encoded_cdn}',
+                            'original_url': cdn_url
+                        })
+                        continue
+                
+                formatted_players.append({
+                    'type': 'iframe',
+                    'server': server_name,
+                    'url': direct_link
+                })
+        except Exception as wl_err:
+            print(f"Error fetching watch links in hybrid resolution: {wl_err}")
             
-            # Detect preferred server (reviewrate.net)
-            if 'reviewrate.net' in direct_link or 'play.php' in direct_link:
-                # Attempt to extract direct MP4 CDN source
-                cdn_url = extract_direct_mp4(direct_link)
-                if cdn_url:
-                    # Encode URL to pass to our range proxy
-                    encoded_cdn = urllib.parse.quote(cdn_url)
-                    formatted_players.append({
-                        'type': 'direct',
-                        'server': f'✨ {server_name} (خالٍ من الإعلانات)',
-                        'url': f'/api/stream?url={encoded_cdn}',
-                        'original_url': cdn_url
-                    })
-                    continue
-            
-            # Fallback to sandboxed iframe for external servers
-            formatted_players.append({
-                'type': 'iframe',
-                'server': server_name,
-                'url': direct_link
+        return formatted_players
+        
+    except Exception as e:
+        print(f"Error resolving hybrid stream for {cinemana_url}: {e}")
+        return []
+
+@app.route('/')
+def home():
+    """Renders the main single page web interface."""
+    return render_template('index.html')
+
+@app.route('/api/search')
+def api_search():
+    """
+    Searches Cinemana for movies/series or routes directly to homepage categories
+    and specific movies/series grids.
+    """
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify({'error': 'Search query is required.'}), 400
+        
+    try:
+        if query == '__home__':
+            # Retrieve beautiful horizontal categorized carousels directly from Cinemana
+            categories = cinemana_api.get_homepage_categories()
+            return jsonify({
+                'categories': categories,
+                'category': 'الرئيسية'
             })
-            
-        return jsonify({'servers': formatted_players})
+        elif query == '__movies__':
+            results = cinemana_api.scrape_listing_page("https://cinemana.cc/movies/")
+            return jsonify({
+                'results': results,
+                'category': 'الأفلام'
+            })
+        elif query == '__series__':
+            results = cinemana_api.scrape_listing_page("https://cinemana.cc/series/")
+            return jsonify({
+                'results': results,
+                'category': 'المسلسلات'
+            })
+        elif query == '__anime__':
+            # Scrape عالم الأنمي by pulling its categorised results
+            results = cinemana_api.scrape_listing_page("https://cinemana.cc/watch=category/%D8%A3%D9%86%D9%85%D9%8A-%D9%88%D8%A3%D9%83%D8%B4%D9%86/")
+            return jsonify({
+                'results': results,
+                'category': 'عالم الأنمي'
+            })
+        else:
+            # Standard search directly from Cinemana.cc
+            results = cinemana_api.search(query)
+            return jsonify({
+                'results': results,
+                'category': f"البحث عن: {query}"
+            })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/details')
+def api_details():
+    """Fetches stories and episodes from Cinemana's details page."""
+    url = request.args.get('url', '').strip()
+    if not url:
+        return jsonify({'error': 'URL is required.'}), 400
+        
+    try:
+        details = cinemana_api.get_details(url)
+        return jsonify(details)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/watch')
+def api_watch():
+    """
+    Transparent Hybrid stream playback matching. Resolves Cinemana
+    title to Arabseed servers and returns direct streams.
+    """
+    url = request.args.get('url', '').strip()
+    if not url:
+        return jsonify({'error': 'URL is required.'}), 400
+        
+    try:
+        servers = resolve_hybrid_stream(url)
+        if not servers:
+            return jsonify({
+                'servers': [{
+                    'type': 'iframe',
+                    'server': '⚠️ عذراً، لم نجد مصادر بث مطابقة حالياً (العرض في وضع الصيانة)',
+                    'url': 'about:blank'
+                }]
+            })
+        return jsonify({'servers': servers})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -462,14 +462,12 @@ def api_watch():
 def api_stream_proxy():
     """
     Transparent chunked-streaming proxy supporting HTTP Range requests.
-    Intercepts video player stream queries, appends valid headers (Referer, User-Agent),
-    and pipes data directly to bypass Nginx hotlink protections.
+    Pipes video chunks directly to bypass Nginx hotlink protections.
     """
     video_url = request.args.get('url', '').strip()
     if not video_url:
         return "Video URL parameter is required", 400
         
-    # Unquote URL if double-encoded
     video_url = urllib.parse.unquote(video_url)
     
     headers = {
@@ -477,27 +475,21 @@ def api_stream_proxy():
         'Referer': 'https://m.reviewrate.net/'
     }
     
-    # Forward the client's Range header if requested
     range_header = request.headers.get('Range')
     if range_header:
         headers['Range'] = range_header
         
     try:
-        # Stream connection to CDN
         r = requests.get(video_url, headers=headers, stream=True, timeout=20)
         
-        # Response chunk generator
         def generate():
             try:
-                # Use a larger chunk size for high-speed buffering
                 for chunk in r.iter_content(chunk_size=131072):
                     if chunk:
                         yield chunk
             except Exception as e:
-                # Log errors in streaming without breaking the app
-                print(f"Streaming Interrupted: {e}")
+                print(f"Streaming Proxy Interrupted: {e}")
                 
-        # Exclude connection-negotiation headers
         excluded_headers = ['connection', 'transfer-encoding', 'keep-alive', 'content-encoding']
         resp_headers = []
         for name, value in r.headers.items():
@@ -509,8 +501,9 @@ def api_stream_proxy():
         return f"Streaming Proxy Error: {e}", 502
 
 if __name__ == '__main__':
-    print("=" * 60)
-    print(" 🚀 AURA CINEMA - PREMIUM AD-FREE PORTAL STARTING...")
+    print("=" * 65)
+    print(" 🚀 CINEMANA PREMIUM - PREMIUM AD-FREE PORTAL STARTING...")
+    print(" Scrape sources: cinemana.cc (Main) | arabseed.show (Hybrid Match)")
     print(" Running at http://0.0.0.0:5000")
-    print("=" * 60)
+    print("=" * 65)
     app.run(host='0.0.0.0', port=5000, debug=True)

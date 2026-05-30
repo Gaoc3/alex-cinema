@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura Cinema - سينما أورا | منصة المشاهدة الاحترافية الخالية من الإعلانات</title>
+    <title>Cinemana Premium - سينمانا بريميوم | المنصة الترفيهية الفاخرة بدون إعلانات</title>
     <!-- SEO Optimization -->
-    <meta name="description" content="منصة سينما أورا - تصفح وشاهد أحدث الأفلام والمسلسلات العربية والأجنبية مجاناً وبجودة عالية مباشرة داخل متصفحك مع مشغل ذكي خالٍ تماماً من الإعلانات والنوافذ المنبثقة.">
-    <meta name="keywords" content="سينما, افلام, مسلسلات, مشاهدة بدون اعلانات, بث مباشر, تحميل مباشر, عرب سيد, سينما فور يو, ايجي بست">
+    <meta name="description" content="منصة سينمانا بريميوم - تصفح وشاهد أحدث الأفلام والمسلسلات والأنمي من شبكتي سينمانا مجاناً وبجودة عالية مباشرة داخل متصفحك مع مشغل ذكي خالٍ تماماً من الإعلانات والنوافذ المنبثقة.">
+    <meta name="keywords" content="سينمانا, شبكتي, افلام, مسلسلات, انمي, مشاهدة بدون اعلانات, بث مباشر, تحميل مباشر, عرب سيد, سينما فور يو, ايجي بست">
     
     <!-- Google Fonts: Cairo (Arabic) & Inter (English/UI) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,14 +32,15 @@
     <header class="navbar" id="app-header">
         <div class="nav-container">
             <div class="nav-logo" id="logo-trigger">
-                <i class="fa-solid fa-wand-magic-sparkles logo-icon"></i>
-                <span class="logo-text">AURA <span class="logo-highlight">CINEMA</span></span>
+                <i class="fa-solid fa-compact-disc logo-icon text-red-600 animate-spin-slow"></i>
+                <span class="logo-text">CINEMANA <span class="logo-highlight text-red-600">PREMIUM</span></span>
             </div>
             
             <nav class="nav-links">
                 <a href="#" class="nav-link active" id="nav-home-btn"><i class="fa-solid fa-house"></i> الرئيسية</a>
                 <a href="#" class="nav-link" id="nav-movies-btn"><i class="fa-solid fa-film"></i> الأفلام</a>
                 <a href="#" class="nav-link" id="nav-series-btn"><i class="fa-solid fa-tv"></i> المسلسلات</a>
+                <a href="#" class="nav-link" id="nav-anime-btn"><i class="fa-solid fa-dragon"></i> عالم الأنمي</a>
             </nav>
             
             <div class="network-badge" id="net-badge">
@@ -55,16 +56,16 @@
         <!-- Welcome Hero Section -->
         <section class="hero-section" id="welcome-hero">
             <div class="hero-content">
-                <span class="hero-tagline"><i class="fa-solid fa-shield-halved"></i> الجيل الجديد من المنصات الترفيهية</span>
-                <h1 class="hero-title">شاهد محتواك المفضل <br><span class="gradient-text">بدون إعلانات مزعجة</span></h1>
-                <p class="hero-desc">قمنا بتطوير سينما أورا لتوفر لك تجربة مشاهدة سينمائية متكاملة. نقوم بكشط مصادر البث وفك تشفيرها تلقائياً لنمنحك تشغيل مباشر فوري خالٍ 100% من النوافذ المنبثقة والإعلانات المزعجة.</p>
+                <span class="hero-tagline"><i class="fa-solid fa-shield-halved"></i> الجيل الجديد من منصات المشاهدة الذكية</span>
+                <h1 class="hero-title">تصفح مكتبة شبكتي <br><span class="gradient-text">بشكل مباشر وخالٍ من الإعلانات</span></h1>
+                <p class="hero-desc">قمنا بإعادة بناء هيكلة سينمانا شبكتي لتوفير مكتبة سينمائية فائقة التنظيم. ندمج واجهة تصفح سينمانا مع محرك بحث هجين فائق السرعة يجلب لك أفضل جودة بث 1080p BluRay خالية 100% من النوافذ المنبثقة المزعجة.</p>
                 
                 <!-- Search Form Grid -->
                 <div class="search-wrapper">
                     <form class="search-form" id="main-search-form">
                         <div class="search-input-group">
                             <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                            <input type="text" id="search-input" placeholder="ابحث عن فيلم، مسلسل، أو أنمي..." required autocomplete="off">
+                            <input type="text" id="search-input" placeholder="ابحث عن فيلم، مسلسل، أو أنمي في مكتبة سينمانا..." required autocomplete="off">
                             <button type="submit" class="search-btn" id="search-submit-btn">ابحث الآن</button>
                         </div>
                     </form>
@@ -82,12 +83,14 @@
             <!-- Loading Indicator -->
             <div class="loader-container" id="spinner-loader" style="display: none;">
                 <div class="cyber-spinner"></div>
-                <p class="loading-text">جاري تصفح قواعد البيانات وتوليد الروابط...</p>
+                <p class="loading-text">جاري البحث في قواعد بيانات سينمانا ومطابقة مصادر البث...</p>
             </div>
             
-            <!-- Grid Layout -->
-            <div class="movie-grid" id="cards-grid">
-                <!-- Cards injected via JavaScript -->
+            <!-- Grid Layout / Carousels Container -->
+            <div class="movie-grid-container" id="cards-grid-container">
+                <div class="movie-grid" id="cards-grid">
+                    <!-- Cards or slider rows injected via JavaScript -->
+                </div>
             </div>
             
             <!-- Empty State -->
@@ -109,8 +112,8 @@
                 <div class="modal-poster-col">
                     <img src="" alt="Poster" class="modal-poster-img" id="modal-poster">
                     <div class="modal-meta-badges">
-                        <span class="meta-badge rating-badge" id="modal-rating"><i class="fa-solid fa-star"></i> N/A</span>
-                        <span class="meta-badge quality-badge" id="modal-quality">HD</span>
+                        <span class="meta-badge rating-badge" id="modal-rating"><i class="fa-solid fa-star"></i> 7.8</span>
+                        <span class="meta-badge quality-badge" id="modal-quality">1080p FHD</span>
                         <span class="meta-badge type-badge" id="modal-type">فيلم</span>
                     </div>
                 </div>
@@ -128,7 +131,7 @@
                         <i class="fa-solid fa-circle-play"></i> تشغيل الآن بأعلى جودة (بدون إعلانات)
                     </button>
                     
-                    <!-- Seasons Section (Hidden by default, shown for series with multiple seasons) -->
+                    <!-- Seasons Section (Legacy season wrapper if needed, usually hidden in Cinemana) -->
                     <div class="seasons-wrapper" id="modal-seasons-section" style="display: none;">
                         <h4 class="info-label"><i class="fa-solid fa-folder-open"></i> المواسم المتوفرة:</h4>
                         <div class="seasons-grid" id="modal-seasons-grid">
@@ -136,7 +139,7 @@
                         </div>
                     </div>
                     
-                    <!-- Episodes Section (Hidden by default, shown for series) -->
+                    <!-- Episodes Section (Dynamic episode grid) -->
                     <div class="episodes-wrapper" id="modal-episodes-section" style="display: none;">
                         <h4 class="info-label"><i class="fa-solid fa-list-ol"></i> حلقات الموسم المتوفرة:</h4>
                         <div class="episodes-search-box">
@@ -150,7 +153,7 @@
                     
                     <!-- Servers Loading Indicator -->
                     <div class="servers-loader" id="servers-loading-spinner" style="display: none;">
-                        <i class="fa-solid fa-circle-notch fa-spin"></i> جاري استخراج سيرفرات التشغيل الآمنة وفك التشفير...
+                        <i class="fa-solid fa-circle-notch fa-spin"></i> جاري توليد روابط البث الذكية وفك تشفير الجودة العالية...
                     </div>
                     
                     <!-- Servers Section -->
@@ -187,8 +190,8 @@
 
     <!-- Footer -->
     <footer class="app-footer">
-        <p>© 2026 سينما أورا (Aura Cinema). كل الحقوق محفوظة. تطوير فريق Antigravity.</p>
-        <p class="footer-subtext">هذا المشروع مبني لأغراض تعليمية وتجريبية لإظهار حماية الخصوصية ومنع الإعلانات الخبيثة.</p>
+        <p>© 2026 سينمانا بريميوم (Cinemana Premium). كل الحقوق محفوظة. تطوير فريق Antigravity.</p>
+        <p class="footer-subtext">هذا المشروع مبني لأغراض تجريبية وتعليمية لتسليط الضوء على كفاءة منع الإعلانات وتحسين تجربة المستخدم.</p>
     </footer>
 
     <!-- Plyr.js Video Player Javascript -->
