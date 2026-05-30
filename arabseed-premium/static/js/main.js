@@ -125,6 +125,43 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.detailsModal.onclick = (e) => { if (e.target === elements.detailsModal) closeDetailsModal(); };
     elements.playerModal.onclick = (e) => { if (e.target === elements.playerModal) closePlayerModal(); };
     
+    // Click network badge to clear cache and refresh UI dynamically
+    if (elements.netBadgeContainer) {
+        elements.netBadgeContainer.addEventListener('click', async () => {
+            const badgeIcon = elements.netBadgeContainer.querySelector('.badge-icon');
+            if (badgeIcon) {
+                badgeIcon.className = 'fa-solid fa-sync fa-spin badge-icon';
+            }
+            
+            try {
+                showToast("🔄 جاري تحديث ومزامنة ذاكرة التخزين المؤقت تسريعاً للتحميل...", "info");
+                const res = await fetch('/api/cache/clear');
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    showToast("⚡ تم تطهير ذاكرة التخزين وتنشيط الاستجابة فورياً بنجاح!", "success");
+                    
+                    // Reload the active section dynamically
+                    const activeNav = document.querySelector('.nav-link.active');
+                    if (activeNav) {
+                        activeNav.click(); // Programmatically trigger active category reload
+                    } else {
+                        resetHomeUI();
+                    }
+                } else {
+                    showToast("⚠️ لم يتمكن الخادم من تحديث الكاش بالكامل.", "warning");
+                }
+            } catch (e) {
+                console.error("Cache clear failed:", e);
+                showToast("❌ فشل الاتصال بالخادم لتحديث الكاش.", "error");
+            } finally {
+                if (badgeIcon) {
+                    badgeIcon.className = 'fa-solid fa-wifi badge-icon';
+                }
+            }
+        });
+    }
+
     // Detect ISP connection
     detectNetwork();
     
@@ -152,6 +189,45 @@ window.openDetailsModalByData = function(catIdx, cardIdx) {
 // ============================================================================
 // Logic Handlers
 // ============================================================================
+
+function showToast(message, type = 'info') {
+    let container = document.querySelector('.alex-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'alex-toast-container';
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `alex-toast ${type === 'success' ? 'alex-toast-success' : ''}`;
+    
+    let iconHTML = '<i class="fa-solid fa-info-circle alex-toast-icon"></i>';
+    if (type === 'success') {
+        iconHTML = '<i class="fa-solid fa-circle-check alex-toast-icon"></i>';
+    } else if (type === 'warning') {
+        iconHTML = '<i class="fa-solid fa-triangle-exclamation alex-toast-icon"></i>';
+    } else if (type === 'error') {
+        iconHTML = '<i class="fa-solid fa-circle-xmark alex-toast-icon"></i>';
+    }
+    
+    toast.innerHTML = `
+        ${iconHTML}
+        <span>${message}</span>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto remove
+    setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => {
+            toast.remove();
+            if (container.children.length === 0) {
+                container.remove();
+            }
+        }, 300);
+    }, 4000);
+}
 
 function detectNetwork() {
     /** Dynamic Network Detection Badge */
