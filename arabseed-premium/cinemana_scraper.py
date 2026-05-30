@@ -79,8 +79,10 @@ class CinemanaAPI:
                 
         # Detect type
         media_type = "فيلم"
-        if "مسلسل" in title or "حلقة" in title or "الموسم" in title or "انمي" in title.lower() or "أنمي" in title:
-            media_type = "مسلسل"
+        is_special = "special" in title.lower() or "سبيشال" in title or "خاص" in title or "فيلم" in title
+        if not is_special:
+            if any(x in title for x in ["مسلسل", "حلقة", "حلقه", "الحلقة", "الحلقه", "الموسم"]) or "انمي" in title.lower() or "أنمي" in title:
+                media_type = "مسلسل"
             
         return {
             "title": title,
@@ -264,18 +266,9 @@ class CinemanaAPI:
                         "episodes": episodes
                     })
             else:
-                # Check title for series keywords if no season-wrappers are present (e.g. single season series)
-                is_series = any(x in title for x in ["مسلسل", "الحلقة", "حلقة", "الموسم"])
-                if is_series:
-                    seasons.append({
-                        "title": "الموسم الأول",
-                        "active": True,
-                        "episodes": [{
-                            "title": "الحلقة الحالية",
-                            "url": watch_url,
-                            "active": True
-                        }]
-                    })
+                # Standalone movie/video if there are no season triggers or wrappers
+                is_series = False
+                seasons = []
                     
             return {
                 "title": title,
