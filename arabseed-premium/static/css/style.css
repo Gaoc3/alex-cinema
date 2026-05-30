@@ -1788,17 +1788,22 @@ body {
     transform: translateY(0);
 }
 .hero-slide-tagline {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-size: 0.9rem;
-    font-weight: 800;
-    letter-spacing: 1px;
-    margin-bottom: 14px;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    filter: drop-shadow(0 2px 8px rgba(124, 58, 237, 0.4));
+    gap: 8px;
+    background: rgba(124, 58, 237, 0.18);
+    border: 1px solid rgba(124, 58, 237, 0.4);
+    color: #e9d5ff; /* Soft luminous violet */
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 0.82rem;
+    font-weight: 750;
+    letter-spacing: 0.5px;
+    margin-bottom: 18px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.15);
+    font-family: var(--font-ar);
 }
 .hero-slide-title {
     font-family: var(--font-ar);
