@@ -21,6 +21,14 @@ if results:
     print("Title:", details['title'])
     print("Description:", details['description'][:100] + "...")
     
+    print(f"\n--- Fetching watch links for first result ---")
+    watch_links = api.get_watch_links(selected['url'])
+    print(f"Found {len(watch_links)} watch links.")
+    for w in watch_links[:3]:
+        print(f"  Server: {w['server']}")
+        print(f"  Direct Stream URL: {w['direct_link']}")
+        print("-" * 20)
+
     print(f"\n--- Fetching download links for first result ---")
     links = api.get_download_links(selected['url'])
     print(f"Found {len(links)} download links.")

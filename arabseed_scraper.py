@@ -479,19 +479,29 @@ def run_cli():
                 target_url = details['episodes'][ep_choice]['url']
                 print(f"⏳ جاري تحميل الحلقة: {details['episodes'][ep_choice]['title']}...")
                 
-            print("\n⏳ جاري استخراج وفك تشفير روابط التحميل المباشرة...")
+            print("\n⏳ جاري استخراج وفك تشفير روابط المشاهدة والتحميل المباشرة...")
+            watch_links = api.get_watch_links(target_url)
             links = api.get_download_links(target_url)
             
-            if not links:
-                print("❌ لم يتم العثور على روابط تحميل متوفرة لهذا العنصر.")
-                return
+            if watch_links:
+                print("\n📺 روابط المشاهدة المباشرة (بث مباشر):")
+                print("="*80)
+                for w_idx, w in enumerate(watch_links):
+                    print(f"[{w_idx+1}] 🖥️ السيرفر: {w['server']}")
+                    print(f"    🔗 رابط التشغيل: {w['direct_link']}")
+                    print("-" * 80)
+            else:
+                print("\n⚠️ لا توجد روابط بث مباشر متوفرة حالياً لهذا العنصر.")
                 
-            print("\n✅ تم استخراج روابط التحميل بنجاح:")
-            print("="*80)
-            for l in links:
-                print(f"🖥️ السيرفر: {l['server']} | الجودة: {l['quality']} | الحجم: {l['size']}")
-                print(f"🔗 الرابط المباشر: {l['direct_link']}")
-                print("-" * 80)
+            if links:
+                print("\n📥 روابط التحميل المباشرة والبديلة:")
+                print("="*80)
+                for l_idx, l in enumerate(links):
+                    print(f"[{l_idx+1}] 🖥️ السيرفر: {l['server']} | الجودة: {l['quality']} | الحجم: {l['size']}")
+                    print(f"    🔗 رابط التحميل: {l['direct_link']}")
+                    print("-" * 80)
+            else:
+                print("\n❌ لم يتم العثور على روابط تحميل متوفرة لهذا العنصر.")
                 
         except Exception as e:
             print("❌ حدث خطأ:", e)
@@ -613,42 +623,58 @@ def run_cli():
         selected_ep_title = episodes[ep_choice]["title"]
         console.print(f"[bold green]⏳ تم اختيار: {selected_ep_title}... جاري جلب صفحة التحميل...[/bold green]")
         
-    # Get download links with loader
+    # Get download & watch links with loader
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         transient=True,
         console=console
     ) as progress:
-        progress.add_task(description="[bold green]🔓 جاري فك التشفير وتوليد روابط التحميل المباشرة الحصرية...[/bold green]", total=None)
+        progress.add_task(description="[bold green]🔓 جاري فك التشفير وتوليد روابط المشاهدة والتحميل المباشرة...[/bold green]", total=None)
         try:
+            watch_links = api.get_watch_links(target_url)
             links = api.get_download_links(target_url)
         except Exception as e:
-            console.print(f"[bold red]❌ فشل جلب روابط التحميل: {e}[/bold red]")
+            console.print(f"[bold red]❌ فشل جلب الروابط: {e}[/bold red]")
             return
             
-    if not links:
-        console.print("[bold red]❌ لم يتم العثور على أي سيرفرات تحميل نشطة لهذا العنصر حالياً.[/bold red]")
-        return
+    # Show Watch Links Table
+    if watch_links:
+        watch_table = Table(title="📺 روابط المشاهدة المباشرة (البث المباشر)", box=box.DOUBLE_EDGE, border_style="magenta")
+        watch_table.add_column("الرقم", justify="center", style="cyan")
+        watch_table.add_column("سيرفر البث", style="magenta", bold=True)
+        watch_table.add_column("رابط التشغيل الفوري", style="white", overflow="ellipsis")
+        
+        for w_idx, w in enumerate(watch_links):
+            watch_table.add_row(
+                str(w_idx + 1),
+                w["server"],
+                w["direct_link"]
+            )
+        console.print(watch_table)
+    else:
+        console.print("[bold yellow]⚠️ لا توجد سيرفرات بث مباشر متوفرة حالياً لهذا العنصر.[/bold yellow]")
         
     # Show Download Links Table
-    dl_table = Table(title="📥 روابط التحميل المباشرة والبديلة (مفكوكة التشفير)", box=box.DOUBLE_EDGE, border_style="green")
-    dl_table.add_column("الرقم", justify="center", style="cyan")
-    dl_table.add_column("اسم السيرفر", style="magenta", bold=True)
-    dl_table.add_column("الجودة", style="green", justify="center")
-    dl_table.add_column("الحجم", style="yellow", justify="center")
-    dl_table.add_column("الرابط المباشر للتحميل الفوري", style="white", overflow="ellipsis")
-    
-    for l_idx, l in enumerate(links):
-        dl_table.add_row(
-            str(l_idx + 1),
-            l["server"],
-            l["quality"],
-            l["size"],
-            l["direct_link"]
-        )
+    if links:
+        dl_table = Table(title="📥 روابط التحميل المباشرة والبديلة (مفكوكة التشفير)", box=box.DOUBLE_EDGE, border_style="green")
+        dl_table.add_column("الرقم", justify="center", style="cyan")
+        dl_table.add_column("اسم السيرفر", style="magenta", bold=True)
+        dl_table.add_column("الجودة", style="green", justify="center")
+        dl_table.add_column("الحجم", style="yellow", justify="center")
+        dl_table.add_column("الرابط المباشر للتحميل الفوري", style="white", overflow="ellipsis")
         
-    console.print(dl_table)
+        for l_idx, l in enumerate(links):
+            dl_table.add_row(
+                str(l_idx + 1),
+                l["server"],
+                l["quality"],
+                l["size"],
+                l["direct_link"]
+            )
+        console.print(dl_table)
+    else:
+        console.print("[bold red]❌ لم يتم العثور على أي سيرفرات تحميل نشطة لهذا العنصر حالياً.[/bold red]")
     
     console.print("\n[bold green]💡 نصيحة: يمكنك نسخ الرابط مباشرة واستخدامه في برنامج التحميل المفضل لديك (مثل IDM أو wget).[/bold green]\n")
 
