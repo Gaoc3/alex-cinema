@@ -129,6 +129,51 @@ def scrape_listing_page(url: str) -> list:
         print(f"Error scraping listing page {url}: {e}")
         return []
 
+def clean_series_title(title: str) -> str:
+    """
+    Cleans series titles by stripping episode numbers, episode words,
+    and trailing quality tags to aggregate scattered episodes under a main series name.
+    """
+    t = title
+    # Remove "الحلقة XX" or "حلقة XX"
+    t = re.sub(r'(?:الحلقة|حلقة)\s+\d+', '', t)
+    # Remove "الحلقة" or "حلقة" if followed by any word (e.g. الحلقة الاخيرة or الحلقة الخامسة)
+    t = re.sub(r'(?:الحلقة|حلقة)\s+[\u0600-\u06FF\w\d]+', '', t)
+    # Remove trailing quality tags, مترجم, مدبلج, etc.
+    t = re.sub(r'\s+(?:مترجم|مدبلج|بلوراي|كامل|HD|FHD|WEB-DL|وب-دل)\b', '', t, flags=re.IGNORECASE)
+    # Clean up spaces
+    t = re.sub(r'\s+', ' ', t).strip()
+    return t
+
+def group_results(results: list) -> list:
+    """
+    Groups scattered series episodes under a single series card.
+    Updates the card title to the clean series name and retains only one card per series/season.
+    """
+    grouped = {}
+    for item in results:
+        title = item.get('title', '')
+        media_type = item.get('type', 'فيلم')
+        
+        # We only group series (type is "مسلسل" or contains "مسلسل" or "حلقة" or "الموسم" in title)
+        is_series = "مسلسل" in title or "حلقة" in title or media_type == "مسلسل" or "الموسم" in title
+        
+        if is_series:
+            clean_title = clean_series_title(title)
+            # If we haven't seen this series before, add it
+            if clean_title not in grouped:
+                item['title'] = clean_title
+                item['type'] = 'مسلسل'
+                grouped[clean_title] = item
+            else:
+                # Retain the one we found first (which is usually the latest episode link)
+                pass
+        else:
+            # Keep movie entries as unique by title
+            grouped[title] = item
+            
+    return list(grouped.values())
+
 @app.route('/')
 def home():
     """Renders the main single page web interface."""
@@ -138,7 +183,7 @@ def home():
 def api_search():
     """
     Searches ArabSeed for movies/series or routes directly to category pages
-    if special navigation query flags are present.
+    if special navigation query flags are present, and groups scattered episodes.
     """
     query = request.args.get('q', '').strip()
     if not query:
@@ -166,6 +211,9 @@ def api_search():
             results = api.search(query)
             category_title = f"البحث عن: {query}"
             
+        # Group scattered series episodes into unified series/season cards
+        results = group_results(results)
+        
         return jsonify({
             'results': results, 
             'mirror': api.base_url,
