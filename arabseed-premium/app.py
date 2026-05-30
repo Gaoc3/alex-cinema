@@ -68,6 +68,67 @@ def extract_direct_mp4(embed_url: str) -> str:
         
     return ""
 
+def scrape_listing_page(url: str) -> list:
+    """
+    Scrapes any standard listing page (like category pages or homepages) on ArabSeed
+    and returns standard structured catalog items, resolving relative URLs correctly.
+    """
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': api.base_url + '/'
+    }
+    try:
+        r = requests.get(url, headers=headers, timeout=12)
+        r.raise_for_status()
+        
+        soup = BeautifulSoup(r.text, "html.parser")
+        blocks = soup.find_all(class_="movie__block")
+        
+        results = []
+        for block in blocks:
+            href = block.get("href")
+            if not href:
+                continue
+                
+            url_item = href
+            if url_item.startswith('/'):
+                url_item = api.base_url + url_item
+                
+            img_tag = block.find("img")
+            poster = ""
+            if img_tag:
+                poster = img_tag.get("data-src") or img_tag.get("src") or ""
+                
+            title_tag = block.find(class_="post__name") or block.find("h3")
+            title = title_tag.get_text(strip=True) if title_tag else "غير معروف"
+            
+            rating_tag = block.find(class_="post__ratings") or block.find(class_="rating")
+            rating = rating_tag.get_text(strip=True) if rating_tag else "N/A"
+            
+            quality_tag = block.find(class_="badge__quality") or block.find(class_="quality")
+            quality = quality_tag.get_text(strip=True) if quality_tag else "FHD"
+            
+            # Detect Media Type from title/URL
+            media_type = "فيلم"
+            if "مسلسل" in title or "s1" in url_item.lower() or "s2" in url_item.lower() or "season" in url_item.lower() or "eps" in url_item.lower():
+                media_type = "مسلسل"
+            elif "اغنية" in title.lower() or "أغنية" in title or "track" in url_item.lower():
+                media_type = "موسيقى"
+                
+            results.append({
+                "title": title,
+                "url": url_item,
+                "poster": poster,
+                "rating": rating,
+                "quality": quality,
+                "type": media_type
+            })
+            
+        return results
+    except Exception as e:
+        print(f"Error scraping listing page {url}: {e}")
+        return []
+
 @app.route('/')
 def home():
     """Renders the main single page web interface."""
@@ -75,7 +136,10 @@ def home():
 
 @app.route('/api/search')
 def api_search():
-    """Searches ArabSeed for movies/series and returns JSON results."""
+    """
+    Searches ArabSeed for movies/series or routes directly to category pages
+    if special navigation query flags are present.
+    """
     query = request.args.get('q', '').strip()
     if not query:
         return jsonify({'error': 'Search query is required.'}), 400
@@ -83,8 +147,30 @@ def api_search():
     try:
         # Check connection/fallback to working mirror
         api.auto_fallback_mirror()
-        results = api.search(query)
-        return jsonify({'results': results, 'mirror': api.base_url})
+        
+        # Route to direct category pages if special flags are sent
+        if query == '__home__':
+            target_url = f"{api.base_url}/main10/"
+            results = scrape_listing_page(target_url)
+            category_title = "الرئيسية"
+        elif query == '__movies__':
+            target_url = f"{api.base_url}/movies-3/"
+            results = scrape_listing_page(target_url)
+            category_title = "أحدث الأفلام"
+        elif query == '__series__':
+            target_url = f"{api.base_url}/series-3/"
+            results = scrape_listing_page(target_url)
+            category_title = "أحدث المسلسلات"
+        else:
+            # Standard search
+            results = api.search(query)
+            category_title = f"البحث عن: {query}"
+            
+        return jsonify({
+            'results': results, 
+            'mirror': api.base_url,
+            'category': category_title
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

@@ -78,8 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Navigation Action Handlers
     elements.navHomeBtn.onclick = (e) => { e.preventDefault(); resetHomeUI(); };
     elements.logoTrigger.onclick = () => resetHomeUI();
-    elements.navMoviesBtn.onclick = (e) => { e.preventDefault(); handleCategorySearch('الأفلام المترجمة', 'الأفلام'); };
-    elements.navSeriesBtn.onclick = (e) => { e.preventDefault(); handleCategorySearch('مسلسل مترجم', 'المسلسلات'); };
+    elements.navMoviesBtn.onclick = (e) => { e.preventDefault(); performSearch('__movies__', 'أحدث الأفلام المضافة'); };
+    elements.navSeriesBtn.onclick = (e) => { e.preventDefault(); performSearch('__series__', 'أحدث المسلسلات المضافة'); };
     
     // Close modals on clicking overlay background
     elements.detailsModal.onclick = (e) => { if (e.target === elements.detailsModal) closeDetailsModal(); };
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
     detectNetwork();
     
     // Auto-load trending movies on startup to look extremely premium!
-    handleCategorySearch('2026', 'أحدث العروض المتوفرة لعام 2026');
+    performSearch('__home__', 'الرئيسية (أحدث الإضافات)');
 });
 
 // ============================================================================
@@ -196,7 +196,7 @@ function renderEmptyState(message) {
 
 function resetHomeUI() {
     elements.searchInput.value = '';
-    handleCategorySearch('2026', 'أحدث العروض المتوفرة لعام 2026');
+    performSearch('__home__', 'الرئيسية (أحدث الإضافات)');
 }
 
 // ============================================================================
