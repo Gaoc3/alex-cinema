@@ -1325,6 +1325,41 @@ function launchPlayer(server, title) {
     // Display Player Overlay Panel
     elements.playerModal.style.display = 'flex';
     
+    // Clean existing Hls instance if present
+    if (state.hlsInstance) {
+        state.hlsInstance.destroy();
+        state.hlsInstance = null;
+    }
+    
+    if (server.type === 'embed') {
+        state.currentPlayingServer = server;
+        elements.playerServerBadge.innerText = server.server;
+        
+        const iframe = document.createElement('iframe');
+        iframe.src = server.url;
+        iframe.className = 'plyr-embed-iframe';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.setAttribute('allow', 'autoplay; encrypted-media');
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation allow-forms');
+        
+        elements.playerRenderArea.appendChild(iframe);
+        
+        // Hide loader smoothly
+        const customLoader = document.getElementById('player-custom-loader');
+        if (customLoader) {
+            customLoader.style.transition = 'opacity 0.4s ease';
+            customLoader.style.opacity = '0';
+            setTimeout(() => {
+                customLoader.style.display = 'none';
+                customLoader.style.opacity = '1';
+            }, 400);
+        }
+        return;
+    }
+    
     const video = document.createElement('video');
     video.id = 'video-player';
     video.className = 'plyr-video-player';
