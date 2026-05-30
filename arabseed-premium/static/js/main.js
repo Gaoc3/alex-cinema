@@ -70,7 +70,12 @@ const elements = {
     navMoviesBtn: document.getElementById('nav-movies-btn'),
     navSeriesBtn: document.getElementById('nav-series-btn'),
     navAnimeBtn: document.getElementById('nav-anime-btn'),
-    logoTrigger: document.getElementById('logo-trigger')
+    logoTrigger: document.getElementById('logo-trigger'),
+    
+    // Live Search Elements
+    liveSearchDropdown: document.getElementById('live-search-dropdown'),
+    liveSearchLoader: document.getElementById('live-search-loader'),
+    liveSearchResults: document.getElementById('live-search-results')
 };
 
 // ============================================================================
@@ -81,6 +86,25 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.closeDetailsBtn.onclick = closeDetailsModal;
     elements.closePlayerBtn.onclick = closePlayerModal;
     elements.episodeFilterInput.addEventListener('input', handleEpisodeFilter);
+    
+    // Live Search - debounced input handler
+    let liveSearchTimer = null;
+    elements.searchInput.addEventListener('input', () => {
+        const query = elements.searchInput.value.trim();
+        if (liveSearchTimer) clearTimeout(liveSearchTimer);
+        if (!query || query.length < 2) {
+            elements.liveSearchDropdown.style.display = 'none';
+            return;
+        }
+        liveSearchTimer = setTimeout(() => performLiveSearch(query), 350);
+    });
+    
+    // Close dropdown on clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-wrapper')) {
+            elements.liveSearchDropdown.style.display = 'none';
+        }
+    });
     
     // Navigation Action Handlers
     elements.navHomeBtn.onclick = (e) => { e.preventDefault(); updateNavActive(elements.navHomeBtn); resetHomeUI(); };
@@ -144,7 +168,102 @@ function handleSearchSubmit(e) {
     const query = elements.searchInput.value.trim();
     if (!query) return;
     updateNavActive(null); // Clear active navigation states
+    elements.liveSearchDropdown.style.display = 'none'; // Hide dropdown on full submit
     performSearch(query);
+}
+
+async function performLiveSearch(query) {
+    // Show dropdown with loader
+    elements.liveSearchDropdown.style.display = 'block';
+    elements.liveSearchLoader.style.display = 'block';
+    elements.liveSearchResults.innerHTML = '';
+    
+    try {
+        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        elements.liveSearchLoader.style.display = 'none';
+        
+        const results = data.results || [];
+        
+        if (results.length === 0) {
+            elements.liveSearchResults.innerHTML = `
+                <div class="live-search-no-results">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    لا توجد نتائج لـ "${query}"
+                </div>
+            `;
+            return;
+        }
+        
+        // Show max 6 results in dropdown
+        const displayResults = results.slice(0, 6);
+        let html = '';
+        
+        displayResults.forEach((item) => {
+            const posterSrc = item.poster || SVG_POSTER_PLACEHOLDER;
+            html += `
+                <div class="live-search-item" data-url="${item.url}" data-title="${item.title.replace(/"/g, '&quot;')}" data-poster="${posterSrc}" data-type="${item.type || 'فيلم'}" data-rating="${item.rating || '7.8'}" data-quality="${item.quality || '1080p'}">
+                    <img class="live-search-item-poster" src="${posterSrc}" alt="${item.title}" onerror="this.src='${SVG_POSTER_PLACEHOLDER}'">
+                    <div class="live-search-item-info">
+                        <div class="live-search-item-title">${item.title}</div>
+                        <div class="live-search-item-meta">
+                            <span class="live-search-item-type">${item.type || 'فيلم'}</span>
+                            <span class="live-search-item-quality">${item.quality || '1080p'}</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-left live-search-item-arrow"></i>
+                </div>
+            `;
+        });
+        
+        if (results.length > 6) {
+            html += `
+                <div class="live-search-view-all" id="live-search-view-all">
+                    <i class="fa-solid fa-grid-2"></i>
+                    عرض كل ${results.length} نتيجة
+                </div>
+            `;
+        }
+        
+        elements.liveSearchResults.innerHTML = html;
+        
+        // Bind click events to each search result item
+        elements.liveSearchResults.querySelectorAll('.live-search-item').forEach(el => {
+            el.addEventListener('click', () => {
+                const itemData = {
+                    url: el.getAttribute('data-url'),
+                    title: el.getAttribute('data-title'),
+                    poster: el.getAttribute('data-poster'),
+                    type: el.getAttribute('data-type'),
+                    rating: el.getAttribute('data-rating'),
+                    quality: el.getAttribute('data-quality')
+                };
+                elements.liveSearchDropdown.style.display = 'none';
+                openDetailsModal(itemData);
+            });
+        });
+        
+        // Bind "view all" button
+        const viewAllBtn = document.getElementById('live-search-view-all');
+        if (viewAllBtn) {
+            viewAllBtn.addEventListener('click', () => {
+                elements.liveSearchDropdown.style.display = 'none';
+                elements.searchInput.value = query;
+                updateNavActive(null);
+                performSearch(query);
+            });
+        }
+        
+    } catch (e) {
+        elements.liveSearchLoader.style.display = 'none';
+        elements.liveSearchResults.innerHTML = `
+            <div class="live-search-no-results">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                حدث خطأ أثناء البحث
+            </div>
+        `;
+    }
 }
 
 async function performSearch(query, customTitle = null) {
