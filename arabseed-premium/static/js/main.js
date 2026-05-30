@@ -304,6 +304,19 @@ async function performSearch(query, customTitle = null) {
     }
 }
 
+function getTypeIconClass(type) {
+    const t = (type || '').toLowerCase().trim();
+    if (t === 'فيلم' || t === 'movie') {
+        return 'fa-solid fa-film';
+    } else if (t === 'مسلسل' || t === 'tv' || t === 'series') {
+        return 'fa-solid fa-tv';
+    } else if (t === 'أنمي' || t === 'انمي' || t === 'anime') {
+        return 'fa-solid fa-dragon';
+    } else {
+        return 'fa-solid fa-clapperboard';
+    }
+}
+
 function renderCarousels(categories) {
     elements.cardsGrid.innerHTML = '';
     elements.cardsGrid.style.display = 'block'; // Convert grid to block layout for categorized rows
@@ -332,7 +345,7 @@ function renderCarousels(categories) {
                     <div class="card-body">
                         <h3 class="card-title">${item.title}</h3>
                         <div class="card-footer">
-                            <span class="card-type"><i class="fa-solid fa-circle-chevron-right"></i> ${item.type || 'فيلم'}</span>
+                            <span class="card-type"><i class="${getTypeIconClass(item.type)}"></i> ${item.type || 'فيلم'}</span>
                             <span class="card-action-hint">بث آمن</span>
                         </div>
                     </div>
@@ -383,7 +396,7 @@ function renderCards(results) {
             <div class="card-body">
                 <h3 class="card-title">${item.title}</h3>
                 <div class="card-footer">
-                    <span class="card-type"><i class="fa-solid fa-circle-chevron-right"></i> ${item.type || 'عرض'}</span>
+                    <span class="card-type"><i class="${getTypeIconClass(item.type)}"></i> ${item.type || 'عرض'}</span>
                     <span class="card-action-hint">بث آمن</span>
                 </div>
             </div>

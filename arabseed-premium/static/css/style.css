@@ -1384,23 +1384,21 @@ body {
     padding: 0 4px !important;
 }
 
-/* Premium Center Play Button (Dark Frosted Glass + Violet Glow) */
+/* Premium Center Play Button (Stunning Neon Gradient & Centered Icon) */
 .plyr--video .plyr__control--overlaid,
 .plyr .plyr__control--overlaid {
-    background: rgba(0, 0, 0, 0.6) !important;
-    backdrop-filter: blur(16px) saturate(1.2) !important;
-    -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
-    box-shadow: 0 0 40px rgba(124, 58, 237, 0.35), 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-    width: 64px !important;
-    height: 64px !important;
-    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+    background: var(--gradient-primary) !important;
+    box-shadow: 0 0 35px rgba(124, 58, 237, 0.75), inset 0 0 15px rgba(255, 255, 255, 0.3) !important;
+    width: 68px !important;
+    height: 68px !important;
+    border: 2px solid rgba(255, 255, 255, 0.35) !important;
     border-radius: 50% !important;
     position: absolute !important;
     left: 50% !important;
     top: 50% !important;
     transform: translate(-50%, -50%) !important;
-    transition: opacity 0.3s ease !important;
-    animation: none !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    animation: gentlePulse 2.5s infinite ease-in-out !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1408,19 +1406,26 @@ body {
 }
 .plyr--video .plyr__control--overlaid:hover,
 .plyr .plyr__control--overlaid:hover {
-    transform: translate(-50%, -50%) !important;
-    background: rgba(0, 0, 0, 0.6) !important;
-    box-shadow: 0 0 40px rgba(124, 58, 237, 0.35), 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
+    transform: translate(-50%, -50%) scale(1.08) !important;
+    background: var(--gradient-primary) !important;
+    box-shadow: 0 0 45px rgba(124, 58, 237, 0.95), inset 0 0 20px rgba(255, 255, 255, 0.4) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
 }
 .plyr--video .plyr__control--overlaid svg,
 .plyr .plyr__control--overlaid svg {
-    width: 22px !important;
-    height: 22px !important;
+    width: 24px !important;
+    height: 24px !important;
     fill: #fff !important;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
-    margin: 0 auto !important;
-    display: block !important;
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.45));
+    margin: 0 !important;
+    display: inline-block !important;
+    /* Slightly offset to the right (in LTR direction) to make it visually centered */
+    transform: translateX(2px) !important;
+}
+
+@keyframes gentlePulse {
+    0%, 100% { box-shadow: 0 0 25px rgba(124, 58, 237, 0.6), inset 0 0 15px rgba(255, 255, 255, 0.25) !important; }
+    50% { box-shadow: 0 0 45px rgba(124, 58, 237, 0.85), inset 0 0 20px rgba(255, 255, 255, 0.35) !important; }
 }
 
 /* Immersive Custom Loader Overlay */

@@ -343,6 +343,8 @@ def api_search():
                         if base in seen_bases:
                             continue
                         seen_bases.add(base)
+                        r['title'] = clean_display_title(title, 'مسلسل')
+                        r['type'] = 'مسلسل'
                     deduped_cards.append(r)
                 cat['cards'] = deduped_cards
             return jsonify({
@@ -366,6 +368,8 @@ def api_search():
                 if base in seen_bases:
                     continue
                 seen_bases.add(base)
+                r['title'] = clean_display_title(title, 'مسلسل')
+                r['type'] = 'مسلسل'
                 deduped_results.append(r)
             return jsonify({
                 'results': deduped_results,
@@ -383,6 +387,8 @@ def api_search():
                 if base in seen_bases:
                     continue
                 seen_bases.add(base)
+                r['title'] = clean_display_title(title, 'مسلسل')
+                r['type'] = 'مسلسل'
                 deduped_results.append(r)
             return jsonify({
                 'results': deduped_results,
@@ -402,6 +408,8 @@ def api_search():
                     if base in seen_bases:
                         continue
                     seen_bases.add(base)
+                    r['title'] = clean_display_title(title, 'مسلسل')
+                    r['type'] = 'مسلسل'
                 deduped_results.append(r)
             return jsonify({
                 'results': deduped_results,
