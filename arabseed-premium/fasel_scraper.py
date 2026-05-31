@@ -2,16 +2,17 @@
 # -*- coding: utf-8 -*-
 
 """
-FaselHD Scraper Engine
-----------------------
+FaselHD Scraper Engine (Robust Cloudflare Edition)
+--------------------------------------------------
 A professional, high-performance scraper for FaselHD.
 Seamlessly aggregates search results, homepage loops, details, seasons, and episodes.
+Equipped with robust sequential loading, request retries, and browser fingerprinting.
 """
 
 import sys
 import re
 import urllib.parse
-import concurrent.futures
+import time
 from typing import List, Dict, Any
 import requests
 from bs4 import BeautifulSoup
@@ -30,12 +31,46 @@ class FaselAPI:
     def __init__(self, base_url: str = "https://web53112x.faselhdx.bid"):
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
+        
+        # State-of-the-art modern browser headers to bypass Cloudflare protection
         self.headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "Accept-Language": "ar,en-US;q=0.9,en;q=0.8",
+            "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Windows"',
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "same-origin",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1",
             "Referer": self.base_url + "/"
         }
         self.session.headers.update(self.headers)
+
+    def get_with_retry(self, url: str, timeout: int = 12, params: dict = None, referer: str = None) -> requests.Response:
+        """
+        Thread-safe requests.get wrapper with smart retries and backoff for Cloudflare bypass.
+        """
+        headers = self.headers.copy()
+        if referer:
+            headers["Referer"] = referer
+            
+        for i in range(3):
+            try:
+                r = self.session.get(url, headers=headers, params=params, timeout=timeout)
+                if r.status_code == 200:
+                    return r
+                elif r.status_code == 403:
+                    print(f"⚠️ Cloudflare 403 on {url}. Retry {i+1}/3 after sleeping...")
+                    time.sleep(1.0 * (i + 1))
+            except Exception as e:
+                print(f"⚠️ Connection error for {url}: {e}. Retry {i+1}/3 after sleeping...")
+                time.sleep(1.0 * (i + 1))
+                
+        # Final request attempt (fallback)
+        return self.session.get(url, headers=headers, params=params, timeout=timeout)
 
     def parse_card(self, div) -> Dict[str, str]:
         """
@@ -108,7 +143,7 @@ class FaselAPI:
         """
         categories = []
         try:
-            r = self.session.get(f"{self.base_url}/main", timeout=15)
+            r = self.get_with_retry(f"{self.base_url}/main", timeout=15)
             r.raise_for_status()
             
             soup = BeautifulSoup(r.text, 'html.parser')
@@ -129,11 +164,11 @@ class FaselAPI:
                     "cards": recent_cards
                 })
                 
-            # 2. Add subcategories for Movies and Series specifically by scraping /movies and /series
+            # 2. Fetch subcategories for Movies and Series sequentially to avoid Cloudflare 403 blocks
             def fetch_sub_cat(category_name, path):
                 cards = []
                 try:
-                    r_sub = self.session.get(f"{self.base_url}/{path}", timeout=10)
+                    r_sub = self.get_with_retry(f"{self.base_url}/{path}", timeout=10)
                     if r_sub.status_code == 200:
                         soup_sub = BeautifulSoup(r_sub.text, 'html.parser')
                         divs = soup_sub.find_all(class_="postDiv")
@@ -145,16 +180,16 @@ class FaselAPI:
                     print(f"Error fetching sub-category {category_name}: {ex}")
                 return {"category": category_name, "cards": cards}
                 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-                futures = [
-                    executor.submit(fetch_sub_cat, "🎬 أحدث الأفلام العالمية", "movies"),
-                    executor.submit(fetch_sub_cat, "📺 أحدث المسلسلات التلفزيونية", "series"),
-                    executor.submit(fetch_sub_cat, "🔥 أحدث حلقات الأنمي والكرتون", "anime-episodes")
-                ]
-                for f in concurrent.futures.as_completed(futures):
-                    res = f.result()
-                    if res.get('cards'):
-                        categories.append(res)
+            # Sequential loading with minor sleep spacing to respect rate-limits
+            for cat_name, cat_path in [
+                ("🎬 أحدث الأفلام العالمية", "movies"),
+                ("📺 أحدث المسلسلات التلفزيونية", "series"),
+                ("🔥 أحدث حلقات الأنمي والكرتون", "anime-episodes")
+            ]:
+                time.sleep(0.15)
+                res = fetch_sub_cat(cat_name, cat_path)
+                if res.get('cards'):
+                    categories.append(res)
                         
             return categories
         except Exception as e:
@@ -167,7 +202,7 @@ class FaselAPI:
         """
         slides = []
         try:
-            r = self.session.get(f"{self.base_url}/main", timeout=12)
+            r = self.get_with_retry(f"{self.base_url}/main", timeout=12)
             if r.status_code == 200:
                 soup = BeautifulSoup(r.text, 'html.parser')
                 slider = soup.find(id="homeSlide") or soup.find(class_=re.compile(r'slide|carousel', re.I))
@@ -238,7 +273,7 @@ class FaselAPI:
         """
         cards = []
         try:
-            r = self.session.get(url, timeout=12)
+            r = self.get_with_retry(url, timeout=12)
             if r.status_code == 200:
                 soup = BeautifulSoup(r.text, 'html.parser')
                 divs = soup.find_all(class_="postDiv")
@@ -261,7 +296,7 @@ class FaselAPI:
             search_url = f"{self.base_url}/"
             params = {"s": query}
             
-            r = self.session.get(search_url, params=params, timeout=15)
+            r = self.get_with_retry(search_url, params=params, timeout=15)
             r.raise_for_status()
             
             soup = BeautifulSoup(r.text, 'html.parser')
@@ -291,7 +326,7 @@ class FaselAPI:
     def get_details(self, watch_url: str) -> Dict[str, Any]:
         """
         Retrieves series/movie details, seasons, and episode grids.
-        If it's a series, fetches all seasons concurrently to build a seamless Cinemana-like grid.
+        If it's a series, fetches seasons sequentially with a small delay to avoid triggering Cloudflare.
         """
         # Ensure url matches the active mirror host
         watch_url_parsed = urllib.parse.urlparse(watch_url)
@@ -300,7 +335,7 @@ class FaselAPI:
             active_url += f"?{watch_url_parsed.query}"
             
         try:
-            r = self.session.get(active_url, timeout=15)
+            r = self.get_with_retry(active_url, timeout=15)
             r.raise_for_status()
             
             soup = BeautifulSoup(r.text, 'html.parser')
@@ -350,11 +385,11 @@ class FaselAPI:
                         "active": is_active
                     })
                     
-                # Concurrent fetcher for season episodes
+                # Sequential loading helper for season episodes
                 def fetch_season_episodes(season_data):
                     eps = []
                     try:
-                        r_season = self.session.get(season_data['url'], timeout=10)
+                        r_season = self.get_with_retry(season_data['url'], timeout=10)
                         if r_season.status_code == 200:
                             s_soup = BeautifulSoup(r_season.text, 'html.parser')
                             ep_all = s_soup.find(class_="epAll")
@@ -389,9 +424,11 @@ class FaselAPI:
                     season_data["episodes"] = eps
                     return season_data
                 
-                # Run thread pool
-                with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-                    seasons = list(executor.map(fetch_season_episodes, seasons_to_fetch))
+                # Fetch season episodes sequentially with a 150ms sleep spacing
+                seasons = []
+                for s_data in seasons_to_fetch:
+                    time.sleep(0.15)
+                    seasons.append(fetch_season_episodes(s_data))
             else:
                 # Direct movie or standalone episode
                 is_series = False
@@ -423,7 +460,7 @@ class FaselAPI:
             active_url += f"?{parsed.query}"
             
         try:
-            r = self.session.get(active_url, timeout=12)
+            r = self.get_with_retry(active_url, timeout=12)
             r.raise_for_status()
             
             soup = BeautifulSoup(r.text, 'html.parser')
