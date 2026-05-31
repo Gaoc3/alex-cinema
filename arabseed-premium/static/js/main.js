@@ -1955,6 +1955,78 @@ function launchPlayer(server, title) {
                 const targetTime = (seekInput.value / 100) * video.duration;
                 performSeek(targetTime);
             });
+
+            // YouTube-like Hover Preview Tooltip Logic
+            const progressContainer = elements.playerRenderArea.querySelector('.plyr__progress');
+            const previewTooltip = document.getElementById('plyr-preview-tooltip');
+            const previewVideo = document.getElementById('plyr-preview-video');
+            const previewTime = document.getElementById('plyr-preview-time');
+            
+            if (progressContainer && previewTooltip && previewVideo) {
+                let isHovering = false;
+                let hoverSeekTimeout = null;
+
+                const formatTime = (secs) => {
+                    if (isNaN(secs)) return '00:00';
+                    const h = Math.floor(secs / 3600);
+                    const m = Math.floor((secs % 3600) / 60);
+                    const s = Math.floor(secs % 60);
+                    const mStr = m.toString().padStart(2, '0');
+                    const sStr = s.toString().padStart(2, '0');
+                    if (h > 0) {
+                        return `${h}:${mStr}:${sStr}`;
+                    }
+                    return `${mStr}:${sStr}`;
+                };
+
+                progressContainer.addEventListener('mouseenter', () => {
+                    isHovering = true;
+                    previewTooltip.classList.add('show');
+                    previewTooltip.style.display = 'block';
+                });
+
+                progressContainer.addEventListener('mousemove', (e) => {
+                    if (!isHovering) return;
+                    
+                    const rect = progressContainer.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const percent = Math.min(Math.max(mouseX / rect.width, 0), 1);
+                    const duration = video.duration || 0;
+                    const targetTime = percent * duration;
+
+                    // Position the tooltip centered over the mouse X position
+                    const parentRect = elements.playerRenderArea.getBoundingClientRect();
+                    const relativeX = e.clientX - parentRect.left;
+                    
+                    const tooltipWidth = 168; // approx width of tooltip including padding/border
+                    const halfWidth = tooltipWidth / 2;
+                    const clampedX = Math.min(Math.max(relativeX, halfWidth), parentRect.width - halfWidth);
+                    
+                    previewTooltip.style.left = `${clampedX}px`;
+
+                    // Update timestamp text
+                    previewTime.innerText = formatTime(targetTime);
+
+                    // Seek preview video (throttled to 80ms)
+                    if (hoverSeekTimeout) clearTimeout(hoverSeekTimeout);
+                    hoverSeekTimeout = setTimeout(() => {
+                        if (isFinite(targetTime)) {
+                            previewVideo.currentTime = targetTime;
+                        }
+                    }, 80);
+                });
+
+                progressContainer.addEventListener('mouseleave', () => {
+                    isHovering = false;
+                    previewTooltip.classList.remove('show');
+                    setTimeout(() => {
+                        if (!isHovering) {
+                            previewTooltip.style.display = 'none';
+                        }
+                    }, 150);
+                    if (hoverSeekTimeout) clearTimeout(hoverSeekTimeout);
+                });
+            }
         }
     });
     
