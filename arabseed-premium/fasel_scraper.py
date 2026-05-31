@@ -161,6 +161,95 @@ class FaselAPI:
             print(f"Error scraping FaselHD homepage categories: {e}")
             return []
 
+    def get_hero_slides(self) -> List[Dict[str, Any]]:
+        """
+        Scrapes the #homeSlide hero carousel from FaselHD's main page.
+        """
+        slides = []
+        try:
+            r = self.session.get(f"{self.base_url}/main", timeout=12)
+            if r.status_code == 200:
+                soup = BeautifulSoup(r.text, 'html.parser')
+                slider = soup.find(id="homeSlide") or soup.find(class_=re.compile(r'slide|carousel', re.I))
+                if slider:
+                    # Swiper slides have class "swiper-slide" or "slideInner"
+                    slide_items = slider.find_all(class_=re.compile(r'swiper-slide|slideInner', re.I))
+                    seen_urls = set()
+                    for s in slide_items:
+                        a_tag = s.find('a', href=True)
+                        if not a_tag or not a_tag.get('href'):
+                            continue
+                        href = a_tag['href']
+                        if href.startswith('/'):
+                            href = self.base_url + href
+                        if href in seen_urls:
+                            continue
+                        seen_urls.add(href)
+                        
+                        # Title
+                        title = a_tag.get_text(strip=True) or "عرض حصري مميز"
+                        # Clean title from nested tags
+                        title = title.replace("\n", "").strip()
+                        
+                        # Background or Poster
+                        poster = ""
+                        img = s.find('img')
+                        if img:
+                            poster = img.get('data-src') or img.get('src') or ""
+                        if not poster:
+                            bg_div = s.find(class_=re.compile(r'Img|bg', re.I)) or s.find(style=re.compile(r'background'))
+                            if bg_div:
+                                style = bg_div.get('style', '')
+                                m = re.search(r"url\(['\"]?([^'\")]+)['\"]?\)", style)
+                                if m:
+                                    poster = m.group(1)
+                                    
+                        rating = "8.5"
+                        quality = "1080p FHD"
+                        
+                        meta_el = s.find(class_=re.compile(r'Meta|imdb|Rate', re.I))
+                        if meta_el:
+                            text = meta_el.get_text(strip=True)
+                            m = re.search(r'(\d+\.\d+)', text)
+                            if m:
+                                rating = m.group(1)
+                                
+                        media_type = "فيلم"
+                        if any(x in href.lower() for x in ['seasons', 'series', 'asian-series', 'anime']):
+                            media_type = "مسلسل"
+                            
+                        slides.append({
+                            "url": href,
+                            "poster": poster,
+                            "title": title,
+                            "type": media_type,
+                            "rating": rating,
+                            "quality": quality
+                        })
+                        if len(slides) >= 5:
+                            break
+        except Exception as e:
+            print(f"Error scraping hero slides: {e}")
+        return slides
+
+    def scrape_listing_page(self, url: str) -> List[Dict[str, Any]]:
+        """
+        Scrapes a standard grid listing page on FaselHD (e.g. /movies/page/2/) and returns parsed cards.
+        """
+        cards = []
+        try:
+            r = self.session.get(url, timeout=12)
+            if r.status_code == 200:
+                soup = BeautifulSoup(r.text, 'html.parser')
+                divs = soup.find_all(class_="postDiv")
+                for d in divs:
+                    parsed = self.parse_card(d)
+                    if parsed and parsed.get('url'):
+                        cards.append(parsed)
+        except Exception as e:
+            print(f"Error scraping listing page '{url}': {e}")
+        return cards
+
     def search(self, query: str, max_pages: int = 1) -> List[Dict[str, Any]]:
         """
         Searches FaselHD by scraping the standard /?s={query} endpoint.
@@ -169,7 +258,6 @@ class FaselAPI:
         seen_urls = set()
         
         try:
-            # We enforce mirror domain resolution
             search_url = f"{self.base_url}/"
             params = {"s": query}
             
