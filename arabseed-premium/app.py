@@ -939,10 +939,15 @@ def api_details():
             
         details = cinemana_api.get_details(url)
         
+        raw_title = details.get('title', '')
+        if raw_title:
+            r_type = 'مسلسل' if details.get('is_series') else 'فيلم'
+            details['title'] = clean_display_title(raw_title, r_type)
+            
         # Smart Search-Based Series Aggregation
-        if details.get('is_series') and details.get('title'):
+        if details.get('is_series') and raw_title:
             try:
-                base_query = clean_for_search(details['title'])
+                base_query = clean_for_search(raw_title)
                 if base_query:
                     search_results = cinemana_api.search(base_query, max_pages=4)
                     
