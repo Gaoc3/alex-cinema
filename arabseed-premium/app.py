@@ -741,8 +741,8 @@ def api_watch():
         if cached_val:
             return jsonify(cached_val)
             
-        # Resolve Cinemana HLS stream options (Rely strictly on Cinemana!)
-        merged_servers = resolve_cinemana_stream(url)
+        # Resolve FaselHD stream options using deobfuscation micro-runner
+        merged_servers = resolve_fasel_stream(url)
         
         if not merged_servers:
             merged_servers = [{
@@ -833,24 +833,23 @@ def api_stream_proxy():
                             rewritten_lines.append('')
                             continue
                         if line_stripped.startswith('#'):
-                            # Rewrite URI paths in EXT-X-KEY encryption tags if they point to stream.php
+                            # Rewrite URI paths in EXT-X-KEY encryption tags to be absolute
                             if 'URI=' in line_stripped:
                                 m = re.search(r'URI=["\']([^"\']+)["\']', line_stripped)
                                 if m:
                                     key_uri = m.group(1)
-                                    if key_uri.startswith('stream.php'):
+                                    if key_uri.startswith('stream.php') and 'cinemana.cc' not in video_url:
                                         abs_key_url = "https://cinemana.cc/" + key_uri
                                     else:
-                                        abs_key_url = key_uri
-                                    # Load keys directly from Cinemana (natively supports CORS)
+                                        abs_key_url = urllib.parse.urljoin(video_url, key_uri)
                                     line_stripped = line_stripped.replace(key_uri, abs_key_url)
                             rewritten_lines.append(line_stripped)
                         else:
                             # It's a segment or sub-playlist URL
-                            if line_stripped.startswith('stream.php'):
+                            if line_stripped.startswith('stream.php') and 'cinemana.cc' not in video_url:
                                 abs_segment_url = "https://cinemana.cc/" + line_stripped
                             else:
-                                abs_segment_url = line_stripped
+                                abs_segment_url = urllib.parse.urljoin(video_url, line_stripped)
                             
                             if 'm3u8' in abs_segment_url.lower():
                                 # Recursive playlist proxying to rewrite sub-playlist relative segments
@@ -914,7 +913,7 @@ def api_stream_proxy():
 if __name__ == '__main__':
     print("=" * 65)
     print(" 🚀 AleX CINEMA - PREMIUM AD-FREE PORTAL STARTING...")
-    print(" Scrape source: cinemana.cc (Main)")
+    print(" Scrape source: web53112x.faselhdx.bid (FaselHD)")
     print(" Running at http://127.0.0.1:5000")
     print("=" * 65)
     

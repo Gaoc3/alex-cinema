@@ -1548,12 +1548,16 @@ function loadPlayerSource(server, startTime = 0, autoplay = true) {
     }
 }
 
-function showCenterIndicator(iconClass, persistent = false) {
+function showCenterIndicator(iconClass, persistent = false, textValue = "") {
     const indicator = document.getElementById('player-center-indicator');
     if (!indicator) return;
     
-    // Set the icon
-    indicator.innerHTML = `<i class="${iconClass}"></i>`;
+    // Set the icon and dynamic text
+    let content = `<i class="${iconClass}"></i>`;
+    if (textValue) {
+        content += `<div style="font-size: 0.95rem; font-weight: bold; margin-top: 8px; color: var(--accent-violet); filter: drop-shadow(0 0 5px var(--accent-violet));">${textValue}</div>`;
+    }
+    indicator.innerHTML = content;
     
     // Clear any pending hide timer
     if (state.indicatorTimeout) {
