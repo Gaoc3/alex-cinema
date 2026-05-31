@@ -18,14 +18,6 @@ from flask import Flask, request, Response, render_template, jsonify
 # Force UTF-8 output to support Arabic characters in all terminals
 sys.stdout.reconfigure(encoding='utf-8')
 
-# Append parent directory to path to import arabseed_scraper
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-try:
-    from arabseed_scraper import ArabSeedAPI
-except ImportError:
-    sys.path.append(os.getcwd())
-    from arabseed_scraper import ArabSeedAPI
-
 # Import Cinemana Scraper
 from cinemana_scraper import CinemanaAPI
 
@@ -36,7 +28,6 @@ def index():
     return render_template('index.html')
 
 # Initialize Scrapers
-api = ArabSeedAPI()
 cinemana_api = CinemanaAPI()
 
 # Arabic numbers mapping to digits for robust season/episode matching
@@ -169,103 +160,7 @@ def clean_display_title(title: str, r_type: str) -> str:
         return f"مسلسل {base_title}"
     return base_title
 
-def extract_direct_mp4(embed_url: str) -> str:
-    """
-    Fetches the reviewrate.net embed page and extracts the direct .mp4 CDN source URL.
-    """
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': 'https://m.asd.ink/'
-    }
-    try:
-        r = requests.get(embed_url, headers=headers, timeout=15)
-        r.raise_for_status()
-        
-        soup = BeautifulSoup(r.text, 'html.parser')
-        
-        # 1. Look for <source> tag with type="video/mp4"
-        source_tag = soup.find('source', type='video/mp4')
-        if source_tag and source_tag.get('src'):
-            return source_tag.get('src')
-            
-        # 2. Regex fallback for source src containing video.mp4
-        match = re.search(r'src=["\']([^"\']+\.mp4[^"\']*)["\']', r.text)
-        if match:
-            return match.group(1)
-            
-        # 3. Search for any URL ending in .mp4 inside javascript blocks
-        scripts = soup.find_all('script')
-        for script in scripts:
-            if script.string:
-                mp4_matches = re.findall(r'(https?://[^\s"\']+\.mp4[^\s"\']*)', script.string)
-                if mp4_matches:
-                    return mp4_matches[0]
-                    
-    except Exception as e:
-        print(f"Error extracting direct MP4 from {embed_url}: {e}")
-        
-    return ""
 
-def extract_mp4_from_download(download_url: str) -> str:
-    """
-    Simulates the two-stage POST filesharing flow on reviewrate.net
-    to extract the raw high-quality 1080p .mp4 CDN URL.
-    """
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': 'https://m.asd.ink/'
-    }
-    try:
-        parts = download_url.rstrip('/').split('/')
-        file_id = parts[-1]
-        
-        # 1. GET page to find fname
-        r = requests.get(download_url, headers=headers, timeout=10)
-        r.raise_for_status()
-        
-        soup = BeautifulSoup(r.text, 'html.parser')
-        fname_input = soup.find('input', {'name': 'fname'})
-        fname = fname_input.get('value') if fname_input else ""
-        if not fname:
-            match = re.search(r'name=["\']fname["\']\s+value=["\']([^"\']+)["\']', r.text)
-            if match:
-                fname = match.group(1)
-                
-        if not fname:
-            return ""
-            
-        # 2. First POST (op = download1)
-        data1 = {
-            'op': 'download1',
-            'usr_login': '',
-            'id': file_id,
-            'fname': fname,
-            'referer': 'https://m.asd.ink/',
-            'method_free': 'Free Download'
-        }
-        r1 = requests.post(download_url, headers=headers, data=data1, timeout=12)
-        r1.raise_for_status()
-        
-        # 3. Second POST (op = download2)
-        data2 = {
-            'op': 'download2',
-            'id': file_id,
-            'rand': '',
-            'referer': 'https://m.asd.ink/',
-            'method_free': 'Free Download',
-            'method_premium': ''
-        }
-        r2 = requests.post(download_url, headers=headers, data=data2, timeout=12)
-        r2.raise_for_status()
-        
-        mp4_matches = re.findall(r'(https?://[^\s"\'>]+\.mp4[^\s"\']*)', r2.text)
-        if mp4_matches:
-            return mp4_matches[0]
-            
-    except Exception as e:
-        print(f"Error extracting direct MP4 from download link {download_url}: {e}")
-        
-    return ""
 
 def resolve_cinemana_stream(cinemana_url: str) -> list:
     """
