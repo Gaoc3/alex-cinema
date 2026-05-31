@@ -110,12 +110,14 @@ def parse_episode_num(title: str) -> int:
         if re.search(r'(?:الحلقة|الحلقه|حلقة|حلقه)\s+' + re.escape(arabic_word), t_clean):
             return ARABIC_NUMBERS[arabic_word]
             
-    # 4. Fallback to general last resort: look for lonely digits
-    m = re.search(r'\b(\d+)\b', t_clean)
-    if m:
-        return int(m.group(1))
-        
+    # 4. Fallback to general last resort: look for lonely digits that are NOT standard release years
+    for m in re.finditer(r'\b(\d+)\b', t_clean):
+        val = int(m.group(1))
+        if not (1900 <= val <= 2030):
+            return val
+            
     return 1 # Default to Episode 1
+
 
 def clean_for_search(title: str) -> str:
     """Cleans up Cinemana title to base name for robust search matching and dynamic grouping."""
