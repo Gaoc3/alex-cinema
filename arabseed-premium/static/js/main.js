@@ -2111,6 +2111,86 @@ function launchPlayer(server, title) {
     };
     elements.playerRenderArea.addEventListener('dblclick', state.playerDblClickListener, true);
     
+    // Mobile Touch Gesture Engine (Swipes for Volume/Brightness)
+    let startX = 0;
+    let startY = 0;
+    let startVolume = 0;
+    let startBrightness = state.currentBrightness || 1.0;
+    let isSwiping = false;
+    let touchSide = ''; // 'left' or 'right'
+
+    state.playerTouchStart = (e) => {
+        const touch = e.touches[0];
+        const rect = elements.playerRenderArea.getBoundingClientRect();
+        startX = touch.clientX;
+        startY = touch.clientY;
+        startVolume = state.activePlayer ? state.activePlayer.volume : 1.0;
+        startBrightness = state.currentBrightness || 1.0;
+        isSwiping = false;
+
+        const xRelative = startX - rect.left;
+        if (xRelative > rect.width / 2) {
+            touchSide = 'right'; // Volume adjustment
+        } else {
+            touchSide = 'left'; // Brightness adjustment
+        }
+    };
+
+    state.playerTouchMove = (e) => {
+        if (!state.activePlayer) return;
+        const touch = e.touches[0];
+        const rect = elements.playerRenderArea.getBoundingClientRect();
+        
+        const diffX = touch.clientX - startX;
+        const diffY = startY - touch.clientY; // swipe up is positive
+
+        // Threshold of 15px to start swiping vertically
+        if (!isSwiping && Math.abs(diffY) > 15 && Math.abs(diffY) > Math.abs(diffX)) {
+            isSwiping = true;
+        }
+
+        if (isSwiping) {
+            e.preventDefault(); // Prevent page scroll while swiping
+            
+            const deltaPercent = diffY / rect.height;
+            if (touchSide === 'right') {
+                // Adjust Volume
+                const newVolume = Math.min(1, Math.max(0, startVolume + deltaPercent * 1.2));
+                state.activePlayer.volume = newVolume;
+                
+                const volPercent = Math.round(newVolume * 100);
+                let icon = 'fa-solid fa-volume-high';
+                if (volPercent === 0) icon = 'fa-solid fa-volume-xmark';
+                else if (volPercent < 40) icon = 'fa-solid fa-volume-low';
+                
+                showCenterIndicator(icon, false, `${volPercent}%`);
+            } else {
+                // Adjust Brightness
+                const newBrightness = Math.min(1, Math.max(0.1, startBrightness + deltaPercent * 1.2));
+                state.currentBrightness = newBrightness;
+                
+                const videoEl = elements.playerRenderArea.querySelector('video');
+                if (videoEl) {
+                    videoEl.style.filter = `brightness(${newBrightness})`;
+                }
+                
+                showCenterIndicator('fa-solid fa-sun', false, `${Math.round(newBrightness * 100)}%`);
+            }
+        }
+    };
+
+    state.playerTouchEnd = (e) => {
+        if (isSwiping) {
+            // Prevent the touchend click/tap trigger
+            e.preventDefault();
+            isSwiping = false;
+        }
+    };
+
+    elements.playerRenderArea.addEventListener('touchstart', state.playerTouchStart, { passive: true });
+    elements.playerRenderArea.addEventListener('touchmove', state.playerTouchMove, { passive: false });
+    elements.playerRenderArea.addEventListener('touchend', state.playerTouchEnd, { passive: false });
+
     // Setup next episode autoplay
     setupAutoplayNext(server.url);
     
@@ -2146,6 +2226,15 @@ function closePlayerModal() {
     if (state.playerDblClickListener) {
         elements.playerRenderArea.removeEventListener('dblclick', state.playerDblClickListener, true);
         state.playerDblClickListener = null;
+    }
+    
+    if (state.playerTouchStart) {
+        elements.playerRenderArea.removeEventListener('touchstart', state.playerTouchStart, { passive: true });
+        elements.playerRenderArea.removeEventListener('touchmove', state.playerTouchMove, { passive: false });
+        elements.playerRenderArea.removeEventListener('touchend', state.playerTouchEnd, { passive: false });
+        state.playerTouchStart = null;
+        state.playerTouchMove = null;
+        state.playerTouchEnd = null;
     }
     
     if (state.activePlayer) {
