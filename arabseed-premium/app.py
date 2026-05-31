@@ -994,15 +994,24 @@ def api_stream_proxy():
         
     try:
         # Fetch HLS playlist or ts segment utilizing the high-performance persistent connection pool session!
-        r = stream_proxy_session.get(video_url, headers=headers, stream=True, timeout=30)
+        r = stream_proxy_session.get(video_url, headers=headers, stream=True, timeout=(8, 120))
         
         # Check if the resource is an HLS playlist (.m3u8) by checking headers or content structure
         content_type = r.headers.get('Content-Type', '').lower()
         is_m3u8 = 'mpegurl' in content_type or 'm3u8' in video_url.lower() or 'playlist.m3u8' in video_url.lower()
+        stream_prefix = b""
+        
+        if not is_m3u8:
+            try:
+                stream_prefix = next(r.iter_content(chunk_size=4096), b"")
+            except StopIteration:
+                stream_prefix = b""
+            if stream_prefix.startswith(b'#EXTM3U'):
+                is_m3u8 = True
         
         # Read the small playlist body in memory to rewrite it
-        if is_m3u8 or 'application/octet-stream' in content_type:
-            content = r.content
+        if is_m3u8:
+            content = stream_prefix + b"".join(r.iter_content(chunk_size=65536))
             try:
                 # Decode to string (taking care of UTF-8 BOM)
                 text_content = content.decode('utf-8-sig')
@@ -1044,8 +1053,11 @@ def api_stream_proxy():
                     resp.headers['Access-Control-Allow-Headers'] = '*'
                     resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
                     return resp
+                
+                stream_prefix = content
             except Exception as decode_err:
                 print(f"Decoding HLS playlist failed, falling back to direct stream: {decode_err}")
+                stream_prefix = content
                 
         # Force strip content-disposition to prevent browsers forcing a download dialog
         excluded_headers = ['connection', 'transfer-encoding', 'keep-alive', 'content-encoding', 'content-disposition']
@@ -1071,7 +1083,16 @@ def api_stream_proxy():
         resp_headers.append(('Access-Control-Allow-Headers', '*'))
         resp_headers.append(('Access-Control-Allow-Methods', 'GET, POST, OPTIONS'))
         
-        return Response(r.iter_content(chunk_size=262144), status=r.status_code, headers=resp_headers)
+        def stream_body():
+            if stream_prefix:
+                yield stream_prefix
+            for chunk in r.iter_content(chunk_size=524288):
+                if chunk:
+                    yield chunk
+        
+        resp = Response(stream_body(), status=r.status_code, headers=resp_headers)
+        resp.direct_passthrough = True
+        return resp
     except Exception as e:
         return f"Streaming Proxy Error: {e}", 502
 
