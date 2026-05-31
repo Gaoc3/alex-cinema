@@ -1,12 +1,16 @@
 import urllib.parse
+import sys
 from curl_cffi import requests
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
 
 # Unquote the URL to see if it makes a difference
 quoted_url = "https://web53112x.faselhdx.bid/episodes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-punisher-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a3%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d9%87-1"
 unquoted_url = urllib.parse.unquote(quoted_url)
 
 print("Quoted URL:", quoted_url)
-print("Unquoted URL:", unquoted_url)
+print("Unquoted URL:", unquoted_url.encode('utf-8', errors='ignore').decode('utf-8', errors='ignore'))
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
