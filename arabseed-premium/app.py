@@ -51,24 +51,29 @@ ARABIC_NUMBERS = {
     "الثامن": 8, "الثامنة": 8, "ثامن": 8, "ثامنة": 8,
     "التاسع": 9, "التاسعة": 9, "تاسع": 9, "تاسعة": 9,
     "العاشر": 10, "العاشرة": 10, "عاشر": 10, "عاشرة": 10,
-    "الحادي عشر": 11, "الثاني عشر": 12, "الثالث عشر": 13, "الرابع عشر": 14, "الخامس عشر": 15
+    "الحادي عشر": 11, "الثاني عشر": 12, "الثالث عشر": 13, "الرابع عشر": 14, "الخامس عشر": 15,
+    "السادس عشر": 16, "السابع عشر": 17, "الثامن عشر": 18, "التاسع عشر": 19, "العشرون": 20, "العشرين": 20
 }
 
 def parse_season_num(title: str) -> int:
     """Parses season number from Arabic/English title string."""
-    m = re.search(r'(?:موسم|الموسم)\s+([\u0600-\u06FF\w\d]+)', title)
-    if m:
-        val = m.group(1).strip()
-        if val.isdigit():
-            return int(val)
-        if val in ARABIC_NUMBERS:
-            return ARABIC_NUMBERS[val]
+    t_clean = re.sub(r'\s+', ' ', title)
+    
+    # Check for Arabic number words first, sorted by length in reverse to match compound words first!
+    for arabic_word in sorted(ARABIC_NUMBERS.keys(), key=lambda x: len(x), reverse=True):
+        if arabic_word in t_clean:
+            return ARABIC_NUMBERS[arabic_word]
             
-    m = re.search(r'(\d+)(?:st|nd|rd|th)?\s+Season', title, re.IGNORECASE)
+    # Then check for explicit digits
+    m = re.search(r'(?:موسم|الموسم)\s+(\d+)', t_clean)
     if m:
         return int(m.group(1))
         
-    m = re.search(r'Season\s+(\d+)', title, re.IGNORECASE)
+    m = re.search(r'(\d+)(?:st|nd|rd|th)?\s+Season', t_clean, re.IGNORECASE)
+    if m:
+        return int(m.group(1))
+        
+    m = re.search(r'Season\s+(\d+)', t_clean, re.IGNORECASE)
     if m:
         return int(m.group(1))
         
@@ -111,7 +116,7 @@ def clean_for_search(title: str) -> str:
     
     # 3. Remove Season patterns in English and Arabic:
     # Arabic: الموسم الاول, الموسم الثاني, الموسم 2, موسم 02
-    t = re.sub(r'(?:الموسم|موسم)\s+(?:الاول|الأول|الأولى|الاولى|الاولي|اول|أول|الثاني|الثانية|ثاني|ثانية|الثالث|الثالثة|ثالث|ثالثة|الرابع|الرابعة|رابع|رابعة|الخامس|الخامسة|خامس|خامسة|السادس|السادسة|سادس|سادسة|السابع|السابعة|سابع|سابعة|الثامن|الثامنة|ثامن|ثامنة|التاسع|التاسعة|تاسع|تاسعة|العاشر|العاشرة|عاشر|عاشرة|[\u0600-\u06FF\w\d]+)', '', t)
+    t = re.sub(r'(?:الموسم|موسم)\s+(?:الحادي عشر|الثاني عشر|الثالث عشر|الرابع عشر|الخامس عشر|السادس عشر|السابع عشر|الثامن عشر|التاسع عشر|العشرون|العشرين|الاول|الأول|الأولى|الاولى|الاولي|اول|أول|الثاني|الثانية|ثاني|ثانية|الثالث|الثالثة|ثالث|ثالثة|الرابع|الرابعة|رابع|رابعة|الخامس|الخامسة|خامس|خامسة|السادس|السادسة|سادس|سادسة|السابع|السابعة|سابع|سابعة|الثامن|الثامنة|ثامن|ثامنة|التاسع|التاسعة|تاسع|تاسعة|العاشر|العاشرة|عاشر|عاشرة|[\u0600-\u06FF\w\d]+)', '', t)
     # English: Season 1, Season 02, S1, S02, S 2, 4th Season, etc.
     t = re.sub(r'\b(?:season|seasons)\s+\d+\b', '', t)
     t = re.sub(r'\b\d+(?:st|nd|rd|th)\s+season\b', '', t)
@@ -1121,9 +1126,13 @@ def api_stream_proxy():
         
     video_url = urllib.parse.unquote(video_url)
     
+    referer = 'https://cinemana.cc/'
+    if 'cinemana.cc' not in video_url.lower():
+        referer = 'https://asd.ink/'
+        
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': 'https://cinemana.cc/'
+        'Referer': referer
     }
     
     range_header = request.headers.get('Range')
