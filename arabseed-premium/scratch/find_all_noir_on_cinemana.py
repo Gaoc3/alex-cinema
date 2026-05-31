@@ -11,20 +11,15 @@ from cinemana_scraper import CinemanaAPI
 
 api = CinemanaAPI()
 
-# Search for broad variations
-queries = ["سبايدرمان", "سبايدر مان", "Spider-Man", "Spider Man"]
-all_results = []
+queries = ["Spider Noir", "سبايدر نوار", "Spider-Man Noir", "سبايدرمان نوار"]
 seen_urls = set()
 
+print("🔍 HARVESTING ALL NOIR RESULTS...")
 for q in queries:
     results = api.search(q)
+    print(f"Query '{q}' returned {len(results)} results:")
     for r in results:
-        if r['url'] not in seen_urls:
-            title = r.get('title', '')
-            if "نوار" in title or "noir" in title.lower():
-                seen_urls.add(r['url'])
-                all_results.append(r)
-
-print(f"Total results found containing 'نوار' or 'Noir': {len(all_results)}")
-for idx, r in enumerate(all_results):
-    print(f"[{idx}] Title: {r['title']} | Type: {r.get('type', '')} | URL: {r['url']}")
+        url = r['url']
+        if url not in seen_urls:
+            seen_urls.add(url)
+            print(f"  - Title: {r['title']} | Type: {r.get('type', '')} | URL: {url}")
