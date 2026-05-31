@@ -213,71 +213,63 @@ def clean_display_title(title: str, r_type: str) -> str:
 
 
 
-def resolve_cinemana_stream(cinemana_url: str) -> list:
+def resolve_fasel_stream(url: str) -> list:
     """
-    Scrapes the Cinemana watch page, calls their Server.php AJAX endpoint,
-    and returns their direct HLS stream proxied via stream.php.
+    Scrapes the FaselHD watch page, extracts the player iframe data-src URL,
+    fetches the player page HTML, and resolves the direct video streams (.m3u8)
+    by running the obfuscated player script inside a sandboxed Node.js VM.
     """
     try:
-        post_id = cinemana_url
-        if 'watch=' in cinemana_url:
-            m = re.search(r'watch=(\d+)', cinemana_url)
-            if m:
-                post_id = m.group(1)
-                
-        watch_url = f"https://cinemana.cc/watch={post_id}/"
-        ajax_url = "https://cinemana.cc/wp-content/themes/EEE/Inc/Ajax/Single/Server.php"
-        data = {
-            'post_id': post_id,
-            'server': '0'
-        }
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Referer': watch_url
-        }
-        
-        print(f"Direct Cinemana stream resolution for post {post_id}...")
-        
-        # Use persistent Session to hit watch page first (establishes Cinemana session/cookies)
-        session = requests.Session()
-        session.headers.update(headers)
-        
-        # Hit watch page
-        session.get(watch_url, timeout=10)
-        
-        # POST to Server.php
-        r = session.post(ajax_url, data=data, timeout=15)
-        if r.status_code == 200:
-            match = re.search(r'const\s+originalUrls\s*=\s*({[^}]+})', r.text)
-            if match:
-                urls_str = match.group(1)
-                parsed_urls = {}
-                url_matches = re.findall(r'["\']?(\w+)["\']?\s*:\s*["\']([^"\']+)["\']', urls_str)
-                for k, v in url_matches:
-                    parsed_urls[k] = v
-                    
-                formatted_players = []
-                # Sort qualities so highest (e.g. 1080) appears first
-                sorted_qualities = sorted(parsed_urls.keys(), key=lambda x: int(x) if x.isdigit() else 0, reverse=True)
-                for q in sorted_qualities:
-                    orig_url = parsed_urls[q]
-                    # Route via root stream.php which is the working Cinemana endpoint
-                    cinemana_stream_url = f"https://cinemana.cc/stream.php?session={post_id}&url={urllib.parse.quote(orig_url)}"
-                    # Wrap in our own /api/stream proxy to solve CORS and segment rewrite
-                    proxied_url = f"/api/stream?url={urllib.parse.quote(cinemana_stream_url)}"
-                    
-                    formatted_players.append({
-                        'type': 'direct',
-                        'server': f'✨ سيرفر مباشر {q}p (خالٍ من الإعلانات)',
-                        'url': proxied_url,
-                        'original_url': orig_url
-                    })
-                return formatted_players
-        else:
-            print(f"Cinemana Server.php returned status {r.status_code}")
+        # 1. Get player iframe URL
+        iframe_url = fasel_api.get_player_iframe_url(url)
+        if not iframe_url:
+            print(f"No player iframe found for {url}")
+            return []
             
+        # 2. Fetch the player page HTML
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": url
+        }
+        r = fasel_api.session.get(iframe_url, headers=headers, timeout=12)
+        r.raise_for_status()
+        player_html = r.text
+        
+        # 3. Call Node.js deobfuscator to decode the streams
+        import json
+        import subprocess
+        
+        script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'deobfuscator.js')
+        p = subprocess.Popen(
+            ['node', script_path, iframe_url],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding='utf-8'
+        )
+        stdout, stderr = p.communicate(input=player_html)
+        if p.returncode == 0:
+            result = json.loads(stdout)
+            if 'error' in result:
+                print(f"Deobfuscator error: {result['error']}")
+                return []
+                
+            servers = []
+            for s in result.get('servers', []):
+                # Wrap in our own /api/stream proxy to solve CORS and segment rewrite
+                proxied_url = f"/api/stream?url={urllib.parse.quote(s['url'])}"
+                servers.append({
+                    'type': 'direct',
+                    'server': f"✨ سيرفر مباشر {s['quality']}p",
+                    'url': proxied_url
+                })
+            return servers
+        else:
+            print(f"Node deobfuscator process failed (code {p.returncode}): {stderr}")
+            return []
     except Exception as e:
-        print(f"Error resolving direct Cinemana stream: {e}")
+        print(f"Error resolving direct FaselHD stream: {e}")
         
     return []
 
@@ -540,59 +532,8 @@ def api_cache_clear():
 def get_home_data_fresh():
     """Fetch home categories and slides synchronously."""
     try:
-        categories = cinemana_api.get_homepage_categories()
-        for cat in categories:
-            deduped_cards = []
-            seen_bases = set()
-            for r in cat.get('cards', []):
-                title = r.get('title', '')
-                r_type = r.get('type', 'فيلم')
-                is_special = "special" in title.lower() or "سبيشال" in title or "خاص" in title or "فيلم" in title
-                if not is_special and (r_type == 'مسلسل' or any(x in title for x in ["مسلسل", "الحلقة", "الحلقه", "حلقة", "حلقه", "الموسم"])):
-                    base = clean_for_search(title).lower().strip()
-                    if base in seen_bases:
-                        continue
-                    seen_bases.add(base)
-                    r['title'] = clean_display_title(title, 'مسلسل')
-                    r['type'] = 'مسلسل'
-                deduped_cards.append(r)
-            cat['cards'] = deduped_cards
-            
-        slides = []
-        try:
-            r_main = cinemana_api.session.get("https://cinemana.cc/main/", timeout=8)
-            if r_main.status_code == 200:
-                soup_main = BeautifulSoup(r_main.text, 'html.parser')
-                carousel = soup_main.find('div', class_='HeroCarousel')
-                if carousel:
-                    slide_items = carousel.find_all('div', class_='HeroSlideItem')
-                    for s in slide_items[:5]:
-                        a = s.find('a', href=True)
-                        href = a['href'] if a else ""
-                        if href.startswith('/'):
-                            href = "https://cinemana.cc" + href
-                        bg_image = ""
-                        bg_div = s.find('div', style=True)
-                        if bg_div:
-                            style = bg_div.get('style', '')
-                            m = re.search(r"url\(['\"]?([^'\")]+)['\"]?\)", style)
-                            if m:
-                                bg_image = m.group(1)
-                        
-                        slides.append({
-                            "url": href,
-                            "poster": bg_image,
-                            "title": "عرض حصري مميز",
-                            "type": "فيلم",
-                            "rating": "8.5",
-                            "quality": "1080p FHD"
-                        })
-                        
-                    if slides:
-                        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-                            executor.map(lambda s: fetch_slide_title(s, cinemana_api.session), slides)
-        except Exception as slide_err:
-            print(f"Error scraping hero slides: {slide_err}")
+        categories = fasel_api.get_homepage_categories()
+        slides = fasel_api.get_hero_slides()
         
         if not slides:
             fallback = []
@@ -609,7 +550,7 @@ def get_home_data_fresh():
                         "poster": card['poster'],
                         "title": card.get('title', 'عرض مميز'),
                         "type": card.get('type', 'فيلم'),
-                        "rating": card.get('rating', '7.8'),
+                        "rating": card.get('rating', '8.2'),
                         "quality": card.get('quality', '1080p')
                     })
                     if len(fallback) >= 5:
