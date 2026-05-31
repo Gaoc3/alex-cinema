@@ -704,6 +704,29 @@ async function loadSeasonData(url, seasonTitle) {
     }
 }
 
+function normalizeVersionName(version) {
+    if (!version) return "مترجم";
+    const norm = version.trim().toLowerCase();
+    
+    const isDubbed = norm.includes("مدبلج") || norm.includes("دبلج") || norm.includes("dub");
+    const isNoir = norm.includes("ابيض") || norm.includes("أبيض") || norm.includes("أسود") || norm.includes("اسود") || norm.includes("noir");
+    const isSpecial = norm.includes("خاص") || norm.includes("سبيشال") || norm.includes("special");
+    
+    if (isDubbed && isNoir) {
+        return "مدبلج - نسخة الأبيض والأسود";
+    }
+    if (isDubbed) {
+        return "مدبلج";
+    }
+    if (isNoir) {
+        return "نسخة الأبيض والأسود";
+    }
+    if (isSpecial) {
+        return "حلقة خاصة";
+    }
+    return "مترجم";
+}
+
 function parseSeasonTitle(title) {
     let seasonNum = 1;
     let version = "مترجم"; // default to subtitled
@@ -754,6 +777,9 @@ function parseSeasonTitle(title) {
             version = verTags.join(" - ");
         }
     }
+    
+    // Standardize version name to avoid duplicates!
+    version = normalizeVersionName(version);
     
     return { seasonNum, version };
 }
@@ -985,6 +1011,36 @@ function getActiveSeasonTitle() {
     return ver && ver !== "مترجم" ? `موسم ${sNum} (${ver})` : `موسم ${sNum}`;
 }
 
+function parseArabicWordToNumber(text) {
+    const norm = normalizeArabicText(text);
+    
+    // Check for "last" episode keywords
+    if (norm.includes("اخير") || norm.includes("أخير")) {
+        return "last";
+    }
+    
+    const wordMap = {
+        "الاول": 1, "الأول": 1, "الاولى": 1, "الأولى": 1, "اول": 1, "اولى": 1,
+        "الثاني": 2, "الثانية": 2, "الثانيه": 2, "ثاني": 2, "ثانيه": 2,
+        "الثالث": 3, "الثالثة": 3, "الثالثه": 3, "ثالع": 3, "ثالثه": 3,
+        "الرابع": 4, "الرابعة": 4, "الرابعه": 4, "رابع": 4, "رابعه": 4,
+        "الخامس": 5, "الخامسة": 5, "الخامسه": 5, "خامس": 5, "خامسه": 5,
+        "السادس": 6, "السادسة": 6, "السادسه": 6, "سادس": 6, "سادسه": 6,
+        "السابع": 7, "السابعة": 7, "السابعه": 7, "سابع": 7, "سابعه": 7,
+        "الثامن": 8, "الثامنة": 8, "الثامنه": 8, "ثامن": 8, "ثامنه": 8,
+        "التاسع": 9, "التاسعة": 9, "التاسعه": 9, "تاسع": 9, "تاسعه": 9,
+        "العاشر": 10, "العاشرة": 10, "العاشره": 10, "عاشر": 10, "عاشره": 10
+    };
+    
+    const words = norm.split(' ');
+    for (let word of words) {
+        if (wordMap[word]) {
+            return wordMap[word];
+        }
+    }
+    return null;
+}
+
 function handleEpisodeFilter() {
     const filter = elements.episodeFilterInput.value.toLowerCase().trim();
     if (!filter) {
@@ -992,33 +1048,54 @@ function handleEpisodeFilter() {
         return;
     }
     
-    // Check if it is a pure numeric or numeric prefix search (e.g. "5", "ep 5", "الحلقة 5")
+    const normalizedFilter = normalizeArabicText(filter);
+    
+    // 1. Check if it is a pure numeric or numeric prefix search (e.g. "5", "ep 5", "الحلقة 5")
     let targetEpNum = null;
     const numMatch = filter.match(/^(?:#|ep|e|الحلقة|الحلقه|حلقة|حلقه)?\s*(\d+)$/i);
     if (numMatch) {
         targetEpNum = parseInt(numMatch[1]);
+    } else {
+        // 2. Check for Arabic word numbers (e.g. "الاولى", "الثانية")
+        targetEpNum = parseArabicWordToNumber(filter);
     }
-    
-    const normalizedFilter = normalizeArabicText(filter);
     
     const filtered = state.currentEpisodes.filter(ep => {
         const epTitle = ep.title;
         const titleMatch = epTitle.match(/\d+/);
         const epNum = titleMatch ? parseInt(titleMatch[0]) : null;
         
-        // 1. Exact numeric matching (typing 5 matches only episode 5, not 15 or 25)
-        if (targetEpNum !== null && epNum !== null) {
-            return epNum === targetEpNum;
+        // Match exact numeric equality or special markers (like "last")
+        if (targetEpNum !== null) {
+            if (targetEpNum === "last" && epNum !== null) {
+                const maxEp = Math.max(...state.currentEpisodes.map(e => {
+                    const m = e.title.match(/\d+/);
+                    return m ? parseInt(m[0]) : 0;
+                }));
+                return epNum === maxEp;
+            }
+            if (epNum !== null) {
+                return epNum === targetEpNum;
+            }
         }
         
-        // 2. Fallback to smart normalized Arabic text matching
+        // 3. Fallback to smart normalized Arabic text matching
         const normalizedTitle = normalizeArabicText(epTitle.toLowerCase());
         return normalizedTitle.includes(normalizedFilter);
     });
     
     elements.modalEpisodesGrid.innerHTML = '';
-    
     const seasonTitle = getActiveSeasonTitle();
+    
+    if (filtered.length === 0) {
+        elements.modalEpisodesGrid.innerHTML = `
+            <div class="no-episodes-found" style="text-align: center; padding: 24px; color: var(--text-muted); font-family: var(--font-ar); font-size: 0.95rem;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.6rem; display: block; margin-bottom: 8px; color: var(--accent-violet);"></i>
+                لا توجد حلقات تطابق تصفيتك
+            </div>
+        `;
+        return;
+    }
     
     filtered.forEach((ep) => {
         const btn = document.createElement('button');
@@ -1275,6 +1352,7 @@ function loadPlayerSource(server, startTime = 0, autoplay = true) {
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             // iOS / Safari Native HLS support
             video.src = server.url;
+            video.load(); // CRITICAL: Force native pipeline load
             const onLoaded = () => {
                 if (progressTime > 0) video.currentTime = progressTime;
                 if (autoplay) state.activePlayer.play().catch(()=>{});
@@ -1286,6 +1364,7 @@ function loadPlayerSource(server, startTime = 0, autoplay = true) {
     } else {
         // Direct MP4 Stream
         video.src = server.url;
+        video.load(); // CRITICAL: Force native pipeline load to refresh play status
         const onLoaded = () => {
             if (progressTime > 0) video.currentTime = progressTime;
             if (autoplay) state.activePlayer.play().catch(()=>{});
