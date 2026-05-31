@@ -42,52 +42,77 @@ ARABIC_NUMBERS = {
     "الثامن": 8, "الثامنة": 8, "ثامن": 8, "ثامنة": 8,
     "التاسع": 9, "التاسعة": 9, "تاسع": 9, "تاسعة": 9,
     "العاشر": 10, "العاشرة": 10, "عاشر": 10, "عاشرة": 10,
-    "الحادي عشر": 11, "الثاني عشر": 12, "الثالث عشر": 13, "الرابع عشر": 14, "الخامس عشر": 15,
-    "السادس عشر": 16, "السابع عشر": 17, "الثامن عشر": 18, "التاسع عشر": 19, "العشرون": 20, "العشرين": 20
+    "الحادي عشر": 11, "الحادية عشر": 11, "الثاني عشر": 12, "الثانية عشر": 12, 
+    "الثالث عشر": 13, "الثالثة عشر": 13, "الرابع عشر": 14, "الرابعة عشر": 14, 
+    "الخامس عشر": 15, "الخامسة عشر": 15, "السادس عشر": 16, "السادسة عشر": 16, 
+    "السابع عشر": 17, "السابعة عشر": 17, "الثامن عشر": 18, "الثامنة عشر": 18, 
+    "التاسع عشر": 19, "التاسعة عشر": 19, 
+    "العشرون": 20, "العشرين": 20, "الحادي والعشرون": 21, "الثاني والعشرون": 22, 
+    "الثالث والعشرون": 23, "الرابع والعشرون": 24, "الخامس والعشرون": 25, 
+    "السادس والعشرون": 26, "السابع والعشرون": 27, "الثامن والعشرون": 28, 
+    "التاسع والعشرون": 29, "الثلاثون": 30, "الثلاثين": 30
 }
 
 def parse_season_num(title: str) -> int:
-    """Parses season number from Arabic/English title string."""
+    """Parses season number from Arabic/English title string using context scanning."""
     t_clean = re.sub(r'\s+', ' ', title)
     
-    # Check for Arabic number words first, sorted by length in reverse to match compound words first!
+    # 1. Search for Season/S in English
+    m = re.search(r'\b(?:season|s)\s*(\d+)\b', t_clean, re.IGNORECASE)
+    if m:
+        return int(m.group(1))
+    
+    m = re.search(r'\b(\d+)(?:st|nd|rd|th)?\s+season\b', t_clean, re.IGNORECASE)
+    if m:
+        return int(m.group(1))
+        
+    # 2. Search for موسم/الموسم in Arabic
+    m = re.search(r'(?:موسم|الموسم)\s+([\u0600-\u06FF0-9\s]+)', t_clean)
+    if m:
+        season_chunk = m.group(1).strip()
+        digit_match = re.match(r'^(\d+)', season_chunk)
+        if digit_match:
+            return int(digit_match.group(1))
+        for arabic_word in sorted(ARABIC_NUMBERS.keys(), key=lambda x: len(x), reverse=True):
+            if arabic_word in season_chunk:
+                return ARABIC_NUMBERS[arabic_word]
+                
+    # Fallback to checking any Arabic number word strictly preceded by موسم/الموسم
     for arabic_word in sorted(ARABIC_NUMBERS.keys(), key=lambda x: len(x), reverse=True):
-        if arabic_word in t_clean:
+        if re.search(r'(?:موسم|الموسم)\s+' + re.escape(arabic_word), t_clean):
             return ARABIC_NUMBERS[arabic_word]
             
-    # Then check for explicit digits
+    # Last fallback: search for season number anywhere as a plain digit after 'موسم'
     m = re.search(r'(?:موسم|الموسم)\s+(\d+)', t_clean)
-    if m:
-        return int(m.group(1))
-        
-    m = re.search(r'(\d+)(?:st|nd|rd|th)?\s+Season', t_clean, re.IGNORECASE)
-    if m:
-        return int(m.group(1))
-        
-    m = re.search(r'Season\s+(\d+)', t_clean, re.IGNORECASE)
     if m:
         return int(m.group(1))
         
     return 1 # Default to Season 1
 
 def parse_episode_num(title: str) -> int:
-    """Parses episode number from Arabic title string."""
-    m = re.search(r'(?:الحلقة|حلقة)\s+(\d+)', title)
+    """Parses episode number from Arabic/English title string using context scanning."""
+    t_clean = re.sub(r'\s+', ' ', title)
+    
+    # 1. Look for explicit digits in episode context
+    m = re.search(r'(?:الحلقة|الحلقه|حلقة|حلقه|ep|episode)\s*(\d+)', t_clean, re.IGNORECASE)
     if m:
         return int(m.group(1))
         
-    m = re.search(r'(?:الحلقة|حلقة)\s+([\u0600-\u06FF]+)', title)
+    # 2. Look for Arabic word digits in episode context
+    m = re.search(r'(?:الحلقة|الحلقه|حلقة|حلقه)\s+([\u0600-\u06FF\s]+)', t_clean)
     if m:
-        val = m.group(1).strip()
-        if val in ARABIC_NUMBERS:
-            return ARABIC_NUMBERS[val]
+        ep_chunk = m.group(1).strip()
+        for arabic_word in sorted(ARABIC_NUMBERS.keys(), key=lambda x: len(x), reverse=True):
+            if arabic_word in ep_chunk:
+                return ARABIC_NUMBERS[arabic_word]
+                
+    # 3. Fallback to check for any Arabic word digit strictly preceded by الحلقة/حلقة
+    for arabic_word in sorted(ARABIC_NUMBERS.keys(), key=lambda x: len(x), reverse=True):
+        if re.search(r'(?:الحلقة|الحلقه|حلقة|حلقه)\s+' + re.escape(arabic_word), t_clean):
+            return ARABIC_NUMBERS[arabic_word]
             
-    m = re.search(r'الحلقة\s+(\d+)\s+والاخيرة', title)
-    if m:
-        return int(m.group(1))
-        
-    # General last resort: look for lonely digits
-    m = re.search(r'\b(\d+)\b', title)
+    # 4. Fallback to general last resort: look for lonely digits
+    m = re.search(r'\b(\d+)\b', t_clean)
     if m:
         return int(m.group(1))
         
@@ -665,31 +690,8 @@ def api_search():
 
 
 def parse_episode_title(title):
-    # Extract season number
-    season_num = 1
-    t_clean = re.sub(r'\s+', ' ', title)
-    
-    # Check for Arabic number words first, sorted by length in reverse
-    for arabic_word in sorted(ARABIC_NUMBERS.keys(), key=lambda x: len(x), reverse=True):
-        if arabic_word in t_clean:
-            season_num = ARABIC_NUMBERS[arabic_word]
-            break
-    else:
-        # Then check for explicit digits
-        m = re.search(r'(?:موسم|الموسم)\s+(\d+)', t_clean)
-        if m:
-            season_num = int(m.group(1))
-            
-    # Extract episode number
-    ep_num = 1
-    ep_match = re.search(r'الحلقة\s+(\d+)', title)
-    if ep_match:
-        ep_num = int(ep_match.group(1))
-    else:
-        # Fallback to search for any digit after الحلقة or EP
-        ep_match_alt = re.search(r'(?:الحلقة|الحلقه|EP)\s*(\d+)', title, re.IGNORECASE)
-        if ep_match_alt:
-            ep_num = int(ep_match_alt.group(1))
+    season_num = parse_season_num(title)
+    ep_num = parse_episode_num(title)
             
     # Extract version/tags
     tags = []
@@ -732,10 +734,11 @@ def api_details():
                 if base_query:
                     search_results = cinemana_api.search(base_query, max_pages=4)
                     
+                    orig_base_cleaned = normalize_arabic(clean_for_search(raw_title))
                     matched_items = []
                     for r in search_results:
-                        score = calculate_match_score(r['title'], base_query)
-                        if score >= 50:
+                        r_base_cleaned = normalize_arabic(clean_for_search(r['title']))
+                        if r_base_cleaned == orig_base_cleaned:
                             matched_items.append(r)
                             
                     if matched_items:
