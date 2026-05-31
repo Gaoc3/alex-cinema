@@ -1614,15 +1614,39 @@ body {
 .plyr__controls {
     background: linear-gradient(180deg, rgba(8, 6, 18, 0) 0%, rgba(8, 6, 18, 0.88) 100%) !important;
     backdrop-filter: blur(10px) !webkit-backdrop-filter: blur(10px);
+    border: none !important;
     border-top: none !important;
     padding: 15px 20px 20px 20px !important;
     box-shadow: none !important;
 }
 
-.plyr__progress, .plyr__progress__container {
+.plyr__controls::before,
+.plyr__controls::after {
+    display: none !important;
+    content: none !important;
+}
+
+.plyr__progress, 
+.plyr__progress__container,
+.plyr__progress input[type="range"],
+.plyr__progress input[type="range"]::-webkit-slider-runnable-track,
+.plyr__progress input[type="range"]::-moz-range-track,
+.plyr__progress input[type="range"]::-ms-track,
+.plyr__progress__buffer,
+.plyr__progress__loading {
     border: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
     outline: none !important;
     box-shadow: none !important;
+}
+
+.plyr__progress input[type="range"]:focus,
+.plyr__progress input[type="range"]:focus-visible,
+.plyr__progress input[type="range"]:active {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
 }
 
 /* Custom Neon Progress Bar */
