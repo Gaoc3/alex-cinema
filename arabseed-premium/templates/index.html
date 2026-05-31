@@ -117,12 +117,17 @@
     <!-- Details Overlay Modal -->
     <div class="modal-overlay" id="details-modal" style="display: none;">
         <div class="modal-card" id="details-modal-card">
+            <!-- Glassmorphic blurred backdrop -->
+            <div class="modal-backdrop-blur" id="modal-backdrop-blur"></div>
+            
             <button class="modal-close-btn" id="close-details-btn"><i class="fa-solid fa-xmark"></i></button>
             
             <div class="modal-body-layout">
                 <!-- Left: Poster Column -->
                 <div class="modal-poster-col">
-                    <img src="" alt="Poster" class="modal-poster-img" id="modal-poster" referrerpolicy="no-referrer">
+                    <div class="modal-poster-wrapper">
+                        <img src="" alt="Poster" class="modal-poster-img" id="modal-poster" referrerpolicy="no-referrer">
+                    </div>
                     <div class="modal-meta-badges">
                         <span class="meta-badge rating-badge" id="modal-rating"><i class="fa-solid fa-star"></i> 7.8</span>
                         <span class="meta-badge quality-badge" id="modal-quality">1080p FHD</span>
@@ -143,7 +148,7 @@
                         <i class="fa-solid fa-play"></i> مشاهدة الآن (بأعلى جودة)
                     </button>
                     
-                    <!-- Seasons Section (Vertical/Horizontal list of seasons parsed natively) -->
+                    <!-- Seasons Section -->
                     <div class="seasons-wrapper" id="modal-seasons-section" style="display: none;">
                         <h4 class="info-label"><i class="fa-solid fa-folder-open"></i> المواسم المتوفرة:</h4>
                         <div class="seasons-grid" id="modal-seasons-grid">
@@ -151,12 +156,20 @@
                         </div>
                     </div>
                     
-                    <!-- Episodes Section (Dynamic episode grid) -->
+                    <!-- Versions Section -->
+                    <div class="versions-wrapper" id="modal-versions-section" style="display: none;">
+                        <h4 class="info-label"><i class="fa-solid fa-language"></i> نسخة العرض والترجمة:</h4>
+                        <div class="versions-grid" id="modal-versions-grid">
+                            <!-- Version pills injected dynamically -->
+                        </div>
+                    </div>
+                    
+                    <!-- Episodes Section -->
                     <div class="episodes-wrapper" id="modal-episodes-section" style="display: none;">
                         <h4 class="info-label"><i class="fa-solid fa-list-ol"></i> حلقات الموسم المتوفرة:</h4>
                         <div class="episodes-search-box">
-                            <i class="fa-solid fa-filter filter-icon"></i>
-                            <input type="text" id="episode-filter-input" placeholder="تصفية الحلقات (مثال: حلقة 5)...">
+                            <i class="fa-solid fa-magnifying-glass filter-icon"></i>
+                            <input type="text" id="episode-filter-input" placeholder="تصفية الحلقات بالرقم أو الكلمة (مثال: الحلقة 5)...">
                         </div>
                         <div class="episodes-grid" id="modal-episodes-grid">
                             <!-- Episodes injected dynamically -->
