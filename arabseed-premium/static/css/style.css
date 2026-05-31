@@ -1424,7 +1424,7 @@ body {
         gap: 15px;
     }
     .episodes-grid {
-        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
     }
     
     /* Mobile responsive sliders cards size */
