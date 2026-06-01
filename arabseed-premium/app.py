@@ -950,8 +950,8 @@ def api_search():
         if live or len(query) < 4:
             local_matches = find_local_matches(query)
             
-        # For live predictive search, if we have matches, return them immediately (<5ms)!
-        if live and len(local_matches) >= 3:
+        # For live predictive search, ALWAYS return local matches immediately to prevent blocking and 429 WAF triggers!
+        if live:
             return jsonify({
                 'results': local_matches[:10],
                 'count': len(local_matches),
