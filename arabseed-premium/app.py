@@ -932,17 +932,33 @@ def api_anime():
 
 @app.route('/api/search')
 def api_search():
-    """Bridges search queries dynamically to the new robust FaselHD scraping engine."""
+    """Bridges search queries dynamically to the robust search engines with ultra-fast local indexing."""
     query = request.args.get('q', '').strip()
+    live = request.args.get('live', '').lower() in ('true', '1')
     if not query:
         return jsonify({'results': [], 'count': 0})
         
     try:
+        # Check cache first for instant hits
         cache_key = f"search_{query}"
         cached_val = app_cache.get(cache_key)
         if cached_val:
             return jsonify(cached_val)
             
+        # Fast local in-memory index search
+        local_matches = []
+        if live or len(query) < 4:
+            local_matches = find_local_matches(query)
+            
+        # For live predictive search, if we have matches, return them immediately (<5ms)!
+        if live and len(local_matches) >= 3:
+            return jsonify({
+                'results': local_matches[:10],
+                'count': len(local_matches),
+                'source': 'local_index'
+            })
+            
+        # Otherwise, fall back to remote scraping search
         results = fasel_api.search(query)
         
         # Format or clean up titles
@@ -977,10 +993,14 @@ def api_search():
                     'quality': 'FHD 1080p'
                 }
                 formatted_results.insert(0, special_card)
+                
+        # Register new results into persistent global index
+        register_cards(formatted_results)
             
         res = {
             'results': formatted_results,
-            'count': len(formatted_results)
+            'count': len(formatted_results),
+            'source': 'remote_scrape'
         }
         
         # Trigger predictive details pre-warming on all search results in background
@@ -992,6 +1012,13 @@ def api_search():
         return jsonify(res)
     except Exception as e:
         print(f"Error in api_search: {e}")
+        # If we failed but have local matches, return them as a fallback
+        if local_matches:
+            return jsonify({
+                'results': local_matches[:10],
+                'count': len(local_matches),
+                'source': 'local_index_fallback'
+            })
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/details')

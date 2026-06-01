@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return;
         }
-        liveSearchTimer = setTimeout(() => performLiveSearch(query), 150); // Fast responsive 150ms debounce
+        liveSearchTimer = setTimeout(() => performLiveSearch(query), 50); // Ultra-responsive 50ms real-time debounce
     });
     
     // Live Search - focus handler to restore active dropdown
@@ -423,11 +423,6 @@ function renderLiveSearchResults(results, query) {
             updateNavActive(null);
             performSearch(query);
         });
-    }
-}
-                حدث خطأ أثناء البحث
-            </div>
-        `;
     }
 }
 
