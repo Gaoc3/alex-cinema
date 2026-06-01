@@ -1,0 +1,7 @@
+Status Code: 200
+Total Results: 5
+  1: Title='فيلم The Punisher: One Last Kill (عرض خاص حصرى)', Type='فيلم', URL='https://web616x.faselhdx.bid/episodes/%d8%ad%d9%84%d9%82%d8%a9-marvel-television-special-presentation-punisher-one-last-kill'
+  2: Title='فيلم The Punisher 2004 مترجم', Type='فيلم', URL='https://web616x.faselhdx.bid/movies/1-%d9%81%d9%8a%d9%84%d9%85-punisher-2004-%d9%85%d8%aa%d8%b1%d8%ac%d9%85'
+  3: Title='فيلم The Punisher 1989 مترجم', Type='فيلم', URL='https://web616x.faselhdx.bid/movies/1-%d9%81%d9%8a%d9%84%d9%85-punisher-1989-%d9%85%d8%aa%d8%b1%d8%ac%d9%85'
+  4: Title='مسلسل The Punisher', Type='مسلسل', URL='https://web616x.faselhdx.bid/seasons/%d9%85%d8%b3%d9%84%d8%b3%d9%84-the-punisher'
+  5: Title='مسلسل The Devil Punisher', Type='مسلسل', URL='https://web616x.faselhdx.bid/asian-series/%d9%85%d8%b3%d9%84%d8%b3%d9%84-devil-punisher-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a3%d9%88%d9%84'
