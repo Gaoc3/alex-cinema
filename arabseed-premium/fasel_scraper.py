@@ -21,6 +21,23 @@ from bs4 import BeautifulSoup
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
+def normalize_url(url: str) -> str:
+    """Normalizes URL paths to standard uppercase percent-encoding to bypass Cloudflare constraints."""
+    if not url:
+        return ""
+    try:
+        parsed = urllib.parse.urlparse(url)
+        path_unquoted = urllib.parse.unquote(parsed.path)
+        path_quoted = urllib.parse.quote(path_unquoted, safe='/')
+        
+        # Re-assemble URL
+        parts = list(parsed)
+        parts[2] = path_quoted
+        return urllib.parse.urlunparse(parts)
+    except Exception as e:
+        print(f"Error normalizing URL {url}: {e}")
+        return url
+
 class FaselAPI:
     """
     API Scraper client for FaselHD.
@@ -54,9 +71,12 @@ class FaselAPI:
         Thread-safe requests.get wrapper with smart retries and backoff for Cloudflare bypass.
         Leverages curl_cffi impersonate Chrome fingerprint.
         """
+        # Always normalize the request URL to standard uppercase percent encoding
+        url = normalize_url(url)
+        
         headers = self.headers.copy()
         if referer:
-            headers["Referer"] = referer
+            headers["Referer"] = normalize_url(referer)
             
         for i in range(3):
             try:
@@ -348,10 +368,11 @@ class FaselAPI:
             title = title.split('-')[0].replace("مشاهدة وتحميل", "").replace("مسلسل", "").replace("فيلم", "").strip()
             
             # 2. Parse Description
-            description = "لا توجد قصة متوفرة حالياً لهذا العرض."
-            desc_div = soup.find(class_=re.compile(r'desc|story|excerpt')) or soup.find('p')
+            desc_div = soup.find(class_="singleDesc") or soup.find(class_=re.compile(r'desc|story|excerpt'))
             if desc_div:
                 description = desc_div.get_text(strip=True)
+            else:
+                description = "لا توجد قصة متوفرة حالياً لهذا العرض."
                 
             # 3. Detect if series
             is_series = False
