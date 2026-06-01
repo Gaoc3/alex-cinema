@@ -31,12 +31,11 @@ for item in parsed_links:
     ]
     
     if any(k in ep_href_decoded or k in ep_text_lower for k in exclude_keywords):
-        # Print without Unicode/Arabic or Emojis to be fully compatible with CP1252
-        print(f"Excluded: Episode 14 -> {ep_href_decoded}")
+        print("Excluded: Episode 14")
         continue
     filtered.append(item)
 
-print(f"\nTotal episodes originally: {len(parsed_links)}")
+print(f"Total episodes originally: {len(parsed_links)}")
 print(f"Total episodes after filtering: {len(filtered)}")
 assert len(filtered) == 13, "Error: Filtering logic did not produce 13 episodes!"
 print("SUCCESS: Offline test PASSED perfectly!")
