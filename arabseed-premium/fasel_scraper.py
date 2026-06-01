@@ -45,7 +45,7 @@ class FaselAPI:
     matching all method signatures and expected return structures.
     """
     
-    def __init__(self, base_url: str = "https://web53112x.faselhdx.bid"):
+    def __init__(self, base_url: str = "https://web616x.faselhdx.bid"):
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
         
@@ -65,6 +65,21 @@ class FaselAPI:
             "Referer": self.base_url + "/"
         }
         self.session.headers.update(self.headers)
+
+    def check_and_update_mirror(self, url: str):
+        """Self-healing helper: extracts and migrates internal base_url if a newer mirror domain is detected."""
+        try:
+            parsed = urllib.parse.urlparse(url)
+            if parsed.netloc and 'faselhdx.bid' in parsed.netloc:
+                current_netloc = urllib.parse.urlparse(self.base_url).netloc
+                if parsed.netloc != current_netloc:
+                    old_base = self.base_url
+                    self.base_url = f"{parsed.scheme}://{parsed.netloc}"
+                    self.headers["Referer"] = self.base_url + "/"
+                    self.session.headers.update(self.headers)
+                    print(f"✨ Dynamic Mirror Self-Healing: Migrated base_url from {old_base} to {self.base_url}")
+        except Exception:
+            pass
 
     def get_with_retry(self, url: str, timeout: int = 12, params: dict = None, referer: str = None) -> requests.Response:
         """
@@ -104,6 +119,7 @@ class FaselAPI:
                 return {}
                 
             href = a_tag['href']
+            self.check_and_update_mirror(href)
             # Make sure it's absolute
             if href.startswith('/'):
                 href = self.base_url + href
