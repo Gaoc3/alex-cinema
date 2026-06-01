@@ -533,6 +533,59 @@ def api_cache_clear():
         'message': 'تم تحديث وتطهير ذاكرة التخزين المؤقت (Cache) بالكامل بنجاح! جاري جلب البيانات بالخلفية...'
     })
 
+def prewarm_item_details_async(urls: list):
+    """Launches a background daemon thread to pre-warm details page and first-stream caches for a list of URLs."""
+    if not urls:
+        return
+        
+    def worker():
+        import time
+        import threading
+        for url in urls:
+            try:
+                # 1. Pre-warm details cache
+                cache_key = f"details_{url}"
+                details = app_cache.get(cache_key)
+                if not details:
+                    details = fasel_api.get_details(url)
+                    if details.get('title') != "غير معروف" and "فشل تحميل" not in details.get('description', ''):
+                        app_cache.set(cache_key, details, ttl=3600)
+                        
+                # 2. Pre-warm first-episode/movie watch streams cache
+                if details and details.get('title') != "غير معروف":
+                    # Determine watch URL
+                    watch_url = None
+                    is_series = details.get('is_series', False)
+                    season_num = ""
+                    episode_num = ""
+                    
+                    if is_series and details.get('seasons'):
+                        # Get first episode of active/first season
+                        first_season = details['seasons'][0]
+                        if first_season.get('episodes'):
+                            first_episode = first_season['episodes'][0]
+                            watch_url = first_episode.get('url')
+                            season_num = first_season.get('title', '')
+                            episode_num = first_episode.get('title', '')
+                    elif not is_series:
+                        watch_url = url
+                        
+                    if watch_url:
+                        watch_cache_key = f"watch_{watch_url}_{details['title']}_{is_series}_{season_num}_{episode_num}"
+                        if not app_cache.get(watch_cache_key):
+                            # Fetch and cache resolved stream links
+                            merged_servers = resolve_fasel_stream(watch_url)
+                            if merged_servers:
+                                res = {'servers': merged_servers}
+                                app_cache.set(watch_cache_key, res, ttl=300) # Cache watch streams for 5 minutes
+                                
+                # Respect rate limits with a small sleep between pages
+                time.sleep(1.2)
+            except Exception as e:
+                print(f"Error pre-warming details for {url}: {e}")
+                
+    threading.Thread(target=worker, daemon=True).start()
+
 def get_home_data_fresh():
     """Fetch home categories and slides synchronously."""
     try:
@@ -690,33 +743,65 @@ def trigger_single_warm(on_startup=False):
 def api_home():
     """Retrieve beautiful horizontal categorized carousels and sliding featured Hero items."""
     cached_val = app_cache.get("home_data")
-    if cached_val:
-        return jsonify(cached_val)
-    return jsonify(get_home_data_fresh())
+    if not cached_val:
+        cached_val = get_home_data_fresh()
+        
+    # Pre-warm top 8 home page cards in the background
+    if cached_val and cached_val.get('categories'):
+        urls = []
+        for cat in cached_val['categories']:
+            for card in cat.get('cards', []):
+                if card.get('url') and card['url'] not in urls:
+                    urls.append(card['url'])
+                if len(urls) >= 8:
+                    break
+            if len(urls) >= 8:
+                break
+        prewarm_item_details_async(urls)
+        
+    return jsonify(cached_val)
 
 @app.route('/api/movies')
 def api_movies():
-    """Scrapes pages 1-4 in parallel to expand movies library."""
+    """Scrapes pages sequentially to expand movies library."""
     cached_val = app_cache.get("movies_data")
-    if cached_val:
-        return jsonify(cached_val)
-    return jsonify(get_movies_data_fresh())
+    if not cached_val:
+        cached_val = get_movies_data_fresh()
+        
+    # Pre-warm top 8 movie details in the background
+    if cached_val and cached_val.get('results'):
+        urls = [r['url'] for r in cached_val['results'][:8] if r.get('url')]
+        prewarm_item_details_async(urls)
+        
+    return jsonify(cached_val)
 
 @app.route('/api/series')
 def api_series():
-    """Scrapes pages in parallel for series listing."""
+    """Scrapes pages sequentially for series listing."""
     cached_val = app_cache.get("series_data")
-    if cached_val:
-        return jsonify(cached_val)
-    return jsonify(get_series_data_fresh())
+    if not cached_val:
+        cached_val = get_series_data_fresh()
+        
+    # Pre-warm top 8 series details in the background
+    if cached_val and cached_val.get('results'):
+        urls = [r['url'] for r in cached_val['results'][:8] if r.get('url')]
+        prewarm_item_details_async(urls)
+        
+    return jsonify(cached_val)
 
 @app.route('/api/anime')
 def api_anime():
-    """Scrapes pages in parallel for anime listing."""
+    """Scrapes pages sequentially for anime listing."""
     cached_val = app_cache.get("anime_data")
-    if cached_val:
-        return jsonify(cached_val)
-    return jsonify(get_anime_data_fresh())
+    if not cached_val:
+        cached_val = get_anime_data_fresh()
+        
+    # Pre-warm top 8 anime details in the background
+    if cached_val and cached_val.get('results'):
+        urls = [r['url'] for r in cached_val['results'][:8] if r.get('url')]
+        prewarm_item_details_async(urls)
+        
+    return jsonify(cached_val)
 
 @app.route('/api/search')
 def api_search():
