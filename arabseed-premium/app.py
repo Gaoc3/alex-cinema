@@ -670,9 +670,13 @@ def warm_caching_worker():
 def trigger_single_warm():
     """Executes a single pre-warming pass across all dynamic cache elements."""
     try:
+        import time
         get_home_data_fresh()
+        time.sleep(5.0)
         get_movies_data_fresh()
+        time.sleep(5.0)
         get_series_data_fresh()
+        time.sleep(5.0)
         get_anime_data_fresh()
         print("✅ Background cache warming completed successfully!")
     except Exception as e:
