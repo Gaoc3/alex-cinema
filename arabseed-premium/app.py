@@ -983,7 +983,7 @@ def api_search():
             found = False
             for r in formatted_results:
                 if r['url'] == special_url:
-                    r['poster'] = "https://static.faselhdcdn.com/wp-content/uploads/2019/01/MV5BMTExODIwOTUxNzFeQTJeQWpwZ15BbWU4MDE5MDA0MTcz._V1_SY1000_CR006741000_AL_-400x600.jpg"
+                    r['poster'] = "https://upload.wikimedia.org/wikipedia/en/a/a0/The_Punisher_One_Last_Kill_poster.jpg"
                     r['title'] = 'فيلم The Punisher: One Last Kill (عرض خاص حصرى)'
                     r['rating'] = '8.6'
                     r['quality'] = 'FHD 1080p'
@@ -999,7 +999,7 @@ def api_search():
                 special_card = {
                     'title': 'فيلم The Punisher: One Last Kill (عرض خاص حصرى)',
                     'url': special_url,
-                    'poster': "https://static.faselhdcdn.com/wp-content/uploads/2019/01/MV5BMTExODIwOTUxNzFeQTJeQWpwZ15BbWU4MDE5MDA0MTcz._V1_SY1000_CR006741000_AL_-400x600.jpg",
+                    'poster': "https://upload.wikimedia.org/wikipedia/en/a/a0/The_Punisher_One_Last_Kill_poster.jpg",
                     'type': 'فيلم',
                     'rating': '8.6',
                     'quality': 'FHD 1080p'
