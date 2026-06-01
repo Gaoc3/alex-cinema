@@ -365,10 +365,40 @@ class FaselAPI:
             print(f"Error searching FaselHD for '{query}': {e}")
             return []
 
+    def resolve_clean_url(self, raw_url: str) -> str:
+        """Resolves raw WordPress query parameter URLs (/?p=...) to clean human-friendly URLs concurrently."""
+        if not raw_url or "?p=" not in raw_url:
+            return raw_url
+            
+        # Check thread-safe cache first
+        with self.redirect_cache_lock:
+            if raw_url in self.redirect_cache:
+                return self.redirect_cache[raw_url]
+                
+        # Resolve via lightweight GET with allow_redirects=False
+        try:
+            url_normalized = normalize_url(raw_url)
+            headers = self.headers.copy()
+            # Disable automatic redirect to extract Location header immediately
+            r = self.session.get(url_normalized, headers=headers, allow_redirects=False, impersonate="chrome120")
+            if r.status_code in [301, 302] and 'Location' in r.headers:
+                clean_url = r.headers['Location']
+                # Make sure it's absolute
+                if clean_url.startswith('/'):
+                    clean_url = self.base_url + clean_url
+                with self.redirect_cache_lock:
+                    self.redirect_cache[raw_url] = clean_url
+                print(f"✅ Dynamic Redirect Resolver: Resolved {raw_url} to {clean_url}")
+                return clean_url
+        except Exception as e:
+            print(f"⚠️ Error resolving clean URL for {raw_url}: {e}")
+            
+        return raw_url
+
     def get_details(self, watch_url: str) -> Dict[str, Any]:
         """
         Retrieves series/movie details, seasons, and episode grids.
-        If it's a series, fetches seasons sequentially with a small delay to avoid triggering Cloudflare.
+        Utilizes high-speed concurrent redirect resolution and parallel scraping to bypass Cloudflare.
         """
         self.check_and_update_mirror(watch_url)
         # Ensure url matches the active mirror host
@@ -395,15 +425,14 @@ class FaselAPI:
             else:
                 description = "لا توجد قصة متوفرة حالياً لهذا العرض."
                 
-            # 3. Detect if series
+            # 3. Detect if series robustly
             is_series = False
             seasons = []
             
-            # Search for available seasons in .seasonLoop container
             season_loop = soup.find(class_="seasonLoop")
-            if season_loop and '/seasons/' in active_url.lower():
+            if any(x in active_url.lower() for x in ['/seasons/', '/series/', '/asian-series/', '/anime/']) or season_loop:
                 is_series = True
-                season_divs = season_loop.find_all(class_="seasonDiv")
+                season_divs = season_loop.find_all(class_="seasonDiv") if season_loop else []
                 
                 # Fetch seasons data
                 seasons_to_fetch = []
@@ -429,11 +458,20 @@ class FaselAPI:
                         "active": is_active
                     })
                     
-                # Sequential loading helper for season episodes
+                # A. Resolve raw URLs concurrently to clean URLs (bypasses Cloudflare WAF checks)
+                def resolve_worker(s_data):
+                    s_data['clean_url'] = self.resolve_clean_url(s_data['url'])
+                    return s_data
+                    
+                with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+                    seasons_to_fetch = list(executor.map(resolve_worker, seasons_to_fetch))
+                    
+                # B. Parallel loading helper for season episodes (direct requests to clean URLs)
                 def fetch_season_episodes(season_data):
                     eps = []
+                    url_to_fetch = season_data.get('clean_url') or season_data['url']
                     try:
-                        r_season = self.get_with_retry(season_data['url'], timeout=10)
+                        r_season = self.get_with_retry(url_to_fetch, timeout=10)
                         if r_season.status_code == 200:
                             s_soup = BeautifulSoup(r_season.text, 'html.parser')
                             ep_all = s_soup.find(class_="epAll")
@@ -480,11 +518,9 @@ class FaselAPI:
                     season_data["episodes"] = eps
                     return season_data
                 
-                # Fetch season episodes sequentially with a 150ms sleep spacing
-                seasons = []
-                for s_data in seasons_to_fetch:
-                    time.sleep(0.15)
-                    seasons.append(fetch_season_episodes(s_data))
+                # Fetch season episodes concurrently using ThreadPoolExecutor
+                with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+                    seasons = list(executor.map(fetch_season_episodes, seasons_to_fetch))
             else:
                 # Direct movie or standalone episode
                 is_series = False
@@ -501,7 +537,7 @@ class FaselAPI:
             return {
                 "title": "غير معروف",
                 "description": "فشل تحميل تفاصيل العرض من فاصل إعلاني.",
-                "is_series": False,
+                "is_series": any(x in active_url.lower() for x in ['/seasons/', '/series/', '/asian-series/', '/anime/']),
                 "seasons": []
             }
 
