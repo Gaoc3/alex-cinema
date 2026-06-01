@@ -771,8 +771,9 @@ def api_details():
             
         details = fasel_api.get_details(url)
         
-        # Cache details for 1 hour
-        app_cache.set(cache_key, details, ttl=3600)
+        # Cache details for 1 hour only if the scrap succeeded to avoid poisoning cache with failures
+        if details.get('title') != "غير معروف" and "فشل تحميل" not in details.get('description', ''):
+            app_cache.set(cache_key, details, ttl=3600)
         return jsonify(details)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
