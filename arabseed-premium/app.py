@@ -660,24 +660,28 @@ def get_anime_data_fresh():
 def warm_caching_worker():
     """Continuous daemon background cache warmer executing every 10 minutes."""
     print("✨ Starting Background Cache Warmer...")
-    # Warm immediately on startup!
-    trigger_single_warm()
+    # Warm only homepage on startup to avoid rate-limiting blocks!
+    trigger_single_warm(on_startup=True)
     while True:
         time.sleep(600)
         print("🔄 Pre-fetching and warming backend caches in background...")
-        trigger_single_warm()
+        trigger_single_warm(on_startup=False)
 
-def trigger_single_warm():
+def trigger_single_warm(on_startup=False):
     """Executes a single pre-warming pass across all dynamic cache elements."""
     try:
         import time
+        print("✨ Pre-warming home page cache...")
         get_home_data_fresh()
-        time.sleep(5.0)
-        get_movies_data_fresh()
-        time.sleep(5.0)
-        get_series_data_fresh()
-        time.sleep(5.0)
-        get_anime_data_fresh()
+        
+        if not on_startup:
+            print("✨ Pre-warming category libraries in the background...")
+            time.sleep(5.0)
+            get_movies_data_fresh()
+            time.sleep(5.0)
+            get_series_data_fresh()
+            time.sleep(5.0)
+            get_anime_data_fresh()
         print("✅ Background cache warming completed successfully!")
     except Exception as e:
         print(f"❌ Error during background cache warming: {e}")
