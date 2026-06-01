@@ -366,7 +366,7 @@ class FaselAPI:
             return []
 
     def resolve_clean_url(self, raw_url: str) -> str:
-        """Resolves raw WordPress query parameter URLs (/?p=...) to clean human-friendly URLs concurrently."""
+        """Resolves raw WordPress query parameter URLs (/?p=...) to clean human-friendly URLs with smart retries."""
         if not raw_url or "?p=" not in raw_url:
             return raw_url
             
@@ -375,30 +375,36 @@ class FaselAPI:
             if raw_url in self.redirect_cache:
                 return self.redirect_cache[raw_url]
                 
-        # Resolve via lightweight GET with allow_redirects=False
-        try:
-            url_normalized = normalize_url(raw_url)
-            headers = self.headers.copy()
-            # Disable automatic redirect to extract Location header immediately
-            r = self.session.get(url_normalized, headers=headers, allow_redirects=False, impersonate="chrome120")
-            if r.status_code in [301, 302] and 'Location' in r.headers:
-                clean_url = r.headers['Location']
-                # Make sure it's absolute
-                if clean_url.startswith('/'):
-                    clean_url = self.base_url + clean_url
-                with self.redirect_cache_lock:
-                    self.redirect_cache[raw_url] = clean_url
-                print(f"✅ Dynamic Redirect Resolver: Resolved {raw_url} to {clean_url}")
-                return clean_url
-        except Exception as e:
-            print(f"⚠️ Error resolving clean URL for {raw_url}: {e}")
+        # Resolve via lightweight GET with allow_redirects=False with smart retries
+        url_normalized = normalize_url(raw_url)
+        headers = self.headers.copy()
+        
+        for i in range(3):
+            try:
+                # Disable automatic redirect to extract Location header immediately
+                r = self.session.get(url_normalized, headers=headers, allow_redirects=False, impersonate="chrome120")
+                if r.status_code in [301, 302] and 'Location' in r.headers:
+                    clean_url = r.headers['Location']
+                    # Make sure it's absolute
+                    if clean_url.startswith('/'):
+                        clean_url = self.base_url + clean_url
+                    with self.redirect_cache_lock:
+                        self.redirect_cache[raw_url] = clean_url
+                    print(f"✅ Dynamic Redirect Resolver: Resolved {raw_url} to {clean_url}")
+                    return clean_url
+                elif r.status_code in [403, 429]:
+                    print(f"⚠️ Redirect WAF hit {r.status_code} for {raw_url}. Retry {i+1}/3 after sleeping...")
+                    time.sleep(1.5 * (i + 1))
+            except Exception as e:
+                print(f"⚠️ Connection error during redirect resolution for {raw_url}: {e}. Retry {i+1}/3 after sleeping...")
+                time.sleep(1.5 * (i + 1))
             
         return raw_url
 
     def get_details(self, watch_url: str) -> Dict[str, Any]:
         """
         Retrieves series/movie details, seasons, and episode grids.
-        Utilizes high-speed concurrent redirect resolution and parallel scraping to bypass Cloudflare.
+        Utilizes hybrid sequential redirect-resolution and parallel episode scraping to bypass Cloudflare.
         """
         self.check_and_update_mirror(watch_url)
         # Ensure url matches the active mirror host
@@ -458,13 +464,10 @@ class FaselAPI:
                         "active": is_active
                     })
                     
-                # A. Resolve raw URLs concurrently to clean URLs (bypasses Cloudflare WAF checks)
-                def resolve_worker(s_data):
+                # A. Resolve raw URLs sequentially with a 250ms spacing sleep to prevent Cloudflare WAF rate triggers
+                for s_data in seasons_to_fetch:
+                    time.sleep(0.25)
                     s_data['clean_url'] = self.resolve_clean_url(s_data['url'])
-                    return s_data
-                    
-                with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
-                    seasons_to_fetch = list(executor.map(resolve_worker, seasons_to_fetch))
                     
                 # B. Parallel loading helper for season episodes (direct requests to clean URLs)
                 def fetch_season_episodes(season_data):
