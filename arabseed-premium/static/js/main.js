@@ -743,7 +743,7 @@ async function openDetailsModal(item) {
     loadSeasonData(item.url, "");
 }
 
-async function loadSeasonData(url, seasonTitle, attempt = 0) {
+async function loadSeasonData(url, seasonTitle) {
     closePlayerModal(); // Stop any active player and restore poster view
     elements.modalEpisodesSection.style.display = 'none';
     elements.modalSeasonsSection.style.display = 'none';
@@ -755,29 +755,12 @@ async function loadSeasonData(url, seasonTitle, attempt = 0) {
     
     try {
         const controller = new AbortController();
-        const timeoutMs = attempt === 0 ? 20000 : 45000;
-        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout failsafe
         
         const response = await fetch(`/api/details?url=${encodeURIComponent(url)}`, { signal: controller.signal });
         clearTimeout(timeoutId);
         
-        if (!response.ok) {
-            let errMsg = `HTTP ${response.status}`;
-            try {
-                const errBody = await response.json();
-                if (errBody && errBody.error) {
-                    errMsg = errBody.error;
-                }
-            } catch (err) {
-                // Ignore JSON parse errors for non-JSON responses
-            }
-            throw new Error(errMsg);
-        }
-        
         const details = await response.json();
-        if (details && details.error) {
-            throw new Error(details.error);
-        }
         
         elements.modalStoryText.innerText = details.description || "لا توجد قصة متوفرة لهذا العرض حالياً.";
         
@@ -802,14 +785,7 @@ async function loadSeasonData(url, seasonTitle, attempt = 0) {
             fetchStreamingServers(url, state.selectedItem.title, state.selectedItem.title, false, "", "");
         }
     } catch (e) {
-        if (e && e.name === 'AbortError' && attempt < 1) {
-            elements.modalStoryText.innerText = 'الاتصال بطيء... جارٍ إعادة المحاولة.';
-            return loadSeasonData(url, seasonTitle, attempt + 1);
-        }
-        const msg = e && e.name === 'AbortError'
-            ? 'انتهت مهلة تحميل التفاصيل. حاول مرة أخرى.'
-            : e.message;
-        elements.modalStoryText.innerText = `فشل تحميل تفاصيل العرض: ${msg}`;
+        elements.modalStoryText.innerText = `فشل تحميل تفاصيل العرض: ${e.message}`;
         elements.serversLoader.style.display = 'none';
     }
 }
