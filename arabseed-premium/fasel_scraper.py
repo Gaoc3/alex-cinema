@@ -442,6 +442,18 @@ class FaselAPI:
                                     elif not ep_href.startswith('http'):
                                         ep_href = self.base_url + '/' + ep_href
                                         
+                                    # Filter out standalone movies, films, and special presentations from the episode list
+                                    ep_href_decoded = urllib.parse.unquote(ep_href).lower()
+                                    ep_text_lower = a.get_text(strip=True).lower()
+                                    exclude_keywords = [
+                                        'special-presentation', 'special_presentation',
+                                        'movie', 'film', 'فيلم', 'فلم', 'خاصة', 'سبيشال',
+                                        'one-last-kill'
+                                    ]
+                                    if any(k in ep_href_decoded or k in ep_text_lower for k in exclude_keywords):
+                                        print(f"🚫 Filtering out movie/special presentation from episode list: {ep_href}")
+                                        continue
+                                        
                                     ep_title = a.get_text(strip=True)
                                     # Active episode detection
                                     is_active_ep = ep_href.rstrip('/') == active_url.rstrip('/')
