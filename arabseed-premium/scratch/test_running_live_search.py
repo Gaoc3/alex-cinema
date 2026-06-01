@@ -48,8 +48,8 @@ def query_search(query, live=True):
     return data
 
 # Wait a brief moment to make sure background worker finished warming
-print("🕒 Querying 'The Boys' with live=true...")
-query_search("The Boys", live=True)
+print("🕒 Querying 'the punisher' with live=true...")
+query_search("the punisher", live=True)
 
 print("🕒 Querying 'بانيشر' (The Punisher) with live=true...")
 query_search("بانيشر", live=True)
