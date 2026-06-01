@@ -1124,21 +1124,13 @@ def api_stream_proxy():
         
     video_url = urllib.parse.unquote(video_url)
     
-    parsed_url = urllib.parse.urlparse(video_url)
-    video_host = parsed_url.netloc.lower()
     referer = 'https://cinemana.cc/'
-    if 'cinemana.cc' not in video_host:
-        if 'fasel' in video_host or 'faselhd' in video_host:
-            referer = f"{fasel_api.base_url}/"
-        elif parsed_url.scheme and parsed_url.netloc:
-            referer = f"{parsed_url.scheme}://{parsed_url.netloc}/"
-        else:
-            referer = 'https://asd.ink/'
+    if 'cinemana.cc' not in video_url.lower():
+        referer = 'https://asd.ink/'
         
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': referer,
-        'Origin': referer.rstrip('/')
+        'Referer': referer
     }
     
     range_header = request.headers.get('Range')
