@@ -244,6 +244,14 @@ function showToast(message, type = 'info') {
         document.body.appendChild(container);
     }
     
+    // Deduplicate toast alerts to prevent duplicate stacking
+    const existingToasts = container.querySelectorAll('.alex-toast span');
+    for (let el of existingToasts) {
+        if (el.innerText.trim() === message.trim()) {
+            return; // Duplicate toast ignored!
+        }
+    }
+    
     const toast = document.createElement('div');
     toast.className = `alex-toast ${type === 'success' ? 'alex-toast-success' : ''}`;
     
@@ -746,7 +754,12 @@ async function loadSeasonData(url, seasonTitle) {
     elements.serversLoader.style.display = 'block';
     
     try {
-        const response = await fetch(`/api/details?url=${encodeURIComponent(url)}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout failsafe
+        
+        const response = await fetch(`/api/details?url=${encodeURIComponent(url)}`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
         const details = await response.json();
         
         elements.modalStoryText.innerText = details.description || "لا توجد قصة متوفرة لهذا العرض حالياً.";
@@ -1026,7 +1039,12 @@ async function fetchStreamingServers(url, displayTitle, title = "", isSeries = f
             apiUrl += `&title=${encodeURIComponent(title)}&is_series=${isSeries}&season=${encodeURIComponent(season)}&episode=${encodeURIComponent(episode)}`;
         }
         
-        const response = await fetch(apiUrl);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout failsafe
+        
+        const response = await fetch(apiUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
         const data = await response.json();
         
         elements.serversLoader.style.display = 'none';
