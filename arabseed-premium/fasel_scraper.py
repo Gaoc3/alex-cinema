@@ -16,6 +16,8 @@ import time
 from typing import List, Dict, Any
 from curl_cffi import requests
 from bs4 import BeautifulSoup
+import concurrent.futures
+import threading
 
 # Ensure UTF-8 output to support Arabic characters in all terminals
 if hasattr(sys.stdout, 'reconfigure'):
@@ -48,6 +50,8 @@ class FaselAPI:
     def __init__(self, base_url: str = "https://web616x.faselhdx.bid"):
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
+        self.redirect_cache = {}
+        self.redirect_cache_lock = threading.Lock()
         
         # State-of-the-art modern browser headers to bypass Cloudflare protection
         self.headers = {
