@@ -633,7 +633,7 @@ def get_series_data_fresh():
 def get_anime_data_fresh():
     """Fetch pages 1-3 in parallel for anime listing."""
     try:
-        urls = [f"{fasel_api.base_url}/anime-series/page/{p}/" for p in [1, 2, 3]]
+        urls = [f"{fasel_api.base_url}/anime/page/{p}/" for p in [1, 2, 3]]
         results = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             futures = {executor.submit(fasel_api.scrape_listing_page, url): url for url in urls}
