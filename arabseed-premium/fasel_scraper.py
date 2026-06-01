@@ -559,11 +559,13 @@ class FaselAPI:
         Loads the watch page and extracts the player token data-src iframe link.
         """
         self.check_and_update_mirror(episode_or_movie_url)
-        # Ensure domain is correct
-        parsed = urllib.parse.urlparse(episode_or_movie_url)
-        active_url = f"{self.base_url}{parsed.path}"
-        if parsed.query:
-            active_url += f"?{parsed.query}"
+        
+        active_url = episode_or_movie_url
+        if active_url.startswith('/'):
+            active_url = self.base_url + active_url
+            
+        if "?p=" in active_url:
+            active_url = self.resolve_clean_url(active_url)
             
         try:
             r = self.get_with_retry(active_url, timeout=12)
