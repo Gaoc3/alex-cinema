@@ -47,7 +47,7 @@ class FaselAPI:
     matching all method signatures and expected return structures.
     """
     
-    def __init__(self, base_url: str = "https://web616x.faselhdx.bid"):
+    def __init__(self, base_url: str = "https://www.fasel-hd.cam"):
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
         self.redirect_cache = {}
