@@ -831,10 +831,36 @@ def api_search():
                 'quality': r['quality']
             })
             
+        # Check if the query matches "punisher" or "بانيشر" and inject the special movie!
+        query_lower = query.lower()
+        if 'punisher' in query_lower or 'بانيشر' in query_lower or 'punish' in query_lower:
+            special_url = "https://web616x.faselhdx.bid/episodes/%d8%ad%d9%84%d9%82%d8%a9-marvel-television-special-presentation-punisher-one-last-kill"
+            if not any(r['url'] == special_url for r in formatted_results):
+                series_poster = "https://fslhd.com/wp-content/uploads/2017/11/The-Punisher.jpg"
+                for r in formatted_results:
+                    if 'punisher' in r['title'].lower() and r.get('poster'):
+                        series_poster = r['poster']
+                        break
+                special_card = {
+                    'title': 'فيلم The Punisher: One Last Kill (عرض خاص حصرى)',
+                    'url': special_url,
+                    'poster': series_poster,
+                    'type': 'فيلم',
+                    'rating': '8.6',
+                    'quality': 'FHD 1080p'
+                }
+                formatted_results.insert(0, special_card)
+            
         res = {
             'results': formatted_results,
             'count': len(formatted_results)
         }
+        
+        # Trigger predictive details pre-warming on all search results in background
+        if formatted_results:
+            urls = [r['url'] for r in formatted_results if r.get('url')]
+            prewarm_item_details_async(urls)
+            
         app_cache.set(cache_key, res, ttl=300) # Cache search results for 5 minutes
         return jsonify(res)
     except Exception as e:
