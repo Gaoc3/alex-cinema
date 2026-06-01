@@ -577,20 +577,20 @@ def get_home_data_fresh():
         return {'categories': [], 'slides': [], 'category': 'الرئيسية'}
 
 def get_movies_data_fresh():
-    """Fetch pages 1-3 in parallel for movies listing."""
+    """Fetch pages 1-3 sequentially with spacing for movies listing."""
     try:
         urls = [f"{fasel_api.base_url}/movies/page/{p}/" for p in [1, 2, 3]]
         results = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            futures = {executor.submit(fasel_api.scrape_listing_page, url): url for url in urls}
-            for f in concurrent.futures.as_completed(futures):
-                try:
-                    page_results = f.result()
-                    for r in page_results:
-                        if not any(x['url'] == r['url'] for x in results):
-                            results.append(r)
-                except Exception as e:
-                    print(f"Error parallel scraping movies: {e}")
+        import time
+        for url in urls:
+            try:
+                page_results = fasel_api.scrape_listing_page(url)
+                for r in page_results:
+                    if not any(x['url'] == r['url'] for x in results):
+                        results.append(r)
+                time.sleep(0.4)
+            except Exception as e:
+                print(f"Error scraping movies page {url}: {e}")
                     
         res = {
             'results': results,
@@ -604,20 +604,20 @@ def get_movies_data_fresh():
         return {'results': [], 'category': 'الأفلام'}
 
 def get_series_data_fresh():
-    """Fetch pages 1-3 in parallel for series listing."""
+    """Fetch pages 1-3 sequentially with spacing for series listing."""
     try:
         urls = [f"{fasel_api.base_url}/series/page/{p}/" for p in [1, 2, 3]]
         results = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            futures = {executor.submit(fasel_api.scrape_listing_page, url): url for url in urls}
-            for f in concurrent.futures.as_completed(futures):
-                try:
-                    page_results = f.result()
-                    for r in page_results:
-                        if not any(x['url'] == r['url'] for x in results):
-                            results.append(r)
-                except Exception as e:
-                    print(f"Error parallel scraping series: {e}")
+        import time
+        for url in urls:
+            try:
+                page_results = fasel_api.scrape_listing_page(url)
+                for r in page_results:
+                    if not any(x['url'] == r['url'] for x in results):
+                        results.append(r)
+                time.sleep(0.4)
+            except Exception as e:
+                print(f"Error scraping series page {url}: {e}")
                     
         res = {
             'results': results,
@@ -631,20 +631,20 @@ def get_series_data_fresh():
         return {'results': [], 'category': 'المسلسلات'}
 
 def get_anime_data_fresh():
-    """Fetch pages 1-3 in parallel for anime listing."""
+    """Fetch pages 1-3 sequentially with spacing for anime listing."""
     try:
         urls = [f"{fasel_api.base_url}/anime/page/{p}/" for p in [1, 2, 3]]
         results = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            futures = {executor.submit(fasel_api.scrape_listing_page, url): url for url in urls}
-            for f in concurrent.futures.as_completed(futures):
-                try:
-                    page_results = f.result()
-                    for r in page_results:
-                        if not any(x['url'] == r['url'] for x in results):
-                            results.append(r)
-                except Exception as e:
-                    print(f"Error parallel scraping anime: {e}")
+        import time
+        for url in urls:
+            try:
+                page_results = fasel_api.scrape_listing_page(url)
+                for r in page_results:
+                    if not any(x['url'] == r['url'] for x in results):
+                        results.append(r)
+                time.sleep(0.4)
+            except Exception as e:
+                print(f"Error scraping anime page {url}: {e}")
                     
         res = {
             'results': results,
