@@ -306,93 +306,125 @@ function handleSearchSubmit(e) {
 }
 
 async function performLiveSearch(query) {
+    // 1. Check client-side memory cache first for 0ms instant display!
+    if (window.liveSearchCache[query]) {
+        renderLiveSearchResults(window.liveSearchCache[query], query);
+        return;
+    }
+    
+    // 2. Abort any previous active search fetch immediately to eliminate lag
+    if (window.liveSearchAbortController) {
+        window.liveSearchAbortController.abort();
+    }
+    
+    // Create a new AbortController
+    window.liveSearchAbortController = new AbortController();
+    const signal = window.liveSearchAbortController.signal;
+    
     // Show dropdown with loader
     elements.liveSearchDropdown.style.display = 'block';
     elements.liveSearchLoader.style.display = 'block';
     elements.liveSearchResults.innerHTML = '';
     
     try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal });
         const data = await response.json();
-        
-        elements.liveSearchLoader.style.display = 'none';
         
         const results = data.results || [];
         
-        if (results.length === 0) {
-            elements.liveSearchResults.innerHTML = `
-                <div class="live-search-no-results">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    لا توجد نتائج لـ "${query}"
-                </div>
-            `;
+        // Save to client memory cache
+        window.liveSearchCache[query] = results;
+        
+        // Render results
+        renderLiveSearchResults(results, query);
+    } catch (e) {
+        if (e.name === 'AbortError') {
+            // Ignore abort errors as they represent newer keystroke cancellations
             return;
         }
-        
-        // Show max 6 results in dropdown
-        const displayResults = results.slice(0, 6);
-        let html = '';
-        
-        displayResults.forEach((item) => {
-            const posterSrc = item.poster || SVG_POSTER_PLACEHOLDER;
-            html += `
-                <div class="live-search-item" data-url="${item.url}" data-title="${item.title.replace(/"/g, '&quot;')}" data-poster="${posterSrc}" data-type="${item.type || 'فيلم'}" data-rating="${item.rating || '7.8'}" data-quality="${item.quality || '1080p'}">
-                    <img class="live-search-item-poster" src="${posterSrc}" alt="${item.title}" onerror="this.src='${SVG_POSTER_PLACEHOLDER}'" referrerpolicy="no-referrer">
-                    <div class="live-search-item-info">
-                        <div class="live-search-item-title">${item.title}</div>
-                        <div class="live-search-item-meta">
-                            <span class="live-search-item-type">${item.type || 'فيلم'}</span>
-                            <span class="live-search-item-quality">${item.quality || '1080p'}</span>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-chevron-left live-search-item-arrow"></i>
-                </div>
-            `;
-        });
-        
-        if (results.length > 6) {
-            html += `
-                <div class="live-search-view-all" id="live-search-view-all">
-                    <i class="fa-solid fa-grid-2"></i>
-                    عرض كل ${results.length} نتيجة
-                </div>
-            `;
-        }
-        
-        elements.liveSearchResults.innerHTML = html;
-        
-        // Bind click events to each search result item
-        elements.liveSearchResults.querySelectorAll('.live-search-item').forEach(el => {
-            el.addEventListener('click', () => {
-                const itemData = {
-                    url: el.getAttribute('data-url'),
-                    title: el.getAttribute('data-title'),
-                    poster: el.getAttribute('data-poster'),
-                    type: el.getAttribute('data-type'),
-                    rating: el.getAttribute('data-rating'),
-                    quality: el.getAttribute('data-quality')
-                };
-                elements.liveSearchDropdown.style.display = 'none';
-                openDetailsModal(itemData);
-            });
-        });
-        
-        // Bind "view all" button
-        const viewAllBtn = document.getElementById('live-search-view-all');
-        if (viewAllBtn) {
-            viewAllBtn.addEventListener('click', () => {
-                elements.liveSearchDropdown.style.display = 'none';
-                elements.searchInput.value = query;
-                updateNavActive(null);
-                performSearch(query);
-            });
-        }
-        
-    } catch (e) {
         elements.liveSearchLoader.style.display = 'none';
         elements.liveSearchResults.innerHTML = `
             <div class="live-search-no-results">
                 <i class="fa-solid fa-triangle-exclamation"></i>
+                حدث خطأ أثناء الاتصال بالخادم
+            </div>
+        `;
+    }
+}
+
+function renderLiveSearchResults(results, query) {
+    elements.liveSearchLoader.style.display = 'none';
+    elements.liveSearchResults.innerHTML = '';
+    
+    if (results.length === 0) {
+        elements.liveSearchResults.innerHTML = `
+            <div class="live-search-no-results">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                لا توجد نتائج لـ "${query}"
+            </div>
+        `;
+        return;
+    }
+    
+    // Show max 6 results in dropdown
+    const displayResults = results.slice(0, 6);
+    let html = '';
+    
+    displayResults.forEach((item) => {
+        const posterSrc = item.poster || SVG_POSTER_PLACEHOLDER;
+        html += `
+            <div class="live-search-item" data-url="${item.url}" data-title="${item.title.replace(/"/g, '&quot;')}" data-poster="${posterSrc}" data-type="${item.type || 'فيلم'}" data-rating="${item.rating || '7.8'}" data-quality="${item.quality || '1080p'}">
+                <img class="live-search-item-poster" src="${posterSrc}" alt="${item.title}" onerror="this.src='${SVG_POSTER_PLACEHOLDER}'" referrerpolicy="no-referrer">
+                <div class="live-search-item-info">
+                    <div class="live-search-item-title">${item.title}</div>
+                    <div class="live-search-item-meta">
+                        <span class="live-search-item-type">${item.type || 'فيلم'}</span>
+                        <span class="live-search-item-quality">${item.quality || '1080p'}</span>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-left live-search-item-arrow"></i>
+            </div>
+        `;
+    });
+    
+    if (results.length > 6) {
+        html += `
+            <div class="live-search-view-all" id="live-search-view-all">
+                <i class="fa-solid fa-grid-2"></i>
+                عرض كل ${results.length} نتيجة
+            </div>
+        `;
+    }
+    
+    elements.liveSearchResults.innerHTML = html;
+    
+    // Bind click events to each search result item
+    elements.liveSearchResults.querySelectorAll('.live-search-item').forEach(el => {
+        el.addEventListener('click', () => {
+            const itemData = {
+                url: el.getAttribute('data-url'),
+                title: el.getAttribute('data-title'),
+                poster: el.getAttribute('data-poster'),
+                type: el.getAttribute('data-type'),
+                rating: el.getAttribute('data-rating'),
+                quality: el.getAttribute('data-quality')
+            };
+            elements.liveSearchDropdown.style.display = 'none';
+            openDetailsModal(itemData);
+        });
+    });
+    
+    // Bind "view all" button
+    const viewAllBtn = document.getElementById('live-search-view-all');
+    if (viewAllBtn) {
+        viewAllBtn.addEventListener('click', () => {
+            elements.liveSearchDropdown.style.display = 'none';
+            elements.searchInput.value = query;
+            updateNavActive(null);
+            performSearch(query);
+        });
+    }
+}
                 حدث خطأ أثناء البحث
             </div>
         `;
