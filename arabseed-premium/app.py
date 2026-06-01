@@ -227,11 +227,7 @@ def resolve_fasel_stream(url: str) -> list:
             return []
             
         # 2. Fetch the player page HTML
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": url
-        }
-        r = fasel_api.session.get(iframe_url, headers=headers, timeout=12)
+        r = fasel_api.get_with_retry(iframe_url, referer=url)
         r.raise_for_status()
         player_html = r.text
         
