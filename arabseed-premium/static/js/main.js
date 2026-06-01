@@ -730,6 +730,7 @@ async function loadSeasonData(url, seasonTitle) {
             // Render the grouped seasons (removes all duplicates!)
             renderGroupedSeasons(details.seasons);
             elements.modalSeasonsSection.style.display = 'block';
+            elements.serversLoader.style.display = 'none'; // Hide loading spinner since series seasons are rendered!
             
         } else {
             elements.modalType.innerText = "فيلم";
