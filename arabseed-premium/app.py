@@ -979,11 +979,7 @@ def api_search():
         if 'punisher' in query_lower or 'بانيشر' in query_lower or 'punish' in query_lower:
             special_url = "https://web616x.faselhdx.bid/episodes/%d8%ad%d9%84%d9%82%d8%a9-marvel-television-special-presentation-punisher-one-last-kill"
             if not any(r['url'] == special_url for r in formatted_results):
-                series_poster = "https://fslhd.com/wp-content/uploads/2017/11/The-Punisher.jpg"
-                for r in formatted_results:
-                    if 'punisher' in r['title'].lower() and r.get('poster'):
-                        series_poster = r['poster']
-                        break
+                series_poster = "https://upload.wikimedia.org/wikipedia/en/d/d4/The_Punisher_season_1_poster.jpg"
                 special_card = {
                     'title': 'فيلم The Punisher: One Last Kill (عرض خاص حصرى)',
                     'url': special_url,
