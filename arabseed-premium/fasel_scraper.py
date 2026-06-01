@@ -366,6 +366,7 @@ class FaselAPI:
         Retrieves series/movie details, seasons, and episode grids.
         If it's a series, fetches seasons sequentially with a small delay to avoid triggering Cloudflare.
         """
+        self.check_and_update_mirror(watch_url)
         # Ensure url matches the active mirror host
         watch_url_parsed = urllib.parse.urlparse(watch_url)
         active_url = f"{self.base_url}{watch_url_parsed.path}"
@@ -492,6 +493,7 @@ class FaselAPI:
         """
         Loads the watch page and extracts the player token data-src iframe link.
         """
+        self.check_and_update_mirror(episode_or_movie_url)
         # Ensure domain is correct
         parsed = urllib.parse.urlparse(episode_or_movie_url)
         active_url = f"{self.base_url}{parsed.path}"
