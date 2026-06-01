@@ -227,8 +227,7 @@ def resolve_fasel_stream(url: str) -> list:
             return []
             
         # 2. Fetch the player page HTML
-        import requests
-        r: requests.Response = fasel_api.get_with_retry(iframe_url, referer=url)
+        r = fasel_api.get_with_retry(iframe_url, referer=url)
         r.raise_for_status()
         player_html = r.text
         
