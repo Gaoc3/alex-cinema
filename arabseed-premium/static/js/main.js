@@ -117,16 +117,23 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
     
-    // Live Search - debounced input handler
+    // Live Search - debounced input handler and client-side memory cache
     let liveSearchTimer = null;
+    window.liveSearchAbortController = null;
+    window.liveSearchCache = {};
+    
     elements.searchInput.addEventListener('input', () => {
         const query = elements.searchInput.value.trim();
         if (liveSearchTimer) clearTimeout(liveSearchTimer);
         if (!query || query.length < 2) {
             elements.liveSearchDropdown.style.display = 'none';
+            // Abort any active pending search fetches immediately
+            if (window.liveSearchAbortController) {
+                window.liveSearchAbortController.abort();
+            }
             return;
         }
-        liveSearchTimer = setTimeout(() => performLiveSearch(query), 350);
+        liveSearchTimer = setTimeout(() => performLiveSearch(query), 150); // Fast responsive 150ms debounce
     });
     
     // Live Search - focus handler to restore active dropdown
