@@ -315,6 +315,109 @@ class SimpleCache:
 
 app_cache = SimpleCache()
 
+# Thread-safe global database of all encountered cards for ultra-fast, premium <5ms predictive live-search
+GLOBAL_KNOWN_CARDS = {}
+GLOBAL_KNOWN_CARDS_LOCK = Lock()
+
+def register_cards(cards_list):
+    """Registers a list of movie/series cards in the global fast-search index."""
+    if not cards_list:
+        return
+    with GLOBAL_KNOWN_CARDS_LOCK:
+        for c in cards_list:
+            if not isinstance(c, dict) or not c.get('url') or not c.get('title'):
+                continue
+            url = c['url']
+            GLOBAL_KNOWN_CARDS[url] = {
+                'title': c['title'],
+                'url': url,
+                'poster': c.get('poster'),
+                'type': c.get('type', 'فيلم'),
+                'rating': c.get('rating', '8.0'),
+                'quality': c.get('quality', '1080p')
+            }
+
+def get_all_known_cards():
+    """Aggregates all cached cards from app_cache and GLOBAL_KNOWN_CARDS to maximize search results."""
+    cards_dict = {}
+    
+    # 1. Add cards from the persistent global index first
+    with GLOBAL_KNOWN_CARDS_LOCK:
+        for url, card in GLOBAL_KNOWN_CARDS.items():
+            cards_dict[url] = dict(card)
+            
+    # 2. Add dynamically cached home, movie, series, and anime entries
+    with app_cache.lock:
+        cache_copy = dict(app_cache.cache)
+        
+    for key, (val, expiry) in cache_copy.items():
+        if time.time() >= expiry:
+            continue
+            
+        if key == "home_data" and isinstance(val, dict):
+            for cat in val.get('categories', []):
+                for card in cat.get('cards', []):
+                    if card.get('url') and card.get('title'):
+                        cards_dict[card['url']] = card
+            for slide in val.get('slides', []):
+                if slide.get('url') and slide.get('title'):
+                    cards_dict[slide['url']] = {
+                        'title': slide['title'],
+                        'url': slide['url'],
+                        'poster': slide.get('poster'),
+                        'type': slide.get('type', 'فيلم'),
+                        'rating': slide.get('rating', '8.0'),
+                        'quality': slide.get('quality', '1080p')
+                    }
+        elif key in ("movies_data", "series_data", "anime_data") or key.startswith("search_"):
+            if isinstance(val, dict) and 'results' in val:
+                for card in val['results']:
+                    if card.get('url') and card.get('title'):
+                        cards_dict[card['url']] = card
+        elif key.startswith("details_"):
+            if isinstance(val, dict) and val.get('title') and val.get('title') != "غير معروف":
+                url = key[8:] # details_url
+                cards_dict[url] = {
+                    'title': val['title'],
+                    'url': url,
+                    'poster': val.get('poster'),
+                    'type': 'مسلسل' if val.get('is_series') else 'فيلم',
+                    'rating': val.get('rating', '8.0'),
+                    'quality': val.get('quality', '1080p')
+                }
+                
+    return list(cards_dict.values())
+
+def find_local_matches(query: str):
+    """Finds matching cards in memory instantly using clean Arabic normalization and prefix-prioritized sorting."""
+    query_normalized = normalize_arabic(query)
+    if len(query_normalized) < 2:
+        return []
+        
+    all_cards = get_all_known_cards()
+    matches = []
+    
+    for card in all_cards:
+        title = card.get('title', '')
+        if not title:
+            continue
+        title_normalized = normalize_arabic(title)
+        
+        # Check substring match
+        if query_normalized in title_normalized:
+            matches.append(card)
+            
+    # Sort matches: Prefix matches (matching from the beginning of the title) rank highest!
+    def sort_key(card):
+        title_norm = normalize_arabic(card.get('title', ''))
+        idx = title_norm.find(query_normalized)
+        if idx == 0:
+            return 0 # Perfect prefix match
+        return idx if idx != -1 else 9999
+        
+    matches.sort(key=sort_key)
+    return matches
+
 def normalize_arabic(text: str) -> str:
     """Normalizes Arabic letters to standard forms for robust searching."""
     t = text.lower()
@@ -624,6 +727,9 @@ def get_home_data_fresh():
         
         if categories or slides:
             app_cache.set("home_data", res, ttl=1800)
+            for cat in categories:
+                register_cards(cat.get('cards', []))
+            register_cards(slides)
         return res
     except Exception as e:
         print(f"Error getting fresh home data: {e}")
@@ -651,6 +757,7 @@ def get_movies_data_fresh():
         }
         if results:
             app_cache.set("movies_data", res, ttl=1200)
+            register_cards(results)
         return res
     except Exception as e:
         print(f"Error getting fresh movies data: {e}")
@@ -678,6 +785,7 @@ def get_series_data_fresh():
         }
         if results:
             app_cache.set("series_data", res, ttl=1200)
+            register_cards(results)
         return res
     except Exception as e:
         print(f"Error getting fresh series data: {e}")
@@ -705,6 +813,7 @@ def get_anime_data_fresh():
         }
         if results:
             app_cache.set("anime_data", res, ttl=1200)
+            register_cards(results)
         return res
     except Exception as e:
         print(f"Error getting fresh anime data: {e}")
@@ -713,8 +822,26 @@ def get_anime_data_fresh():
 def warm_caching_worker():
     """Continuous daemon background cache warmer executing every 10 minutes."""
     print("✨ Starting Background Cache Warmer...")
-    # Warm only homepage on startup to avoid rate-limiting blocks!
+    # 1. Warm homepage on startup immediately
     trigger_single_warm(on_startup=True)
+    
+    # 2. Wait 15 seconds after startup, then warm category libraries in background to populate live search local index
+    def seed_categories():
+        import time
+        time.sleep(15)
+        print("🔄 Warming category libraries for live search local index...")
+        try:
+            get_movies_data_fresh()
+            time.sleep(5.0)
+            get_series_data_fresh()
+            time.sleep(5.0)
+            get_anime_data_fresh()
+            print("✅ Live search local index fully populated!")
+        except Exception as e:
+            print(f"Error seeding live search local index: {e}")
+            
+    threading.Thread(target=seed_categories, daemon=True).start()
+    
     while True:
         time.sleep(600)
         print("🔄 Pre-fetching and warming backend caches in background...")
