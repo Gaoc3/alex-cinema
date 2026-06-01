@@ -129,9 +129,26 @@ document.addEventListener('DOMContentLoaded', () => {
         liveSearchTimer = setTimeout(() => performLiveSearch(query), 350);
     });
     
+    // Live Search - focus handler to restore active dropdown
+    elements.searchInput.addEventListener('focus', () => {
+        const query = elements.searchInput.value.trim();
+        if (query && query.length >= 2) {
+            elements.liveSearchDropdown.style.display = 'block';
+        }
+    });
+    
+    // Bind search icon click event to programmatically submit search form
+    const searchIcon = document.querySelector('.nav-search-icon');
+    if (searchIcon) {
+        searchIcon.style.cursor = 'pointer';
+        searchIcon.addEventListener('click', () => {
+            elements.searchForm.requestSubmit();
+        });
+    }
+    
     // Close dropdown on clicking outside
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.search-wrapper')) {
+        if (!e.target.closest('.nav-search-wrapper') && !e.target.closest('.search-wrapper')) {
             elements.liveSearchDropdown.style.display = 'none';
         }
     });
@@ -1571,6 +1588,46 @@ function setupAutoplayNext(currentUrl) {
 }
 
 function launchPlayer(server, title) {
+    // Hide details close button IMMEDIATELY to prevent multiple overlapping close buttons
+    if (elements.closeDetailsBtn) {
+        elements.closeDetailsBtn.style.display = 'none';
+    }
+    
+    // Check if the stream option is unavailable (about:blank)
+    if (!server || server.url === 'about:blank' || !server.url) {
+        state.currentPlayingServer = server;
+        elements.playerServerBadge.innerText = '⚠️ غير متوفر للبث';
+        elements.playerModal.style.display = 'block';
+        
+        // Hide poster wrapper, show player wrapper inline
+        const posterWrapper = document.getElementById('modal-poster-wrapper');
+        if (posterWrapper) posterWrapper.style.display = 'none';
+        
+        // Render a beautiful neon warning inside elements.playerRenderArea
+        elements.playerRenderArea.innerHTML = `
+            <div class="player-error-fallback" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; background: #0b0c10; border-radius: 12px; padding: 30px; text-align: center; border: 1px solid rgba(225, 29, 72, 0.3); box-shadow: 0 0 30px rgba(225, 29, 72, 0.15);">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 3.5rem; color: #rose; margin-bottom: 20px; text-shadow: 0 0 20px rgba(225, 29, 72, 0.6); animation: pulse 2s infinite;"></i>
+                <h3 style="font-family: var(--font-ar); font-size: 1.4rem; color: #fff; margin-bottom: 12px; font-weight: 700;">عذراً، مسار البث المباشر غير متوفر حالياً</h3>
+                <p style="font-family: var(--font-ar); font-size: 0.95rem; color: var(--text-muted); max-width: 480px; margin-bottom: 24px; line-height: 1.6;">فشلت محاولة توليد رابط مباشر آمن من الخادم الخارجي، أو قد يكون المصدر قد تم حذفه بسبب حقوق الملكية. يرجى تجربة خيارات تشغيل أخرى أو إعادة المحاولة لاحقاً.</p>
+                <button class="error-retry-btn" onclick="closePlayerModal()" style="font-family: var(--font-ar); font-weight: 700; font-size: 0.9rem; padding: 10px 24px; border-radius: 12px; background: rgba(124, 58, 237, 0.15); border: 1px solid var(--accent-violet); color: var(--accent-violet); cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(124, 58, 237, 0.25);">
+                    <i class="fa-solid fa-arrow-rotate-left" style="margin-left: 8px;"></i> العودة لتفاصيل العرض
+                </button>
+            </div>
+        `;
+        
+        // Hide loader smoothly
+        const customLoader = document.getElementById('player-custom-loader');
+        if (customLoader) {
+            customLoader.style.transition = 'opacity 0.2s ease';
+            customLoader.style.opacity = '0';
+            setTimeout(() => {
+                customLoader.style.display = 'none';
+                customLoader.style.opacity = '1';
+            }, 200);
+        }
+        return;
+    }
+
     elements.playerTitleDisplay.innerText = title;
     elements.playerRenderArea.innerHTML = '';
     
@@ -1585,11 +1642,6 @@ function launchPlayer(server, title) {
     if (posterWrapper) posterWrapper.style.display = 'none';
     
     elements.playerModal.style.display = 'block';
-    
-    // Hide details close button to prevent multiple overlapping close buttons
-    if (elements.closeDetailsBtn) {
-        elements.closeDetailsBtn.style.display = 'none';
-    }
     
     // Clean existing Hls instance if present
     if (state.hlsInstance) {
