@@ -99,12 +99,12 @@ class FaselAPI:
                 r = self.session.get(url, headers=headers, params=params, timeout=timeout, impersonate="chrome120")
                 if r.status_code == 200:
                     return r
-                elif r.status_code == 403:
-                    print(f"⚠️ Cloudflare 403 on {url}. Retry {i+1}/3 after sleeping...")
-                    time.sleep(1.0 * (i + 1))
+                elif r.status_code in [403, 429]:
+                    print(f"⚠️ Rate-limiting/Cloudflare {r.status_code} on {url}. Retry {i+1}/3 after sleeping...")
+                    time.sleep(2.0 * (i + 1))
             except Exception as e:
                 print(f"⚠️ Connection error for {url}: {e}. Retry {i+1}/3 after sleeping...")
-                time.sleep(1.0 * (i + 1))
+                time.sleep(2.0 * (i + 1))
                 
         # Final request attempt (fallback)
         return self.session.get(url, headers=headers, params=params, timeout=timeout, impersonate="chrome120")
