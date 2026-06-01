@@ -375,31 +375,41 @@ class FaselAPI:
             if raw_url in self.redirect_cache:
                 return self.redirect_cache[raw_url]
                 
-        # Resolve via lightweight GET with allow_redirects=False with smart retries
-        url_normalized = normalize_url(raw_url)
+        current_url = raw_url
         headers = self.headers.copy()
         
-        for i in range(3):
-            try:
-                # Disable automatic redirect to extract Location header immediately
-                r = self.session.get(url_normalized, headers=headers, allow_redirects=False, impersonate="chrome120")
-                if r.status_code in [301, 302] and 'Location' in r.headers:
-                    clean_url = r.headers['Location']
-                    # Make sure it's absolute
-                    if clean_url.startswith('/'):
-                        clean_url = self.base_url + clean_url
-                    with self.redirect_cache_lock:
-                        self.redirect_cache[raw_url] = clean_url
-                    print(f"✅ Dynamic Redirect Resolver: Resolved {raw_url} to {clean_url}")
-                    return clean_url
-                elif r.status_code in [403, 429]:
-                    print(f"⚠️ Redirect WAF hit {r.status_code} for {raw_url}. Retry {i+1}/3 after sleeping...")
+        for _ in range(3): # follow up to 3 redirects sequentially
+            if "?p=" not in current_url:
+                break
+                
+            success = False
+            for i in range(3): # retries for WAF
+                try:
+                    r = self.session.get(normalize_url(current_url), headers=headers, allow_redirects=False, impersonate="chrome120")
+                    if r.status_code in [301, 302, 307, 308] and 'Location' in r.headers:
+                        next_url = r.headers['Location']
+                        if next_url.startswith('/'):
+                            next_url = self.base_url + next_url
+                        current_url = next_url
+                        success = True
+                        print(f"✅ Dynamic Redirect Resolver: Resolved to {current_url}")
+                        break
+                    elif r.status_code in [403, 429]:
+                        print(f"⚠️ Redirect WAF hit {r.status_code} for {current_url}. Retry {i+1}/3 after sleeping...")
+                        time.sleep(1.5 * (i + 1))
+                    else:
+                        break # no redirect
+                except Exception as e:
+                    print(f"⚠️ Connection error during redirect resolution for {current_url}: {e}. Retry {i+1}/3 after sleeping...")
                     time.sleep(1.5 * (i + 1))
-            except Exception as e:
-                print(f"⚠️ Connection error during redirect resolution for {raw_url}: {e}. Retry {i+1}/3 after sleeping...")
-                time.sleep(1.5 * (i + 1))
+                    
+            if not success:
+                break
+                
+        with self.redirect_cache_lock:
+            self.redirect_cache[raw_url] = current_url
             
-        return raw_url
+        return current_url
 
     def get_details(self, watch_url: str) -> Dict[str, Any]:
         """
