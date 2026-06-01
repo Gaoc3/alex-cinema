@@ -29,7 +29,7 @@ def index():
     return render_template('index.html')
 
 # Initialize Scrapers
-fasel_api = FaselAPI("https://web53112x.faselhdx.bid")
+fasel_api = FaselAPI("https://web616x.faselhdx.bid")
 
 # Arabic numbers mapping to digits for robust season/episode matching
 ARABIC_NUMBERS = {
@@ -701,6 +701,14 @@ def api_series():
     if cached_val:
         return jsonify(cached_val)
     return jsonify(get_series_data_fresh())
+
+@app.route('/api/anime')
+def api_anime():
+    """Scrapes pages in parallel for anime listing."""
+    cached_val = app_cache.get("anime_data")
+    if cached_val:
+        return jsonify(cached_val)
+    return jsonify(get_anime_data_fresh())
 
 @app.route('/api/search')
 def api_search():
