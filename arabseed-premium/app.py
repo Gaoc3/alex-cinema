@@ -961,6 +961,12 @@ def api_search():
         # Otherwise, fall back to remote scraping search
         results = fasel_api.search(query)
         
+        # If remote search failed (e.g. 403 WAF) and returned nothing, use local index!
+        if not results:
+            local_matches = find_local_matches(query)
+            if local_matches:
+                results = local_matches
+        
         # Format or clean up titles
         formatted_results = []
         for r in results:
