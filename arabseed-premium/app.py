@@ -974,16 +974,32 @@ def api_search():
                 'quality': r['quality']
             })
             
-        # Check if the query matches "punisher" or "بانيشر" and inject the special movie!
+        # Check if the query matches "punisher" or "بانيشر" and inject/overwrite the special movie!
         query_lower = query.lower()
         if 'punisher' in query_lower or 'بانيشر' in query_lower or 'punish' in query_lower:
             special_url = "https://web616x.faselhdx.bid/episodes/%d8%ad%d9%84%d9%82%d8%a9-marvel-television-special-presentation-punisher-one-last-kill"
-            if not any(r['url'] == special_url for r in formatted_results):
-                series_poster = "https://upload.wikimedia.org/wikipedia/en/d/d4/The_Punisher_season_1_poster.jpg"
+            
+            # 1. If it already exists in the results, find it and overwrite its poster and metadata to be clean and working!
+            found = False
+            for r in formatted_results:
+                if r['url'] == special_url:
+                    r['poster'] = "https://upload.wikimedia.org/wikipedia/en/d/d4/The_Punisher_season_1_poster.jpg"
+                    r['title'] = 'فيلم The Punisher: One Last Kill (عرض خاص حصرى)'
+                    r['rating'] = '8.6'
+                    r['quality'] = 'FHD 1080p'
+                    r['type'] = 'فيلم'
+                    found = True
+                    # Move to the top (index 0) for maximum prominence
+                    formatted_results.remove(r)
+                    formatted_results.insert(0, r)
+                    break
+                    
+            # 2. If it is NOT in the results, inject it as a new card at the top
+            if not found:
                 special_card = {
                     'title': 'فيلم The Punisher: One Last Kill (عرض خاص حصرى)',
                     'url': special_url,
-                    'poster': series_poster,
+                    'poster': "https://upload.wikimedia.org/wikipedia/en/d/d4/The_Punisher_season_1_poster.jpg",
                     'type': 'فيلم',
                     'rating': '8.6',
                     'quality': 'FHD 1080p'
