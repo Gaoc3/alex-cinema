@@ -397,7 +397,7 @@ class FaselAPI:
             
             # Search for available seasons in .seasonLoop container
             season_loop = soup.find(class_="seasonLoop")
-            if season_loop:
+            if season_loop and '/seasons/' in active_url.lower():
                 is_series = True
                 season_divs = season_loop.find_all(class_="seasonDiv")
                 
