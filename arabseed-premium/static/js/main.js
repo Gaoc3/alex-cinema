@@ -327,7 +327,7 @@ async function performLiveSearch(query) {
     elements.liveSearchResults.innerHTML = '';
     
     try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal });
+        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&live=true`, { signal });
         const data = await response.json();
         
         const results = data.results || [];
