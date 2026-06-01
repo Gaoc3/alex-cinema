@@ -965,6 +965,12 @@ def api_search():
         formatted_results = []
         for r in results:
             clean_title = clean_display_title(r['title'], r['type'])
+            
+            # 1. Custom Poster Override for "Game of Thrones The Movie"
+            if 'game-thrones-movie' in r['url'] or ('game of thrones' in r['title'].lower() and r['type'] == 'فيلم'):
+                r['poster'] = 'https://m.media-amazon.com/images/M/MV5BN2IzYzBiOTQtNGZmMi00NDI5LTgxMzMtN2EzZjA1NjhlOGMxXkEyXkFqcGdeQXVyNjAwNDUxODI@._V1_FMjpg_UX1000_.jpg'
+                clean_title = 'فيلم Game of Thrones: The Movie (النسخة السينمائية)'
+                
             formatted_results.append({
                 'title': clean_title,
                 'url': r['url'],
