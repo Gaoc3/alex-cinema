@@ -2531,17 +2531,17 @@ body {
 /* Custom IMDb Rating Badge */
 .imdb-rating-badge {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 8px;
+    right: 8px;
     background: rgba(0, 0, 0, 0.75);
     border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    padding: 4px 10px;
-    border-radius: 8px;
+    padding: 2px 6px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     z-index: 3;
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     transition: all 0.3s ease;
@@ -2549,17 +2549,17 @@ body {
 
 .imdb-icon {
     color: #f5c518;
-    font-size: 1.8rem;
+    font-size: 1.25rem;
     line-height: 1;
 }
 
 .imdb-score {
     color: #fff;
     font-weight: 800;
-    font-size: 1rem;
+    font-size: 0.8rem;
     font-family: var(--font-en), sans-serif;
     letter-spacing: 0.5px;
-    padding-top: 2px;
+    padding-top: 1px;
 }
 
 /* Adjust old rating badge usage */
