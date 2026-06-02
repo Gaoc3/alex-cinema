@@ -1,4 +1,4 @@
-/* AleX CINEMA Premium Dark & Cyberpunk Stylesheet */
+﻿/* AleX CINEMA Premium Dark & Cyberpunk Stylesheet */
 
 :root {
     /* Color Palette */
@@ -47,7 +47,7 @@ body {
     background-color: var(--bg-primary);
     color: var(--text-main);
     font-family: var(--font-ar);
-    min-height: 100vh;
+    min-height: 100%;
     overflow-x: hidden;
     position: relative;
     line-height: 1.6;
@@ -344,7 +344,7 @@ body {
         right: -320px;
         width: 300px;
         max-width: 85%;
-        height: 100vh;
+        height: 100%;
         background: rgba(12, 9, 28, 0.98);
         border-left: 1px solid rgba(124, 58, 237, 0.3);
         box-shadow: -10px 0 50px rgba(0, 0, 0, 0.8);
@@ -394,7 +394,7 @@ body {
         display: flex;
         position: absolute;
         top: 25px;
-        left: 25px;
+        right: 25px; left: auto;
         width: 45px;
         height: 45px;
         font-size: 1.5rem;
@@ -539,7 +539,7 @@ body {
         right: -320px;
         width: 300px;
         max-width: 85%;
-        height: 100vh;
+        height: 100%;
         background: rgba(12, 9, 28, 0.98);
         border-left: 1px solid rgba(124, 58, 237, 0.3);
         box-shadow: -10px 0 50px rgba(0, 0, 0, 0.8);
@@ -589,7 +589,7 @@ body {
         display: flex;
         position: absolute;
         top: 25px;
-        left: 25px;
+        right: 25px; left: auto;
         width: 45px;
         height: 45px;
         font-size: 1.5rem;
@@ -1140,7 +1140,7 @@ body {
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
+    height: 100%;
     background: rgba(3, 2, 7, 0.85);
     backdrop-filter: blur(25px);
     -webkit-backdrop-filter: blur(25px);
@@ -1192,7 +1192,7 @@ body {
 .modal-close-btn {
     position: absolute;
     top: 25px;
-    left: 25px;
+    right: 25px; left: auto;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
     color: rgba(255, 255, 255, 0.7);
@@ -2602,7 +2602,7 @@ body {
     right: 25px;
 }
 .hero-slider-arrow.next {
-    left: 25px;
+    right: 25px; left: auto;
 }
 
 /* Media Queries for Hero Slider and Layout */
@@ -2639,7 +2639,7 @@ body {
     .hero-slide-content {
         bottom: 25px;
         right: 25px;
-        left: 25px;
+        right: 25px; left: auto;
         max-width: 100%;
         text-align: center;
     }
