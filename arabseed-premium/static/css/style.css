@@ -2553,67 +2553,6 @@ body {
 
 /* Media Queries for Hero Slider and Layout */
 @media (max-width: 900px) {
-    .navbar {
-        padding: 10px 0;
-    }
-    .nav-container {
-        flex-wrap: wrap;
-        gap: 12px;
-        align-items: center;
-    }
-    .mobile-menu-btn {
-        display: block;
-        order: 1;
-        margin-left: 10px;
-    }
-    .nav-logo {
-        order: 2;
-        flex: 1;
-    }
-    .nav-search-wrapper {
-        order: 5;
-        width: 100%;
-        margin-top: 20px;
-        max-width: 100%;
-    }
-    .network-badge {
-        order: 6;
-        width: 100%;
-        justify-content: center;
-        margin-top: 15px;
-    }
-    .nav-links {
-        position: fixed;
-        top: 0;
-        right: -100%;
-        width: 260px;
-        height: 100vh;
-        background: rgba(12, 9, 28, 0.95);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: flex-start;
-        padding: 60px 20px;
-        transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
-        z-index: 1000;
-        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.8);
-        border-left: 1px solid rgba(124, 58, 237, 0.2);
-    }
-    .nav-links.nav-active {
-        right: 0;
-    }
-    .mobile-menu-close {
-        display: block;
-        position: absolute;
-        top: 20px;
-        right: 20px;
-    }
-    .nav-link {
-        width: 100%;
-        padding: 15px;
-        font-size: 1.1rem;
-    }
     .hero-slider-section {
         padding: 0 15px;
     }
@@ -2639,23 +2578,6 @@ body {
     }
 }
 @media (max-width: 600px) {
-    .nav-logo {
-        font-size: 1.2rem;
-    }
-    .nav-links {
-        gap: 8px;
-    }
-    .nav-link {
-        padding: 6px 12px;
-        font-size: 0.8rem;
-    }
-    .nav-search-wrapper {
-        max-width: 160px;
-        margin: 0 10px;
-    }
-    .nav-search-form {
-        padding: 5px 10px;
-    }
     .hero-slider-container {
         height: 280px;
         border-radius: 16px;
