@@ -2823,17 +2823,10 @@ body {
 }
 
 /* ====================================================
-   Desktop Fullscreen & Core Fixes (Progress, Blur, Flickering)
+   Desktop Fullscreen & Core Fixes (Progress, Flickering)
    ==================================================== */
 
-/* 1. Restore blur and shape on controls */
-.plyr__controls {
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    border-bottom-left-radius: 16px !important;
-    border-bottom-right-radius: 16px !important;
-}
-/* Remove border radius in fullscreen to stick nicely to edges */
+/* 1. Remove border radius in fullscreen to stick nicely to edges */
 .plyr--fullscreen-active .plyr__controls {
     border-radius: 0 !important;
 }
@@ -2841,14 +2834,16 @@ body {
 /* 2. Fix progress bar layout and shape of elements */
 .plyr__progress__container {
     display: flex !important;
-    flex: 1 !important;
+    flex: 1 1 0% !important;
     align-items: center !important;
+    min-width: 0 !important;
 }
 .plyr__progress {
     display: flex !important;
-    flex: 1 !important;
+    flex: 1 1 0% !important;
     align-items: center !important;
     margin: 0 10px !important;
+    min-width: 0 !important;
 }
 .plyr__progress input[type="range"] {
     border-radius: 10px !important;
@@ -2876,10 +2871,8 @@ body {
     .plyr__controls {
         padding: 10px 20px !important;
         gap: 12px !important;
-        backdrop-filter: blur(15px) !important;
-        -webkit-backdrop-filter: blur(15px) !important;
         border-radius: 0 !important;
-        background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%) !important;
+        background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%) !important;
     }
     .plyr__time {
         font-size: 13px !important;
@@ -2890,19 +2883,6 @@ body {
     .plyr__time + .plyr__time::before {
         margin-right: 4px;
         margin-left: 4px;
-    }
-    .plyr__progress__container {
-        display: flex !important;
-        align-items: center !important;
-        margin: 0 10px !important;
-    }
-    .plyr__progress {
-        margin: 0 !important;
-        width: 100% !important;
-    }
-    .plyr__progress input[type="range"] {
-        height: 6px !important;
-        border-radius: 10px !important;
     }
     .plyr__controls .plyr__control {
         padding: 8px !important;
@@ -2920,11 +2900,25 @@ body {
 
 /* Fix flickering globally on mobile */
 .plyr__video-wrapper,
-.player-custom-loader,
 .plyr {
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     perspective: 1000px;
+}
+
+/* Enforce Portrait Mode Rules (Must be at the very bottom) */
+@media screen and (orientation: portrait) {
+    .plyr__progress, .plyr__progress__container, .plyr__time {
+        display: none !important;
+    }
+    .plyr__controls {
+        justify-content: center !important;
+        gap: 25px !important;
+    }
+    .plyr__controls > * {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
 }
