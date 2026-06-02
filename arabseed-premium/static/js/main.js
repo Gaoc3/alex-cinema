@@ -551,8 +551,8 @@ async function performSearch(query, customTitle = null) {
         if (query === '__home__' && data.categories && data.categories.length > 0) {
             state.categories = data.categories;
             
-            if (elements.resultsTitleText) elements.resultsTitleText.innerHTML = `<i class="fa-solid fa-star animate-pulse" style="color: var(--accent-violet);"></i> مكتبة AleX CINEMA المضافة حديثاً`;
-            if (elements.resultsCount) elements.resultsCount.innerText = `${data.categories.length} تصنيف`;
+            if (elements.resultsTitleText) elements.resultsTitleText.innerHTML = `<i class="fa-solid fa-crown animate-pulse"></i> مكتبة AleX CINEMA المميزة`;
+            if (elements.resultsCount) elements.resultsCount.innerHTML = `<i class="fa-solid fa-layer-group"></i> ${data.categories.length} مكتبات`;
             if (elements.resultsHeader) elements.resultsHeader.style.display = 'flex';
             
             // Show and render dynamic Hero Slider
@@ -575,8 +575,8 @@ async function performSearch(query, customTitle = null) {
             if (data.results && data.results.length > 0) {
                 state.searchResults = data.results;
                 
-                if (elements.resultsTitleText) elements.resultsTitleText.innerHTML = `<i class="fa-solid fa-fire" style="color: var(--accent-blue);"></i> ${customTitle || `نتائج البحث عن: "${query}"`}`;
-                if (elements.resultsCount) elements.resultsCount.innerText = `${data.results.length} عرض`;
+                if (elements.resultsTitleText) elements.resultsTitleText.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> ${customTitle || `نتائج البحث عن: "${query}"`}`;
+                if (elements.resultsCount) elements.resultsCount.innerHTML = `<i class="fa-solid fa-film"></i> ${data.results.length} عرض`;
                 if (elements.resultsHeader) elements.resultsHeader.style.display = 'flex';
                 
                 renderCards(data.results);
@@ -732,7 +732,7 @@ function renderCarousels(categories) {
         
         row.innerHTML = `
             <div class="category-header">
-                <h3><i class="fa-solid fa-compact-disc animate-spin-slow" style="color: var(--accent-violet);"></i> ${cat.category}</h3>
+                <h3><i class="fa-solid fa-clapperboard"></i> ${cat.category}</h3>
             </div>
             <div class="category-slider-container">
                 <button class="slider-arrow arrow-left" onclick="window.scrollSlider('${categoryId}', -350)"><i class="fa-solid fa-chevron-left"></i></button>
