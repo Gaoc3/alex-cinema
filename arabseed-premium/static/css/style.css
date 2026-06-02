@@ -1,4 +1,4 @@
-﻿/* AleX CINEMA Premium Dark & Cyberpunk Stylesheet */
+/* AleX CINEMA Premium Dark & Cyberpunk Stylesheet */
 
 :root {
     /* Color Palette */
@@ -317,24 +317,27 @@ body {
 
 @media (max-width: 900px) {
     .navbar-island {
-    position: relative;
-    z-index: 1000;
-    width: 100%;
-    background: rgba(14, 16, 25, 0.6);
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    transition: all 0.4s ease;
-}
+        position: relative;
+        top: 0;
+        margin: 15px;
+        z-index: 1000;
+        width: auto;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        border: none;
+        transition: all 0.4s ease;
+    }
 
-.island-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 15px 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+    .island-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 12px 20px;
+        border-radius: 50px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
     .nav-island-links {
         position: fixed;
         top: 0;
