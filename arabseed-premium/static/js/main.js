@@ -2031,6 +2031,12 @@ function launchPlayer(server, title) {
     
     // Fast Scrubbing: instant frame-by-frame seeking during timeline drag
     state.activePlayer.on('ready', () => {
+        // Strip native title attributes to prevent OS-level tooltips from showing on mobile
+        document.querySelectorAll('.plyr__control').forEach(btn => {
+            if (btn.hasAttribute('title')) btn.removeAttribute('title');
+            if (btn.hasAttribute('data-plyr-tooltip')) btn.removeAttribute('data-plyr-tooltip');
+        });
+        
         const seekInput = elements.playerRenderArea.querySelector('.plyr__progress input[data-plyr="seek"], .plyr__progress input[type="range"]');
         if (seekInput) {
             let lastSeekTime = 0;
