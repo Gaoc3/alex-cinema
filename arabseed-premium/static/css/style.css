@@ -1262,6 +1262,7 @@ body {
     display: flex;
     gap: 12px;
     overflow-x: auto;
+    padding-top: 5px;
     padding-bottom: 8px;
     scrollbar-width: thin;
 }
