@@ -2237,15 +2237,28 @@ function launchPlayer(server, title) {
             // Hide player controls to keep the view clean for the animation
             try { state.activePlayer.toggleControls(false); } catch(err){}
         }
+        if (plyrContainer) {
+            plyrContainer.classList.add('hide-controls-force');
+        }
 
         if (currentSide === 'middle') {
             if (state.activePlayer) state.activePlayer.fullscreen.toggle();
+            if (plyrContainer) plyrContainer.classList.remove('hide-controls-force');
             return;
         }
 
         state.seekDirection = currentSide;
         if (!state.accumulatedSeek) state.accumulatedSeek = 0;
         state.accumulatedSeek += 10;
+        
+        // Execute the seek IMMEDIATELY (jump 10s per tap instantly)
+        if (state.activePlayer) {
+            if (currentSide === 'forward') {
+                state.activePlayer.currentTime = Math.min(state.activePlayer.duration || 0, state.activePlayer.currentTime + 10);
+            } else {
+                state.activePlayer.currentTime = Math.max(0, state.activePlayer.currentTime - 10);
+            }
+        }
         
         // Show UI Overlay
         const overlayId = currentSide === 'forward' ? 'yt-seek-right-overlay' : 'yt-seek-left-overlay';
@@ -2259,18 +2272,12 @@ function launchPlayer(server, title) {
 
         if (state.seekOverlayTimer) clearTimeout(state.seekOverlayTimer);
         state.seekOverlayTimer = setTimeout(() => {
-            // Execute the seek smoothly after taps stop
-            if (state.activePlayer) {
-                if (state.seekDirection === 'forward') {
-                    state.activePlayer.currentTime = Math.min(state.activePlayer.duration || 0, state.activePlayer.currentTime + state.accumulatedSeek);
-                } else {
-                    state.activePlayer.currentTime = Math.max(0, state.activePlayer.currentTime - state.accumulatedSeek);
-                }
-            }
-            
-            // Hide Overlay
+            // Hide Overlay and restore controls visibility state
             if (overlay) {
                 overlay.classList.remove('active', 'animate-ripple');
+            }
+            if (plyrContainer) {
+                plyrContainer.classList.remove('hide-controls-force');
             }
             
             // Reset state
