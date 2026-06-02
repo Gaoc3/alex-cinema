@@ -855,7 +855,8 @@ body {
 /* Force hardware acceleration to prevent repaint glitches on backdrop-filters */
 .plyr--loading .plyr__progress__buffer,
 .plyr__progress__buffer,
-.plyr__progress__loading {
+.plyr__progress__loading,
+.plyr__time {
     -webkit-backface-visibility: hidden !important;
     backface-visibility: hidden !important;
     transform: translateZ(0) !important;
