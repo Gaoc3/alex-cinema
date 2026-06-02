@@ -2808,3 +2808,8 @@ body {
     background: rgba(124, 58, 237, 0.15);
     border-color: rgba(124, 58, 237, 0.3);
 }
+@media (max-width: 550px) {
+    .episodes-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+}
