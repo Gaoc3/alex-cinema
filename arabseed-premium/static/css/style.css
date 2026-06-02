@@ -1276,9 +1276,9 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.06);
     color: rgba(255, 255, 255, 0.6);
     font-family: var(--font-ar);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     font-weight: 800;
-    padding: 8px 22px;
+    padding: 10px 24px;
     border-radius: 50px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1457,12 +1457,13 @@ body {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border-light);
     color: var(--text-muted);
-    padding: 8px 14px;
+    padding: 10px 18px;
     border-radius: 20px;
     cursor: pointer;
     font-family: var(--font-ar);
     font-weight: 600;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
+    min-height: 40px;
     transition: all 0.25s ease;
 }
 .server-item-btn:hover {
@@ -1685,9 +1686,6 @@ body {
     .hero-section {
         margin: 35px auto 25px auto;
     }
-    .hero-section {
-        margin: 35px auto 25px auto;
-    }
     .search-input-group {
         border-radius: 20px;
         flex-direction: column;
@@ -1699,7 +1697,8 @@ body {
     }
     .movie-card {
         min-width: 120px;
-        -webkit-mask-image: -webkit-radial-gradient(white, black);`n}
+        -webkit-mask-image: -webkit-radial-gradient(white, black);
+    }
 .movie-card::after {
     content: '';
     position: absolute;
