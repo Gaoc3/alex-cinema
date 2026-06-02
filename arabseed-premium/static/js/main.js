@@ -711,7 +711,6 @@ function renderCarousels(categories) {
                         <img src="${posterUrl}" alt="${item.title}" class="card-poster-img" onerror="this.src='${SVG_POSTER_PLACEHOLDER}'" referrerpolicy="no-referrer">
                         
                         <div class="card-top-badges">
-                            <span class="card-quality-badge">${item.quality || '1080p'}</span>
                             <div class="imdb-rating-badge" dir="ltr">
                                 <span class="imdb-brand">IMDb</span>
                                 <span class="imdb-score"><i class="fa-solid fa-star star-icon"></i> ${rating}</span>
@@ -770,7 +769,6 @@ function renderCards(results) {
                 <img src="${posterUrl}" alt="${item.title}" class="card-poster-img" onerror="this.src='${SVG_POSTER_PLACEHOLDER}'" referrerpolicy="no-referrer">
                 
                 <div class="card-top-badges">
-                    <span class="card-quality-badge">${item.quality || '1080p'}</span>
                     <div class="imdb-rating-badge" dir="ltr">
                         <span class="imdb-brand">IMDb</span>
                         <span class="imdb-score"><i class="fa-solid fa-star star-icon"></i> ${rating}</span>
