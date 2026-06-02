@@ -1,4 +1,4 @@
-﻿/* AleX CINEMA Premium Dark & Cyberpunk Stylesheet */
+/* AleX CINEMA Premium Dark & Cyberpunk Stylesheet */
 
 :root {
     /* Color Palette */
@@ -713,17 +713,209 @@ body {
     border: none;
     border-radius: 16px;
     overflow: hidden;
+    color: var(--text-muted);
+    margin-right: 20px;
+    margin-left: 10px;
+}
+.search-form input {
+    flex-grow: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text-main);
+    font-family: var(--font-ar);
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 10px 0;
+}
+.search-form input::placeholder {
+    color: var(--text-dim);
+}
+.search-btn {
+    background: var(--gradient-primary);
+    border: none;
+    color: #fff;
+    font-family: var(--font-ar);
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 10px 24px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+}
+.search-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.55);
+}
+
+.live-search-loader {
+    text-align: center;
+    padding: 18px;
+    color: var(--text-muted);
+    font-family: var(--font-ar);
+    font-size: 0.9rem;
+}
+.live-search-loader i {
+    color: var(--accent-violet);
+    margin-left: 8px;
+}
+.live-search-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+.live-search-item:hover {
+    background: rgba(124, 58, 237, 0.1);
+    border-color: rgba(124, 58, 237, 0.2);
+}
+.live-search-item-poster {
+    width: 48px;
+    height: 68px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--bg-card);
+}
+.live-search-item-info {
+    flex-grow: 1;
+    overflow: hidden;
+}
+.live-search-item-title {
+    font-family: var(--font-ar);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+.live-search-item-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.live-search-item-meta span {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-family: var(--font-ar);
+    font-weight: 600;
+}
+.live-search-item-type {
+    background: rgba(124, 58, 237, 0.15);
+    color: var(--accent-violet);
+}
+.live-search-item-quality {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent-green);
+}
+.live-search-item-arrow {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+.live-search-item:hover .live-search-item-arrow {
+    transform: translateX(-4px);
+    color: var(--accent-violet);
+}
+.live-search-no-results {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-muted);
+    font-family: var(--font-ar);
+    font-size: 0.9rem;
+}
+.live-search-no-results i {
+    font-size: 1.8rem;
+    color: var(--text-dim);
+    display: block;
+    margin-bottom: 10px;
+}
+.live-search-view-all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    margin-top: 4px;
+    border-radius: 12px;
+    background: rgba(124, 58, 237, 0.08);
+    border: 1px solid rgba(124, 58, 237, 0.15);
+    color: var(--accent-violet);
+    font-family: var(--font-ar);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.live-search-view-all:hover {
+    background: rgba(124, 58, 237, 0.15);
+    border-color: rgba(124, 58, 237, 0.3);
+}
+
+/* Catalog Area */
+.catalog-section {
+    max-width: 1400px;
+    margin: 30px auto 60px auto;
+    padding: 0 25px;
+}
+
+
+/* Cyber Loader Spinner */
+.loader-container {
+    text-align: center;
+    padding: 50px 0;
+}
+.cyber-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(124, 58, 237, 0.1);
+    border-top: 3px solid var(--accent-violet);
+    border-right: 3px solid var(--accent-blue);
+    border-radius: 50%;
+    margin: 0 auto 20px auto;
+    animation: spin 1s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.5));
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.loading-text {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Flat Grid (For Listings & Searches) */
+.movie-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+/* Modern Card Layout */
+.movie-card {
+    background: #0f1115;
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
     cursor: pointer;
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     position: relative;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     
     /* Anti-aliasing and corner bleeding fixes */
-    
-    
-    
-    
-    -webkit-
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    mask-image: radial-gradient(white, black);
 }
 .movie-card::after {
     content: '';
