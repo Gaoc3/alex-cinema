@@ -226,9 +226,6 @@
         .seasons-wrapper,
         .episodes-wrapper,
         .servers-wrapper,
-        .seasons-grid,
-        .episodes-grid,
-        .servers-list,
         .hero-badges-row,
         .show-page-wrapper,
         .hero-content-layer {
@@ -236,6 +233,18 @@
             max-width: 100% !important;
             box-sizing: border-box !important;
             overflow-x: hidden;
+        }
+        
+        .seasons-grid,
+        .episodes-grid,
+        .servers-list {
+            min-width: 0 !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .hero-content-layer {
+            padding: 20px 15px; /* Better mobile padding */
         }
         
         .hero-main-grid {
@@ -271,14 +280,22 @@
             font-size: 1rem;
         }
         .hero-title {
-            font-size: 2rem !important; /* Fix title size on mobile */
+            font-size: 2.2rem !important; /* Fix title size on mobile */
+            line-height: 1.3;
             overflow-wrap: break-word;
             word-break: break-word;
+            text-align: center;
         }
         .top-nav-bar {
             margin-bottom: 20px;
             position: relative !important;
             top: 0 !important; /* Force reset any rogue top offset */
+            display: flex;
+            justify-content: center; /* Center the back button on mobile */
+        }
+        .back-btn {
+            padding: 10px 20px;
+            font-size: 0.95rem;
         }
         .seasons-wrapper, .episodes-wrapper, .servers-wrapper {
             padding: 20px;
