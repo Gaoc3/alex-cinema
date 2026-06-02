@@ -219,12 +219,16 @@
 
     @media (max-width: 1000px) {
         .hero-main-grid {
-            grid-template-columns: 1fr;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             text-align: center;
+            width: 100%;
         }
         .hero-poster-col {
             order: -1;
             max-width: 300px;
+            width: 100%;
             margin: 0 auto;
         }
         .hero-poster-wrapper {
@@ -244,6 +248,8 @@
         }
         .hero-title {
             font-size: 2rem !important; /* Fix title size on mobile */
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
         .top-nav-bar {
             margin-bottom: 20px;
