@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Bind search icon click event to programmatically submit search form
-    const searchIcon = document.querySelector('.nav-search-icon');
+    const searchIcon = document.querySelector('.search-icon');
     if (searchIcon) {
         searchIcon.style.cursor = 'pointer';
         searchIcon.addEventListener('click', () => {
@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Close dropdown on clicking outside
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.nav-search-wrapper') && !e.target.closest('.search-wrapper')) {
+        if (!e.target.closest('.search-capsule') && !e.target.closest('.search-wrapper')) {
             if (elements.liveSearchDropdown) elements.liveSearchDropdown.style.display = 'none';
         }
     });
