@@ -711,7 +711,7 @@ function renderCarousels(categories) {
                         <div class="poster-overlay">
                             <div class="play-hover-btn"><i class="fa-solid fa-play"></i></div>
                         </div>
-                        <span class="card-rating-badge"><i class="fa-solid fa-star"></i> ${rating}</span>
+                        <span class="card-rating-badge"><i class="fa-brands fa-imdb" style="color: #f5c518; font-size: 1.1em; margin-left: 2px;"></i> ${rating}</span>
                         <span class="card-quality-badge">${item.quality || '1080p'}</span>
                     </div>
                     <div class="card-body">
@@ -764,7 +764,7 @@ function renderCards(results) {
                 <div class="poster-overlay">
                     <div class="play-hover-btn"><i class="fa-solid fa-play"></i></div>
                 </div>
-                <span class="card-rating-badge"><i class="fa-solid fa-star"></i> ${rating}</span>
+                <span class="card-rating-badge"><i class="fa-brands fa-imdb" style="color: #f5c518; font-size: 1.1em; margin-left: 2px;"></i> ${rating}</span>
                 <span class="card-quality-badge">${item.quality || '1080p'}</span>
             </div>
             <div class="card-body">
@@ -811,7 +811,7 @@ async function openDetailsModal(item) {
     // Set static UI values
     elements.modalTitleText.innerText = item.title;
     elements.modalPoster.src = item.poster || SVG_POSTER_PLACEHOLDER;
-    elements.modalRating.innerHTML = `<i class="fa-solid fa-star"></i> ${item.rating || '7.8'}`;
+    elements.modalRating.innerHTML = `<i class="fa-brands fa-imdb" style="color: #f5c518; font-size: 1.2em; vertical-align: middle; margin-left: 3px;"></i> ${item.rating || '7.8'}`;
     elements.modalQuality.innerText = item.quality || '1080p FHD';
     elements.modalType.innerText = item.type || 'عرض سينمائي';
     
