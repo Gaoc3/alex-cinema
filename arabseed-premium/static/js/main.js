@@ -640,17 +640,17 @@ function renderHeroSlider(slides) {
         elements.heroSliderDots.appendChild(dot);
     });
     
-    // Bind Arrow controls
+    // Bind Arrow controls (Swapped for RTL)
     elements.heroSliderPrev.onclick = () => {
-        let prevIdx = currentHeroSlideIdx - 1;
-        if (prevIdx < 0) prevIdx = slides.length - 1;
-        goToHeroSlide(prevIdx, slides.length);
-    };
-    
-    elements.heroSliderNext.onclick = () => {
         let nextIdx = currentHeroSlideIdx + 1;
         if (nextIdx >= slides.length) nextIdx = 0;
         goToHeroSlide(nextIdx, slides.length);
+    };
+    
+    elements.heroSliderNext.onclick = () => {
+        let prevIdx = currentHeroSlideIdx - 1;
+        if (prevIdx < 0) prevIdx = slides.length - 1;
+        goToHeroSlide(prevIdx, slides.length);
     };
     
     // Start Autoplay (every 5 seconds)
