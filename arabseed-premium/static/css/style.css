@@ -2867,3 +2867,64 @@ body {
     backface-visibility: hidden;
     perspective: 1000px;
 }
+
+/* ====================================================
+   Mobile Landscape Fullscreen Fixes
+   ==================================================== */
+@media screen and (max-width: 950px) and (orientation: landscape) {
+    /* Ensure controls are perfectly harmonious */
+    .plyr__controls {
+        padding: 10px 20px !important;
+        gap: 12px !important;
+        backdrop-filter: blur(15px) !important;
+        -webkit-backdrop-filter: blur(15px) !important;
+        border-radius: 0 !important;
+        background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%) !important;
+    }
+    .plyr__time {
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .plyr__time + .plyr__time::before {
+        margin-right: 4px;
+        margin-left: 4px;
+    }
+    .plyr__progress__container {
+        display: flex !important;
+        align-items: center !important;
+        margin: 0 10px !important;
+    }
+    .plyr__progress {
+        margin: 0 !important;
+        width: 100% !important;
+    }
+    .plyr__progress input[type="range"] {
+        height: 6px !important;
+        border-radius: 10px !important;
+    }
+    .plyr__controls .plyr__control {
+        padding: 8px !important;
+        margin: 0 2px !important;
+        border-radius: 50% !important;
+    }
+    .plyr__controls .plyr__control svg {
+        width: 22px !important;
+        height: 22px !important;
+    }
+    .plyr__volume {
+        max-width: 70px !important;
+    }
+}
+
+/* Fix flickering globally on mobile */
+.plyr__video-wrapper,
+.player-custom-loader,
+.plyr {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    perspective: 1000px;
+}
