@@ -1,4 +1,4 @@
-﻿/* AleX CINEMA Premium Dark & Cyberpunk Stylesheet */
+/* AleX CINEMA Premium Dark & Cyberpunk Stylesheet */
 
 :root {
     /* Color Palette */
@@ -457,19 +457,6 @@ body {
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
 }
-.search-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.55);
-}
-
-/* Live Search Dropdown */
-.search-wrapper {
-    position: relative;
-.live-search-dropdown::-webkit-scrollbar {
-    width: 6px;
-}
-.live-search-dropdown::-webkit-scrollbar-track {
-    background: transparent;
 }
 .live-search-dropdown::-webkit-scrollbar-thumb {
     background: rgba(124, 58, 237, 0.3);
