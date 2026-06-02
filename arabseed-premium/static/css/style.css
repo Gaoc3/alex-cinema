@@ -2831,6 +2831,11 @@ body {
     border-radius: 0 !important;
 }
 
+/* Add margin to settings gear everywhere to prevent touching volume */
+.plyr__menu {
+    margin: 0 10px !important;
+}
+
 /* 2. Fix progress bar layout and shape of elements */
 .plyr__progress__container {
     display: flex !important;
@@ -2895,6 +2900,9 @@ body {
     }
     .plyr__volume {
         max-width: 70px !important;
+    }
+    .plyr__menu {
+        margin: 0 10px !important;
     }
 }
 

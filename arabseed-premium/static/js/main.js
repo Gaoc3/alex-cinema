@@ -1389,7 +1389,7 @@ function loadPlayerSource(server, startTime = 0, autoplay = true) {
                 enableWorker: true,
                 lowLatencyMode: true, // Enable low latency for fast seek response!
                 progressive: true,
-                capLevelToPlayerSize: true,
+                capLevelToPlayerSize: false, // DO NOT cap quality on mobile! Allow true 1080p always.
                 startLevel: -1,
                 abrBandWidthFactor: 0.85,
                 abrBandWidthUpFactor: 0.7,
