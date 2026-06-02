@@ -717,8 +717,13 @@ body {
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     position: relative;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    
+    /* Anti-aliasing and corner bleeding fixes */
     transform: translateZ(0);
-    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    backface-visibility: hidden;
+    outline: 1px solid transparent;
+    clip-path: inset(0 round 16px);
+    -webkit-clip-path: inset(0 round 16px);
 }
 .movie-card:hover {
     transform: translateY(-8px) scale(1.02);
@@ -906,8 +911,13 @@ body {
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     position: relative;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    
+    /* Anti-aliasing and corner bleeding fixes */
     transform: translateZ(0);
-    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    backface-visibility: hidden;
+    outline: 1px solid transparent;
+    clip-path: inset(0 round 16px);
+    -webkit-clip-path: inset(0 round 16px);
 }
 .movie-card:hover {
     transform: translateY(-8px) scale(1.02);
