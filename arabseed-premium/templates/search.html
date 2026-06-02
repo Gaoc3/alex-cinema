@@ -34,6 +34,6 @@
 
 <!-- Data for JS -->
 <script>
-    window.SEARCH_QUERY = "{{ request.args.get('q', '') | safe }}";
+    window.SEARCH_QUERY = {{ request.args.get('q', '') | tojson }};
 </script>
 {% endblock %}
