@@ -719,11 +719,11 @@ body {
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     
     /* Anti-aliasing and corner bleeding fixes */
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    outline: 1px solid transparent;
-    clip-path: inset(0 round 16px);
-    -webkit-clip-path: inset(0 round 16px);
+    
+    
+    
+    
+    -webkit-
 }
 .movie-card::after {
     content: '';
@@ -735,7 +735,7 @@ body {
     z-index: 10;
 }
 .movie-card:hover {
-    transform: translateY(-8px) scale(1.02) translateZ(0);
+    transform: translateY(-8px);
     box-shadow: 0 20px 40px rgba(124, 58, 237, 0.25);
 }
 .movie-card:hover .poster-overlay {
@@ -2450,9 +2450,9 @@ body {
     border-radius: 28px;
     overflow: hidden;
     /* Flawless sub-pixel anti-aliasing clip hacks for GPU composited scaling */
-    -webkit-mask-image: -webkit-linear-gradient(white, white);
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
     mask-image: linear-gradient(white, white);
-    transform: translateZ(0);
+    
     box-shadow: 0 25px 75px rgba(0, 0, 0, 0.75), 
                 0 0 50px rgba(124, 58, 237, 0.15); /* Completely borderless for seamless edges */
     background: transparent;
