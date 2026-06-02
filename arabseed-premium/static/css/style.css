@@ -2567,6 +2567,8 @@ body {
     justify-content: center;
     letter-spacing: -0.5px;
     line-height: 1.2;
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
 }
 
 .imdb-score {
@@ -2582,6 +2584,8 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-left: none; /* seamlessly connects to imdb brand */
     line-height: 1.2;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
 }
 
 .star-icon {
