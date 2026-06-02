@@ -198,8 +198,8 @@ body {
 .live-search-dropdown {
     position: absolute;
     top: calc(100% + 15px);
-    right: 0;
-    left: auto;
+    left: 0;
+    right: auto;
     width: 380px;
     max-width: 90vw;
     background: rgba(18, 20, 28, 0.97);
@@ -422,8 +422,8 @@ body {
     .live-search-dropdown {
     position: absolute;
     top: calc(100% + 15px);
-    right: 0;
-    left: auto;
+    left: 0;
+    right: auto;
     width: 380px;
     max-width: 90vw;
     background: rgba(18, 20, 28, 0.97);
@@ -2383,8 +2383,8 @@ body {
 .nav-search-wrapper .live-search-dropdown {
     position: absolute;
     top: calc(100% + 15px);
-    right: 0;
-    left: auto;
+    left: 0;
+    right: auto;
     width: 380px;
     max-width: 90vw;
     background: rgba(18, 20, 28, 0.97);
