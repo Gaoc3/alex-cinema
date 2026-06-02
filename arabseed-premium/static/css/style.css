@@ -2759,3 +2759,24 @@ body {
 
 
 
+
+/* Miniature IMDb Badge strictly for Banner Cards */
+.card-top-badges .imdb-brand {
+    font-size: 0.6rem !important;
+    padding: 1px 4px !important;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+.card-top-badges .imdb-score {
+    font-size: 0.6rem !important;
+    padding: 1px 4px !important;
+    gap: 3px !important;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+.card-top-badges .star-icon {
+    font-size: 0.5rem !important;
+}
+.card-top-badges .imdb-rating-badge {
+    border-radius: 4px !important;
+}
