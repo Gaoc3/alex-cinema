@@ -1371,6 +1371,8 @@ body {
     max-height: 250px;
     overflow-y: auto;
     padding-right: 6px;
+    padding-top: 6px;
+    padding-bottom: 6px;
 }
 
 /* Beautiful Interactive Episode Cards */
