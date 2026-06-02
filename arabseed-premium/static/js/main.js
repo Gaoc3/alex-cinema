@@ -709,20 +709,22 @@ function renderCarousels(categories) {
                 <div class="movie-card" onclick="window.openDetailsModalByData(${idx}, ${cardIdx})">
                     <div class="card-poster">
                         <img src="${posterUrl}" alt="${item.title}" class="card-poster-img" onerror="this.src='${SVG_POSTER_PLACEHOLDER}'" referrerpolicy="no-referrer">
+                        
+                        <div class="card-top-badges">
+                            <span class="card-quality-badge">${item.quality || '1080p'}</span>
+                            <div class="imdb-rating-badge" dir="ltr">
+                                <span class="imdb-brand">IMDb</span>
+                                <span class="imdb-score"><i class="fa-solid fa-star star-icon"></i> ${rating}</span>
+                            </div>
+                        </div>
+
                         <div class="poster-overlay">
                             <div class="play-hover-btn"><i class="fa-solid fa-play"></i></div>
                         </div>
-                        <div class="imdb-rating-badge" dir="ltr">
-                            <span class="imdb-brand">IMDb</span>
-                            <span class="imdb-score"><i class="fa-solid fa-star star-icon"></i> ${rating}</span>
-                        </div>
-                        <span class="card-quality-badge">${item.quality || '1080p'}</span>
-                    </div>
-                    <div class="card-body">
-                        <h3 class="card-title">${item.title}</h3>
-                        <div class="card-footer">
+
+                        <div class="card-bottom-content">
                             <span class="card-type"><i class="${getTypeIconClass(item.type)}"></i> ${item.type || 'فيلم'}</span>
-                            <span class="card-action-hint">بث آمن</span>
+                            <h3 class="card-title">${item.title}</h3>
                         </div>
                     </div>
                 </div>
@@ -778,9 +780,9 @@ function renderCards(results) {
                 <div class="poster-overlay">
                     <div class="play-hover-btn"><i class="fa-solid fa-play"></i></div>
                 </div>
-                <div class="card-footer">
-                    <span class="card-type"><i class="${getTypeIconClass(item.type)}"></i> ${item.type || 'عرض'}</span>
-                    <span class="card-action-hint">بث آمن</span>
+                <div class="card-bottom-content">
+                    <span class="card-type"><i class="${getTypeIconClass(item.type)}"></i> ${item.type || 'فيلم'}</span>
+                    <h3 class="card-title">${item.title}</h3>
                 </div>
             </div>
         `;
