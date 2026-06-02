@@ -92,21 +92,24 @@ body {
     background: radial-gradient(circle, var(--accent-blue) 0%, rgba(0,0,0,0) 70%);
 }
 
-/* Navigation Navbar */
-.navbar {
+/* Navigation Island Navbar */
+.navbar-island {
     position: sticky;
-    top: 0;
-    z-index: 100;
-    background: linear-gradient(180deg, rgba(16, 14, 32, 0.85), rgba(16, 14, 32, 0.55));
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border-light);
-    padding: 15px 0;
+    top: 20px;
+    z-index: 1000;
+    margin: 0 20px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.nav-container {
-    max-width: 1400px;
+
+.island-container {
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 0 25px;
+    background: rgba(16, 14, 32, 0.7);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 100px;
+    padding: 10px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
