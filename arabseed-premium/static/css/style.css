@@ -1,4 +1,4 @@
-﻿/* AleX CINEMA Premium Dark & Cyberpunk Stylesheet */
+/* AleX CINEMA Premium Dark & Cyberpunk Stylesheet */
 
 :root {
     /* Color Palette */
@@ -310,7 +310,7 @@ body {
         z-index: 2000;
         transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .nav-island-links.active {
+    .nav-island-links.nav-active {
         right: 0;
     }
     .island-links-wrapper {
