@@ -1318,6 +1318,9 @@ function closeDetailsModal() {
 
 // LocalStorage key helper
 function getProgressKey(url) {
+    if (state.activePlayerTitle) {
+        return `alex_cinema_progress_${encodeURIComponent(state.activePlayerTitle.trim())}`;
+    }
     return `alex_cinema_progress_${url}`;
 }
 
@@ -1872,6 +1875,7 @@ function launchPlayer(server, title) {
     }
 
     elements.playerTitleDisplay.innerText = title;
+    state.activePlayerTitle = title; // Used for consistent progress tracking
     elements.playerRenderArea.innerHTML = '';
     
     // Hide overlays initially
