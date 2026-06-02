@@ -970,21 +970,8 @@ function renderGroupedSeasons(seasons) {
             state.currentEpisodes = season.episodes;
             renderEpisodes(season.episodes, season.title);
             elements.modalEpisodesSection.style.display = 'block';
-            
-            // Autoplay first episode of this season
-            const firstEp = season.episodes[0];
-            if (firstEp) {
-                highlightActiveEpisode(firstEp.url);
-                const displayTitle = `${state.selectedItem.title} - ${season.title} - ${firstEp.title}`;
-                fetchStreamingServers(
-                    firstEp.url, 
-                    displayTitle, 
-                    state.selectedItem.title, 
-                    true, 
-                    season.title, 
-                    firstEp.title
-                );
-            }
+            // Removed autoplay logic to eliminate artificial delay!
+            // User can now click the episode they want manually.
         };
         
         elements.modalSeasonsGrid.appendChild(btn);
