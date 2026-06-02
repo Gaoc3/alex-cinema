@@ -840,6 +840,26 @@ body {
     -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 2px 8px rgba(124, 58, 237, 0.3));
 }
+.plyr__progress__container {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+}
+
+/* Fix mobile landscape flickering during buffering */
+.plyr--loading .plyr__progress__buffer {
+    animation: none !important;
+    background-image: none !important;
+}
+
+/* Force hardware acceleration to prevent repaint glitches on backdrop-filters */
+.plyr--loading .plyr__progress__buffer,
+.plyr__progress__buffer,
+.plyr__progress__loading {
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+    transform: translateZ(0) !important;
+}
 .category-slider-container {
     position: relative;
     display: flex;
