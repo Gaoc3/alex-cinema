@@ -2168,8 +2168,9 @@ function launchPlayer(server, title) {
     state.clickTimer = null;
     // Ensure YouTube Seek Overlays exist in DOM
     const ensureSeekOverlays = () => {
-        if (!document.getElementById('yt-seek-left-overlay')) {
-            elements.playerRenderArea.insertAdjacentHTML('beforeend', `
+        const plyrContainer = elements.playerRenderArea.querySelector('.plyr');
+        if (plyrContainer && !document.getElementById('yt-seek-left-overlay')) {
+            plyrContainer.insertAdjacentHTML('beforeend', `
                 <div id="yt-seek-left-overlay" class="yt-seek-overlay yt-seek-left">
                     <div class="yt-seek-ripple"></div>
                     <div class="yt-seek-content">
