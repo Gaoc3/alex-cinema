@@ -224,6 +224,7 @@
             align-items: center;
             text-align: center;
             width: 100%;
+            gap: 25px; /* Reduce massive 60px gap on mobile */
         }
         .hero-poster-col {
             order: -1;
@@ -239,12 +240,15 @@
             border-top: 4px solid var(--accent-primary);
             text-align: center;
             border-radius: 16px;
+            word-break: break-word;
         }
         .hero-badges-row {
             justify-content: center;
         }
         .hero-play-btn {
             align-self: center;
+            padding: 12px 20px;
+            font-size: 1rem;
         }
         .hero-title {
             font-size: 2rem !important; /* Fix title size on mobile */
