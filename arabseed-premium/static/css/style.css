@@ -2690,9 +2690,9 @@ body {
 
 /* Custom IMDb Split Pill Badge */
 .imdb-rating-badge, .rating-badge {
-    position: absolute;
-    top: 8px;
-    right: 8px;
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
@@ -2755,4 +2755,5 @@ body {
 .card-rating-badge {
     display: none !important;
 }
+
 
