@@ -2501,21 +2501,6 @@ body {
 .plyr.hide-controls-force .plyr__controls {
     opacity: 0 !important;
     visibility: hidden !important;
-    pointer-events: none !important;
-    transform: translateY(100%) !important;
-    transition: none !important;
-}
-
-/* Hide progress bar and perfectly center the remaining buttons in portrait mode */
-@media screen and (orientation: portrait) {
-    .plyr__progress, .plyr__time {
-        display: none !important;
-    }
-    .plyr__controls {
-        justify-content: center !important;
-        gap: 25px !important;
-    }
-    .plyr__controls > * {
         margin-left: 0 !important;
         margin-right: 0 !important;
     }
