@@ -840,27 +840,6 @@ body {
     -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 2px 8px rgba(124, 58, 237, 0.3));
 }
-.plyr__progress__container {
-    flex: 1 1 auto;
-    display: flex;
-    align-items: center;
-}
-
-/* Fix mobile landscape flickering during buffering */
-.plyr--loading .plyr__progress__buffer {
-    animation: none !important;
-    background-image: none !important;
-}
-
-/* Force hardware acceleration to prevent repaint glitches on backdrop-filters */
-.plyr--loading .plyr__progress__buffer,
-.plyr__progress__buffer,
-.plyr__progress__loading,
-.plyr__time {
-    -webkit-backface-visibility: hidden !important;
-    backface-visibility: hidden !important;
-    transform: translateZ(0) !important;
-}
 .category-slider-container {
     position: relative;
     display: flex;
@@ -1808,20 +1787,11 @@ body {
 /* Glassmorphic Plyr Control Bar Override */
 .plyr__controls {
     background: linear-gradient(180deg, rgba(8, 6, 18, 0) 0%, rgba(8, 6, 18, 0.88) 100%) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    transform: translateZ(0); /* Fix for hardware acceleration */
-    will-change: transform;
+    backdrop-filter: blur(10px) !webkit-backdrop-filter: blur(10px);
     border: none !important;
     border-top: none !important;
     padding: 15px 20px 20px 20px !important;
     box-shadow: none !important;
-}
-
-.plyr__progress__loading {
-    display: none !important;
-    background: transparent !important;
-    animation: none !important;
 }
 
 .plyr__controls::before,
