@@ -2280,21 +2280,6 @@ function launchPlayer(server, title) {
             const videoEl = elements.playerRenderArea.querySelector('video');
             
             if (videoEl && !hasToggledZoom) {
-                // Calculate precise zoom scale to simulate object-fit: cover
-                if (videoEl.videoWidth && videoEl.videoHeight) {
-                    const videoAspect = videoEl.videoWidth / videoEl.videoHeight;
-                    const rectAspect = rect.width / rect.height;
-                    let zoomScale = 1;
-                    if (rectAspect > videoAspect) {
-                        zoomScale = rectAspect / videoAspect;
-                    } else {
-                        zoomScale = videoAspect / rectAspect;
-                    }
-                    videoEl.style.setProperty('--zoom-scale', zoomScale);
-                } else {
-                    videoEl.style.setProperty('--zoom-scale', 1.35); // fallback
-                }
-
                 // Threshold of 60px distance change to toggle zoom safely
                 if (pinchDiff > 60) { // Pinch Out (Zoom to fill)
                     if (!videoEl.classList.contains('video-zoomed')) {
@@ -2329,8 +2314,8 @@ function launchPlayer(server, title) {
         if (isSwiping) {
             if (e.cancelable) e.preventDefault(); // Prevent page scroll while swiping
             
-            const deltaPercent = diffY / rect.height;
             if (touchSide === 'right') {
+                const deltaPercent = diffY / rect.height;
                 // Adjust Volume
                 const newVolume = Math.min(1, Math.max(0, startVolume + deltaPercent * 1.2));
                 state.activePlayer.volume = newVolume;
@@ -2341,18 +2326,8 @@ function launchPlayer(server, title) {
                 else if (volPercent < 40) icon = 'fa-solid fa-volume-low';
                 
                 showCenterIndicator(icon, false, `${volPercent}%`);
-            } else {
-                // Adjust Brightness
-                const newBrightness = Math.min(3, Math.max(0.1, startBrightness + deltaPercent * 1.5));
-                state.currentBrightness = newBrightness;
-                
-                const videoEl = elements.playerRenderArea.querySelector('video');
-                if (videoEl) {
-                    videoEl.style.filter = `brightness(${newBrightness})`;
-                }
-                
-                showCenterIndicator('fa-solid fa-sun', false, `${Math.round(newBrightness * 100)}%`);
             }
+            // Brightness swipe disabled per user request
         }
     };
 
