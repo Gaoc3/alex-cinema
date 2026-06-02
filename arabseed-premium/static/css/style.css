@@ -2821,3 +2821,49 @@ body {
         grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     }
 }
+
+/* ====================================================
+   Desktop Fullscreen & Core Fixes (Progress, Blur, Flickering)
+   ==================================================== */
+
+/* 1. Restore blur and shape on controls */
+.plyr__controls {
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border-bottom-left-radius: 16px !important;
+    border-bottom-right-radius: 16px !important;
+}
+/* Remove border radius in fullscreen to stick nicely to edges */
+.plyr--fullscreen-active .plyr__controls {
+    border-radius: 0 !important;
+}
+
+/* 2. Fix progress bar layout and shape of elements */
+.plyr__progress__container {
+    display: flex !important;
+    flex: 1 !important;
+    align-items: center !important;
+}
+.plyr__progress {
+    display: flex !important;
+    flex: 1 !important;
+    align-items: center !important;
+    margin: 0 10px !important;
+}
+.plyr__progress input[type="range"] {
+    border-radius: 10px !important;
+    height: 6px !important;
+}
+
+/* 3. Fix Flickering during loading */
+.loader-pulse-icon {
+    background: none !important;
+    -webkit-text-fill-color: var(--accent-violet) !important;
+    color: var(--accent-violet) !important;
+    text-shadow: 0 0 15px rgba(124, 58, 237, 0.6) !important;
+}
+.player-custom-loader {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
