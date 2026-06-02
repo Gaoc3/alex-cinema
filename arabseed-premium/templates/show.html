@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}AleX CINEMA - تفاصيل العرض{% endblock %}
+{% block page_id %}show{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Convert modal styles to full page styles */
+    .show-page-container {
+        padding: 40px;
+        max-width: 1400px;
+        margin: 0 auto;
+        animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .back-btn {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-family: 'Cairo', sans-serif;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+    .back-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateX(5px);
+    }
+    
+    .show-card {
+        background: rgba(15, 17, 26, 0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 24px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        width: 100%;
+    }
+    
+    /* Reuse modal layout classes but adapted for page */
+    .modal-body-layout {
+        padding: 40px;
+    }
+    
+    .modal-backdrop-blur {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        opacity: 0.15;
+        background-size: cover;
+        background-position: center;
+        filter: blur(40px) saturate(150%);
+    }
+    
+    /* Ensure the poster wrapper looks good in full page */
+    .modal-poster-wrapper {
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    
+    .page-loader {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+    }
+    
+    @media (max-width: 600px) {
+        .show-page-container {
+            padding: 10px;
+        }
+        .show-card {
+            border-radius: 16px;
+        }
+        .modal-body-layout {
+            padding: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-loader" id="show-page-loader">
+    <div class="cyber-spinner"></div>
+    <p class="loading-text" style="margin-top: 20px; font-size: 1.2rem;">جاري تحميل التفاصيل الفاخرة...</p>
+</div>
+
+<div class="show-page-container" id="details-modal" style="display: none;">
+    <a href="/" class="back-btn"><i class="fa-solid fa-arrow-right"></i> عودة للرئيسية</a>
+    <div class="show-card" id="details-modal-card">
+        <div class="modal-backdrop-blur" id="modal-backdrop-blur"></div>
+        
+        <div class="modal-body-layout">
+            <!-- Top Section: Media + Info side-by-side -->
+            <div class="modal-top-layout">
+                <!-- Left: Media Column -->
+                <div class="modal-media-col">
+                    <div class="modal-media-viewport">
+                        <div class="modal-poster-wrapper" id="modal-poster-wrapper">
+                            <div class="poster-blur-bg" id="modal-poster-blur-bg"></div>
+                            <img src="" alt="Poster" class="modal-poster-img" id="modal-poster" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'450\' viewBox=\'0 0 300 450\'><rect width=\'100%\' height=\'100%\' fill=\'%2314171c\'/><g transform=\'translate(100, 160)\'><circle cx=\'50\' cy=\'50\' r=\'40\' fill=\'%23e50914\' opacity=\'0.15\'/><path d=\'M10 20 L90 20 L80 90 L20 90 Z\' fill=\'%23e50914\' opacity=\'0.6\'/><rect x=\'15\' y=\'30\' width=\'70\' height=\'50\' rx=\'4\' fill=\'%23ef4444\' opacity=\'0.8\'/><polygon points=\'45,45 65,55 45,65\' fill=\'%23ffffff\'/><circle cx=\'50\' cy=\'110\' r=\'8\' fill=\'%2310b981\'/><circle cx=\'20\' cy=\'110\' r=\'6\' fill=\'%23f59e0b\'/><circle cx=\'80\' cy=\'110\' r=\'6\' fill=\'%23f43f5e\'/></g><text x=\'50%\' y=\'360\' font-family=\'Cairo, sans-serif\' font-weight=\'700\' font-size=\'16\' fill=\'%239ca3af\' text-anchor=\'middle\'>لا يتوفر بوستر</text></svg>';" referrerpolicy="no-referrer">
+                        </div>
+                    </div>
+                    
+                    <!-- Badges -->
+                    <div class="modal-meta-badges">
+                        <span class="meta-badge rating-badge" id="modal-rating"><i class="fa-solid fa-star"></i> ...</span>
+                        <span class="meta-badge quality-badge" id="modal-quality">1080p FHD</span>
+                        <span class="meta-badge type-badge" id="modal-type">...</span>
+                    </div>
+                </div>
+                
+                <!-- Right: Info Column -->
+                <div class="modal-info-col">
+                    <h2 class="modal-title" id="modal-title-text" style="font-size: 2.5rem; margin-bottom: 20px;">...</h2>
+                    <div class="modal-divider"></div>
+                    
+                    <h4 class="info-label"><i class="fa-solid fa-quote-right"></i> القصة والتفاصيل:</h4>
+                    <p class="modal-story" id="modal-story-text" style="font-size: 1.1rem; line-height: 1.8;">...</p>
+                    
+                    <!-- Quick Play Button for Movies -->
+                    <button class="quick-play-btn" id="modal-quick-play-btn" style="display: none; margin-top: 30px; font-size: 1.2rem; padding: 15px 30px;">
+                        <i class="fa-solid fa-play"></i> مشاهدة الآن (بأعلى جودة)
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Bottom Section: Seasons / Episodes -->
+            <div class="modal-bottom-layout" style="margin-top: 40px;">
+                <!-- Seasons Section -->
+                <div class="seasons-wrapper" id="modal-seasons-section" style="display: none;">
+                    <h4 class="info-label"><i class="fa-solid fa-folder-open"></i> المواسم المتوفرة:</h4>
+                    <div class="seasons-grid" id="modal-seasons-grid"></div>
+                </div>
+                
+                <!-- Episodes Section -->
+                <div class="episodes-wrapper" id="modal-episodes-section" style="display: none; margin-top: 30px;">
+                    <h4 class="info-label"><i class="fa-solid fa-list-ol"></i> حلقات الموسم المتوفرة:</h4>
+                    <div class="episodes-search-box">
+                        <i class="fa-solid fa-magnifying-glass filter-icon"></i>
+                        <input type="text" id="episode-filter-input" placeholder="تصفية الحلقات بالرقم أو الكلمة...">
+                    </div>
+                    <div class="episodes-grid" id="modal-episodes-grid"></div>
+                </div>
+                
+                <!-- Servers Section (Hidden natively since it's now handled by the Watch page mostly, but needed for JS) -->
+                <div class="servers-wrapper" id="modal-servers-section" style="display: none; margin-top: 30px;">
+                    <h4 class="info-label"><i class="fa-solid fa-server"></i> سيرفرات البث:</h4>
+                    <div class="servers-list" id="modal-servers-list"></div>
+                    <div class="loader-container" id="servers-loading-spinner" style="display: none; margin-top: 20px;">
+                        <div class="cyber-spinner"></div>
+                        <p class="loading-text" style="font-size: 0.9rem;">جاري جلب تفاصيل العرض الفاخرة...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.SHOW_URL = "{{ request.args.get('url', '') | safe }}";
+    window.SHOW_POSTER = "{{ request.args.get('poster', '') | safe }}";
+    window.SHOW_TITLE = "{{ request.args.get('title', 'جاري التحميل...') | safe }}";
+    window.SHOW_RATING = "{{ request.args.get('rating', '7.8') | safe }}";
+    window.SHOW_QUALITY = "{{ request.args.get('quality', '1080p FHD') | safe }}";
+    window.SHOW_TYPE = "{{ request.args.get('type', 'عرض سينمائي') | safe }}";
+    
+    // Hide initial page loader when DOM is ready and modal is shown
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('show-page-loader').style.display = 'none';
+    });
+</script>
+{% endblock %}

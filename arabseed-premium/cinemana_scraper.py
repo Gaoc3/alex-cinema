@@ -136,6 +136,12 @@ class CinemanaAPI:
         except Exception as e:
             print(f"Error scraping homepage categories: {e}")
             return []
+    def get_hero_slides(self) -> List[Dict[str, Any]]:
+        """
+        Returns empty list as Cinemana doesn't have hero slides.
+        """
+        return []
+
 
     def search(self, query: str, max_pages: int = 1) -> List[Dict[str, Any]]:
         """
@@ -328,6 +334,48 @@ class CinemanaAPI:
                 "is_series": False,
                 "seasons": []
             }
+
+    def get_video_streams(self, watch_url: str) -> List[Dict[str, str]]:
+        """
+        Extracts stream URLs (m3u8) for a Cinemana watch URL.
+        """
+        streams = []
+        try:
+            m = re.search(r'watch=(\d+)', watch_url)
+            if not m:
+                return []
+            post_id = m.group(1)
+            
+            headers = self.headers.copy()
+            headers["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8"
+            
+            data = {"post_id": post_id, "server": "0", "action": "Server"}
+            ajax_url = f"{self.base_url}/wp-content/themes/EEE/Inc/Ajax/Single/Server.php"
+            
+            r = self.session.post(ajax_url, data=data, headers=headers, timeout=10)
+            if r.status_code == 200:
+                # Find all m3u8 links
+                m3u8_links = re.findall(r'(https?://[^\s"\'<>]+?m3u8)', r.text)
+                
+                # Cinemana returns 1080p, 720p, 360p usually in that order
+                qualities = ["1080p", "720p", "360p", "240p"]
+                for i, link in enumerate(m3u8_links):
+                    # Try to infer quality from url
+                    quality = "Auto"
+                    if "1080" in link: quality = "1080p"
+                    elif "720" in link: quality = "720p"
+                    elif "360" in link: quality = "360p"
+                    elif "240" in link: quality = "240p"
+                    elif i < len(qualities): quality = qualities[i]
+                    
+                    streams.append({
+                        "quality": quality,
+                        "url": link
+                    })
+            return streams
+        except Exception as e:
+            print(f"Error getting streams for {watch_url}: {e}")
+            return []
 
 if __name__ == '__main__':
     # Simple CLI Test

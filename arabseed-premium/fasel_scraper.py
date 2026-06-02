@@ -49,26 +49,14 @@ class FaselAPI:
     
     def __init__(self, base_url: str = "https://www.fasel-hd.cam"):
         self.base_url = base_url.rstrip('/')
-        self.session = requests.Session()
+        self.session = requests.Session(impersonate="chrome120")
         self.redirect_cache = {}
         self.redirect_cache_lock = threading.Lock()
+        self.request_lock = threading.Lock() # Lock for thread-safe curl_cffi session usage
         
-        # State-of-the-art modern browser headers to bypass Cloudflare protection
         self.headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "Accept-Language": "ar,en-US;q=0.9,en;q=0.8",
-            "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-            "Sec-Ch-Ua-Mobile": "?0",
-            "Sec-Ch-Ua-Platform": '"Windows"',
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "same-origin",
-            "Sec-Fetch-User": "?1",
-            "Upgrade-Insecure-Requests": "1",
             "Referer": self.base_url + "/"
         }
-        self.session.headers.update(self.headers)
 
     def check_and_update_mirror(self, url: str):
         """Self-healing helper: extracts and migrates internal base_url if a newer mirror domain is detected."""
@@ -100,7 +88,9 @@ class FaselAPI:
         for i in range(3):
             try:
                 # Impersonate modern Chrome 120 client TLS fingerprinter
-                r = self.session.get(url, headers=headers, params=params, timeout=timeout, impersonate="chrome120")
+                # curl_cffi session is not thread-safe, so we must lock it!
+                with self.request_lock:
+                    r = self.session.get(url, headers=headers, params=params, timeout=timeout, impersonate="chrome120")
                 if r.status_code == 200:
                     return r
                 elif r.status_code in [403, 429]:
@@ -111,7 +101,8 @@ class FaselAPI:
                 time.sleep(2.0 * (i + 1))
                 
         # Final request attempt (fallback)
-        return self.session.get(url, headers=headers, params=params, timeout=timeout, impersonate="chrome120")
+        with self.request_lock:
+            return self.session.get(url, headers=headers, params=params, timeout=timeout, impersonate="chrome120")
 
     def parse_card(self, div) -> Dict[str, str]:
         """
@@ -385,7 +376,8 @@ class FaselAPI:
             success = False
             for i in range(3): # retries for WAF
                 try:
-                    r = self.session.get(normalize_url(current_url), headers=headers, allow_redirects=False, impersonate="chrome120")
+                    with self.request_lock:
+                        r = self.session.get(normalize_url(current_url), headers=headers, allow_redirects=False, impersonate="chrome120")
                     if r.status_code in [301, 302, 307, 308] and 'Location' in r.headers:
                         next_url = r.headers['Location']
                         if next_url.startswith('/'):
@@ -466,60 +458,62 @@ class FaselAPI:
                         elif not s_url.startswith('http'):
                             s_url = self.base_url + '/' + s_url
                             
-                    is_active = 'active' in s_div.get('class', [])
+                    is_active = 'active' in s_div.get('class', []) or not s_url
                     
                     seasons_to_fetch.append({
                         "title": s_title,
-                        "url": s_url,
+                        "url": s_url if s_url else active_url,
                         "active": is_active
                     })
                     
-                # A. Resolve raw URLs sequentially with a 250ms spacing sleep to prevent Cloudflare WAF rate triggers
+                # A. Resolve raw URLs ONLY for the active season to prevent Cloudflare WAF rate triggers
                 for s_data in seasons_to_fetch:
-                    time.sleep(0.25)
-                    s_data['clean_url'] = self.resolve_clean_url(s_data['url'])
+                    if s_data.get('active'):
+                        s_data['clean_url'] = self.resolve_clean_url(s_data['url'])
+                    else:
+                        s_data['clean_url'] = ""
                     
-                # B. Parallel loading helper for season episodes (direct requests to clean URLs)
-                def fetch_season_episodes(season_data):
+                # B. Helper for season episodes
+                def fetch_season_episodes(season_data, main_soup):
                     eps = []
-                    url_to_fetch = season_data.get('clean_url') or season_data['url']
-                    try:
-                        r_season = self.get_with_retry(url_to_fetch, timeout=10)
-                        if r_season.status_code == 200:
-                            s_soup = BeautifulSoup(r_season.text, 'html.parser')
-                            ep_all = s_soup.find(class_="epAll")
-                            if ep_all:
-                                ep_links = ep_all.find_all('a', href=True)
-                                for a in ep_links:
-                                    ep_href = a['href']
-                                    if ep_href.startswith('/'):
-                                        ep_href = self.base_url + ep_href
-                                    elif not ep_href.startswith('http'):
-                                        ep_href = self.base_url + '/' + ep_href
-                                        
-                                    # Filter out standalone movies, films, and special presentations from the episode list
-                                    ep_href_decoded = urllib.parse.unquote(ep_href).lower()
-                                    ep_text_lower = a.get_text(strip=True).lower()
-                                    exclude_keywords = [
-                                        'special-presentation', 'special_presentation',
-                                        'movie', 'film', 'فيلم', 'فلم', 'خاصة', 'سبيشال',
-                                        'one-last-kill'
-                                    ]
-                                    if any(k in ep_href_decoded or k in ep_text_lower for k in exclude_keywords):
-                                        print(f"🚫 Filtering out movie/special presentation from episode list: {ep_href}")
-                                        continue
-                                        
-                                    ep_title = a.get_text(strip=True)
-                                    # Active episode detection
-                                    is_active_ep = ep_href.rstrip('/') == active_url.rstrip('/')
-                                    
-                                    eps.append({
-                                        "title": ep_title,
-                                        "url": ep_href,
-                                        "active": is_active_ep
-                                    })
-                    except Exception as s_err:
-                        print(f"Error fetching episodes for season {season_data['title']}: {s_err}")
+                    
+                    # If this is the active season, we ALREADY have the episodes in the main_soup!
+                    if season_data.get('active'):
+                        ep_all = main_soup.find(class_="epAll")
+                    else:
+                        # DO NOT eagerly fetch episodes for inactive seasons!
+                        # The frontend will fetch them dynamically when the user clicks the season.
+                        season_data["episodes"] = []
+                        return season_data
+
+                    if ep_all:
+                        ep_links = ep_all.find_all('a', href=True)
+                        for a in ep_links:
+                            ep_href = a['href']
+                            if ep_href.startswith('/'):
+                                ep_href = self.base_url + ep_href
+                            elif not ep_href.startswith('http'):
+                                ep_href = self.base_url + '/' + ep_href
+                                
+                            # Filter out standalone movies, films, and special presentations
+                            ep_href_decoded = urllib.parse.unquote(ep_href).lower()
+                            ep_text_lower = a.get_text(strip=True).lower()
+                            exclude_keywords = [
+                                'special-presentation', 'special_presentation',
+                                'movie', 'film', 'فيلم', 'فلم', 'خاصة', 'سبيشال',
+                                'one-last-kill'
+                            ]
+                            if any(k in ep_href_decoded or k in ep_text_lower for k in exclude_keywords):
+                                continue
+                                
+                            ep_title = a.get_text(strip=True)
+                            is_active_ep = ep_href.rstrip('/') == active_url.rstrip('/')
+                            
+                            eps.append({
+                                "title": ep_title,
+                                "url": ep_href,
+                                "active": is_active_ep
+                            })
                     
                     # Sort episodes logically (ep 1, ep 2...)
                     if eps:
@@ -531,9 +525,12 @@ class FaselAPI:
                     season_data["episodes"] = eps
                     return season_data
                 
-                # Fetch season episodes concurrently using ThreadPoolExecutor
-                with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
-                    seasons = list(executor.map(fetch_season_episodes, seasons_to_fetch))
+                # Fetch season episodes sequentially to avoid Cloudflare 429 Too Many Requests bans
+                seasons = []
+                for s_data in seasons_to_fetch:
+                    seasons.append(fetch_season_episodes(s_data, soup))
+                    if not s_data.get('active'):
+                        time.sleep(0.3) # WAF cooldown only needed if we actually made a request
             else:
                 # Direct movie or standalone episode
                 is_series = False

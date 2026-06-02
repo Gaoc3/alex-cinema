@@ -17,7 +17,7 @@ from flask import Flask, request, Response, render_template, jsonify
 # Force UTF-8 output to support Arabic characters in all terminals
 sys.stdout.reconfigure(encoding='utf-8')
 
-# Import Fasel Scraper and Subprocess
+# Import Scraper and Subprocess
 import subprocess
 import json
 from fasel_scraper import FaselAPI
@@ -28,8 +28,20 @@ app = Flask(__name__, template_folder='templates', static_folder='static')
 def index():
     return render_template('index.html')
 
+@app.route('/search')
+def search():
+    return render_template('search.html')
+
+@app.route('/show')
+def show():
+    return render_template('show.html')
+
+@app.route('/watch')
+def watch():
+    return render_template('watch.html')
+
 # Initialize Scrapers
-fasel_api = FaselAPI("https://web616x.faselhdx.bid")
+fasel_api = FaselAPI("https://web6112x.faselhdx.bid")
 
 # Arabic numbers mapping to digits for robust season/episode matching
 ARABIC_NUMBERS = {
@@ -211,7 +223,25 @@ def clean_display_title(title: str, r_type: str) -> str:
         return f"مسلسل {base_title}"
     return base_title
 
-
+def group_cards(cards: list) -> list:
+    """
+    Groups scattered series episode cards into a single unified series card.
+    Prevents the UI from displaying multiple episodes of the same series.
+    """
+    grouped = {}
+    result = []
+    for card in cards:
+        if card.get('type') == 'مسلسل':
+            base_title = clean_display_title(card.get('title', ''), 'مسلسل')
+            if base_title not in grouped:
+                # Keep the first episode seen as the main card but update its title
+                card_copy = card.copy()
+                card_copy['title'] = base_title
+                grouped[base_title] = card_copy
+                result.append(card_copy)
+        else:
+            result.append(card)
+    return result
 
 def resolve_fasel_stream(url: str) -> list:
     """
@@ -270,12 +300,12 @@ def resolve_fasel_stream(url: str) -> list:
                 })
             return servers
         else:
-            print(f"Node deobfuscator process failed (code {p.returncode}): {stderr}")
+            print(f"Deobfuscator failed: {stderr}")
             return []
+            
     except Exception as e:
-        print(f"Error resolving direct FaselHD stream: {e}")
-        
-    return []
+        print(f"Error resolving FaselHD stream: {e}")
+        return []
 
 
 
@@ -637,9 +667,11 @@ def api_cache_clear():
     })
 
 def prewarm_item_details_async(urls: list):
-    """Launches a background daemon thread to pre-warm details page and first-stream caches for a list of URLs."""
-    if not urls:
-        return
+    """
+    Disabled for FaselHD. Prewarming aggressively hits rate limits (Cloudflare 429)
+    and CPU spikes due to Node.js deobfuscator.
+    """
+    return
         
     def worker():
         import time
@@ -695,6 +727,13 @@ def get_home_data_fresh():
         categories = fasel_api.get_homepage_categories()
         slides = fasel_api.get_hero_slides()
         
+        # Group episodes so they are not scattered!
+        for cat in categories:
+            if 'cards' in cat:
+                cat['cards'] = group_cards(cat['cards'])
+        if slides:
+            slides = group_cards(slides)
+        
         if not slides:
             fallback = []
             seen_urls = set()
@@ -730,10 +769,16 @@ def get_home_data_fresh():
             for cat in categories:
                 register_cards(cat.get('cards', []))
             register_cards(slides)
+        else:
+            # If everything failed (e.g., 403), cache empty to prevent thundering herds
+            app_cache.set("home_data", res, ttl=30)
+            
         return res
     except Exception as e:
         print(f"Error getting fresh home data: {e}")
-        return {'categories': [], 'slides': [], 'category': 'الرئيسية'}
+        err_res = {'categories': [], 'slides': [], 'category': 'الرئيسية'}
+        app_cache.set("home_data", err_res, ttl=30)
+        return err_res
 
 def get_movies_data_fresh():
     """Fetch pages 1-3 sequentially with spacing for movies listing."""
@@ -758,10 +803,14 @@ def get_movies_data_fresh():
         if results:
             app_cache.set("movies_data", res, ttl=1200)
             register_cards(results)
+        else:
+            app_cache.set("movies_data", res, ttl=30)
         return res
     except Exception as e:
         print(f"Error getting fresh movies data: {e}")
-        return {'results': [], 'category': 'الأفلام'}
+        err_res = {'results': [], 'category': 'الأفلام'}
+        app_cache.set("movies_data", err_res, ttl=30)
+        return err_res
 
 def get_series_data_fresh():
     """Fetch pages 1-3 sequentially with spacing for series listing."""
@@ -786,10 +835,14 @@ def get_series_data_fresh():
         if results:
             app_cache.set("series_data", res, ttl=1200)
             register_cards(results)
+        else:
+            app_cache.set("series_data", res, ttl=30)
         return res
     except Exception as e:
         print(f"Error getting fresh series data: {e}")
-        return {'results': [], 'category': 'المسلسلات'}
+        err_res = {'results': [], 'category': 'المسلسلات'}
+        app_cache.set("series_data", err_res, ttl=30)
+        return err_res
 
 def get_anime_data_fresh():
     """Fetch pages 1-3 sequentially with spacing for anime listing."""
@@ -814,10 +867,14 @@ def get_anime_data_fresh():
         if results:
             app_cache.set("anime_data", res, ttl=1200)
             register_cards(results)
+        else:
+            app_cache.set("anime_data", res, ttl=30)
         return res
     except Exception as e:
         print(f"Error getting fresh anime data: {e}")
-        return {'results': [], 'category': 'عالم الأنمي'}
+        err_res = {'results': [], 'category': 'عالم الأنمي'}
+        app_cache.set("anime_data", err_res, ttl=30)
+        return err_res
 
 def warm_caching_worker():
     """Continuous daemon background cache warmer executing every 10 minutes."""
@@ -873,18 +930,7 @@ def api_home():
     if not cached_val:
         cached_val = get_home_data_fresh()
         
-    # Pre-warm top 8 home page cards in the background
-    if cached_val and cached_val.get('categories'):
-        urls = []
-        for cat in cached_val['categories']:
-            for card in cat.get('cards', []):
-                if card.get('url') and card['url'] not in urls:
-                    urls.append(card['url'])
-                if len(urls) >= 8:
-                    break
-            if len(urls) >= 8:
-                break
-        prewarm_item_details_async(urls)
+    # Pre-warming disabled to prevent Cloudflare 429 rate limits
         
     return jsonify(cached_val)
 
@@ -895,10 +941,7 @@ def api_movies():
     if not cached_val:
         cached_val = get_movies_data_fresh()
         
-    # Pre-warm top 8 movie details in the background
-    if cached_val and cached_val.get('results'):
-        urls = [r['url'] for r in cached_val['results'][:8] if r.get('url')]
-        prewarm_item_details_async(urls)
+    # Pre-warming disabled
         
     return jsonify(cached_val)
 
@@ -909,10 +952,7 @@ def api_series():
     if not cached_val:
         cached_val = get_series_data_fresh()
         
-    # Pre-warm top 8 series details in the background
-    if cached_val and cached_val.get('results'):
-        urls = [r['url'] for r in cached_val['results'][:8] if r.get('url')]
-        prewarm_item_details_async(urls)
+    # Pre-warming disabled
         
     return jsonify(cached_val)
 
@@ -923,10 +963,7 @@ def api_anime():
     if not cached_val:
         cached_val = get_anime_data_fresh()
         
-    # Pre-warm top 8 anime details in the background
-    if cached_val and cached_val.get('results'):
-        urls = [r['url'] for r in cached_val['results'][:8] if r.get('url')]
-        prewarm_item_details_async(urls)
+    # Pre-warming disabled
         
     return jsonify(cached_val)
 
@@ -939,6 +976,7 @@ def api_search():
         return jsonify({'results': [], 'count': 0})
         
     try:
+        print(f"DEBUG: /api/search called with query='{query}', live={live}")
         # Check cache first for instant hits
         cache_key = f"search_{query}"
         cached_val = app_cache.get(cache_key)
@@ -950,35 +988,48 @@ def api_search():
         if live or len(query) < 4:
             local_matches = find_local_matches(query)
             
-        # For live predictive search, ALWAYS return local matches immediately to prevent blocking and 429 WAF triggers!
+        # For live predictive search, return local matches immediately if we have them, OR if query is too short for remote search
         if live:
-            return jsonify({
-                'results': local_matches[:10],
-                'count': len(local_matches),
-                'source': 'local_index'
-            })
+            # Only return local matches early if we found more than 0 naturally, or if query is too short
+            if local_matches or len(query) < 3:
+                # Still allow injection if returning early
+                if query.lower().strip() == 'from' or query.strip() == 'فروم':
+                    from_series = {
+                        'title': 'مسلسل From',
+                        'url': f'{fasel_api.base_url}/series/%d9%85%d8%b3%d9%84%d8%b3%d9%84-from',
+                        'poster': 'https://image.tmdb.org/t/p/w500/cjZ02D2bQZ0LhE7w0Z4T7wV3jJ.jpg',
+                        'type': 'series',
+                        'rating': '7.7',
+                        'quality': '1080p FHD'
+                    }
+                    local_matches = [m for m in local_matches if 'from' not in m.get('url', '').lower()]
+                    local_matches.insert(0, from_series)
+                
+                # If we only have the injected one, and length >= 3, we should still fetch remote!
+                if len(local_matches) > 1 or len(query) < 3:
+                    return jsonify({
+                        'results': local_matches[:10],
+                        'count': len(local_matches),
+                        'source': 'local_index'
+                    })
             
-        # Otherwise, fall back to remote scraping search
+        # Fall back to remote scraping search
         results = fasel_api.search(query)
         
         # If remote search failed (e.g. 403 WAF) and returned nothing, use local index!
         if not results:
-            local_matches = find_local_matches(query)
+            print("DEBUG: Remote search failed or returned nothing. Using local matches fallback.")
             if local_matches:
                 results = local_matches
         
-        # Format or clean up titles
+        print(f"DEBUG: Found {len(results)} total results. Formatting...")
+        # Format or clean up titles and group them!
         formatted_results = []
         for r in results:
             clean_title = clean_display_title(r['title'], r['type'])
             
-            # 1. Custom Poster Override for "Game of Thrones The Movie"
-            if 'game-thrones-movie' in r['url'] or ('game of thrones' in r['title'].lower() and r['type'] == 'فيلم'):
-                r['poster'] = 'https://m.media-amazon.com/images/M/MV5BN2IzYzBiOTQtNGZmMi00NDI5LTgxMzMtN2EzZjA1NjhlOGMxXkEyXkFqcGdeQXVyNjAwNDUxODI@._V1_FMjpg_UX1000_.jpg'
-                clean_title = 'فيلم Game of Thrones: The Movie (النسخة السينمائية)'
-                
             formatted_results.append({
-                'title': clean_title,
+                'title': r['title'], # keep original title for grouping logic
                 'url': r['url'],
                 'poster': r['poster'],
                 'type': r['type'],
@@ -986,37 +1037,21 @@ def api_search():
                 'quality': r['quality']
             })
             
-        # Check if the query matches "punisher" or "بانيشر" and inject/overwrite the special movie!
-        query_lower = query.lower()
-        if 'punisher' in query_lower or 'بانيشر' in query_lower or 'punish' in query_lower:
-            special_url = "https://web616x.faselhdx.bid/episodes/%d8%ad%d9%84%d9%82%d8%a9-marvel-television-special-presentation-punisher-one-last-kill"
+        # Ensure 'From' stays on top of full search results too!
+        if query.lower().strip() == 'from' or query.strip() == 'فروم':
+            from_series = {
+                'title': 'مسلسل From',
+                'url': f'{fasel_api.base_url}/series/%d9%85%d8%b3%d9%84%d8%b3%d9%84-from',
+                'poster': 'https://image.tmdb.org/t/p/w500/cjZ02D2bQZ0LhE7w0Z4T7wV3jJ.jpg',
+                'type': 'series',
+                'rating': '7.7',
+                'quality': '1080p FHD'
+            }
+            formatted_results = [r for r in formatted_results if 'from' not in r['url'].lower()]
+            formatted_results.insert(0, from_series)
             
-            # 1. If it already exists in the results, find it and overwrite its poster and metadata to be clean and working!
-            found = False
-            for r in formatted_results:
-                if r['url'] == special_url:
-                    r['poster'] = "https://upload.wikimedia.org/wikipedia/en/a/a0/The_Punisher_One_Last_Kill_poster.jpg"
-                    r['title'] = 'فيلم The Punisher: One Last Kill (عرض خاص حصرى)'
-                    r['rating'] = '8.6'
-                    r['quality'] = 'FHD 1080p'
-                    r['type'] = 'فيلم'
-                    found = True
-                    # Move to the top (index 0) for maximum prominence
-                    formatted_results.remove(r)
-                    formatted_results.insert(0, r)
-                    break
-                    
-            # 2. If it is NOT in the results, inject it as a new card at the top
-            if not found:
-                special_card = {
-                    'title': 'فيلم The Punisher: One Last Kill (عرض خاص حصرى)',
-                    'url': special_url,
-                    'poster': "https://upload.wikimedia.org/wikipedia/en/a/a0/The_Punisher_One_Last_Kill_poster.jpg",
-                    'type': 'فيلم',
-                    'rating': '8.6',
-                    'quality': 'FHD 1080p'
-                }
-                formatted_results.insert(0, special_card)
+        # Group the scattered episodes!
+        formatted_results = group_cards(formatted_results)
                 
         # Register new results into persistent global index
         register_cards(formatted_results)
@@ -1027,10 +1062,7 @@ def api_search():
             'source': 'remote_scrape'
         }
         
-        # Trigger predictive details pre-warming on all search results in background
-        if formatted_results:
-            urls = [r['url'] for r in formatted_results if r.get('url')]
-            prewarm_item_details_async(urls)
+        # Pre-warming disabled
             
         app_cache.set(cache_key, res, ttl=300) # Cache search results for 5 minutes
         return jsonify(res)
@@ -1136,10 +1168,7 @@ def api_stream_proxy():
         
     video_url = urllib.parse.unquote(video_url)
     
-    referer = 'https://cinemana.cc/'
-    if 'cinemana.cc' not in video_url.lower():
-        referer = 'https://asd.ink/'
-        
+    referer = 'https://faselhdx.bid/'
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Referer': referer
@@ -1186,10 +1215,7 @@ def api_stream_proxy():
                                 m = re.search(r'URI=["\']([^"\']+)["\']', line_stripped)
                                 if m:
                                     key_uri = m.group(1)
-                                    if key_uri.startswith('stream.php') and 'cinemana.cc' not in video_url:
-                                        abs_key_url = "https://cinemana.cc/" + key_uri
-                                    else:
-                                        abs_key_url = urllib.parse.urljoin(video_url, key_uri)
+                                    abs_key_url = urllib.parse.urljoin(video_url, key_uri)
                                     
                                     # Proxy the decryption key through our Flask backend to completely bypass CORS blockade!
                                     proxied_key_url = f"/api/stream?url={urllib.parse.quote(abs_key_url)}"
@@ -1197,10 +1223,7 @@ def api_stream_proxy():
                             rewritten_lines.append(line_stripped)
                         else:
                             # It's a segment or sub-playlist URL
-                            if line_stripped.startswith('stream.php') and 'cinemana.cc' not in video_url:
-                                abs_segment_url = "https://cinemana.cc/" + line_stripped
-                            else:
-                                abs_segment_url = urllib.parse.urljoin(video_url, line_stripped)
+                            abs_segment_url = urllib.parse.urljoin(video_url, line_stripped)
                             
                             # Proxy ALL sub-playlists and ts segments through our Flask backend to resolve CORS blockade perfectly!
                             proxied_segment_url = f"/api/stream?url={urllib.parse.quote(abs_segment_url)}"
@@ -1259,14 +1282,9 @@ def api_stream_proxy():
 if __name__ == '__main__':
     print("=" * 65)
     print(" 🚀 AleX CINEMA - PREMIUM AD-FREE PORTAL STARTING...")
-    print(" Scrape source: web53112x.faselhdx.bid (FaselHD)")
+    print(f" Scrape source: {fasel_api.base_url.replace('https://', '')} (FaselHD)")
     print(" Running at http://127.0.0.1:5000")
     print("=" * 65)
     
-    # Start cache warming worker in a background daemon thread
-    # WERKZEUG_RUN_MAIN ensures it only runs once in the reloader sub-process
-    if not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-        warmer_thread = threading.Thread(target=warm_caching_worker, daemon=True)
-        warmer_thread.start()
-        
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Background cache warming disabled to prevent Cloudflare 429 rate limit bans
+    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)

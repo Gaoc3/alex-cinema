@@ -24,6 +24,9 @@ const SVG_POSTER_PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w
 
 // DOM Elements Cache
 const elements = {
+    mobileMenuBtn: document.getElementById('mobile-menu-btn'),
+    mobileMenuClose: document.getElementById('mobile-menu-close'),
+    navLinksMenu: document.getElementById('nav-links-menu'),
     searchForm: document.getElementById('main-search-form'),
     searchInput: document.getElementById('search-input'),
     searchSubmitBtn: document.getElementById('search-submit-btn'),
@@ -93,10 +96,30 @@ const elements = {
 // Core Event Bindings
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    elements.searchForm.addEventListener('submit', handleSearchSubmit);
-    elements.closeDetailsBtn.onclick = closeDetailsModal;
-    elements.closePlayerBtn.onclick = closePlayerModal;
-    elements.episodeFilterInput.addEventListener('input', handleEpisodeFilter);
+    if (elements.searchForm) elements.searchForm.addEventListener('submit', handleSearchSubmit);
+    if (elements.closeDetailsBtn) elements.closeDetailsBtn.onclick = closeDetailsModal;
+    if (elements.closePlayerBtn) elements.closePlayerBtn.onclick = closePlayerModal;
+    if (elements.episodeFilterInput) elements.episodeFilterInput.addEventListener('input', handleEpisodeFilter);
+    
+    // Mobile Menu Logic
+    if (elements.mobileMenuBtn && elements.navLinksMenu) {
+        elements.mobileMenuBtn.addEventListener('click', () => {
+            elements.navLinksMenu.classList.add('nav-active');
+        });
+    }
+    if (elements.mobileMenuClose && elements.navLinksMenu) {
+        elements.mobileMenuClose.addEventListener('click', () => {
+            elements.navLinksMenu.classList.remove('nav-active');
+        });
+    }
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (elements.navLinksMenu && elements.navLinksMenu.classList.contains('nav-active')) {
+            if (!elements.navLinksMenu.contains(e.target) && !elements.mobileMenuBtn.contains(e.target)) {
+                elements.navLinksMenu.classList.remove('nav-active');
+            }
+        }
+    });
     
     // Play button / Entire Poster Wrapper overlay click action
     const posterWrapper = document.getElementById('modal-poster-wrapper');
@@ -122,27 +145,29 @@ document.addEventListener('DOMContentLoaded', () => {
     window.liveSearchAbortController = null;
     window.liveSearchCache = {};
     
-    elements.searchInput.addEventListener('input', () => {
-        const query = elements.searchInput.value.trim();
-        if (liveSearchTimer) clearTimeout(liveSearchTimer);
-        if (!query || query.length < 2) {
-            elements.liveSearchDropdown.style.display = 'none';
-            // Abort any active pending search fetches immediately
-            if (window.liveSearchAbortController) {
-                window.liveSearchAbortController.abort();
+    if (elements.searchInput) {
+        elements.searchInput.addEventListener('input', () => {
+            const query = elements.searchInput.value.trim();
+            if (liveSearchTimer) clearTimeout(liveSearchTimer);
+            if (!query || query.length < 2) {
+                if (elements.liveSearchDropdown) elements.liveSearchDropdown.style.display = 'none';
+                // Abort any active pending search fetches immediately
+                if (window.liveSearchAbortController) {
+                    window.liveSearchAbortController.abort();
+                }
+                return;
             }
-            return;
-        }
-        liveSearchTimer = setTimeout(() => performLiveSearch(query), 50); // Ultra-responsive 50ms real-time debounce
-    });
-    
-    // Live Search - focus handler to restore active dropdown
-    elements.searchInput.addEventListener('focus', () => {
-        const query = elements.searchInput.value.trim();
-        if (query && query.length >= 2) {
-            elements.liveSearchDropdown.style.display = 'block';
-        }
-    });
+            liveSearchTimer = setTimeout(() => performLiveSearch(query), 750); // Increased debounce to 750ms to prevent Cloudflare 429 WAF triggers on remote scraping
+        });
+        
+        // Live Search - focus handler to restore active dropdown
+        elements.searchInput.addEventListener('focus', () => {
+            const query = elements.searchInput.value.trim();
+            if (query && query.length >= 2) {
+                if (elements.liveSearchDropdown) elements.liveSearchDropdown.style.display = 'block';
+            }
+        });
+    }
     
     // Bind search icon click event to programmatically submit search form
     const searchIcon = document.querySelector('.nav-search-icon');
@@ -156,20 +181,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // Close dropdown on clicking outside
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.nav-search-wrapper') && !e.target.closest('.search-wrapper')) {
-            elements.liveSearchDropdown.style.display = 'none';
+            if (elements.liveSearchDropdown) elements.liveSearchDropdown.style.display = 'none';
         }
     });
     
     // Navigation Action Handlers
-    elements.navHomeBtn.onclick = (e) => { e.preventDefault(); updateNavActive(elements.navHomeBtn); resetHomeUI(); };
-    elements.logoTrigger.onclick = () => { updateNavActive(elements.navHomeBtn); resetHomeUI(); };
-    elements.navMoviesBtn.onclick = (e) => { e.preventDefault(); updateNavActive(elements.navMoviesBtn); performSearch('__movies__', 'أحدث الأفلام المضافة'); };
-    elements.navSeriesBtn.onclick = (e) => { e.preventDefault(); updateNavActive(elements.navSeriesBtn); performSearch('__series__', 'أحدث المسلسلات المضافة'); };
-    elements.navAnimeBtn.onclick = (e) => { e.preventDefault(); updateNavActive(elements.navAnimeBtn); performSearch('__anime__', 'عالم الأنمي والكرتون'); };
+    const pageId = document.body.dataset.page;
+    
+    const handleNavClick = (e, btn, searchKey, searchTitle, tabName) => {
+        if (pageId === 'home') {
+            e.preventDefault();
+            updateNavActive(btn);
+            if (searchKey === '__home__') {
+                resetHomeUI();
+            } else {
+                performSearch(searchKey, searchTitle);
+            }
+        } else {
+            // If not on home page, navigate to home with the tab parameter
+            e.preventDefault();
+            window.location.href = tabName ? `/?tab=${tabName}` : '/';
+        }
+    };
+
+    if (elements.navHomeBtn) elements.navHomeBtn.onclick = (e) => handleNavClick(e, elements.navHomeBtn, '__home__', '', null);
+    if (elements.logoTrigger) elements.logoTrigger.onclick = (e) => handleNavClick(e, elements.navHomeBtn, '__home__', '', null);
+    if (elements.navMoviesBtn) elements.navMoviesBtn.onclick = (e) => handleNavClick(e, elements.navMoviesBtn, '__movies__', 'أحدث الأفلام المضافة', 'movies');
+    if (elements.navSeriesBtn) elements.navSeriesBtn.onclick = (e) => handleNavClick(e, elements.navSeriesBtn, '__series__', 'أحدث المسلسلات المضافة', 'series');
+    if (elements.navAnimeBtn) elements.navAnimeBtn.onclick = (e) => handleNavClick(e, elements.navAnimeBtn, '__anime__', 'عالم الأنمي والكرتون', 'anime');
     
     // Close modals on clicking overlay background
-    elements.detailsModal.onclick = (e) => { if (e.target === elements.detailsModal) closeDetailsModal(); };
-    elements.playerModal.onclick = (e) => { if (e.target === elements.playerModal) closePlayerModal(); };
+    if (elements.detailsModal) elements.detailsModal.onclick = (e) => { if (e.target === elements.detailsModal) closeDetailsModal(); };
+    if (elements.playerModal) elements.playerModal.onclick = (e) => { if (e.target === elements.playerModal) closePlayerModal(); };
     
     // Click network badge to clear cache and refresh UI dynamically
     if (elements.netBadgeContainer) {
@@ -211,8 +254,40 @@ document.addEventListener('DOMContentLoaded', () => {
     // Detect ISP connection
     detectNetwork();
     
-    // Auto-load trending categories on startup
-    resetHomeUI();
+    // Auto-load based on current MPA page
+    if (pageId === 'home') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+        if (tab === 'movies' && elements.navMoviesBtn) {
+            elements.navMoviesBtn.click();
+        } else if (tab === 'series' && elements.navSeriesBtn) {
+            elements.navSeriesBtn.click();
+        } else if (tab === 'anime' && elements.navAnimeBtn) {
+            elements.navAnimeBtn.click();
+        } else {
+            resetHomeUI();
+        }
+    } else if (pageId === 'search') {
+        if (window.SEARCH_QUERY) {
+            performSearch(window.SEARCH_QUERY, 'نتائج البحث عن: ' + window.SEARCH_QUERY);
+        }
+    } else if (pageId === 'show') {
+        if (window.SHOW_URL) {
+            openDetailsModal({
+                url: window.SHOW_URL, 
+                title: window.SHOW_TITLE, 
+                poster: window.SHOW_POSTER,
+                rating: window.SHOW_RATING,
+                quality: window.SHOW_QUALITY,
+                type: window.SHOW_TYPE
+            });
+        }
+    } else if (pageId === 'watch') {
+        if (window.WATCH_URL) {
+            document.getElementById('modal-player-viewport').style.display = 'block';
+            fetchStreamingServers(window.WATCH_URL, window.WATCH_TITLE, "", false, "", "", true);
+        }
+    }
 });
 
 // Horizontal Carousel slider scroll control
@@ -224,11 +299,11 @@ window.scrollSlider = function(trackId, distance) {
     }
 };
 
-// Open details for a card loaded inside a homepage carousel row
+// Open details for a card (Redirects to /show page now)
 window.openDetailsModalByData = function(catIdx, cardIdx) {
     if (state.categories[catIdx] && state.categories[catIdx].cards[cardIdx]) {
         const item = state.categories[catIdx].cards[cardIdx];
-        openDetailsModal(item);
+        window.location.href = `/show?url=${encodeURIComponent(item.url)}&poster=${encodeURIComponent(item.poster || '')}&title=${encodeURIComponent(item.title || '')}&rating=${encodeURIComponent(item.rating || '')}&quality=${encodeURIComponent(item.quality || '')}`;
     }
 };
 
@@ -294,23 +369,32 @@ function detectNetwork() {
     }
 }
 
+function handleSearchSubmit(e) {
+    e.preventDefault();
+    const query = elements.searchInput ? elements.searchInput.value.trim() : '';
+    if (!query) {
+        showToast("الرجاء إدخال كلمة للبحث عن العروض...", "warning");
+        return;
+    }
+    
+    updateNavActive(null); // Clear active navigation states
+    
+    const pageId = document.body.dataset.page;
+    if (pageId !== 'search') {
+        window.location.href = `/search?q=${encodeURIComponent(query)}`;
+    } else {
+        if (elements.liveSearchDropdown) elements.liveSearchDropdown.style.display = 'none';
+        window.history.pushState({}, '', `/search?q=${encodeURIComponent(query)}`);
+        window.SEARCH_QUERY = query;
+        performSearch(query, `نتائج البحث عن: ${query}`);
+    }
+}
+
 function updateNavActive(activeBtn) {
     [elements.navHomeBtn, elements.navMoviesBtn, elements.navSeriesBtn, elements.navAnimeBtn].forEach(btn => {
         if (btn) btn.classList.remove('active');
     });
     if (activeBtn) activeBtn.classList.add('active');
-}
-
-function handleSearchSubmit(e) {
-    e.preventDefault();
-    const query = elements.searchInput.value.trim();
-    if (!query) {
-        showToast("الرجاء إدخال كلمة للبحث عن العروض...", "warning");
-        return;
-    }
-    updateNavActive(null); // Clear active navigation states
-    elements.liveSearchDropdown.style.display = 'none'; // Hide dropdown on full submit
-    performSearch(query);
 }
 
 async function performLiveSearch(query) {
@@ -417,8 +501,11 @@ function renderLiveSearchResults(results, query) {
                 rating: el.getAttribute('data-rating'),
                 quality: el.getAttribute('data-quality')
             };
+            // Redirect to /show page
+            window.location.href = `/show?url=${encodeURIComponent(itemData.url)}&poster=${encodeURIComponent(itemData.poster || '')}&title=${encodeURIComponent(itemData.title || '')}&rating=${encodeURIComponent(itemData.rating || '')}&quality=${encodeURIComponent(itemData.quality || '')}`;
+            
+            // Hide dropdown
             elements.liveSearchDropdown.style.display = 'none';
-            openDetailsModal(itemData);
         });
     });
     
@@ -439,10 +526,10 @@ let currentHeroSlideIdx = 0;
 
 async function performSearch(query, customTitle = null) {
     // UI Loading State
-    elements.cardsGrid.innerHTML = '';
-    elements.emptyState.style.display = 'none';
-    elements.spinnerLoader.style.display = 'block';
-    elements.resultsHeader.style.display = 'none';
+    if (elements.cardsGrid) elements.cardsGrid.innerHTML = '';
+    if (elements.emptyState) elements.emptyState.style.display = 'none';
+    if (elements.spinnerLoader) elements.spinnerLoader.style.display = 'block';
+    if (elements.resultsHeader) elements.resultsHeader.style.display = 'none';
     
     try {
         let apiUrl = `/api/search?q=${encodeURIComponent(query)}`;
@@ -459,27 +546,27 @@ async function performSearch(query, customTitle = null) {
         const response = await fetch(apiUrl);
         const data = await response.json();
         
-        elements.spinnerLoader.style.display = 'none';
+        if (elements.spinnerLoader) elements.spinnerLoader.style.display = 'none';
         
         if (query === '__home__' && data.categories && data.categories.length > 0) {
             state.categories = data.categories;
             
-            elements.resultsTitleText.innerHTML = `<i class="fa-solid fa-star animate-pulse" style="color: var(--accent-violet);"></i> مكتبة AleX CINEMA المضافة حديثاً`;
-            elements.resultsCount.innerText = `${data.categories.length} تصنيف`;
-            elements.resultsHeader.style.display = 'flex';
+            if (elements.resultsTitleText) elements.resultsTitleText.innerHTML = `<i class="fa-solid fa-star animate-pulse" style="color: var(--accent-violet);"></i> مكتبة AleX CINEMA المضافة حديثاً`;
+            if (elements.resultsCount) elements.resultsCount.innerText = `${data.categories.length} تصنيف`;
+            if (elements.resultsHeader) elements.resultsHeader.style.display = 'flex';
             
             // Show and render dynamic Hero Slider
             if (data.slides && data.slides.length > 0) {
                 renderHeroSlider(data.slides);
-                elements.heroSliderArea.style.display = 'block';
+                if (elements.heroSliderArea) elements.heroSliderArea.style.display = 'block';
             } else {
-                elements.heroSliderArea.style.display = 'none';
+                if (elements.heroSliderArea) elements.heroSliderArea.style.display = 'none';
             }
             
             renderCarousels(data.categories);
         } else {
             // Hide Hero Slider when not on homepage
-            elements.heroSliderArea.style.display = 'none';
+            if (elements.heroSliderArea) elements.heroSliderArea.style.display = 'none';
             if (heroSliderTimer) {
                 clearInterval(heroSliderTimer);
                 heroSliderTimer = null;
@@ -488,9 +575,9 @@ async function performSearch(query, customTitle = null) {
             if (data.results && data.results.length > 0) {
                 state.searchResults = data.results;
                 
-                elements.resultsTitleText.innerHTML = `<i class="fa-solid fa-fire" style="color: var(--accent-blue);"></i> ${customTitle || `نتائج البحث عن: "${query}"`}`;
-                elements.resultsCount.innerText = `${data.results.length} عرض`;
-                elements.resultsHeader.style.display = 'flex';
+                if (elements.resultsTitleText) elements.resultsTitleText.innerHTML = `<i class="fa-solid fa-fire" style="color: var(--accent-blue);"></i> ${customTitle || `نتائج البحث عن: "${query}"`}`;
+                if (elements.resultsCount) elements.resultsCount.innerText = `${data.results.length} عرض`;
+                if (elements.resultsHeader) elements.resultsHeader.style.display = 'flex';
                 
                 renderCards(data.results);
             } else {
@@ -498,13 +585,14 @@ async function performSearch(query, customTitle = null) {
             }
         }
     } catch (e) {
-        elements.spinnerLoader.style.display = 'none';
-        elements.heroSliderArea.style.display = 'none';
+        if (elements.spinnerLoader) elements.spinnerLoader.style.display = 'none';
+        if (elements.heroSliderArea) elements.heroSliderArea.style.display = 'none';
         renderEmptyState(`حدث خطأ أثناء تحميل البيانات: ${e.message}. يرجى التحقق من اتصال الشبكة.`);
     }
 }
 
 function renderHeroSlider(slides) {
+    if (!elements.heroSliderWrapper) return;
     elements.heroSliderWrapper.innerHTML = '';
     elements.heroSliderDots.innerHTML = '';
     
@@ -536,9 +624,8 @@ function renderHeroSlider(slides) {
         // Bind Play Button
         const playBtn = slideEl.querySelector(`#hero-play-btn-${idx}`);
         if (playBtn) {
-            playBtn.onclick = (e) => {
-                e.stopPropagation();
-                openDetailsModal(slide);
+            playBtn.onclick = () => {
+                window.location.href = `/show?url=${encodeURIComponent(slide.url)}&poster=${encodeURIComponent(slide.poster || '')}&title=${encodeURIComponent(slide.title || '')}&rating=${encodeURIComponent(slide.rating || '')}&quality=${encodeURIComponent(slide.quality || '')}`;
             };
         }
         
@@ -664,7 +751,9 @@ function renderCards(results) {
         card.className = 'movie-card';
         card.setAttribute('data-id', idx);
         
-        card.onclick = () => openDetailsModal(item);
+        card.onclick = () => {
+            window.location.href = `/show?url=${encodeURIComponent(item.url)}&poster=${encodeURIComponent(item.poster || '')}&title=${encodeURIComponent(item.title || '')}&rating=${encodeURIComponent(item.rating || '')}&quality=${encodeURIComponent(item.quality || '')}`;
+        };
         
         const posterUrl = item.poster || SVG_POSTER_PLACEHOLDER;
         const rating = item.rating || '7.8';
@@ -727,35 +816,37 @@ async function openDetailsModal(item) {
     elements.modalType.innerText = item.type || 'عرض سينمائي';
     
     // Loading State
-    elements.modalStoryText.innerText = "جاري تحميل تفاصيل القصة وجدول الحلقات من مكتبة AleX CINEMA...";
-    elements.modalSeasonsSection.style.display = 'none';
-    elements.modalSeasonsGrid.innerHTML = '';
-    elements.modalEpisodesSection.style.display = 'none';
-    elements.modalQuickPlayBtn.style.display = 'none';
+    if (elements.modalStoryText) elements.modalStoryText.innerText = "جاري تحميل تفاصيل القصة وجدول الحلقات من مكتبة AleX CINEMA...";
+    if (elements.modalSeasonsSection) elements.modalSeasonsSection.style.display = 'none';
+    if (elements.modalSeasonsGrid) elements.modalSeasonsGrid.innerHTML = '';
+    if (elements.modalEpisodesSection) elements.modalEpisodesSection.style.display = 'none';
+    if (elements.modalQuickPlayBtn) elements.modalQuickPlayBtn.style.display = 'none';
     state.bestServer = null;
-    elements.modalServersList.innerHTML = '';
-    elements.serversLoader.style.display = 'block';
+    if (elements.modalServersList) elements.modalServersList.innerHTML = '';
+    if (elements.serversLoader) elements.serversLoader.style.display = 'block';
     
     // Display Modal Panel
-    elements.detailsModal.style.display = 'flex';
-    document.body.style.overflow = 'hidden'; // Lock background scroll
+    const loader = document.getElementById('show-page-loader');
+    if (loader) loader.style.display = 'none';
+    if (elements.detailsModal) elements.detailsModal.style.display = 'flex';
+    document.body.style.overflow = 'auto'; // Re-enable scroll for the MPA page
     
     loadSeasonData(item.url, "");
 }
 
 async function loadSeasonData(url, seasonTitle) {
-    closePlayerModal(); // Stop any active player and restore poster view
-    elements.modalEpisodesSection.style.display = 'none';
-    elements.modalSeasonsSection.style.display = 'none';
-    elements.modalQuickPlayBtn.style.display = 'none';
-    elements.modalSeasonsGrid.innerHTML = '';
-    elements.modalEpisodesGrid.innerHTML = '';
-    elements.modalServersList.innerHTML = '';
-    elements.serversLoader.style.display = 'block';
+    if (typeof closePlayerModal === 'function') closePlayerModal(); // Stop any active player and restore poster view
+    if (elements.modalEpisodesSection) elements.modalEpisodesSection.style.display = 'none';
+    if (elements.modalSeasonsSection) elements.modalSeasonsSection.style.display = 'none';
+    if (elements.modalQuickPlayBtn) elements.modalQuickPlayBtn.style.display = 'none';
+    if (elements.modalSeasonsGrid) elements.modalSeasonsGrid.innerHTML = '';
+    if (elements.modalEpisodesGrid) elements.modalEpisodesGrid.innerHTML = '';
+    if (elements.modalServersList) elements.modalServersList.innerHTML = '';
+    if (elements.serversLoader) elements.serversLoader.style.display = 'block';
     
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout failsafe
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seconds timeout failsafe to allow scraping multiple seasons
         
         const response = await fetch(`/api/details?url=${encodeURIComponent(url)}`, { signal: controller.signal });
         clearTimeout(timeoutId);
@@ -765,7 +856,7 @@ async function loadSeasonData(url, seasonTitle) {
         elements.modalStoryText.innerText = details.description || "لا توجد قصة متوفرة لهذا العرض حالياً.";
         
         if (details.is_series && details.seasons && details.seasons.length > 0) {
-            elements.modalType.innerText = "مسلسل";
+            if (elements.modalType) elements.modalType.innerText = "مسلسل";
             state.seasons = details.seasons;
             
             // Smart title: update modal title to clean series base name (no episode/season noise)
@@ -776,17 +867,17 @@ async function loadSeasonData(url, seasonTitle) {
             
             // Render the grouped seasons (removes all duplicates!)
             renderGroupedSeasons(details.seasons);
-            elements.modalSeasonsSection.style.display = 'block';
-            elements.serversLoader.style.display = 'none'; // Hide loading spinner since series seasons are rendered!
+            if (elements.modalSeasonsSection) elements.modalSeasonsSection.style.display = 'block';
+            if (elements.serversLoader) elements.serversLoader.style.display = 'none'; // Hide loading spinner since series seasons are rendered!
             
         } else {
-            elements.modalType.innerText = "فيلم";
+            if (elements.modalType) elements.modalType.innerText = "فيلم";
             // For movies
             fetchStreamingServers(url, state.selectedItem.title, state.selectedItem.title, false, "", "");
         }
     } catch (e) {
-        elements.modalStoryText.innerText = `فشل تحميل تفاصيل العرض: ${e.message}`;
-        elements.serversLoader.style.display = 'none';
+        if (elements.modalStoryText) elements.modalStoryText.innerText = `فشل تحميل تفاصيل العرض: ${e.message}`;
+        if (elements.serversLoader) elements.serversLoader.style.display = 'none';
     }
 }
 
@@ -814,9 +905,54 @@ function renderGroupedSeasons(seasons) {
         btn.innerText = season.title;
         btn.setAttribute('data-season-title', season.title);
         
-        btn.onclick = () => {
+        btn.onclick = async () => {
             elements.modalSeasonsGrid.querySelectorAll('.season-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            
+            // Check if episodes are already fetched
+            if (!season.episodes || season.episodes.length === 0) {
+                elements.modalEpisodesGrid.innerHTML = `
+                    <div class="loader-container" style="display: flex; flex-direction: column; align-items: center; grid-column: 1 / -1; padding: 20px;">
+                        <div class="cyber-spinner" style="width: 30px; height: 30px; border-width: 3px;"></div>
+                        <p class="loading-text" style="font-size: 0.9rem; margin-top: 10px;">جاري جلب حلقات ${season.title}...</p>
+                    </div>
+                `;
+                elements.modalEpisodesSection.style.display = 'block';
+                
+                try {
+                    const response = await fetch(`/api/details?url=${encodeURIComponent(season.url)}`);
+                    const data = await response.json();
+                    
+                    // Find the matched season from the response to extract its episodes
+                    let fetchedEpisodes = [];
+                    if (data.seasons && data.seasons.length > 0) {
+                        const matchedSeason = data.seasons.find(s => s.active) || data.seasons.find(s => s.title === season.title);
+                        if (matchedSeason && matchedSeason.episodes) {
+                            fetchedEpisodes = matchedSeason.episodes;
+                        }
+                    }
+                    
+                    if (fetchedEpisodes.length > 0) {
+                        season.episodes = fetchedEpisodes;
+                    } else {
+                        elements.modalEpisodesGrid.innerHTML = `
+                            <div style="grid-column: 1 / -1; text-align: center; color: #a1a1aa; padding: 20px;">
+                                <i class="fa-solid fa-ghost" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
+                                <p>لا توجد حلقات متوفرة حالياً في هذا الموسم.</p>
+                            </div>
+                        `;
+                        return; // Exit early since there are no episodes to render
+                    }
+                } catch (e) {
+                    elements.modalEpisodesGrid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; color: #ef4444; padding: 20px;">
+                            <i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            <p>حدث خطأ أثناء جلب الحلقات.</p>
+                        </div>
+                    `;
+                    return; // Exit early on error
+                }
+            }
             
             // Render episodes for this season directly!
             state.currentEpisodes = season.episodes;
@@ -842,10 +978,24 @@ function renderGroupedSeasons(seasons) {
         elements.modalSeasonsGrid.appendChild(btn);
     });
     
-    // Set first season active by default
-    const firstSeasonBtn = elements.modalSeasonsGrid.querySelector('.season-btn');
-    if (firstSeasonBtn) {
-        firstSeasonBtn.click();
+    // Set active season by default (the one that came from backend with active=true, or the first one with episodes)
+    let defaultSeasonBtn = null;
+    let fallbackSeasonBtn = null;
+    
+    // Find the right button by checking the sortedSeasons array
+    const buttons = elements.modalSeasonsGrid.querySelectorAll('.season-btn');
+    sortedSeasons.forEach((season, index) => {
+        if (season.active && buttons[index]) {
+            defaultSeasonBtn = buttons[index];
+        }
+        if (!fallbackSeasonBtn && season.episodes && season.episodes.length > 0 && buttons[index]) {
+            fallbackSeasonBtn = buttons[index];
+        }
+    });
+    
+    const targetBtn = defaultSeasonBtn || fallbackSeasonBtn || elements.modalSeasonsGrid.querySelector('.season-btn');
+    if (targetBtn) {
+        targetBtn.click();
     }
 }
 
@@ -1029,9 +1179,10 @@ function handleEpisodeFilter() {
 }
 
 async function fetchStreamingServers(url, displayTitle, title = "", isSeries = false, season = "", episode = "", autoPlay = false) {
-    elements.modalServersList.innerHTML = '';
-    elements.serversLoader.style.display = 'block';
-    elements.modalQuickPlayBtn.style.display = 'none';
+    // We are on the watch or show page, proceed to fetch the stream servers
+    if (elements.playerServerBadge) elements.playerServerBadge.innerText = 'جاري المعالجة...';
+    if (elements.serversLoader) elements.serversLoader.style.display = 'block';
+    if (elements.modalQuickPlayBtn) elements.modalQuickPlayBtn.style.display = 'none';
     
     try {
         let apiUrl = `/api/watch?url=${encodeURIComponent(url)}`;
@@ -1040,18 +1191,18 @@ async function fetchStreamingServers(url, displayTitle, title = "", isSeries = f
         }
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout failsafe
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seconds timeout failsafe
         
         const response = await fetch(apiUrl, { signal: controller.signal });
         clearTimeout(timeoutId);
         
         const data = await response.json();
         
-        elements.serversLoader.style.display = 'none';
+        if (elements.serversLoader) elements.serversLoader.style.display = 'none';
         
         if (data.servers && data.servers.length > 0) {
             state.activeServerList = data.servers;
-            renderServers(data.servers, displayTitle);
+            renderServers(data.servers, displayTitle, url); // Pass url for redirect
             
             // Automatically select the BEST server (prefer direct, then fallback to first available)
             const bestServer = data.servers.find(s => s.type === 'direct') || data.servers[0];
@@ -1059,36 +1210,66 @@ async function fetchStreamingServers(url, displayTitle, title = "", isSeries = f
             
             // Configure the prominent Quick Play button
             if (state.bestServer && state.bestServer.url !== 'about:blank') {
-                elements.modalQuickPlayBtn.style.display = 'flex';
-                elements.modalQuickPlayBtn.innerHTML = `<i class="fa-solid fa-play"></i> مشاهدة الآن (بأعلى جودة)`;
-                elements.modalQuickPlayBtn.onclick = () => {
-                    launchPlayer(state.bestServer, displayTitle);
-                };
+                if (elements.modalQuickPlayBtn) {
+                    elements.modalQuickPlayBtn.style.display = 'flex';
+                    elements.modalQuickPlayBtn.innerHTML = `<i class="fa-solid fa-play"></i> مشاهدة الآن (بأعلى جودة)`;
+                    elements.modalQuickPlayBtn.onclick = () => {
+                        const pageId = document.body.dataset.page;
+                        if (pageId === 'show') {
+                            window.location.href = `/watch?url=${encodeURIComponent(url)}&title=${encodeURIComponent(displayTitle)}`;
+                        } else {
+                            launchPlayer(state.bestServer, displayTitle);
+                        }
+                    };
+                }
                 
                 // Widescreen auto-play update
                 const isPlayerActive = elements.playerModal && elements.playerModal.style.display !== 'none';
                 if (autoPlay || isPlayerActive) {
-                    launchPlayer(state.bestServer, displayTitle);
+                    const pageId = document.body.dataset.page;
+                    if (pageId === 'show') {
+                        window.location.href = `/watch?url=${encodeURIComponent(url)}&title=${encodeURIComponent(displayTitle)}`;
+                    } else {
+                        launchPlayer(state.bestServer, displayTitle);
+                    }
                 }
-            } else {
+            }
+        } else {
+            if (elements.modalQuickPlayBtn) {
                 elements.modalQuickPlayBtn.style.display = 'flex';
                 elements.modalQuickPlayBtn.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> العرض غير متوفر حالياً`;
                 elements.modalQuickPlayBtn.onclick = null;
             }
-        } else {
-            elements.modalQuickPlayBtn.style.display = 'flex';
-            elements.modalQuickPlayBtn.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> العرض غير متوفر حالياً`;
-            elements.modalQuickPlayBtn.onclick = null;
+            // If we are on the watch page and it failed, update the custom loader to show an error
+            const customLoaderStatus = document.getElementById('player-loader-status');
+            if (customLoaderStatus) {
+                customLoaderStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; margin-bottom: 10px; display: block; font-size: 2rem;"></i> فشل في جلب السيرفرات، يرجى المحاولة لاحقاً.`;
+                const spinner = document.querySelector('.pulse-spinner');
+                if (spinner) spinner.style.display = 'none';
+            }
         }
     } catch (e) {
-        elements.serversLoader.style.display = 'none';
-        elements.modalQuickPlayBtn.style.display = 'flex';
-        elements.modalQuickPlayBtn.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> فشل توليد روابط البث`;
-        elements.modalQuickPlayBtn.onclick = null;
+        if (elements.serversLoader) elements.serversLoader.style.display = 'none';
+        if (elements.modalQuickPlayBtn) {
+            elements.modalQuickPlayBtn.style.display = 'flex';
+            elements.modalQuickPlayBtn.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> فشل توليد روابط البث`;
+            elements.modalQuickPlayBtn.onclick = null;
+        }
+        
+        // If we are on the watch page and it failed, update the custom loader to show an error
+        const customLoaderStatus = document.getElementById('player-loader-status');
+        if (customLoaderStatus) {
+            customLoaderStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; margin-bottom: 10px; display: block; font-size: 2rem;"></i> حدث خطأ أثناء جلب البث المباشر. يرجى العودة والمحاولة مرة أخرى.`;
+            const spinner = document.querySelector('.pulse-spinner');
+            if (spinner) spinner.style.display = 'none';
+        }
+        
+        console.error("fetchStreamingServers Error:", e);
     }
 }
 
-function renderServers(servers, displayTitle) {
+function renderServers(servers, displayTitle, sourceUrl = "") {
+    if (!elements.modalServersList) return;
     elements.modalServersList.innerHTML = '';
     
     servers.forEach((server) => {
@@ -1110,7 +1291,15 @@ function renderServers(servers, displayTitle) {
         
         btn.onclick = () => {
             if (server.url !== 'about:blank') {
-                launchPlayer(server, displayTitle);
+                elements.modalServersList.querySelectorAll('.server-item-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const pageId = document.body.dataset.page;
+                if (pageId === 'show' && sourceUrl) {
+                    window.location.href = `/watch?url=${encodeURIComponent(sourceUrl)}&title=${encodeURIComponent(displayTitle)}`;
+                } else {
+                    launchPlayer(server, displayTitle);
+                }
             }
         };
         elements.modalServersList.appendChild(btn);
@@ -1641,8 +1830,9 @@ function setupAutoplayNext(currentUrl) {
 }
 
 function launchPlayer(server, title) {
-    // Hide details close button IMMEDIATELY to prevent multiple overlapping close buttons
-    if (elements.closeDetailsBtn) {
+    try {
+        // Hide details close button IMMEDIATELY to prevent multiple overlapping close buttons
+        if (elements.closeDetailsBtn) {
         elements.closeDetailsBtn.style.display = 'none';
     }
     
@@ -1801,6 +1991,32 @@ function launchPlayer(server, title) {
                 if (targetServer) {
                     const currentTime = state.activePlayer ? state.activePlayer.currentTime : 0;
                     const isPlaying = state.activePlayer ? !state.activePlayer.paused : true;
+                    
+                    // Seamless HLS Quality Switch if URL is identical!
+                    if (state.hlsInstance && state.currentPlayingServer && targetServer.url === state.currentPlayingServer.url) {
+                        console.log("URL is identical. Switching HLS currentLevel seamlessly to:", newQuality);
+                        let targetLevelIdx = -1;
+                        
+                        // Find corresponding level index in HLS manifest
+                        state.hlsInstance.levels.forEach((level, idx) => {
+                            if (level.height === newQuality) {
+                                targetLevelIdx = idx;
+                            }
+                        });
+                        
+                        if (targetLevelIdx !== -1) {
+                            state.hlsInstance.currentLevel = targetLevelIdx;
+                            state.hlsInstance.loadLevel = targetLevelIdx;
+                            state.currentPlayingServer = targetServer;
+                            
+                            // Show indicator for seamless switch
+                            showCenterIndicator('fa-solid fa-bolt', false, `${newQuality}p`);
+                            return; // Exit early, no need to reload source!
+                        } else {
+                            console.warn("Quality level not found in HLS manifest, falling back to full reload.");
+                        }
+                    }
+                    
                     console.log("Player quality switched in gear settings menu to:", newQuality);
                     loadPlayerSource(targetServer, currentTime, isPlaying);
                 }
@@ -2017,8 +2233,24 @@ function launchPlayer(server, title) {
     let startBrightness = state.currentBrightness || 1.0;
     let isSwiping = false;
     let touchSide = ''; // 'left' or 'right'
+    
+    // Pinch to Zoom state
+    let initialPinchDistance = 0;
+    let isPinching = false;
+    let hasToggledZoom = false;
 
     state.playerTouchStart = (e) => {
+        if (e.touches.length === 2) {
+            // Multi-touch for pinch to zoom
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            initialPinchDistance = Math.hypot(dx, dy);
+            isPinching = true;
+            hasToggledZoom = false;
+            return;
+        }
+        
+        isPinching = false;
         const touch = e.touches[0];
         const rect = elements.playerRenderArea.getBoundingClientRect();
         startX = touch.clientX;
@@ -2037,6 +2269,37 @@ function launchPlayer(server, title) {
 
     state.playerTouchMove = (e) => {
         if (!state.activePlayer) return;
+        
+        if (isPinching && e.touches.length === 2) {
+            if (e.cancelable) e.preventDefault(); // Prevent native zoom/scroll
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const currentDistance = Math.hypot(dx, dy);
+            
+            const pinchDiff = currentDistance - initialPinchDistance;
+            const videoEl = elements.playerRenderArea.querySelector('video');
+            
+            if (videoEl && !hasToggledZoom) {
+                // Threshold of 60px distance change to toggle zoom safely
+                if (pinchDiff > 60) { // Pinch Out (Zoom to fill)
+                    if (!videoEl.classList.contains('video-zoomed')) {
+                        videoEl.classList.add('video-zoomed');
+                        showCenterIndicator('fa-solid fa-expand', false, "تم ملء الشاشة");
+                        hasToggledZoom = true;
+                    }
+                } else if (pinchDiff < -60) { // Pinch In (Zoom out to original fit)
+                    if (videoEl.classList.contains('video-zoomed')) {
+                        videoEl.classList.remove('video-zoomed');
+                        showCenterIndicator('fa-solid fa-compress', false, "الوضع الأصلي");
+                        hasToggledZoom = true;
+                    }
+                }
+            }
+            return;
+        }
+        
+        if (isPinching || e.touches.length > 1) return; // Prevent single swipe if currently pinching
+
         const touch = e.touches[0];
         const rect = elements.playerRenderArea.getBoundingClientRect();
         
@@ -2049,7 +2312,7 @@ function launchPlayer(server, title) {
         }
 
         if (isSwiping) {
-            e.preventDefault(); // Prevent page scroll while swiping
+            if (e.cancelable) e.preventDefault(); // Prevent page scroll while swiping
             
             const deltaPercent = diffY / rect.height;
             if (touchSide === 'right') {
@@ -2079,9 +2342,17 @@ function launchPlayer(server, title) {
     };
 
     state.playerTouchEnd = (e) => {
+        if (isPinching) {
+            if (e.touches.length < 2) {
+                isPinching = false;
+            }
+            if (e.cancelable) e.preventDefault();
+            return;
+        }
+        
         if (isSwiping) {
             // Prevent the touchend click/tap trigger
-            e.preventDefault();
+            if (e.cancelable) e.preventDefault();
             isSwiping = false;
         }
     };
@@ -2095,6 +2366,11 @@ function launchPlayer(server, title) {
     
     // Load initial source
     loadPlayerSource(server, 0, true);
+    } catch (error) {
+        console.error("Launch Player Crash:", error);
+        if (elements.playerServerBadge) elements.playerServerBadge.innerText = 'CRASH: ' + error.message;
+        if (elements.playerTitleDisplay) elements.playerTitleDisplay.innerText = 'CRASH: ' + error.stack;
+    }
 }
 
 function closePlayerModal() {
@@ -2117,17 +2393,17 @@ function closePlayerModal() {
         state.clickTimer = null;
     }
     
-    if (state.playerClickListener) {
+    if (state.playerClickListener && elements.playerRenderArea) {
         elements.playerRenderArea.removeEventListener('click', state.playerClickListener, true);
         state.playerClickListener = null;
     }
     
-    if (state.playerDblClickListener) {
+    if (state.playerDblClickListener && elements.playerRenderArea) {
         elements.playerRenderArea.removeEventListener('dblclick', state.playerDblClickListener, true);
         state.playerDblClickListener = null;
     }
     
-    if (state.playerTouchStart) {
+    if (state.playerTouchStart && elements.playerRenderArea) {
         elements.playerRenderArea.removeEventListener('touchstart', state.playerTouchStart, { passive: true });
         elements.playerRenderArea.removeEventListener('touchmove', state.playerTouchMove, { passive: false });
         elements.playerRenderArea.removeEventListener('touchend', state.playerTouchEnd, { passive: false });
@@ -2152,8 +2428,8 @@ function closePlayerModal() {
     }
     
     state.currentPlayingServer = null;
-    elements.playerRenderArea.innerHTML = '';
-    elements.playerModal.style.display = 'none';
+    if (elements.playerRenderArea) elements.playerRenderArea.innerHTML = '';
+    if (elements.playerModal) elements.playerModal.style.display = 'none';
     
     // Show poster wrapper again
     const posterWrapper = document.getElementById('modal-poster-wrapper');

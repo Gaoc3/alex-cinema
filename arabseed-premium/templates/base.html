@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="notranslate" translate="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AleX CINEMA - أليكس سينما | المنصة الترفيهية الفاخرة بدون إعلانات{% endblock %}</title>
+    <!-- SEO Optimization -->
+    <meta name="description" content="منصة AleX CINEMA - تصفح وشاهد أحدث الأفلام والمسلسلات والأنمي بجودة عالية مباشرة داخل متصفحك مع مشغل ذكي احترافي خالٍ تماماً من الإعلانات والنوافذ المنبثقة.">
+    <meta name="keywords" content="أليكس سينما, AleX CINEMA, افلام, مسلسلات, انمي, مشاهدة بدون اعلانات, بث مباشر, تحميل مباشر, مشغل ذكي, بدون اعلانات">
+    
+    <!-- Google Fonts: Cairo (Arabic) & Inter (English/UI) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Plyr.js Video Player CSS -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="/static/css/style.css?v=8.0">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="notranslate" translate="no" data-page="{% block page_id %}home{% endblock %}">
+
+    <!-- Blurred Background Accents -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <!-- Header / Navbar -->
+    <header class="navbar" id="app-header">
+        <div class="nav-container">
+            <a href="/" class="nav-logo" id="logo-trigger" style="text-decoration: none;">
+                <i class="fa-solid fa-wand-magic-sparkles logo-icon"></i>
+                <span class="logo-text">AleX <span class="logo-highlight">CINEMA</span></span>
+            </a>
+            
+            <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="القائمة المنسدلة">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            
+            <nav class="nav-links" id="nav-links-menu">
+                <button class="mobile-menu-close" id="mobile-menu-close" aria-label="إغلاق القائمة">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <a href="/" class="nav-link {% block nav_home %}{% endblock %}" id="nav-home-btn"><i class="fa-solid fa-house"></i> الرئيسية</a>
+                <a href="/search?q=أفلام" class="nav-link {% block nav_movies %}{% endblock %}" id="nav-movies-btn"><i class="fa-solid fa-film"></i> الأفلام</a>
+                <a href="/search?q=مسلسلات" class="nav-link {% block nav_series %}{% endblock %}" id="nav-series-btn"><i class="fa-solid fa-tv"></i> المسلسلات</a>
+                <a href="/search?q=انمي" class="nav-link {% block nav_anime %}{% endblock %}" id="nav-anime-btn"><i class="fa-solid fa-dragon"></i> عالم الأنمي</a>
+            </nav>
+            
+            <!-- Sleek Navbar Search capsule -->
+            <div class="nav-search-wrapper">
+                <form class="nav-search-form" id="main-search-form" action="/search" method="GET">
+                    <i class="fa-solid fa-magnifying-glass nav-search-icon"></i>
+                    <input type="text" name="q" id="search-input" placeholder="ابحث عن العروض..." autocomplete="off" value="{{ request.args.get('q', '') }}">
+                </form>
+                
+                <!-- Live Search Dropdown -->
+                <div class="live-search-dropdown" id="live-search-dropdown" style="display: none;">
+                    <div class="live-search-loader" id="live-search-loader" style="display: none;">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i> جاري البحث...
+                    </div>
+                    <div class="live-search-results" id="live-search-results"></div>
+                </div>
+            </div>
+            
+            <div class="network-badge" id="net-badge">
+                <i class="fa-solid fa-wifi badge-icon"></i>
+                <span id="network-name">الشبكة: متصل مباشر</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-content" id="app-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>© 2026 أليكس سينما (AleX CINEMA). كل الحقوق محفوظة. تطوير فريق Antigravity.</p>
+        <p class="footer-subtext">هذا المشروع مبني لأغراض تجريبية وتعليمية لتسليط الضوء على كفاءة منع الإعلانات وتحسين تجربة المستخدم.</p>
+    </footer>
+
+    <!-- Plyr.js Video Player Javascript -->
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+    
+    <!-- Hls.js HLS Streaming Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    
+    <!-- Custom Web Frontend JS -->
+    <script src="/static/js/main.js?v=9.0"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

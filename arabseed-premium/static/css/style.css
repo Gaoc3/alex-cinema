@@ -144,6 +144,19 @@ body {
     font-weight: 900;
     filter: drop-shadow(0 2px 12px rgba(96, 165, 250, 0.55));
 }
+.mobile-menu-btn, .mobile-menu-close {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+.mobile-menu-btn:hover, .mobile-menu-close:hover {
+    color: var(--accent-violet);
+}
+
 .nav-links {
     display: flex;
     gap: 15px;
@@ -839,8 +852,14 @@ body {
 .modal-top-layout {
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 35px;
     width: 100%;
+}
+
+@media (min-width: 900px) {
+    .modal-top-layout {
+        flex-direction: row;
+    }
 }
 
 .modal-media-col {
@@ -851,10 +870,16 @@ body {
     gap: 15px;
 }
 
+@media (min-width: 900px) {
+    .modal-media-col {
+        width: 320px;
+    }
+}
+
 .modal-media-viewport {
     position: relative;
     width: 100%;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 2 / 3;
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
@@ -1486,8 +1511,8 @@ body {
 }
 
 @media (max-width: 600px) {
-    .nav-links {
-        display: none;
+    .hero-section {
+        margin: 35px auto 25px auto;
     }
     .hero-section {
         margin: 35px auto 25px auto;
@@ -1511,28 +1536,38 @@ body {
         border-radius: 12px;
     }
     .movie-grid {
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 15px;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 12px;
     }
     .card-title {
         font-size: 0.8rem;
         height: 2.2rem;
     }
     .card-rating-badge, .card-quality-badge {
-        font-size: 0.6rem;
-        padding: 2px 6px;
+        font-size: 0.65rem;
+        padding: 3px 6px;
     }
     .modal-body-layout {
         padding: 15px;
         gap: 15px;
     }
+    .modal-card {
+        margin: 0;
+        width: 100%;
+        border-radius: 20px 20px 0 0;
+        max-height: 90vh;
+        align-self: flex-end;
+    }
+    .modal-overlay {
+        align-items: flex-end;
+    }
     .episodes-grid {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     }
     
     /* Mobile responsive sliders cards size */
     .category-slider-track .movie-card {
-        min-width: 135px;
+        min-width: 120px;
     }
     .category-header h3 {
         font-size: 1rem;
@@ -1665,8 +1700,10 @@ body {
     border-radius: 50% !important;
     position: absolute !important;
     left: 50% !important;
+    right: auto !important;
     top: 50% !important;
     transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     animation: gentlePulse 2.5s infinite ease-in-out !important;
     display: flex !important;
@@ -1689,8 +1726,6 @@ body {
     filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.45));
     margin: 0 !important;
     display: inline-block !important;
-    /* Slightly offset to the right (in LTR direction) to make it visually centered */
-    transform: translateX(2px) !important;
 }
 
 @keyframes gentlePulse {
@@ -1966,6 +2001,25 @@ body {
 }
 
 /* ============================================================================
+   Loading Skeleton Keyframes
+   ============================================================================ */
+@keyframes skeletonLoading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ============================================================================
+   Pinch to Zoom Video Classes
+   ============================================================================ */
+.plyr video {
+    transition: object-fit 0.3s ease-in-out !important;
+}
+
+.plyr video.video-zoomed {
+    object-fit: cover !important;
+}
+
+/* ============================================================================
    Premium Giant Trending Hero Slider
    ============================================================================ */
 .hero-slider-section {
@@ -2167,29 +2221,68 @@ body {
     left: 25px;
 }
 
-/* Media Queries for Hero Slider */
+/* Media Queries for Hero Slider and Layout */
 @media (max-width: 900px) {
     .navbar {
-        position: static;
         padding: 10px 0;
     }
     .nav-container {
         flex-wrap: wrap;
         gap: 12px;
+        align-items: center;
     }
-    .nav-links {
-        order: 3;
-        width: 100%;
-        justify-content: center;
-        flex-wrap: wrap;
+    .mobile-menu-btn {
+        display: block;
+        order: 1;
+        margin-left: 10px;
+    }
+    .nav-logo {
+        order: 2;
+        flex: 1;
     }
     .nav-search-wrapper {
-        order: 2;
-        flex: 1 1 260px;
-        margin: 0;
+        order: 5;
+        width: 100%;
+        margin-top: 20px;
+        max-width: 100%;
     }
     .network-badge {
-        order: 4;
+        order: 6;
+        width: 100%;
+        justify-content: center;
+        margin-top: 15px;
+    }
+    .nav-links {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 260px;
+        height: 100vh;
+        background: rgba(12, 9, 28, 0.95);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        padding: 60px 20px;
+        transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+        z-index: 1000;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.8);
+        border-left: 1px solid rgba(124, 58, 237, 0.2);
+    }
+    .nav-links.nav-active {
+        right: 0;
+    }
+    .mobile-menu-close {
+        display: block;
+        position: absolute;
+        top: 20px;
+        right: 20px;
+    }
+    .nav-link {
+        width: 100%;
+        padding: 15px;
+        font-size: 1.1rem;
     }
     .hero-slider-section {
         padding: 0 15px;
@@ -2200,7 +2293,7 @@ body {
     }
     .hero-slide-content {
         bottom: 40px;
-        right: 85px; /* Shifted to prevent overlapping on tablet screens */
+        right: 40px;
         max-width: 450px;
     }
     .hero-slide-title {
