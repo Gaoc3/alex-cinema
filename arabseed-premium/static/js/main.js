@@ -2166,43 +2166,60 @@ function launchPlayer(server, title) {
     
     // Single Click & Double Click gesture actions inside a unified Click handler in CAPTURING phase
     state.clickTimer = null;
+    // Ensure YouTube Seek Overlays exist in DOM
+    const ensureSeekOverlays = () => {
+        if (!document.getElementById('yt-seek-left-overlay')) {
+            elements.playerRenderArea.insertAdjacentHTML('beforeend', `
+                <div id="yt-seek-left-overlay" class="yt-seek-overlay yt-seek-left">
+                    <div class="yt-seek-ripple"></div>
+                    <div class="yt-seek-content">
+                        <div class="yt-seek-triangles">
+                            <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
+                            <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
+                            <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
+                        </div>
+                        <div class="yt-seek-text">10 ثوانٍ</div>
+                    </div>
+                </div>
+                <div id="yt-seek-right-overlay" class="yt-seek-overlay yt-seek-right">
+                    <div class="yt-seek-ripple"></div>
+                    <div class="yt-seek-content">
+                        <div class="yt-seek-triangles">
+                            <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                            <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                            <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                        </div>
+                        <div class="yt-seek-text">10 ثوانٍ</div>
+                    </div>
+                </div>
+            `);
+        }
+    };
+
     state.playerClickListener = (e) => {
         // Only capture and coordinate clicks directly on the video viewport wrapper
         const isVideoClick = e.target.closest('.plyr__video-wrapper') || e.target.tagName === 'VIDEO';
-        if (!isVideoClick) return; // Let all other clicks (like controls, menus, etc.) pass through normally!
+        if (!isVideoClick) return; // Let all other clicks pass through normally!
         
         e.preventDefault();
         e.stopPropagation();
         
+        ensureSeekOverlays();
+        const plyrContainer = elements.playerRenderArea.querySelector('.plyr');
+        const rect = plyrContainer ? plyrContainer.getBoundingClientRect() : elements.playerRenderArea.getBoundingClientRect();
+        const tapX = e.clientX - rect.left;
+        const widthPercent = (tapX / rect.width) * 100;
+        const currentSide = widthPercent > 65 ? 'forward' : (widthPercent < 35 ? 'backward' : 'middle');
+
         if (state.clickTimer) {
-            // Double Click Gesture Detected!
             clearTimeout(state.clickTimer);
             state.clickTimer = null;
-            
-            // Get bounding rect of the actual active Plyr container to support flawless coordinates in both standard and fullscreen views
-            const plyrContainer = elements.playerRenderArea.querySelector('.plyr');
-            const rect = plyrContainer ? plyrContainer.getBoundingClientRect() : elements.playerRenderArea.getBoundingClientRect();
-            const tapX = e.clientX - rect.left;
-            const widthPercent = (tapX / rect.width) * 100;
-            
-            if (widthPercent > 65) {
-                // Double click on right: Fast Forward 10s
-                state.activePlayer.currentTime = Math.min(state.activePlayer.duration || 0, state.activePlayer.currentTime + 10);
-                showCenterIndicator('fa-solid fa-forward-step');
-            } else if (widthPercent < 35) {
-                // Double click on left: Seek back 10s
-                state.activePlayer.currentTime = Math.max(0, state.activePlayer.currentTime - 10);
-                showCenterIndicator('fa-solid fa-backward-step');
-            } else {
-                // Double click in middle: Toggle Fullscreen
-                state.activePlayer.fullscreen.toggle();
-            }
+        } else if (state.seekOverlayTimer && currentSide === state.seekDirection) {
+            // Continuation of consecutive tapping
         } else {
-            // Wait for 250ms to distinguish from double click
+            // Wait to distinguish from double click
             state.clickTimer = setTimeout(() => {
                 state.clickTimer = null;
-                
-                // Single Click Toggle Play/Pause
                 if (state.activePlayer) {
                     if (state.activePlayer.paused) {
                         state.activePlayer.play().catch(()=>{});
@@ -2211,7 +2228,50 @@ function launchPlayer(server, title) {
                     }
                 }
             }, 250);
+            return;
         }
+
+        // Handle Double Tap / Consecutive Taps
+        if (currentSide === 'middle') {
+            if (state.activePlayer) state.activePlayer.fullscreen.toggle();
+            return;
+        }
+
+        state.seekDirection = currentSide;
+        if (!state.accumulatedSeek) state.accumulatedSeek = 0;
+        state.accumulatedSeek += 10;
+        
+        // Show UI Overlay
+        const overlayId = currentSide === 'forward' ? 'yt-seek-right-overlay' : 'yt-seek-left-overlay';
+        const overlay = document.getElementById(overlayId);
+        if (overlay) {
+            overlay.classList.remove('animate-ripple');
+            void overlay.offsetWidth; // trigger reflow
+            overlay.classList.add('active', 'animate-ripple');
+            overlay.querySelector('.yt-seek-text').innerText = `${state.accumulatedSeek} ثوانٍ`;
+        }
+
+        if (state.seekOverlayTimer) clearTimeout(state.seekOverlayTimer);
+        state.seekOverlayTimer = setTimeout(() => {
+            // Execute the seek smoothly after taps stop
+            if (state.activePlayer) {
+                if (state.seekDirection === 'forward') {
+                    state.activePlayer.currentTime = Math.min(state.activePlayer.duration || 0, state.activePlayer.currentTime + state.accumulatedSeek);
+                } else {
+                    state.activePlayer.currentTime = Math.max(0, state.activePlayer.currentTime - state.accumulatedSeek);
+                }
+            }
+            
+            // Hide Overlay
+            if (overlay) {
+                overlay.classList.remove('active', 'animate-ripple');
+            }
+            
+            // Reset state
+            state.accumulatedSeek = 0;
+            state.seekDirection = null;
+            state.seekOverlayTimer = null;
+        }, 700);
     };
     
     elements.playerRenderArea.addEventListener('click', state.playerClickListener, true);
