@@ -2528,38 +2528,65 @@ body {
     visibility: hidden !important;
 }
 
-/* Custom IMDb Rating Badge */
-.imdb-rating-badge {
+
+
+/* Custom IMDb Split Pill Badge */
+.imdb-rating-badge, .rating-badge {
     position: absolute;
     top: 8px;
     right: 8px;
-    background: rgba(0, 0, 0, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 2px 6px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: stretch !important;
+    border-radius: 6px !important;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     z-index: 3;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     transition: all 0.3s ease;
 }
 
-.imdb-icon {
-    color: #f5c518;
-    font-size: 1.25rem;
-    line-height: 1;
+/* Override position for modal badge */
+.modal-meta-badges .rating-badge {
+    position: relative !important;
+    top: auto;
+    right: auto;
+    box-shadow: 0 4px 15px rgba(245, 197, 24, 0.2);
+}
+
+.imdb-brand {
+    background: #f5c518;
+    color: #000;
+    font-weight: 900;
+    font-size: 0.85rem;
+    font-family: var(--font-en), sans-serif;
+    padding: 3px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
 }
 
 .imdb-score {
+    background: rgba(20, 20, 20, 0.95);
     color: #fff;
     font-weight: 800;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-family: var(--font-en), sans-serif;
-    letter-spacing: 0.5px;
-    padding-top: 1px;
+    padding: 3px 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: none; /* seamlessly connects to imdb brand */
+    line-height: 1.2;
+}
+
+.star-icon {
+    color: #f5c518;
+    font-size: 0.75rem;
 }
 
 /* Adjust old rating badge usage */
