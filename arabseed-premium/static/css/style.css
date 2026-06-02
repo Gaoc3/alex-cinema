@@ -2714,4 +2714,103 @@ body {
         width: 94vw !important;
         max-width: 450px !important;
     }
+}.live-search-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+.live-search-item:hover {
+    background: rgba(124, 58, 237, 0.1);
+    border-color: rgba(124, 58, 237, 0.2);
+}
+.live-search-item-poster {
+    width: 48px;
+    height: 68px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--bg-card);
+}
+.live-search-item-info {
+    flex-grow: 1;
+    overflow: hidden;
+}
+.live-search-item-title {
+    font-family: var(--font-ar), sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+.live-search-item-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.live-search-item-meta span {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-family: var(--font-ar), sans-serif;
+    font-weight: 600;
+}
+.live-search-item-type {
+    background: rgba(124, 58, 237, 0.15);
+    color: var(--accent-violet);
+}
+.live-search-item-quality {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent-green);
+}
+.live-search-item-arrow {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+.live-search-item:hover .live-search-item-arrow {
+    transform: translateX(-4px);
+    color: var(--accent-violet);
+}
+.live-search-no-results {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-muted);
+    font-family: var(--font-ar), sans-serif;
+    font-size: 0.9rem;
+}
+.live-search-no-results i {
+    font-size: 1.8rem;
+    color: var(--text-dim);
+    display: block;
+    margin-bottom: 10px;
+}
+.live-search-view-all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    margin-top: 4px;
+    border-radius: 12px;
+    background: rgba(124, 58, 237, 0.08);
+    border: 1px solid rgba(124, 58, 237, 0.15);
+    color: var(--accent-violet);
+    font-family: var(--font-ar), sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.live-search-view-all:hover {
+    background: rgba(124, 58, 237, 0.15);
+    border-color: rgba(124, 58, 237, 0.3);
 }
