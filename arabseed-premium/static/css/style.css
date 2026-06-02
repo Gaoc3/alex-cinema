@@ -585,7 +585,7 @@ body {
     border-radius: 8px;
     object-fit: cover;
     flex-shrink: 0;
-    background: var(--bg-tertiary);
+    background: var(--bg-card);
 }
 .live-search-item-info {
     flex-grow: 1;
@@ -619,7 +619,7 @@ body {
 }
 .live-search-item-quality {
     background: rgba(16, 185, 129, 0.15);
-    color: var(--accent-emerald);
+    color: var(--accent-green);
 }
 .live-search-item-arrow {
     color: var(--text-dim);
