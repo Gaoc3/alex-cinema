@@ -2520,3 +2520,10 @@ body {
         margin-right: 0 !important;
     }
 }
+
+/* Forcefully remove all Plyr tooltips (e.g. Exit fullscreen popup) */
+.plyr__tooltip {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
