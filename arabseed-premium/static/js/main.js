@@ -702,7 +702,8 @@ function renderCarousels(categories) {
         
         cat.cards.forEach((item, cardIdx) => {
             const posterUrl = item.poster || SVG_POSTER_PLACEHOLDER;
-            const rating = item.rating || '7.8';
+            const rawRating = item.rating || '7.8';
+            const rating = (!isNaN(parseFloat(rawRating))) ? parseFloat(rawRating).toFixed(1) : rawRating;
             
             cardsHTML += `
                 <div class="movie-card" onclick="window.openDetailsModalByData(${idx}, ${cardIdx})">
@@ -711,9 +712,9 @@ function renderCarousels(categories) {
                         <div class="poster-overlay">
                             <div class="play-hover-btn"><i class="fa-solid fa-play"></i></div>
                         </div>
-                        <div class="imdb-rating-badge">
-                            <i class="fa-brands fa-imdb imdb-icon"></i>
-                            <span class="imdb-score">${rating}</span>
+                        <div class="imdb-rating-badge" dir="ltr">
+                            <span class="imdb-brand">IMDb</span>
+                            <span class="imdb-score"><i class="fa-solid fa-star star-icon"></i> ${rating}</span>
                         </div>
                         <span class="card-quality-badge">${item.quality || '1080p'}</span>
                     </div>
@@ -759,7 +760,8 @@ function renderCards(results) {
         };
         
         const posterUrl = item.poster || SVG_POSTER_PLACEHOLDER;
-        const rating = item.rating || '7.8';
+        const rawRating = item.rating || '7.8';
+        const rating = (!isNaN(parseFloat(rawRating))) ? parseFloat(rawRating).toFixed(1) : rawRating;
         
         card.innerHTML = `
             <div class="card-poster">
@@ -767,9 +769,9 @@ function renderCards(results) {
                 <div class="poster-overlay">
                     <div class="play-hover-btn"><i class="fa-solid fa-play"></i></div>
                 </div>
-                <div class="imdb-rating-badge">
-                    <i class="fa-brands fa-imdb imdb-icon"></i>
-                    <span class="imdb-score">${rating}</span>
+                <div class="imdb-rating-badge" dir="ltr">
+                    <span class="imdb-brand">IMDb</span>
+                    <span class="imdb-score"><i class="fa-solid fa-star star-icon"></i> ${rating}</span>
                 </div>
                 <span class="card-quality-badge">${item.quality || '1080p'}</span>
             </div>
@@ -817,7 +819,10 @@ async function openDetailsModal(item) {
     // Set static UI values
     elements.modalTitleText.innerText = item.title;
     elements.modalPoster.src = item.poster || SVG_POSTER_PLACEHOLDER;
-    elements.modalRating.innerHTML = `<i class="fa-brands fa-imdb" style="color: #f5c518; font-size: 1.8rem; margin-left: 6px; vertical-align: middle;"></i> <span style="font-size: 1.1rem; font-weight: 800; vertical-align: middle;">${item.rating || '7.8'}</span>`;
+    const rawModalRating = item.rating || '7.8';
+    const finalModalRating = (!isNaN(parseFloat(rawModalRating))) ? parseFloat(rawModalRating).toFixed(1) : rawModalRating;
+    elements.modalRating.setAttribute('dir', 'ltr');
+    elements.modalRating.innerHTML = `<span class="imdb-brand">IMDb</span><span class="imdb-score"><i class="fa-solid fa-star star-icon"></i> ${finalModalRating}</span>`;
     elements.modalQuality.innerText = item.quality || '1080p FHD';
     elements.modalType.innerText = item.type || 'عرض سينمائي';
     
