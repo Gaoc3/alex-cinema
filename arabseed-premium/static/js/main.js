@@ -642,15 +642,15 @@ function renderHeroSlider(slides) {
     
     // Bind Arrow controls
     elements.heroSliderPrev.onclick = () => {
-        let prevIdx = currentHeroSlideIdx - 1;
-        if (prevIdx < 0) prevIdx = slides.length - 1;
-        goToHeroSlide(prevIdx, slides.length);
-    };
-    
-    elements.heroSliderNext.onclick = () => {
         let nextIdx = currentHeroSlideIdx + 1;
         if (nextIdx >= slides.length) nextIdx = 0;
         goToHeroSlide(nextIdx, slides.length);
+    };
+    
+    elements.heroSliderNext.onclick = () => {
+        let prevIdx = currentHeroSlideIdx - 1;
+        if (prevIdx < 0) prevIdx = slides.length - 1;
+        goToHeroSlide(prevIdx, slides.length);
     };
     
     // Start Autoplay (every 5 seconds)
@@ -735,11 +735,11 @@ function renderCarousels(categories) {
                 <h3><i class="fa-solid fa-clapperboard"></i> ${cat.category}</h3>
             </div>
             <div class="category-slider-container">
-                <button class="slider-arrow arrow-left" onclick="window.scrollSlider('${categoryId}', -350)"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="slider-arrow arrow-left" onclick="window.scrollSlider('${categoryId}', 350)"><i class="fa-solid fa-chevron-left"></i></button>
                 <div class="category-slider-track" id="${categoryId}">
                     ${cardsHTML}
                 </div>
-                <button class="slider-arrow arrow-right" onclick="window.scrollSlider('${categoryId}', 350)"><i class="fa-solid fa-chevron-right"></i></button>
+                <button class="slider-arrow arrow-right" onclick="window.scrollSlider('${categoryId}', -350)"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
         `;
         
