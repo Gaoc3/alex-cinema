@@ -94,8 +94,10 @@ body {
 
 /* Navigation Island Navbar */
 .navbar-island {
-    position: sticky;
+    position: absolute;
     top: 20px;
+    left: 0;
+    right: 0;
     z-index: 1000;
     margin: 0 20px;
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
