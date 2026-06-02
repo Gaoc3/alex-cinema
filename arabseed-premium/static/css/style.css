@@ -421,12 +421,6 @@ body {
     
     /* Live Search Mobile Improvements */
     .live-search-dropdown {
-    position: absolute;
-    top: calc(100% + 15px);
-    left: 0;
-    right: auto;
-    width: 380px;
-    max-width: 90vw;
     background: rgba(18, 20, 28, 0.97);
     border: 1px solid rgba(124, 58, 237, 0.3);
     border-radius: 18px;
