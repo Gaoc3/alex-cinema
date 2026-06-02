@@ -2026,7 +2026,7 @@ function launchPlayer(server, title) {
                 }
             }
         },
-        tooltips: { controls: true, seek: true }
+        tooltips: { controls: false, seek: true }
     });
     
     // Fast Scrubbing: instant frame-by-frame seeking during timeline drag
