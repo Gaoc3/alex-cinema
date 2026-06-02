@@ -1,4 +1,4 @@
-/* AleX CINEMA Premium Dark & Cyberpunk Stylesheet */
+﻿/* AleX CINEMA Premium Dark & Cyberpunk Stylesheet */
 
 :root {
     /* Color Palette */
@@ -94,28 +94,23 @@ body {
 
 /* Navigation Island Navbar */
 .navbar-island {
-    position: absolute;
-    top: 20px;
-    left: 0;
-    right: 0;
+    position: relative;
     z-index: 1000;
-    margin: 0 20px;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 100%;
+    background: rgba(14, 16, 25, 0.6);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.4s ease;
 }
 
 .island-container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
-    background: rgba(16, 14, 32, 0.7);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 100px;
-    padding: 10px 20px;
+    padding: 15px 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 /* Brand */
@@ -322,12 +317,24 @@ body {
 
 @media (max-width: 900px) {
     .navbar-island {
-        margin: 10px;
-        top: 10px;
-    }
-    .island-container {
-        padding: 12px 20px;
-    }
+    position: relative;
+    z-index: 1000;
+    width: 100%;
+    background: rgba(14, 16, 25, 0.6);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.4s ease;
+}
+
+.island-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
     .nav-island-links {
         position: fixed;
         top: 0;
