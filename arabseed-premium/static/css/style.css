@@ -1,4 +1,4 @@
-﻿/* AleX CINEMA Premium Dark & Cyberpunk Stylesheet */
+/* AleX CINEMA Premium Dark & Cyberpunk Stylesheet */
 
 :root {
     /* Color Palette */
@@ -530,24 +530,6 @@ body {
     background: var(--gradient-primary);
     border: none;
     color: #fff;
-    font-family: var(--font-ar);
-    font-weight: 700;
-    font-size: 0.9rem;
-    padding: 10px 24px;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
-}
-}
-.live-search-dropdown::-webkit-scrollbar-thumb {
-    background: rgba(124, 58, 237, 0.3);
-    border-radius: 6px;
-}
-.live-search-loader {
-    text-align: center;
-    padding: 18px;
-    color: var(--text-muted);
     font-family: var(--font-ar);
     font-size: 0.9rem;
 }
@@ -2909,4 +2891,15 @@ body {
 }
 .card-top-badges .imdb-rating-badge {
     border-radius: 4px !important;
+}
+
+@media (max-width: 900px) {
+    .live-search-dropdown {
+        position: fixed !important;
+        top: 75px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 94vw !important;
+        max-width: 450px !important;
+    }
 }
