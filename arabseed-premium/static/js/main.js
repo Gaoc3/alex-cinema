@@ -2197,9 +2197,9 @@ function launchPlayer(server, title) {
     };
 
     state.playerClickListener = (e) => {
-        // Only capture and coordinate clicks directly on the video viewport wrapper
-        const isVideoClick = e.target.closest('.plyr__video-wrapper') || e.target.tagName === 'VIDEO';
-        if (!isVideoClick) return; // Let all other clicks pass through normally!
+        // Prevent interfering with actual buttons or sliders
+        const isControlElement = e.target.closest('button, input, [role="menuitem"], .plyr__menu');
+        if (isControlElement) return;
         
         e.preventDefault();
         e.stopPropagation();
@@ -2232,6 +2232,11 @@ function launchPlayer(server, title) {
         }
 
         // Handle Double Tap / Consecutive Taps
+        if (state.activePlayer) {
+            // Hide player controls to keep the view clean for the animation
+            try { state.activePlayer.toggleControls(false); } catch(err){}
+        }
+
         if (currentSide === 'middle') {
             if (state.activePlayer) state.activePlayer.fullscreen.toggle();
             return;
