@@ -1019,6 +1019,8 @@ def api_search():
         # If remote search failed (e.g. 403 WAF) and returned nothing, use local index!
         if not results:
             print("DEBUG: Remote search failed or returned nothing. Using local matches fallback.")
+            if not local_matches:
+                local_matches = find_local_matches(query)
             if local_matches:
                 results = local_matches
         
