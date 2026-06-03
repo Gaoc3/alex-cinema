@@ -12,6 +12,8 @@ async def main():
         try:
             await pg.wait_for_selector('.movie-card', timeout=15000)
             print('Cards found!')
+            disp = await pg.evaluate("document.getElementById('spinner-loader').style.display")
+            print("Spinner display:", disp)
         except Exception as e:
             print("Timeout!", e)
         await b.close()
