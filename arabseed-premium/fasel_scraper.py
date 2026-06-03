@@ -296,11 +296,6 @@ class FaselAPI:
                             break
         except Exception as e:
             print(f"Error scraping newest additions for hero slides: {e}")
-        return slides                     })
-                        if len(slides) >= 5:
-                            break
-        except Exception as e:
-            print(f"Error scraping fallback hero slides: {e}")
         return slides
 
     def scrape_listing_page(self, url: str) -> List[Dict[str, Any]]:
