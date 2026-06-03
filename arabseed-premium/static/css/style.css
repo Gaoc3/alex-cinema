@@ -1054,19 +1054,21 @@ body {
 }
 
 /* Glassmorphic blurred backdrop */
-.modal-backdrop-blur {
+#modal-backdrop-blur {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     background-size: cover;
-    background-position: center;
-    filter: blur(80px);
-    opacity: 0.14;
+    background-position: center top;
+    filter: blur(60px);
+    opacity: 0.35;
     z-index: 0;
     pointer-events: none;
-    transform: scale(1.1);
+    transform: scale(1.2);
+    -webkit-mask-image: radial-gradient(ellipse at top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 75%);
+    mask-image: radial-gradient(ellipse at top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 75%);
 }
 
 .modal-close-btn {
