@@ -446,7 +446,7 @@ def find_local_matches(query: str):
         return idx if idx != -1 else 9999
         
     matches.sort(key=sort_key)
-    return matches
+    return group_cards(matches)
 
 def normalize_arabic(text: str) -> str:
     """Normalizes Arabic letters to standard forms for robust searching."""
