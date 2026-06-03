@@ -40,8 +40,8 @@ def show():
 def watch():
     return render_template('watch.html')
 
-# Initialize Scrapers
-fasel_api = FaselAPI("https://web6112x.faselhdx.bid")
+# Initialize Scraper API Client
+fasel_api = FaselAPI("https://web630x.faselhdx.bid")
 
 # Arabic numbers mapping to digits for robust season/episode matching
 ARABIC_NUMBERS = {
