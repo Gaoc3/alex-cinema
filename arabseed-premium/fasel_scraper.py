@@ -231,17 +231,17 @@ class FaselAPI:
 
     def get_hero_slides(self) -> List[Dict[str, Any]]:
         """
-        Dynamically builds the hero slider using the newest items added to the site.
+        Dynamically builds the hero slider using the newest movies added to the site.
         This ensures the slider updates automatically with the latest library additions!
         """
         slides = []
         try:
-            r = self.get_with_retry(f"{self.base_url}/main", timeout=12)
+            r = self.get_with_retry(f"{self.base_url}/movies", timeout=12)
             if r.status_code == 200:
                 soup = BeautifulSoup(r.text, 'html.parser')
                 
-                # Fetch the absolute newest items from "Added Recently" list
-                post_list = soup.find(id="postList") or soup.find(class_="form-row")
+                # Fetch the absolute newest movies from page 1
+                post_list = soup.find(id="postList") or soup.find(class_="form-row") or soup.find(class_="row")
                 if post_list:
                     divs = post_list.find_all(class_="postDiv")
                     seen_titles = set()
