@@ -1005,8 +1005,8 @@ def api_search():
                     local_matches = [m for m in local_matches if 'from' not in m.get('url', '').lower()]
                     local_matches.insert(0, from_series)
                 
-                # If we only have the injected one, and length >= 3, we should still fetch remote!
-                if len(local_matches) > 1 or len(query) < 3:
+                # If we have any matches, or query is too short, return immediately for instant live search!
+                if len(local_matches) > 0 or len(query) < 3:
                     return jsonify({
                         'results': local_matches[:10],
                         'count': len(local_matches),
