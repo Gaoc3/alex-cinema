@@ -10,7 +10,7 @@ async def main():
         print("Navigating...")
         await pg.goto('http://127.0.0.1:5000/')
         try:
-            await pg.wait_for_selector('.movie-card', timeout=15000)
+            await pg.wait_for_selector('.movie-card', timeout=60000)
             print('Cards found!')
             disp = await pg.evaluate("document.getElementById('spinner-loader').style.display")
             print("Spinner display:", disp)
