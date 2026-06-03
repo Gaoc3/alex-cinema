@@ -231,72 +231,44 @@ class FaselAPI:
 
     def get_hero_slides(self) -> List[Dict[str, Any]]:
         """
-        Dynamically builds the hero slider using the native FaselHD slider from the homepage.
-        This prevents massive Cloudflare 429 bans and makes the homepage load instantly.
+        Dynamically builds the hero slider using the newest items added to the site.
+        This ensures the slider updates automatically with the latest library additions!
         """
         slides = []
-        
-        # Fallback to standard scraping of the native slider
         try:
             r = self.get_with_retry(f"{self.base_url}/main", timeout=12)
             if r.status_code == 200:
                 soup = BeautifulSoup(r.text, 'html.parser')
-                slider = soup.find(id="homeSlide") or soup.find(class_=re.compile(r'slide|carousel', re.I))
-                if slider:
-                    # Swiper slides have class "swiper-slide" or "slideInner"
-                    slide_items = slider.find_all(class_=re.compile(r'swiper-slide|slideInner', re.I))
-                    seen_urls = set()
-                    for s in slide_items:
-                        a_tag = s.find('a', href=True)
-                        if not a_tag or not a_tag.get('href'):
+                
+                # Fetch the absolute newest items from "Added Recently" list
+                post_list = soup.find(id="postList") or soup.find(class_="form-row")
+                if post_list:
+                    divs = post_list.find_all(class_="postDiv")
+                    seen_titles = set()
+                    
+                    for d in divs:
+                        parsed = self.parse_card(d)
+                        if not parsed or not parsed.get('url'):
                             continue
-                        href = a_tag['href']
-                        if href.startswith('/'):
-                            href = self.base_url + href
-                        if href in seen_urls:
-                            continue
-                        seen_urls.add(href)
-                        
-                        # Title
-                        title = a_tag.get_text(strip=True) or "عرض حصري مميز"
-                        # Clean title from nested tags
-                        title = title.replace("\n", "").strip()
-                        
-                        # Background or Poster
-                        poster = ""
-                        img = s.find('img')
-                        if img:
-                            poster = img.get('data-src') or img.get('src') or ""
-                        if not poster:
-                            bg_div = s.find(class_=re.compile(r'Img|bg', re.I)) or s.find(style=re.compile(r'background'))
-                            if bg_div:
-                                style = bg_div.get('style', '')
-                                m = re.search(r"url\(['\"]?([^'\")]+)['\"]?\)", style)
-                                if m:
-                                    poster = m.group(1)
-                                    
-                        rating = "8.5"
-                        quality = "1080p FHD"
-                        
-                        meta_el = s.find(class_=re.compile(r'Meta|imdb|Rate', re.I))
-                        if meta_el:
-                            text = meta_el.get_text(strip=True)
-                            m = re.search(r'(\d+\.\d+)', text)
-                            if m:
-                                rating = m.group(1)
-                                
-                        media_type = "فيلم"
-                        if any(x in href.lower() for x in ['seasons', 'series', 'asian-series', 'anime']):
-                            media_type = "مسلسل"
                             
+                        # Avoid duplicates (e.g. multiple episodes of the same series)
+                        title = parsed.get('title', 'عرض حصري')
+                        clean_title = re.sub(r'(فيلم|مسلسل|مترجم|مدبلج|مشاهدة|تحميل|الحلقة\s*\d+)', '', title).strip()
+                        clean_title = re.sub(r'\b\d{4}\b', '', clean_title).strip()
+                        
+                        # Only unique movies/series!
+                        if clean_title in seen_titles:
+                            continue
+                        seen_titles.add(clean_title)
+                        
+                        poster = parsed.get('poster', '')
+                        rating = parsed.get('rating', '8.5')
+                        quality = parsed.get('quality', '1080p FHD')
+                        media_type = parsed.get('type', 'فيلم')
+                        
                         # Upgrade to High-Res TMDB Cinematic 16:9 Backdrop
                         try:
                             tmdb_api_key = '15d2ea6d0dc1d476efbca3eba2b9bbfb'
-                            # Clean the title from Arabic keywords to maximize search accuracy
-                            clean_title = re.sub(r'(فيلم|مسلسل|مترجم|مدبلج|مشاهدة|تحميل)', '', title)
-                            # Remove year if present
-                            clean_title = re.sub(r'\b\d{4}\b', '', clean_title).strip()
-                            
                             if clean_title:
                                 tmdb_url = f'https://api.themoviedb.org/3/search/multi?api_key={tmdb_api_key}&language=ar&query={urllib.parse.quote(clean_title)}'
                                 tmdb_r = requests.get(tmdb_url, timeout=5)
@@ -313,13 +285,18 @@ class FaselAPI:
                             print(f"Error fetching TMDB backdrop for {title}: {e}")
                             
                         slides.append({
-                            "url": href,
+                            "url": parsed['url'],
                             "poster": poster,
                             "title": title,
                             "type": media_type,
                             "rating": rating,
                             "quality": quality
                         })
+                        if len(slides) >= 5:
+                            break
+        except Exception as e:
+            print(f"Error scraping newest additions for hero slides: {e}")
+        return slides                     })
                         if len(slides) >= 5:
                             break
         except Exception as e:
