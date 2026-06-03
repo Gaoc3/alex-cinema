@@ -81,16 +81,16 @@ class FaselAPI:
         # Always normalize the request URL to standard uppercase percent encoding
         url = normalize_url(url)
         
-        headers = self.headers.copy()
+        req_headers = {}
         if referer:
-            headers["Referer"] = normalize_url(referer)
+            req_headers["Referer"] = normalize_url(referer)
             
         for i in range(3):
             try:
                 # Impersonate modern Chrome 120 client TLS fingerprinter
                 # curl_cffi session is not thread-safe, so we must lock it!
                 with self.request_lock:
-                    r = self.session.get(url, headers=headers, params=params, timeout=timeout, impersonate="chrome120")
+                    r = self.session.get(url, headers=req_headers if req_headers else None, params=params, timeout=timeout, impersonate="chrome120")
                 if r.status_code == 200:
                     return r
                 elif r.status_code in [403, 429]:
@@ -102,7 +102,7 @@ class FaselAPI:
                 
         # Final request attempt (fallback)
         with self.request_lock:
-            return self.session.get(url, headers=headers, params=params, timeout=timeout, impersonate="chrome120")
+            return self.session.get(url, headers=req_headers if req_headers else None, params=params, timeout=timeout, impersonate="chrome120")
 
     def parse_card(self, div) -> Dict[str, str]:
         """
