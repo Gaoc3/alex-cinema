@@ -289,6 +289,29 @@ class FaselAPI:
                         if any(x in href.lower() for x in ['seasons', 'series', 'asian-series', 'anime']):
                             media_type = "مسلسل"
                             
+                        # Upgrade to High-Res TMDB Cinematic 16:9 Backdrop
+                        try:
+                            tmdb_api_key = '15d2ea6d0dc1d476efbca3eba2b9bbfb'
+                            # Clean the title from Arabic keywords to maximize search accuracy
+                            clean_title = re.sub(r'(فيلم|مسلسل|مترجم|مدبلج|مشاهدة|تحميل)', '', title)
+                            # Remove year if present
+                            clean_title = re.sub(r'\b\d{4}\b', '', clean_title).strip()
+                            
+                            if clean_title:
+                                tmdb_url = f'https://api.themoviedb.org/3/search/multi?api_key={tmdb_api_key}&language=ar&query={urllib.parse.quote(clean_title)}'
+                                tmdb_r = requests.get(tmdb_url, timeout=5)
+                                if tmdb_r.status_code == 200:
+                                    tmdb_results = tmdb_r.json().get('results', [])
+                                    if tmdb_results:
+                                        # Find first result with a backdrop
+                                        for res in tmdb_results:
+                                            backdrop = res.get('backdrop_path')
+                                            if backdrop:
+                                                poster = f"https://image.tmdb.org/t/p/original{backdrop}"
+                                                break
+                        except Exception as e:
+                            print(f"Error fetching TMDB backdrop for {title}: {e}")
+                            
                         slides.append({
                             "url": href,
                             "poster": poster,
