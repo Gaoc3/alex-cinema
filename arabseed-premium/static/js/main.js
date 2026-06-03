@@ -552,7 +552,7 @@ async function performSearch(query, customTitle = null) {
             state.categories = data.categories;
             
             if (elements.resultsTitleText) elements.resultsTitleText.innerHTML = `<i class="fa-solid fa-crown animate-pulse"></i> مكتبة AleX CINEMA المميزة`;
-            if (elements.resultsCount) elements.resultsCount.innerHTML = `<i class="fa-solid fa-layer-group"></i> ${data.categories.length} مكتبات`;
+            if (elements.resultsCount) elements.resultsCount.innerHTML = `<div class="count-icon"><i class="fa-solid fa-layer-group"></i></div><div class="count-details"><span class="count-val">${data.categories.length}</span><span class="count-lbl">مكتبات</span></div>`;
             if (elements.resultsHeader) elements.resultsHeader.style.display = 'flex';
             
             // Show and render dynamic Hero Slider
@@ -576,7 +576,7 @@ async function performSearch(query, customTitle = null) {
                 state.searchResults = data.results;
                 
                 if (elements.resultsTitleText) elements.resultsTitleText.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> ${customTitle || `نتائج البحث عن: "${query}"`}`;
-                if (elements.resultsCount) elements.resultsCount.innerHTML = `<i class="fa-solid fa-film"></i> ${data.results.length} عرض`;
+                if (elements.resultsCount) elements.resultsCount.innerHTML = `<div class="count-icon"><i class="fa-solid fa-film"></i></div><div class="count-details"><span class="count-val">${data.results.length}</span><span class="count-lbl">عرض</span></div>`;
                 if (elements.resultsHeader) elements.resultsHeader.style.display = 'flex';
                 
                 renderCards(data.results);
