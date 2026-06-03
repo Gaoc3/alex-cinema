@@ -681,7 +681,10 @@ body {
     flex-direction: column;
     justify-content: space-between;
     gap: 8px;
-    background: rgba(15, 12, 32, 0.3);
+    background: #0e0b19; /* Solid dark background to prevent light bleeding */
+    position: relative;
+    z-index: 3;
+    margin-top: -2px; /* Physically overlap the poster to seal any subpixel rendering gaps! */
 }
 .card-footer {
     display: flex;
