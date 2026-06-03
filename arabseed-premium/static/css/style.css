@@ -756,6 +756,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 15px; /* Prevent collision */
     background: rgba(22, 18, 46, 0.5);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -783,6 +784,8 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0; /* CRITICAL: Allows flex child to shrink */
+    flex: 1; /* Pushes content and handles its own truncation */
 }
 
 .section-title i {
@@ -809,6 +812,7 @@ body {
     transition: all 0.3s ease;
     white-space: nowrap;
     direction: rtl;
+    flex-shrink: 0; /* CRITICAL: Prevents the badge from being squished by long titles */
 }
 
 .results-count:hover {
