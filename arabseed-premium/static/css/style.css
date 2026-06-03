@@ -1948,14 +1948,29 @@ html {
 
 /* Glassmorphic Plyr Control Bar Override */
 .plyr__controls {
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
     background: linear-gradient(180deg, rgba(8, 6, 18, 0) 0%, rgba(8, 6, 18, 0.95) 100%) !important;
     border: none !important;
     border-top: none !important;
-    padding: 15px 20px 20px 20px !important;
+    padding: 30px 20px 20px 20px !important; /* Larger top padding for smooth hover gradient */
     box-shadow: none !important;
     display: flex !important;
     align-items: center !important;
     gap: 15px !important;
+    z-index: 50 !important;
+    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease !important;
+}
+
+/* Ensure controls are totally unclickable when hidden */
+.plyr--video.plyr--hide-controls .plyr__controls {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transform: translateY(100%) !important;
 }
 
 .plyr__controls::before,
