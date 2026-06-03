@@ -23,14 +23,14 @@
     <link rel="stylesheet" href="/static/css/style.css?v=8.0">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="notranslate" translate="no" data-page="{% block page_id %}home{% endblock %}" dir="rtl">
+<body class="notranslate" translate="no" data-page="{% block page_id %}home{% endblock %}" dir="ltr">
 
     <!-- Blurred Background Accents -->
     <div class="bg-glow bg-glow-1"></div>
     <div class="bg-glow bg-glow-2"></div>
 
     <!-- Header / Navbar Island -->
-    <header class="navbar-island" id="app-header">
+    <header class="navbar-island" id="app-header" dir="rtl">
         <div class="island-container">
             <!-- Mobile Toggle (Far Right in RTL) -->
             <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="القائمة">
@@ -82,12 +82,12 @@
     </header>
 
     <!-- Main Container -->
-    <main class="main-content" id="app-main">
+    <main class="main-content" id="app-main" dir="rtl">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Premium Footer -->
-    <footer class="app-footer">
+    <footer class="app-footer" dir="rtl">
         <div class="footer-content">
             <div class="footer-brand">
                 <div class="brand-orb"><i class="fa-solid fa-film"></i></div>
