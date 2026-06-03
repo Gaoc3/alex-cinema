@@ -43,6 +43,35 @@
     scroll-behavior: smooth;
 }
 
+/* Prevent ugly blue selection box and mobile tap highlights on interactive elements */
+button, 
+a, 
+.btn, 
+.icon-btn, 
+.action-btn, 
+.play-hover-btn, 
+.nav-link, 
+.logo, 
+.slider-arrow, 
+.header-action-btn, 
+.ai-btn, 
+.cyber-btn,
+.mobile-nav-item,
+.play-btn-large,
+.control-btn,
+.play-overlay-btn,
+i,
+img,
+.movie-card {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-tap-highlight-color: transparent;
+    outline: none !important;
+}
+
 body {
     background-color: var(--bg-primary);
     color: var(--text-main);
