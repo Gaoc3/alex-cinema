@@ -53,6 +53,13 @@ body {
     line-height: 1.6;
 }
 
+.main-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 10;
+}
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
