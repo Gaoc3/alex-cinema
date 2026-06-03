@@ -1049,6 +1049,12 @@ body {
     position: relative;
     box-shadow: 0 25px 80px rgba(0, 0, 0, 0.7), 0 0 50px rgba(124, 58, 237, 0.05);
     animation: slideUp 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    direction: ltr; /* Forces the scrollbar to the right side */
+}
+
+/* Restore RTL for modal content so text direction is correct */
+.modal-card > * {
+    direction: rtl;
 }
 @keyframes slideUp {
     from { transform: translateY(40px) scale(0.96); opacity: 0; }
