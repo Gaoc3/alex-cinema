@@ -256,15 +256,19 @@ class FaselAPI:
                         clean_title = re.sub(r'(فيلم|مسلسل|مترجم|مدبلج|مشاهدة|تحميل|الحلقة\s*\d+)', '', title).strip()
                         clean_title = re.sub(r'\b\d{4}\b', '', clean_title).strip()
                         
-                        # Only unique movies/series!
+                        # Only unique movies/series! Filter out anime episodes
                         if clean_title in seen_titles:
                             continue
+                        
+                        media_type = parsed.get('type', 'فيلم')
+                        if 'أنمي' in title or 'حلقة' in title or 'anime' in parsed.get('url', '').lower():
+                            continue
+                            
                         seen_titles.add(clean_title)
                         
                         poster = parsed.get('poster', '')
                         rating = parsed.get('rating', '8.5')
                         quality = parsed.get('quality', '1080p FHD')
-                        media_type = parsed.get('type', 'فيلم')
                         
                         # Upgrade to High-Res TMDB Cinematic 16:9 Backdrop
                         try:
