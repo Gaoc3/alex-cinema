@@ -763,10 +763,13 @@ body {
 .results-count {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
     background: rgba(15, 12, 32, 0.7);
     border: 1px solid rgba(124, 58, 237, 0.4);
-    padding: 6px 20px 6px 8px; /* Slightly less padding on the left for the icon */
+    /* In RTL, padding-right is next to the icon, padding-left is next to the text */
+    padding: 6px;
+    padding-right: 6px;
+    padding-left: 20px;
     border-radius: 40px;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 0 15px rgba(124, 58, 237, 0.1);
     backdrop-filter: blur(10px);
@@ -797,23 +800,27 @@ body {
 
 .count-details {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    flex-direction: column;
+    align-items: flex-start; /* Aligns to the right in RTL */
+    justify-content: center;
+    gap: 0;
 }
 
 .count-val {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     font-weight: 900;
     color: #fff;
     font-family: var(--font-en), sans-serif;
     letter-spacing: 0.5px;
+    line-height: 1;
 }
 
 .count-lbl {
-    font-size: 0.85rem;
-    color: #a78bfa;
+    font-size: 0.7rem;
+    color: #c084fc;
     font-weight: 700;
-    margin-top: 2px;
+    margin-top: 4px;
+    line-height: 1;
 }
 /* Category Header (Rows) */
 .category-header {
