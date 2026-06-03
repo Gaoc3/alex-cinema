@@ -219,7 +219,7 @@ class FaselAPI:
                 ("📺 أحدث المسلسلات التلفزيونية", "series"),
                 ("🔥 أحدث حلقات الأنمي والكرتون", "anime-episodes")
             ]:
-                time.sleep(0.15)
+                time.sleep(1.0)
                 res = fetch_sub_cat(cat_name, cat_path)
                 if res.get('cards'):
                     categories.append(res)
