@@ -557,28 +557,23 @@ body {
     opacity: 1;
 }
 .movie-card:hover .card-poster-img {
-    transform: scale(1.06) translateZ(0);
+    transform: scale(1.1);
 }
 .card-poster {
     position: relative;
     width: 100%;
     aspect-ratio: 2 / 3;
     overflow: hidden;
-    background: #0f1115;
-    /* Force WebKit to clip hardware accelerated children */
-    transform: translateZ(0);
-    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    background: transparent;
+    border-radius: 16px 16px 0 0;
 }
 .card-poster-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform 0.5s ease;
-    will-change: transform;
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    transform: translateZ(0);
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: scale(1.03); /* Overshoot trick to hide edge rendering artifacts forever! */
 }
 .poster-overlay {
     position: absolute;
@@ -681,10 +676,7 @@ body {
     flex-direction: column;
     justify-content: space-between;
     gap: 8px;
-    background: #0e0b19; /* Solid dark background to prevent light bleeding */
-    position: relative;
-    z-index: 3;
-    margin-top: -2px; /* Physically overlap the poster to seal any subpixel rendering gaps! */
+    background: rgba(15, 12, 32, 0.3);
 }
 .card-footer {
     display: flex;
