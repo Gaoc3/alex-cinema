@@ -845,7 +845,7 @@ async function openDetailsModal(item) {
     // Display Modal Panel
     const loader = document.getElementById('show-page-loader');
     if (loader) loader.style.display = 'none';
-    if (elements.detailsModal) elements.detailsModal.style.display = 'flex';
+    if (elements.detailsModal) elements.detailsModal.style.display = 'block';
     document.body.style.overflow = 'auto'; // Re-enable scroll for the MPA page
     
     loadSeasonData(item.url, "");
