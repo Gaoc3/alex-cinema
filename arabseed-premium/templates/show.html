@@ -9,11 +9,11 @@
        Show Page — Cinematic Detail Layout
        ============================================= */
     .show-page-wrapper {
-        min-height: 100vh;
         background: #06080d;
         position: relative;
         color: #fff;
         overflow: hidden;
+        direction: rtl;
     }
 
     /* === Backdrop: Full-width blurred poster behind everything === */
@@ -78,12 +78,13 @@
         transform: translateX(5px);
     }
 
-    /* === Main Hero Grid: Info (right) + Poster (left in visual) === */
+    /* === Main Hero Grid: Info (right RTL) + Poster (left in visual) === */
     .hero-grid {
         display: grid;
-        grid-template-columns: 1fr 280px;
+        grid-template-columns: 1fr 300px;
         gap: 50px;
         align-items: start;
+        direction: rtl;
     }
 
     /* --- Info Column --- */
@@ -92,15 +93,17 @@
         flex-direction: column;
         gap: 20px;
         padding-top: 10px;
+        text-align: right;
     }
 
     .film-title {
-        font-size: 3rem;
+        font-size: 2.8rem;
         font-weight: 900;
-        line-height: 1.15;
+        line-height: 1.2;
         margin: 0;
         color: #fff;
         text-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        text-align: right;
     }
 
     .badges-row {
