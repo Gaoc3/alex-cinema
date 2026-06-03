@@ -1956,7 +1956,7 @@ html {
     background: linear-gradient(180deg, rgba(8, 6, 18, 0) 0%, rgba(8, 6, 18, 0.95) 100%) !important;
     border: none !important;
     border-top: none !important;
-    padding: 30px 20px 20px 20px !important; /* Larger top padding for smooth hover gradient */
+    padding: 15px 20px 20px 20px !important;
     box-shadow: none !important;
     display: flex !important;
     align-items: center !important;
