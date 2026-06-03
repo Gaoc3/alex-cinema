@@ -756,44 +756,57 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 15px; /* Prevent collision */
-    background: rgba(22, 18, 46, 0.5);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    padding: 12px 20px;
-    margin-bottom: 25px;
-    border-radius: 12px;
-    border: 1px solid rgba(124, 58, 237, 0.2);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2), inset 0 1px 5px rgba(255, 255, 255, 0.05);
-    position: relative;
-    overflow: hidden;
+    gap: 15px;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .section-title {
-    font-size: 1.15rem;
+    font-size: 1.3rem;
     font-weight: 800;
     margin: 0;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     color: #fff;
     position: relative;
-    z-index: 1;
     letter-spacing: 0;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0; /* CRITICAL: Allows flex child to shrink */
-    flex: 1; /* Pushes content and handles its own truncation */
+    white-space: normal;
+    word-break: break-word;
+    padding-right: 18px;
+}
+
+/* Sleek vertical glowing accent line */
+.section-title::before {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 10%;
+    height: 80%;
+    width: 4px;
+    background: var(--gradient-primary);
+    border-radius: 4px;
+    box-shadow: 0 0 12px rgba(124, 58, 237, 0.6);
 }
 
 .section-title i {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     background: var(--gradient-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 2px 8px rgba(124, 58, 237, 0.4));
+}
+
+/* Mobile Responsiveness for Header */
+@media (max-width: 768px) {
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        border-bottom: none;
+        padding-bottom: 0;
+        gap: 18px;
+    }
 }
 .results-count {
     display: flex;
