@@ -5,401 +5,288 @@
 
 {% block extra_css %}
 <style>
-    /* Full Page Immersive Hero Design */
+    /* =============================================
+       Show Page — Cinematic Detail Layout
+       ============================================= */
     .show-page-wrapper {
         min-height: 100vh;
-        background: #050608;
+        background: #06080d;
         position: relative;
-        padding-bottom: 100px;
         color: #fff;
-        overflow-x: hidden;
-        width: 100%;
-    }
-    
-    .hero-bg-blur {
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        height: 100%;
-        background-size: cover;
-        background-position: center;
-        filter: blur(60px) brightness(0.35) saturate(1.4);
-        z-index: 1;
-        opacity: 0.8;
+        overflow: hidden;
     }
 
-    /* Cinematic Overlay for depth */
-    .show-page-wrapper::before {
-        content: "";
+    /* === Backdrop: Full-width blurred poster behind everything === */
+    .hero-backdrop {
         position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: 
-            radial-gradient(circle at 50% 30%, transparent 0%, rgba(5, 6, 8, 0.85) 100%),
-            linear-gradient(to bottom, rgba(5, 6, 8, 0) 0%, #050608 100%);
+        top: 0; left: 0; right: 0;
+        height: 70vh;
+        background-size: cover;
+        background-position: center 20%;
+        filter: blur(30px) brightness(0.4) saturate(1.3);
+        transform: scale(1.15); /* prevent blur white edges */
+        z-index: 1;
+    }
+
+    /* Gradient fade from backdrop to dark background */
+    .hero-backdrop-fade {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 75vh;
+        background: linear-gradient(to bottom,
+            rgba(6, 8, 13, 0) 0%,
+            rgba(6, 8, 13, 0.4) 50%,
+            rgba(6, 8, 13, 0.85) 75%,
+            #06080d 100%
+        );
         z-index: 2;
         pointer-events: none;
     }
 
-    /* Texture Overlay */
-    .show-page-wrapper::after {
-        content: "";
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
-        opacity: 0.03;
-        z-index: 3;
-        pointer-events: none;
-    }
-
-    .hero-content-layer {
+    /* === Content Layer === */
+    .hero-content {
         position: relative;
         z-index: 10;
-        max-width: 1400px;
+        max-width: 1300px;
         margin: 0 auto;
-        padding: 50px 5%;
+        padding: 30px 40px 60px;
     }
-    
-    .top-nav-bar {
-        margin-bottom: 50px;
-        position: relative !important;
-        top: 0 !important;
-        z-index: 100;
-    }
-    
+
+    /* Back button */
     .back-btn {
-        background: rgba(255, 255, 255, 0.05);
-        color: #e2e8f0;
-        border: 1px solid rgba(255,255,255,0.1);
-        padding: 12px 28px;
-        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(255, 255, 255, 0.06);
+        color: #cbd5e1;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 10px 22px;
+        border-radius: 12px;
         font-family: 'Cairo', sans-serif;
         font-weight: 700;
+        font-size: 0.9rem;
         cursor: pointer;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transition: all 0.3s ease;
         text-decoration: none;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        margin-bottom: 35px;
+    }
+    .back-btn:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        transform: translateX(5px);
+    }
+
+    /* === Main Hero Grid: Info (right) + Poster (left in visual) === */
+    .hero-grid {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        gap: 50px;
+        align-items: start;
+    }
+
+    /* --- Info Column --- */
+    .info-col {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding-top: 10px;
+    }
+
+    .film-title {
+        font-size: 3rem;
+        font-weight: 900;
+        line-height: 1.15;
+        margin: 0;
+        color: #fff;
+        text-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    }
+
+    .badges-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+
+    /* Story */
+    .story-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 16px;
+        padding: 22px 26px;
+        font-size: 1.05rem;
+        line-height: 1.85;
+        color: #d1d5db;
+        position: relative;
+        margin-top: 5px;
+    }
+    .story-card .story-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 800;
+        color: #e2e8f0;
+        margin-bottom: 10px;
+        font-size: 1.05rem;
+    }
+    .story-card .story-label i {
+        color: #a78bfa;
+    }
+    .story-card p {
+        margin: 0;
+    }
+
+    /* Play CTA */
+    .play-cta {
         display: inline-flex;
         align-items: center;
         gap: 12px;
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    .back-btn:hover {
-        background: rgba(255, 255, 255, 0.15);
+        background: linear-gradient(135deg, #7c3aed, #6d28d9);
         color: #fff;
-        transform: translateX(8px);
-        border-color: rgba(255,255,255,0.3);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        border: none;
+        padding: 14px 36px;
+        font-size: 1.1rem;
+        font-weight: 800;
+        border-radius: 14px;
+        cursor: pointer;
+        font-family: 'Cairo', sans-serif;
+        text-decoration: none;
+        box-shadow: 0 8px 25px rgba(109, 40, 217, 0.35);
+        transition: all 0.3s ease;
+        margin-top: 5px;
+        align-self: flex-start;
+    }
+    .play-cta:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(109, 40, 217, 0.5);
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
     }
 
-    .hero-main-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 380px;
-        gap: 80px;
-        align-items: center;
+    /* --- Poster Column --- */
+    .poster-col {
+        position: relative;
+    }
+    .poster-frame {
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: #111;
+        transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+    .poster-frame:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 30px 60px rgba(0,0,0,0.7), 0 0 30px rgba(139, 92, 246, 0.15);
+    }
+    .poster-frame img {
+        width: 100%;
+        aspect-ratio: 2/3;
+        object-fit: cover;
+        display: block;
     }
 
-    /* Info Column */
-    .hero-info-col {
+    /* === Bottom Sections === */
+    .detail-sections {
+        position: relative;
+        z-index: 10;
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 0 40px 80px;
         display: flex;
         flex-direction: column;
         gap: 30px;
-        animation: slideInRight 0.8s ease-out forwards;
     }
 
-    @keyframes slideInRight {
-        from { opacity: 0; transform: translateX(-40px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
-
-    .hero-title {
-        font-size: 4.5rem;
-        font-weight: 900;
-        line-height: 1.1;
-        margin: 0;
-        text-shadow: 0 10px 30px rgba(0,0,0,0.8);
-        background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        letter-spacing: -1px;
-    }
-
-    .hero-badges-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 15px;
-        align-items: center;
-    }
-
-    .hero-story-box {
-        margin-top: 10px;
-        font-size: 1.2rem;
-        line-height: 1.8;
-        color: #f1f5f9;
-        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-        background: rgba(15, 17, 26, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-right: 4px solid #8b5cf6;
-        padding: 30px;
+    .section-card {
+        background: rgba(12, 14, 22, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: 20px;
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        box-shadow: 0 15px 35px rgba(0,0,0,0.3), inset 0 0 20px rgba(255,255,255,0.02);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .hero-story-box::before {
-        content: "";
-        position: absolute;
-        top: 0; left: 0; right: 0; height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    }
-
-    .hero-play-btn {
-        align-self: flex-start;
-        background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-        color: white;
-        border: 1px solid rgba(139, 92, 246, 0.5);
-        padding: 18px 45px;
-        font-size: 1.3rem;
-        font-weight: 800;
-        border-radius: 100px; /* Pill shape */
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        box-shadow: 0 10px 30px rgba(109, 40, 217, 0.4), inset 0 2px 5px rgba(255,255,255,0.3);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        font-family: 'Cairo', sans-serif;
-        margin-top: 20px;
-        text-decoration: none;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .hero-play-btn::after {
-        content: "";
-        position: absolute;
-        top: -50%; left: -50%; width: 200%; height: 200%;
-        background: linear-gradient(transparent, rgba(255,255,255,0.3), transparent);
-        transform: rotate(45deg) translateY(-100%);
-        transition: transform 0.6s ease;
-    }
-
-    .hero-play-btn:hover {
-        transform: translateY(-5px) scale(1.02);
-        box-shadow: 0 15px 40px rgba(109, 40, 217, 0.6), 0 0 20px rgba(139, 92, 246, 0.4);
-        background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
-    }
-    
-    .hero-play-btn:hover::after {
-        transform: rotate(45deg) translateY(100%);
-    }
-
-    /* Poster Column */
-    .hero-poster-col {
-        position: relative;
-        perspective: 1000px;
-        animation: slideInLeft 0.8s ease-out forwards;
-    }
-    
-    @keyframes slideInLeft {
-        from { opacity: 0; transform: translateX(40px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
-
-    .hero-poster-wrapper {
-        position: relative;
-        border-radius: 28px;
-        overflow: hidden;
-        box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 40px rgba(139, 92, 246, 0.2);
-        border: 1px solid rgba(255,255,255,0.1);
-        transform: rotateY(-5deg) rotateX(2deg);
-        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        background: #111;
-    }
-    
-    .hero-poster-wrapper::after {
-        content: "";
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
-        pointer-events: none;
-    }
-
-    .hero-poster-img {
-        width: 100%;
-        display: block;
-        transition: transform 0.7s ease;
-    }
-    .hero-poster-wrapper:hover {
-        transform: rotateY(0deg) rotateX(0deg) translateY(-10px);
-        box-shadow: 0 50px 100px rgba(0,0,0,0.9), 0 0 60px rgba(139, 92, 246, 0.4);
-        border-color: rgba(255,255,255,0.2);
-    }
-    .hero-poster-wrapper:hover .hero-poster-img {
-        transform: scale(1.08);
-    }
-
-    /* Bottom Sections (Seasons / Episodes) */
-    .hero-bottom-sections {
-        margin-top: 80px;
-        display: flex;
-        flex-direction: column;
-        gap: 40px;
-        position: relative;
-        z-index: 10;
-    }
-    
-    .seasons-wrapper, .episodes-wrapper, .servers-wrapper {
-        background: rgba(15, 17, 26, 0.5);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 28px;
-        padding: 40px;
-        backdrop-filter: blur(25px);
-        -webkit-backdrop-filter: blur(25px);
-        box-shadow: 0 25px 60px rgba(0,0,0,0.4), inset 0 1px 10px rgba(255,255,255,0.02);
-        transition: transform 0.3s ease;
-    }
-
-    .seasons-wrapper:hover, .episodes-wrapper:hover, .servers-wrapper:hover {
-        transform: translateY(-5px);
-        border-color: rgba(139, 92, 246, 0.3);
+        padding: 30px;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }
 
     .section-heading {
-        font-size: 1.8rem;
+        font-size: 1.4rem;
         font-weight: 800;
-        margin-bottom: 30px;
+        margin-bottom: 22px;
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 12px;
         color: #fff;
-        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
     .section-heading i {
         color: #a78bfa;
-        background: rgba(139, 92, 246, 0.15);
-        padding: 12px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
     }
 
-    /* Hide ugly scrollbar for seasons */
-    .seasons-grid::-webkit-scrollbar {
-        height: 8px;
-    }
-    .seasons-grid::-webkit-scrollbar-track {
-        background: rgba(0,0,0,0.2);
-        border-radius: 10px;
-    }
-    .seasons-grid::-webkit-scrollbar-thumb {
-        background: rgba(139, 92, 246, 0.5);
-        border-radius: 10px;
-    }
-    .seasons-grid::-webkit-scrollbar-thumb:hover {
-        background: rgba(139, 92, 246, 0.8);
-    }
-    }
+    /* Scrollbar */
+    .seasons-grid::-webkit-scrollbar { height: 6px; }
+    .seasons-grid::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); border-radius: 10px; }
+    .seasons-grid::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.4); border-radius: 10px; }
+    .seasons-grid::-webkit-scrollbar-thumb:hover { background: rgba(139,92,246,0.7); }
 
-    /* Adjust badges inside the row specifically */
-    .hero-badges-row .meta-badge {
-        font-size: 1rem !important;
-        padding: 6px 14px !important;
+    /* Badge overrides inside hero */
+    .badges-row .meta-badge {
+        font-size: 0.9rem !important;
+        padding: 5px 12px !important;
         border-radius: 8px !important;
     }
-    .hero-badges-row .imdb-rating-badge {
-        font-size: 1rem !important;
+    .badges-row .imdb-rating-badge {
+        font-size: 0.9rem !important;
         position: static !important;
     }
-    .hero-badges-row .imdb-brand {
-        padding: 6px 10px !important;
-        font-size: 1rem !important;
+    .badges-row .imdb-brand {
+        padding: 5px 10px !important;
+        font-size: 0.9rem !important;
     }
-    .hero-badges-row .imdb-score {
-        padding: 6px 10px !important;
-        font-size: 1rem !important;
+    .badges-row .imdb-score {
+        padding: 5px 10px !important;
+        font-size: 0.9rem !important;
     }
 
-    @media (max-width: 1000px) {
-        .hero-main-grid,
-        .hero-info-col,
-        .hero-bottom-sections,
-        .seasons-wrapper,
-        .episodes-wrapper,
-        .servers-wrapper,
-        .hero-badges-row,
-        .show-page-wrapper,
-        .hero-content-layer {
-            min-width: 0 !important;
-            max-width: 100% !important;
-            box-sizing: border-box !important;
-            overflow-x: hidden;
+    /* =============================================
+       Responsive
+       ============================================= */
+    @media (max-width: 900px) {
+        .hero-content {
+            padding: 20px 16px 40px;
         }
-        
-        .seasons-grid,
-        .episodes-grid,
-        .servers-list {
-            min-width: 0 !important;
-            max-width: 100% !important;
-            box-sizing: border-box !important;
-        }
-
-        .hero-content-layer {
-            padding: 20px 15px; /* Better mobile padding */
-        }
-        
-        .hero-main-grid {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        .hero-grid {
+            grid-template-columns: 1fr;
+            gap: 25px;
             text-align: center;
-            width: 100%;
-            gap: 25px; /* Reduce massive 60px gap on mobile */
         }
-        .hero-poster-col {
+        .poster-col {
             order: -1;
-            max-width: 300px;
-            width: 100%;
+            max-width: 220px;
             margin: 0 auto;
         }
-        .hero-poster-wrapper {
-            transform: translateY(0);
+        .info-col {
+            align-items: center;
         }
-        .hero-story-box {
-            border-right: none;
-            border-top: 4px solid var(--accent-primary);
+        .film-title {
+            font-size: 2rem;
             text-align: center;
-            border-radius: 16px;
-            word-break: break-word;
         }
-        .hero-badges-row {
+        .badges-row {
             justify-content: center;
         }
-        .hero-play-btn {
-            align-self: center;
-            padding: 12px 20px;
-            font-size: 1rem;
-        }
-        .hero-title {
-            font-size: 2.2rem !important; /* Fix title size on mobile */
-            line-height: 1.3;
-            overflow-wrap: break-word;
-            word-break: break-word;
+        .story-card {
             text-align: center;
         }
-        .top-nav-bar {
-            margin-bottom: 20px;
-            position: relative !important;
-            top: 0 !important; /* Force reset any rogue top offset */
-            display: flex;
-            justify-content: center; /* Center the back button on mobile */
+        .play-cta {
+            align-self: center;
         }
         .back-btn {
-            padding: 10px 20px;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
+            padding: 8px 16px;
         }
-        .seasons-wrapper, .episodes-wrapper, .servers-wrapper {
+        .detail-sections {
+            padding: 0 16px 60px;
+        }
+        .section-card {
             padding: 20px;
         }
     }
@@ -413,66 +300,70 @@
 </div>
 
 <div class="show-page-wrapper" id="details-modal" style="display: none;">
-    <div class="hero-bg-blur" id="modal-backdrop-blur"></div>
-    
-    <div class="hero-content-layer">
-        <div class="top-nav-bar">
-            <a href="/" class="back-btn"><i class="fa-solid fa-arrow-right"></i> عودة للرئيسية</a>
-        </div>
+    <!-- Blurred backdrop from poster -->
+    <div class="hero-backdrop" id="modal-backdrop-blur"></div>
+    <div class="hero-backdrop-fade"></div>
 
-        <div class="hero-main-grid">
-            <div class="hero-info-col">
-                <h1 class="hero-title" id="modal-title-text">...</h1>
-                
-                <div class="hero-badges-row">
+    <!-- Hero content -->
+    <div class="hero-content">
+        <a href="/" class="back-btn"><i class="fa-solid fa-arrow-right"></i> عودة للرئيسية</a>
+
+        <div class="hero-grid">
+            <!-- Info (shows on the right in RTL) -->
+            <div class="info-col">
+                <h1 class="film-title" id="modal-title-text">...</h1>
+
+                <div class="badges-row">
                     <span class="meta-badge type-badge" id="modal-type">...</span>
                     <span class="meta-badge quality-badge" id="modal-quality">1080p FHD</span>
                     <div class="imdb-rating-badge" dir="ltr" id="modal-rating">
                         <span class="imdb-brand">IMDb</span><span class="imdb-score"><i class="fa-solid fa-star star-icon"></i> ...</span>
                     </div>
                 </div>
-                
-                <div class="hero-story-box">
-                    <div style="margin-bottom: 10px; font-weight: 800; color: #fff;"><i class="fa-solid fa-quote-right" style="color: var(--accent-primary); margin-left: 8px;"></i>القصة والتفاصيل:</div>
-                    <p id="modal-story-text" style="margin: 0; opacity: 0.9;">...</p>
+
+                <div class="story-card">
+                    <div class="story-label"><i class="fa-solid fa-quote-right"></i> القصة والتفاصيل:</div>
+                    <p id="modal-story-text">...</p>
                 </div>
-                
-                <button class="hero-play-btn" id="modal-quick-play-btn" style="display: none;">
-                    <i class="fa-solid fa-play"></i> مشاهدة الآن بأعلى جودة
+
+                <button class="play-cta" id="modal-quick-play-btn" style="display: none;">
+                    <i class="fa-solid fa-play"></i> مشاهدة الآن (بأعلى جودة)
                 </button>
             </div>
 
-            <div class="hero-poster-col">
-                <div class="hero-poster-wrapper">
-                    <img src="" alt="Poster" class="hero-poster-img" id="modal-poster" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'450\' viewBox=\'0 0 300 450\'><rect width=\'100%\' height=\'100%\' fill=\'%2314171c\'/><g transform=\'translate(100, 160)\'><circle cx=\'50\' cy=\'50\' r=\'40\' fill=\'%23e50914\' opacity=\'0.15\'/><path d=\'M10 20 L90 20 L80 90 L20 90 Z\' fill=\'%23e50914\' opacity=\'0.6\'/><rect x=\'15\' y=\'30\' width=\'70\' height=\'50\' rx=\'4\' fill=\'%23ef4444\' opacity=\'0.8\'/><polygon points=\'45,45 65,55 45,65\' fill=\'%23ffffff\'/><circle cx=\'50\' cy=\'110\' r=\'8\' fill=\'%2310b981\'/><circle cx=\'20\' cy=\'110\' r=\'6\' fill=\'%23f59e0b\'/><circle cx=\'80\' cy=\'110\' r=\'6\' fill=\'%23f43f5e\'/></g><text x=\'50%\' y=\'360\' font-family=\'Cairo, sans-serif\' font-weight=\'700\' font-size=\'16\' fill=\'%239ca3af\' text-anchor=\'middle\'>لا يتوفر بوستر</text></svg>';" referrerpolicy="no-referrer">
+            <!-- Poster -->
+            <div class="poster-col">
+                <div class="poster-frame" id="modal-poster-wrapper">
+                    <img src="" alt="Poster" id="modal-poster" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'450\' viewBox=\'0 0 300 450\'><rect width=\'100%\' height=\'100%\' fill=\'%2314171c\'/><text x=\'50%\' y=\'50%\' font-family=\'Cairo, sans-serif\' font-weight=\'700\' font-size=\'16\' fill=\'%239ca3af\' text-anchor=\'middle\' dominant-baseline=\'middle\'>لا يتوفر بوستر</text></svg>';" referrerpolicy="no-referrer">
                 </div>
             </div>
         </div>
-        
-        <div class="hero-bottom-sections">
-            <div class="seasons-wrapper" id="modal-seasons-section" style="display: none;">
-                <h3 class="section-heading"><i class="fa-solid fa-layer-group"></i> المواسم المتوفرة</h3>
-                <div class="seasons-grid" id="modal-seasons-grid"></div>
-            </div>
-            
-            <div class="episodes-wrapper" id="modal-episodes-section" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 25px;">
-                    <h3 class="section-heading" style="margin: 0;"><i class="fa-solid fa-list-ol"></i> حلقات الموسم</h3>
-                    <div class="episodes-search-box" style="margin: 0;">
-                        <i class="fa-solid fa-magnifying-glass filter-icon"></i>
-                        <input type="text" id="episode-filter-input" placeholder="تصفية الحلقات...">
-                    </div>
+    </div>
+
+    <!-- Seasons / Episodes / Servers -->
+    <div class="detail-sections">
+        <div class="section-card seasons-wrapper" id="modal-seasons-section" style="display: none;">
+            <h3 class="section-heading"><i class="fa-solid fa-layer-group"></i> المواسم المتوفرة</h3>
+            <div class="seasons-grid" id="modal-seasons-grid"></div>
+        </div>
+
+        <div class="section-card episodes-wrapper" id="modal-episodes-section" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 25px;">
+                <h3 class="section-heading" style="margin: 0;"><i class="fa-solid fa-list-ol"></i> حلقات الموسم</h3>
+                <div class="episodes-search-box" style="margin: 0;">
+                    <i class="fa-solid fa-magnifying-glass filter-icon"></i>
+                    <input type="text" id="episode-filter-input" placeholder="تصفية الحلقات...">
                 </div>
-                <div class="episodes-grid" id="modal-episodes-grid"></div>
             </div>
-            
-            <div class="servers-wrapper" id="modal-servers-section" style="display: none;">
-                <h3 class="section-heading"><i class="fa-solid fa-server"></i> سيرفرات البث</h3>
-                <div class="servers-list" id="modal-servers-list"></div>
-                <div class="loader-container" id="servers-loading-spinner" style="display: none; margin-top: 20px;">
-                    <div class="cyber-spinner"></div>
-                    <p class="loading-text" style="font-size: 0.9rem;">جاري جلب الروابط...</p>
-                </div>
+            <div class="episodes-grid" id="modal-episodes-grid"></div>
+        </div>
+
+        <div class="section-card servers-wrapper" id="modal-servers-section" style="display: none;">
+            <h3 class="section-heading"><i class="fa-solid fa-server"></i> سيرفرات البث</h3>
+            <div class="servers-list" id="modal-servers-list"></div>
+            <div class="loader-container" id="servers-loading-spinner" style="display: none; margin-top: 20px;">
+                <div class="cyber-spinner"></div>
+                <p class="loading-text" style="font-size: 0.9rem;">جاري جلب الروابط...</p>
             </div>
         </div>
     </div>
@@ -485,7 +376,7 @@
     window.SHOW_RATING = "{{ request.args.get('rating', '7.8') | safe }}";
     window.SHOW_QUALITY = "{{ request.args.get('quality', '1080p FHD') | safe }}";
     window.SHOW_TYPE = "{{ request.args.get('type', 'عرض سينمائي') | safe }}";
-    
+
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('show-page-loader').style.display = 'none';
     });
