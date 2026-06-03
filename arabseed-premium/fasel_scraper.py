@@ -231,57 +231,12 @@ class FaselAPI:
 
     def get_hero_slides(self) -> List[Dict[str, Any]]:
         """
-        Dynamically builds the hero slider using TMDB trending movies for ultra-high-res backdrops,
-        and links them to actual playable FaselHD URLs.
-        If it fails, it gracefully falls back to scraping the #homeSlide from FaselHD.
+        Dynamically builds the hero slider using the native FaselHD slider from the homepage.
+        This prevents massive Cloudflare 429 bans and makes the homepage load instantly.
         """
         slides = []
-        try:
-            tmdb_api_key = '15d2ea6d0dc1d476efbca3eba2b9bbfb'
-            # Use curl_cffi session to hit TMDB (thread-safe without impersonate)
-            r = requests.get(f'https://api.themoviedb.org/3/trending/movie/week?api_key={tmdb_api_key}&language=ar', timeout=10)
-            if r.status_code == 200:
-                movies = r.json().get('results', [])
-                
-                # Fetch matches in parallel for blazing speed
-                def process_movie(m):
-                    title = m.get('title') or m.get('original_title')
-                    backdrop = m.get('backdrop_path')
-                    if not title or not backdrop:
-                        return None
-                    
-                    # Search FaselHD for this exact trending movie
-                    results = self.search(title, max_pages=1)
-                    if results:
-                        # Grab the first match
-                        match = results[0]
-                        return {
-                            "url": match['url'],
-                            "poster": f"https://image.tmdb.org/t/p/original{backdrop}",
-                            "title": title,
-                            "type": match.get('type', 'فيلم'),
-                            "rating": str(round(m.get('vote_average', 8.5), 1)),
-                            "quality": "1080p FHD"
-                        }
-                    return None
-                    
-                with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-                    futures = [executor.submit(process_movie, m) for m in movies[:12]]
-                    for future in concurrent.futures.as_completed(futures):
-                        res = future.result()
-                        if res:
-                            slides.append(res)
-                            if len(slides) >= 6:
-                                break
-                                
-            # If TMDB gave us great slides, return them!
-            if len(slides) >= 3:
-                return slides
-                
-        except Exception as e:
-            print(f"Error fetching dynamic TMDB hero slides: {e}")
-
-        # Fallback to standard scraping if TMDB logic failed or didn't find enough matches
+        
+        # Fallback to standard scraping of the native slider
         try:
             r = self.get_with_retry(f"{self.base_url}/main", timeout=12)
             if r.status_code == 200:
