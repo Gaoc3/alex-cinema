@@ -9,6 +9,7 @@
        Show Page — Cinematic Detail Layout
        ============================================= */
     .show-page-wrapper {
+        min-height: calc(100vh - 200px); /* Fill screen but don't add 600px of empty space */
         background: #06080d;
         position: relative;
         color: #fff;
@@ -17,14 +18,15 @@
     }
 
     /* === Backdrop: Full-width blurred poster behind everything === */
-    .hero-backdrop {
+    #modal-backdrop-blur.hero-backdrop {
         position: absolute;
         top: 0; left: 0; right: 0;
         height: 100%;
         background-size: cover;
         background-position: center 20%;
-        filter: blur(35px) brightness(0.6) saturate(1.6);
-        transform: scale(1.15); /* prevent blur white edges */
+        filter: blur(35px) brightness(0.6) saturate(1.6) !important;
+        transform: scale(1.15) !important; /* prevent blur white edges */
+        opacity: 1 !important; /* override style.css opacity: 0.35 */
         z-index: 1;
     }
 
