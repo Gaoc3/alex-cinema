@@ -764,7 +764,14 @@ def get_home_data_fresh():
             'category': 'الرئيسية'
         }
         
-        if categories or slides:
+        # Prevent completely broken UI: if categories is empty (rate limit), fallback to old cache
+        if not categories:
+            old_cache = app_cache.get("home_data")
+            if old_cache and old_cache.get('categories'):
+                return old_cache
+                
+        # Only overwrite cache if we got valid categories
+        if categories:
             app_cache.set("home_data", res, ttl=1800)
             for cat in categories:
                 register_cards(cat.get('cards', []))
