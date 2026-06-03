@@ -720,10 +720,12 @@ function renderCarousels(categories) {
                         <div class="poster-overlay">
                             <div class="play-hover-btn"><i class="fa-solid fa-play"></i></div>
                         </div>
-
-                        <div class="card-bottom-content">
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">${item.title}</h3>
+                        <div class="card-footer">
                             <span class="card-type"><i class="${getTypeIconClass(item.type)}"></i> ${item.type || 'فيلم'}</span>
-                            <h3 class="card-title">${item.title}</h3>
+                            <span class="card-action-hint">شاهد الان</span>
                         </div>
                     </div>
                 </div>
@@ -778,9 +780,12 @@ function renderCards(results) {
                 <div class="poster-overlay">
                     <div class="play-hover-btn"><i class="fa-solid fa-play"></i></div>
                 </div>
-                <div class="card-bottom-content">
+            </div>
+            <div class="card-body">
+                <h3 class="card-title">${item.title}</h3>
+                <div class="card-footer">
                     <span class="card-type"><i class="${getTypeIconClass(item.type)}"></i> ${item.type || 'فيلم'}</span>
-                    <h3 class="card-title">${item.title}</h3>
+                    <span class="card-action-hint">شاهد الان</span>
                 </div>
             </div>
         `;
