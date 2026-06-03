@@ -754,9 +754,9 @@ body {
 /* Main Section Header */
 .section-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
-    gap: 15px;
+    gap: 25px;
     margin-bottom: 30px;
     padding-bottom: 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
