@@ -63,6 +63,7 @@ function SeriesContent() {
   const selectedSort = searchParams.get('sort') || 'recent';
   const selectedYear = searchParams.get('year') || '1900,2026';
   const selectedRating = searchParams.get('rating') || '';
+  const viewMode = searchParams.get('view') || '';
   const page = parseInt(searchParams.get('page') || '1', 10);
 
   const [series, setSeries] = useState<VideoItem[]>([]);
@@ -71,55 +72,85 @@ function SeriesContent() {
   useEffect(() => {
     async function loadSeries() {
       setLoading(true);
-      
-      const yearRange = selectedYear;
-      const catParam = selectedCategory ? `&category_id=${selectedCategory}` : '';
-      const starParam = selectedRating ? `&star=>=${selectedRating}` : '';
-      
-      const ITEMS_PER_PAGE = 30;
-      const API_PAGE_SIZE = 12;
-      
-      const startItem = (page - 1) * ITEMS_PER_PAGE;
-      const endItem = page * ITEMS_PER_PAGE - 1;
-      
-      const firstApiPage = Math.floor(startItem / API_PAGE_SIZE);
-      const lastApiPage = Math.floor(endItem / API_PAGE_SIZE);
-      
-      const apiPagesToFetch = [];
-      for (let i = firstApiPage; i <= lastApiPage; i++) {
-        apiPagesToFetch.push(i);
-      }
 
       try {
-        const fetchPromises = apiPagesToFetch.map(apiPage => {
-          const url = `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=&staffTitle=&page=${apiPage}&year=${yearRange}&type=series${catParam}${starParam}`;
-          return fetch(url).then(res => res.ok ? res.json() : []);
-        });
-        
-        const results = await Promise.all(fetchPromises);
-        let combinedList: VideoItem[] = [];
-        
-        results.forEach(data => {
-          if (Array.isArray(data)) {
-            combinedList.push(...data);
+        if (viewMode === 'episodes') {
+          // Latest Episodes mode: use latestSeries endpoint
+          const ITEMS_PER_PAGE = 30;
+          const API_PAGE_SIZE = 20;
+
+          const startItem = (page - 1) * ITEMS_PER_PAGE;
+          const endItem = page * ITEMS_PER_PAGE - 1;
+
+          const firstApiPage = Math.floor(startItem / API_PAGE_SIZE) + 1;
+          const lastApiPage = Math.floor(endItem / API_PAGE_SIZE) + 1;
+
+          const apiPagesToFetch = [];
+          for (let i = firstApiPage; i <= lastApiPage; i++) {
+            apiPagesToFetch.push(i);
           }
-        });
-        
-        const offset = startItem % API_PAGE_SIZE;
-        let list = combinedList.slice(offset, offset + ITEMS_PER_PAGE);
 
-        // Client-side Sorting
-        if (selectedSort === 'recent') {
-          list = [...list].sort((a, b) => parseInt(b.nb) - parseInt(a.nb));
-        } else if (selectedSort === 'stars') {
-          list = [...list].sort((a, b) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0'));
-        } else if (selectedSort === 'year') {
-          list = [...list].sort((a, b) => parseInt(b.year || '0') - parseInt(a.year || '0'));
-        } else if (selectedSort === 'name') {
-          list = [...list].sort((a, b) => (a.ar_title || '').localeCompare(b.ar_title || ''));
+          const fetchPromises = apiPagesToFetch.map(apiPage => {
+            const url = `/api/proxy?endpoint=latestSeries/level/2/itemsPerPage/${API_PAGE_SIZE}/page/${apiPage}/`;
+            return fetch(url).then(res => res.ok ? res.json() : []);
+          });
+
+          const results = await Promise.all(fetchPromises);
+          let combinedList: VideoItem[] = [];
+          results.forEach(data => {
+            if (Array.isArray(data)) combinedList.push(...data);
+          });
+
+          const offset = startItem % API_PAGE_SIZE;
+          const list = combinedList.slice(offset, offset + ITEMS_PER_PAGE);
+          setSeries(list);
+        } else {
+          // Normal series archive mode: use AdvancedSearch
+          const yearRange = selectedYear;
+          const catParam = selectedCategory ? `&category_id=${selectedCategory}` : '';
+          const starParam = selectedRating ? `&star=>=${selectedRating}` : '';
+
+          const ITEMS_PER_PAGE = 30;
+          const API_PAGE_SIZE = 12;
+
+          const startItem = (page - 1) * ITEMS_PER_PAGE;
+          const endItem = page * ITEMS_PER_PAGE - 1;
+
+          const firstApiPage = Math.floor(startItem / API_PAGE_SIZE);
+          const lastApiPage = Math.floor(endItem / API_PAGE_SIZE);
+
+          const apiPagesToFetch = [];
+          for (let i = firstApiPage; i <= lastApiPage; i++) {
+            apiPagesToFetch.push(i);
+          }
+
+          const fetchPromises = apiPagesToFetch.map(apiPage => {
+            const url = `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=&staffTitle=&page=${apiPage}&year=${yearRange}&type=series${catParam}${starParam}`;
+            return fetch(url).then(res => res.ok ? res.json() : []);
+          });
+
+          const results = await Promise.all(fetchPromises);
+          let combinedList: VideoItem[] = [];
+          results.forEach(data => {
+            if (Array.isArray(data)) combinedList.push(...data);
+          });
+
+          const offset = startItem % API_PAGE_SIZE;
+          let list = combinedList.slice(offset, offset + ITEMS_PER_PAGE);
+
+          // Client-side Sorting
+          if (selectedSort === 'recent') {
+            list = [...list].sort((a, b) => parseInt(b.nb) - parseInt(a.nb));
+          } else if (selectedSort === 'stars') {
+            list = [...list].sort((a, b) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0'));
+          } else if (selectedSort === 'year') {
+            list = [...list].sort((a, b) => parseInt(b.year || '0') - parseInt(a.year || '0'));
+          } else if (selectedSort === 'name') {
+            list = [...list].sort((a, b) => (a.ar_title || '').localeCompare(b.ar_title || ''));
+          }
+
+          setSeries(list);
         }
-
-        setSeries(list);
       } catch (error) {
         console.error('Failed to load series:', error);
         setSeries([]);
@@ -129,7 +160,7 @@ function SeriesContent() {
     }
 
     loadSeries();
-  }, [page, selectedCategory, selectedYear, selectedRating, selectedSort]);
+  }, [page, selectedCategory, selectedYear, selectedRating, selectedSort, viewMode]);
 
   const updateParams = (newParams: Record<string, string | null>) => {
     if (typeof window !== 'undefined') {
