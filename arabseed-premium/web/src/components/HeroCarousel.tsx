@@ -48,7 +48,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
   const coverImgUrl = current.imgObjUrl || `https://cnth2.shabakaty.com/vascin-cover-images/${current.img}`;
 
   return (
-    <div className="relative w-full h-[500px] lg:h-[580px] flex items-center mt-0 overflow-hidden bg-black select-none group">
+    <div className="relative w-full min-h-[600px] lg:min-h-[75vh] flex flex-col justify-end mt-0 overflow-hidden bg-black select-none group">
       {/* Background Image Carousel Slider */}
       <div className="absolute inset-0 w-full h-full">
         <div 
@@ -71,7 +71,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       </div>
       
       {/* Carousel Content */}
-      <div className="relative z-10 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col justify-center h-full pb-32 md:pb-40 lg:pb-48 pt-24">
+      <div className="relative z-10 w-full flex flex-col justify-between h-full pt-24 lg:pt-32 pb-4 sm:pb-6">
+        
+        {/* Top Text Section */}
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow flex flex-col justify-center mb-8">
         <div 
           className={`max-w-3xl relative transition-all duration-500 transform text-right ${
             fade ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
@@ -145,7 +148,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
 
       {/* Slide Indicators / Thumbnails Row (Cinemana Style) */}
       {videos.length > 1 && (
-        <div className="absolute bottom-5 left-0 right-0 z-20 w-full">
+        <div className="w-full z-20 mt-auto">
           <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full pb-4">
             {/* Start spacer to replace padding and avoid RTL bugs */}
             <div className="w-1 sm:w-4 shrink-0 pointer-events-none opacity-0"></div>
@@ -178,8 +181,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             {/* End spacer to replace padding and avoid RTL bugs */}
             <div className="w-1 sm:w-4 shrink-0 pointer-events-none opacity-0"></div>
           </div>
+          </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
