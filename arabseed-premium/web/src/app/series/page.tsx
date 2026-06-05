@@ -193,7 +193,7 @@ function SeriesContent() {
   };
 
   return (
-    <div className="min-h-screen pt-32 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 animate-fade-in-up">
+    <div className="min-h-screen pt-20 sm:pt-24 lg:pt-32 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 animate-fade-in-up">
       {/* Title */}
       <div className="flex items-center gap-4 mb-8">
         <div className="w-1.5 h-10 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
@@ -335,11 +335,11 @@ function SeriesContent() {
               </div>
 
               {/* Pagination Controls */}
-              <div className="flex items-center justify-center gap-4 mt-16">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-12 sm:mt-16">
                 {page > 1 ? (
                   <button 
                     onClick={() => updateParams({ page: (page - 1).toString() })}
-                    className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/5 px-6 py-3.5 rounded-xl font-bold text-sm transition-all hover-scale cursor-pointer"
+                    className="flex items-center gap-1.5 sm:gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/5 px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm transition-all hover-scale cursor-pointer"
                   >
                     <i className="fa-solid fa-arrow-right"></i>
                     <span>الصفحة السابقة</span>
@@ -351,14 +351,14 @@ function SeriesContent() {
                   </div>
                 )}
                 
-                <div className="glass-panel px-6 py-3.5 rounded-xl text-sm font-black text-gray-200 border border-white/10 shadow-lg">
+                <div className="glass-panel px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl text-xs sm:text-sm font-black text-gray-200 border border-white/10 shadow-lg">
                   صفحة <span className="font-en text-blue-500 font-black mx-1">{page}</span>
                 </div>
 
                 {series.length >= 20 ? (
                   <button 
                     onClick={() => updateParams({ page: (page + 1).toString() })}
-                    className="flex items-center gap-2 bg-alex-primary text-white border border-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.3)] px-6 py-3.5 rounded-xl font-bold text-sm transition-all hover-scale cursor-pointer"
+                    className="flex items-center gap-1.5 sm:gap-2 bg-alex-primary text-white border border-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.3)] px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm transition-all hover-scale cursor-pointer"
                   >
                     <span>الصفحة التالية</span>
                     <i className="fa-solid fa-arrow-left"></i>
