@@ -162,7 +162,7 @@ function SeriesContent() {
               onClick={() => handleCategoryChange(cat.id)}
               className={`flex-shrink-0 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 selectedCategory === cat.id
-                  ? 'bg-blue-600 text-white shadow-[0_0_10px_rgba(59,130,246,0.4)]'
+                  ? 'bg-alex-primary text-white shadow-[0_0_10px_rgba(59,130,246,0.4)]'
                   : 'glass-panel text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -253,7 +253,7 @@ function SeriesContent() {
 
                       {/* Play Hover Indicator */}
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 transform scale-50 group-hover/card:opacity-100 group-hover/card:scale-100 transition-all duration-300 z-20">
-                        <div className="w-14 h-14 rounded-full bg-blue-600/95 flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.5)] backdrop-blur-md">
+                        <div className="w-14 h-14 rounded-full bg-alex-primary/95 flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.5)] backdrop-blur-md">
                           <i className="fa-solid fa-play ml-1 text-xl"></i>
                         </div>
                       </div>
@@ -306,7 +306,7 @@ function SeriesContent() {
                 {series.length === 24 ? (
                   <button 
                     onClick={() => updateParams({ page: (page + 1).toString() })}
-                    className="flex items-center gap-2 bg-blue-600 text-white border border-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.3)] px-6 py-3.5 rounded-xl font-bold text-sm transition-all hover-scale cursor-pointer"
+                    className="flex items-center gap-2 bg-alex-primary text-white border border-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.3)] px-6 py-3.5 rounded-xl font-bold text-sm transition-all hover-scale cursor-pointer"
                   >
                     <span>الصفحة التالية</span>
                     <i className="fa-solid fa-arrow-left"></i>
@@ -338,7 +338,7 @@ function SeriesContent() {
                   onClick={() => handleCategoryChange(cat.id)}
                   className={`w-full text-right px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
                     selectedCategory === cat.id
-                      ? 'bg-blue-600 text-white shadow-[0_0_10px_rgba(59,130,246,0.4)] font-black'
+                      ? 'bg-alex-primary text-white shadow-[0_0_10px_rgba(59,130,246,0.4)] font-black'
                       : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
