@@ -145,15 +145,15 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
 
       {/* Slide Indicators / Thumbnails Row (Cinemana Style) */}
       {videos.length > 1 && (
-        <div className="absolute bottom-5 left-0 right-0 z-20 w-full px-4 sm:px-6">
-          <div className="flex gap-3 overflow-x-auto hide-scrollbar mx-auto w-fit max-w-full pb-2">
+        <div className="absolute bottom-5 left-0 right-0 z-20 w-full overflow-x-auto hide-scrollbar" dir="ltr">
+          <div className="flex flex-row-reverse gap-2 sm:gap-3 w-max mx-auto px-4 sm:px-8 pb-2">
           {videos.map((video, idx) => {
             const thumbUrl = video.imgObjUrl || `https://cnth2.shabakaty.com/vascin-cover-images/${video.img}`;
             return (
               <button
                 key={video.nb}
                 onClick={() => triggerSlideChange(idx)}
-                className={`relative w-20 sm:w-24 md:w-28 aspect-[16/9] rounded-lg overflow-hidden border-2 transition-all duration-300 hover:scale-105 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none ${
+                className={`relative w-16 sm:w-20 lg:w-24 aspect-[16/9] rounded-md overflow-hidden border-2 transition-all duration-300 hover:scale-105 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none ${
                   currentIndex === idx 
                     ? 'border-alex-primary shadow-[0_0_12px_rgba(229,9,20,0.6)] scale-105' 
                     : 'border-white/10 hover:border-white/30'
