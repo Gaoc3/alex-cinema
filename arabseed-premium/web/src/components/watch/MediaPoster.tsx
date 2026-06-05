@@ -18,7 +18,7 @@ export default function MediaPoster({ img, imdbUrlRef }: MediaPosterProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0e17] via-transparent to-transparent opacity-80"></div>
         
         {imdbUrlRef && (
-          <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/95 via-black/80 to-transparent backdrop-blur-sm border-t border-white/10 flex items-center justify-center">
+          <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/95 via-black/80 to-transparent backdrop-blur-sm border-t border-white/10 flex items-center justify-center rounded-b-2xl">
             <a 
               href={imdbUrlRef} 
               target="_blank" 
