@@ -227,10 +227,10 @@ export default function Sidebar() {
 
             {/* انمي */}
             <Link 
-              href="/movies?category=57" 
+              href="/series?category=57" 
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
-                isActive('/movies?category=57') 
+                isActive('/series?category=57') 
                   ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
@@ -275,10 +275,10 @@ export default function Sidebar() {
 
             {/* الأطفال والكرتون */}
             <Link 
-              href="/movies?category=65" 
+              href="/movies?category=57" 
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
-                isActive('/movies?category=65') 
+                isActive('/movies?category=57') 
                   ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
