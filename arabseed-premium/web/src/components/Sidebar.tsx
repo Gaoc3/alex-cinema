@@ -77,7 +77,7 @@ export default function Sidebar() {
         <div className="h-24 border-b border-white/5 flex items-center justify-between pr-5 pl-3 w-full shrink-0 relative z-20">
           
           {/* Logo and Brand Name (Hidden on Collapsed) */}
-          <div className="flex items-center gap-2.5 sidebar-brand-name">
+          <div className={`flex items-center gap-2.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-right ${isCollapsed ? 'opacity-0 max-w-0 overflow-hidden scale-90 pointer-events-none' : 'opacity-100 max-w-[300px] scale-100 delay-100'}`}>
             <Link href="/" className="flex items-center gap-2.5 group" onClick={closeSidebar}>
               <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300">
                 <i className="fa-solid fa-play text-white ml-0.5 text-base"></i>
@@ -92,14 +92,14 @@ export default function Sidebar() {
           {/* Hamburger toggle button (Hidden on Collapsed) */}
           <button 
             onClick={toggleSidebar}
-            className="w-10 h-10 shrink-0 rounded-xl glass-panel border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-alex-primary transition-all hover-scale cursor-pointer sidebar-brand-name"
+            className={`shrink-0 rounded-xl glass-panel border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-alex-primary transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${isCollapsed ? 'opacity-0 w-0 h-0 overflow-hidden scale-50 pointer-events-none border-0' : 'opacity-100 w-10 h-10 scale-100 delay-100 hover-scale'}`}
             aria-label="Collapse Sidebar"
           >
             <i className="fa-solid fa-bars text-gray-300 text-base"></i>
           </button>
 
           {/* Centered logo button (Shown ONLY on Collapsed) */}
-          <div className="sidebar-collapsed-logo w-full flex justify-center items-center absolute inset-0 opacity-0 pointer-events-none">
+          <div className={`w-full flex justify-center items-center absolute inset-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isCollapsed ? 'opacity-100 scale-100 delay-150 pointer-events-auto' : 'opacity-0 scale-50 pointer-events-none'}`}>
             <button 
               onClick={toggleSidebar}
               className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.6)] hover:shadow-[0_0_25px_rgba(229,9,20,0.9)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
