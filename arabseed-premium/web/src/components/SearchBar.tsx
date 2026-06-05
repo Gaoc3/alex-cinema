@@ -180,7 +180,7 @@ export default function SearchBar() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim().length >= 2 && setShowDropdown(true)}
           autoComplete="off"
-          className="w-[50vw] max-w-[200px] sm:w-[350px] lg:w-[450px] glass-panel border border-white/10 rounded-full py-2 sm:py-2.5 lg:py-3 pr-9 pl-9 sm:pr-10 sm:pl-10 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-alex-primary focus:bg-black/40 focus:ring-1 focus:ring-alex-primary transition-all duration-300 shadow-inner"
+          className="w-40 sm:w-64 md:w-72 lg:w-80 glass-panel border border-white/10 rounded-full py-2 sm:py-2.5 lg:py-3 pr-9 pl-9 sm:pr-10 sm:pl-10 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-alex-primary focus:bg-black/40 focus:ring-1 focus:ring-alex-primary transition-all duration-300 shadow-inner"
           placeholder="ابحث..."
         />
         <div className="absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-alex-primary transition-colors">
@@ -197,7 +197,7 @@ export default function SearchBar() {
 
       {/* Live Search Results Dropdown */}
       {showDropdown && query.trim().length >= 2 && (results.length > 0 || !isLoading) && (
-        <div className="fixed inset-x-2 top-[72px] sm:absolute sm:top-full sm:left-0 sm:right-auto sm:w-[450px] lg:w-[500px] mt-3 bg-[#0b0f19] sm:bg-slate-900/80 border border-white/10 sm:backdrop-blur-3xl rounded-[22px] overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_40px_rgba(229,9,20,0.03)] z-50 animate-fade-in-up py-3 group/scrollbar">
+        <div className="fixed inset-x-2 top-[72px] sm:absolute sm:top-full sm:left-0 sm:right-auto sm:w-[450px] lg:w-[500px] mt-3 glass-panel max-sm:!bg-[#0b0f19] max-sm:!backdrop-blur-none bg-slate-900/80 border border-white/10 backdrop-blur-3xl rounded-[22px] overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_40px_rgba(229,9,20,0.03)] z-50 animate-fade-in-up py-3 group/scrollbar">
           
           <div 
             ref={containerRef}
