@@ -36,7 +36,7 @@ export default function PlayerSection({
                   stream_url: activeEpisodeDetails.streams?.length > 0 
                     ? activeEpisodeDetails.streams[0].videoUrl 
                     : (activeEpisodeDetails.fileFile 
-                        ? `https://cndw2.shabakaty.com/m240/${activeEpisodeDetails.fileFile}` 
+                        ? `https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=https://cndw2.shabakaty.com/m240/${activeEpisodeDetails.fileFile}` 
                         : ''),
                   img: video.img,
                   ar_title: displayTitle,

@@ -63,7 +63,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
   const current = videos[bgIndex];
 
   // Build the correct landscape cover image URL
-  const coverImgUrl = current.imgObjUrl || `https://cnth2.shabakaty.com/vascin-cover-images/${current.img}`;
+  const coverImgUrl = current.imgObjUrl || `https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=https://cnth2.shabakaty.com/vascin-cover-images/${current.img}`;
 
   return (
     <div className="relative w-full h-[85svh] min-h-[600px] sm:min-h-[auto] sm:h-[580px] lg:h-[85vh] flex flex-col justify-end mt-0 overflow-hidden bg-[#070a13] select-none group">
@@ -172,7 +172,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             {/* Start spacer to replace padding and avoid RTL bugs */}
             <div className="w-1 sm:w-4 shrink-0 pointer-events-none opacity-0"></div>
           {videos.map((video, idx) => {
-            const thumbUrl = video.imgObjUrl || `https://cnth2.shabakaty.com/vascin-cover-images/${video.img}`;
+            const thumbUrl = video.imgObjUrl || `https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=https://cnth2.shabakaty.com/vascin-cover-images/${video.img}`;
             return (
               <button
                 key={video.nb}
