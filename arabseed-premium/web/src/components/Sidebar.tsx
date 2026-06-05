@@ -198,9 +198,9 @@ export default function Sidebar() {
               
               {/* Movies Submenu */}
               <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] mr-8 space-y-1 mt-1 sidebar-submenu origin-top ${moviesOpen && !isCollapsed ? 'max-h-40 opacity-100 translate-y-0 scale-y-100' : 'max-h-0 opacity-0 -translate-y-2 scale-y-95 pointer-events-none'}`}>
-                <Link href="/movies" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white hover:translate-x-[-4px] transition-all">كل الأفلام</Link>
-                <Link href="/movies?sort=stars" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white hover:translate-x-[-4px] transition-all">الأعلى تقييماً</Link>
-                <Link href="/movies?category=84" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white hover:translate-x-[-4px] transition-all">أفلام أكشن</Link>
+                <Link href="/movies" onClick={closeSidebar} className={`block py-2 px-4 text-sm font-semibold transition-all ${isActive('/movies') ? 'text-alex-primary translate-x-[-4px]' : 'text-gray-400 hover:text-white hover:translate-x-[-4px]'}`}>كل الأفلام</Link>
+                <Link href="/movies?sort=stars" onClick={closeSidebar} className={`block py-2 px-4 text-sm font-semibold transition-all ${isActive('/movies?sort=stars') ? 'text-alex-primary translate-x-[-4px]' : 'text-gray-400 hover:text-white hover:translate-x-[-4px]'}`}>الأعلى تقييماً</Link>
+                <Link href="/movies?category=84" onClick={closeSidebar} className={`block py-2 px-4 text-sm font-semibold transition-all ${isActive('/movies?category=84') ? 'text-alex-primary translate-x-[-4px]' : 'text-gray-400 hover:text-white hover:translate-x-[-4px]'}`}>أفلام أكشن</Link>
               </div>
             </div>
 
