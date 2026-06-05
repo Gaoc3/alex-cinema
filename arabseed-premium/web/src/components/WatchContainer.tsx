@@ -223,10 +223,10 @@ export default function WatchContainer({ video, seasons, episodes }: WatchContai
     : video.ar_content;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 w-full max-w-7xl mx-auto">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-7xl mx-auto">
       
-      {/* Right side on desktop: Player + Movie Details (spans 3 columns) */}
-      <div className="lg:col-span-3 space-y-8">
+      {/* Right side on desktop: Player + Movie Details (spans 2 columns) */}
+      <div className="lg:col-span-2 space-y-8">
         
         {/* Video Player */}
         <div className="w-full">
@@ -445,7 +445,7 @@ export default function WatchContainer({ video, seasons, episodes }: WatchContai
       </div>
 
       {/* Left side on desktop: Poster & Metadata info (lg:col-span-1) */}
-      <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-28">
+      <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-6">
         
         {/* Card 1: Poster & IMDB Link */}
         <div className="glass-panel rounded-3xl p-5 shadow-2xl relative overflow-hidden border border-white/5">
