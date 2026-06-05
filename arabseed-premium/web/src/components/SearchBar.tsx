@@ -172,7 +172,7 @@ export default function SearchBar() {
   };
 
   return (
-    <div className="relative md:block group" ref={dropdownRef}>
+    <div className="relative group" ref={dropdownRef}>
       <form onSubmit={handleSubmit} className="relative">
         <input
           type="text"
@@ -180,17 +180,17 @@ export default function SearchBar() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim().length >= 2 && setShowDropdown(true)}
           autoComplete="off"
-          className="w-80 sm:w-96 glass-panel border border-white/10 rounded-full py-3 pr-12 pl-12 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-alex-primary focus:bg-black/40 focus:ring-1 focus:ring-alex-primary transition-all duration-300 focus:w-[360px] sm:focus:w-[440px] shadow-inner"
-          placeholder="عن ماذا تبحث اليوم؟..."
+          className="w-48 sm:w-64 md:w-72 lg:w-80 glass-panel border border-white/10 rounded-full py-2.5 lg:py-3 pr-10 pl-10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-alex-primary focus:bg-black/40 focus:ring-1 focus:ring-alex-primary transition-all duration-300 shadow-inner"
+          placeholder="ابحث..."
         />
-        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-alex-primary transition-colors">
-          <i className="fa-solid fa-search text-lg"></i>
+        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500 group-focus-within:text-alex-primary transition-colors">
+          <i className="fa-solid fa-search text-base"></i>
         </div>
         
         {/* Loading Spinner */}
         {isLoading && (
-          <div className="absolute inset-y-0 left-4 flex items-center">
-            <div className="w-5 h-5 border-2 border-alex-primary border-t-transparent rounded-full animate-spin"></div>
+          <div className="absolute inset-y-0 left-3 flex items-center">
+            <div className="w-4 h-4 border-2 border-alex-primary border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
       </form>
