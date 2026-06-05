@@ -173,6 +173,8 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
               </button>
             );
           })}
+            {/* Spacer to fix RTL flex scroll cutoff bug in Chromium/Safari */}
+            <div className="w-2 sm:w-6 shrink-0 pointer-events-none opacity-0"></div>
           </div>
         </div>
       )}
