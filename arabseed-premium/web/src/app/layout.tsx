@@ -51,7 +51,7 @@ export default function RootLayout({
                       </Link>
                   </div>
  
-                  <div className="flex items-center gap-1.5 sm:gap-4 lg:gap-6 shrink-0">
+                  <div className="flex items-center gap-1.5 sm:gap-4 lg:gap-24 shrink-0">
                       <SearchBar />
 
                       <button className="hidden sm:flex w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 border-alex-primary/50 overflow-hidden hover:border-alex-primary transition-all hover-scale shadow-[0_0_15px_rgba(229,9,20,0.3)]">
