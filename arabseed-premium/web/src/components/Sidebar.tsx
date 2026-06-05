@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [moviesOpen, setMoviesOpen] = useState(false);
   const [seriesOpen, setSeriesOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -32,7 +33,27 @@ export default function Sidebar() {
     };
   }, []);
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => {
+    // If the path contains a query string
+    if (path.includes('?')) {
+      const [basePath, queryString] = path.split('?');
+      if (pathname !== basePath) return false;
+      
+      const targetParams = new URLSearchParams(queryString);
+      // Check if all target params exist in the current URL with the same value
+      for (const [key, value] of targetParams.entries()) {
+        if (searchParams.get(key) !== value) return false;
+      }
+      return true;
+    }
+    
+    // Exact match for base path without query string
+    // Special case for root '/'
+    if (path === '/') return pathname === '/';
+    
+    // For other paths without query strings, just check if pathname matches
+    return pathname === path && Array.from(searchParams.keys()).length === 0;
+  };
 
   const closeSidebar = () => {
     if (typeof document !== 'undefined') {
