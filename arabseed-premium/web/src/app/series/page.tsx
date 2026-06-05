@@ -195,11 +195,11 @@ function SeriesContent() {
   return (
     <div className="min-h-screen pt-20 sm:pt-24 lg:pt-32 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 animate-fade-in-up">
       {/* Title */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-1.5 h-10 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+      <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="w-1.5 h-8 sm:h-10 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
         <div>
-          <h1 className="text-4xl font-black text-white drop-shadow-md tracking-wide">{viewMode === 'episodes' ? 'أحدث الحلقات' : 'أرشيف المسلسلات'}</h1>
-          <p className="text-gray-400 mt-1 text-sm font-medium">{viewMode === 'episodes' ? 'المسلسلات التي أُضيفت لها حلقات جديدة مؤخراً' : 'استخدم الفلاتر الجانبية والعلوية للوصول للمسلسلات المطلوبة'}</p>
+          <h1 className="text-2xl sm:text-4xl font-black text-white drop-shadow-md tracking-wide">{viewMode === 'episodes' ? 'أحدث الحلقات' : 'أرشيف المسلسلات'}</h1>
+          <p className="text-gray-400 mt-1 text-xs sm:text-sm font-medium">{viewMode === 'episodes' ? 'المسلسلات التي أُضيفت لها حلقات جديدة مؤخراً' : 'استخدم الفلاتر الجانبية والعلوية للوصول للمسلسلات المطلوبة'}</p>
         </div>
       </div>
 
