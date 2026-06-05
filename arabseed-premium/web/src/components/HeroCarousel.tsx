@@ -153,7 +153,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
               <button
                 key={video.nb}
                 onClick={() => triggerSlideChange(idx)}
-                className={`relative w-20 sm:w-24 md:w-28 aspect-[16/9] rounded-lg overflow-hidden border-2 transition-all duration-300 hover:scale-105 flex-shrink-0 cursor-pointer select-none ${
+                className={`relative w-20 sm:w-24 md:w-28 aspect-[16/9] rounded-lg overflow-hidden border-2 transition-all duration-300 hover:scale-105 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none ${
                   currentIndex === idx 
                     ? 'border-alex-primary shadow-[0_0_12px_rgba(229,9,20,0.6)] scale-105' 
                     : 'border-white/10 hover:border-white/30'
@@ -163,8 +163,9 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                 <img 
                   src={thumbUrl} 
                   alt={video.ar_title} 
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transform-gpu"
                   loading="lazy"
+                  style={{ imageRendering: 'high-quality' as any }}
                 />
                 <div className={`absolute inset-0 transition-colors duration-300 ${
                   currentIndex === idx ? 'bg-transparent' : 'bg-black/50 hover:bg-black/35'
