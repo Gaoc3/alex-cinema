@@ -11,12 +11,7 @@ export default async function Home() {
 
   let carouselVideos = [];
   if (promoVideos && promoVideos.length > 0) {
-    carouselVideos = promoVideos.filter((item: any) => Number(item.isSpecial) === 1);
-    if (carouselVideos.length === 0) {
-      carouselVideos = promoVideos.slice(0, 8);
-    } else {
-      carouselVideos = carouselVideos.slice(0, 10);
-    }
+    carouselVideos = promoVideos.slice(0, 15);
   }
 
   // Sort movies by rating to get "Featured Movies"
