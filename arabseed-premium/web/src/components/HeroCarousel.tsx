@@ -123,17 +123,20 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       {/* Manual Controls Left & Right Arrows (Hidden on Mobile, Visible on hover) */}
       {videos.length > 1 && (
         <>
+          {/* Left Arrow (Goes to Next in RTL because next items are on the left) */}
           <button 
-            onClick={() => triggerSlideChange((currentIndex - 1 + videos.length) % videos.length)}
+            onClick={() => triggerSlideChange((currentIndex + 1) % videos.length)}
             className="absolute left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/40 hover:bg-alex-primary/95 text-white border border-white/5 flex items-center justify-center transition-all duration-300 backdrop-blur-sm opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer"
-            aria-label="Previous Slide"
+            aria-label="Next Slide"
           >
             <i className="fa-solid fa-chevron-left text-lg"></i>
           </button>
+          
+          {/* Right Arrow (Goes to Previous in RTL because previous items are on the right) */}
           <button 
-            onClick={() => triggerSlideChange((currentIndex + 1) % videos.length)}
+            onClick={() => triggerSlideChange((currentIndex - 1 + videos.length) % videos.length)}
             className="absolute right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/40 hover:bg-alex-primary/95 text-white border border-white/5 flex items-center justify-center transition-all duration-300 backdrop-blur-sm opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer"
-            aria-label="Next Slide"
+            aria-label="Previous Slide"
           >
             <i className="fa-solid fa-chevron-right text-lg"></i>
           </button>
@@ -142,7 +145,8 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
 
       {/* Slide Indicators / Thumbnails Row (Cinemana Style) */}
       {videos.length > 1 && (
-        <div className="absolute bottom-5 left-0 right-0 z-20 flex justify-center gap-3 overflow-x-auto hide-scrollbar px-6 max-w-screen-xl mx-auto">
+        <div className="absolute bottom-5 left-0 right-0 z-20 w-full px-4 sm:px-6">
+          <div className="flex gap-3 overflow-x-auto hide-scrollbar mx-auto w-fit max-w-full pb-2">
           {videos.map((video, idx) => {
             const thumbUrl = video.imgObjUrl || `https://cnth2.shabakaty.com/vascin-cover-images/${video.img}`;
             return (
