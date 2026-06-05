@@ -74,8 +74,21 @@ export default function Sidebar() {
         <div className="absolute top-10 right-0 w-32 h-32 bg-alex-primary/5 rounded-full blur-[60px] pointer-events-none"></div>
 
         {/* Sidebar Header (Cinemana Style) */}
-        <div className="h-24 border-b border-white/5 flex items-center justify-start gap-5 px-5 w-full shrink-0 relative z-20">
+        <div className="h-24 border-b border-white/5 flex items-center justify-between pr-5 pl-3 w-full shrink-0 relative z-20">
           
+          {/* Logo and Brand Name (Hidden on Collapsed) */}
+          <div className="flex items-center gap-2.5 sidebar-brand-name">
+            <Link href="/" className="flex items-center gap-2.5 group" onClick={closeSidebar}>
+              <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300">
+                <i className="fa-solid fa-play text-white ml-0.5 text-base"></i>
+              </div>
+              <div className="flex flex-col leading-none font-sans">
+                <span className="text-[19px] font-black font-en tracking-normal text-white">ALEX<span className="text-alex-primary">CINEMA</span></span>
+                <span className="text-[10px] text-gray-500 font-bold tracking-[0.1em] mt-1 uppercase">Premium</span>
+              </div>
+            </Link>
+          </div>
+
           {/* Hamburger toggle button (Hidden on Collapsed) */}
           <button 
             onClick={toggleSidebar}
@@ -84,19 +97,6 @@ export default function Sidebar() {
           >
             <i className="fa-solid fa-bars text-gray-300 text-base"></i>
           </button>
-
-          {/* Logo and Brand Name (Hidden on Collapsed) */}
-          <div className="flex items-center gap-3 sidebar-brand-name">
-            <Link href="/" className="flex items-center gap-3 group" onClick={closeSidebar}>
-              <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300">
-                <i className="fa-solid fa-play text-white ml-0.5 text-base"></i>
-              </div>
-              <div className="flex flex-col leading-none font-sans">
-                <span className="text-xl font-black font-en tracking-wider text-white">ALEX<span className="text-alex-primary">CINEMA</span></span>
-                <span className="text-[10px] text-gray-500 font-bold tracking-[0.1em] mt-1 uppercase">Premium</span>
-              </div>
-            </Link>
-          </div>
 
           {/* Centered logo button (Shown ONLY on Collapsed) */}
           <div className="sidebar-collapsed-logo w-full flex justify-center items-center absolute inset-0 opacity-0 pointer-events-none">
