@@ -180,11 +180,11 @@ export default function SearchBar() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim().length >= 2 && setShowDropdown(true)}
           autoComplete="off"
-          className="w-48 sm:w-64 md:w-72 lg:w-80 glass-panel border border-white/10 rounded-full py-2.5 lg:py-3 pr-10 pl-10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-alex-primary focus:bg-black/40 focus:ring-1 focus:ring-alex-primary transition-all duration-300 shadow-inner"
+          className="w-32 sm:w-64 md:w-72 lg:w-80 glass-panel border border-white/10 rounded-full py-2 sm:py-2.5 lg:py-3 pr-9 pl-9 sm:pr-10 sm:pl-10 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-alex-primary focus:bg-black/40 focus:ring-1 focus:ring-alex-primary transition-all duration-300 shadow-inner"
           placeholder="ابحث..."
         />
-        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500 group-focus-within:text-alex-primary transition-colors">
-          <i className="fa-solid fa-search text-base"></i>
+        <div className="absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-alex-primary transition-colors">
+          <i className="fa-solid fa-search text-sm sm:text-base"></i>
         </div>
         
         {/* Loading Spinner */}
