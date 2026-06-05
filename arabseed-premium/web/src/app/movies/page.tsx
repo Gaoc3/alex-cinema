@@ -107,7 +107,6 @@ function MoviesContent() {
         }
 
         setMovies(list);
-        }
       } catch (error) {
         console.error('Failed to load movies:', error);
         setMovies([]);
