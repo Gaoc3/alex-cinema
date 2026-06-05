@@ -160,13 +160,13 @@ function SearchPageContent() {
   };
 
   return (
-    <div className="min-h-screen pt-32 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 animate-fade-in-up" dir="rtl">
+    <div className="min-h-screen pt-20 sm:pt-24 lg:pt-32 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 animate-fade-in-up" dir="rtl">
       
       {/* Page Header */}
       <div className="mb-10 text-center relative">
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-alex-primary/10 rounded-full blur-[80px] pointer-events-none"></div>
-        <h1 className="text-4xl sm:text-5xl font-black text-white mb-4 drop-shadow-md">
-          نتائج البحث عن: <span className="text-alex-primary tracking-tight">"{query}"</span>
+        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-4 drop-shadow-md break-words">
+          نتائج البحث عن: <span className="text-alex-primary tracking-tight break-all">"{query}"</span>
         </h1>
         <p className="text-gray-400 font-medium">
           تم العثور على {isLoading ? '...' : totalResults} نتيجة مطابقة
@@ -174,7 +174,7 @@ function SearchPageContent() {
       </div>
 
       {/* ADVANCED FILTER BAR */}
-      <div className="mb-14 flex flex-wrap items-center justify-between gap-6 bg-[#0d1323]/40 border border-white/5 p-4 rounded-2xl backdrop-blur-md shadow-xl select-none">
+      <div className="mb-8 sm:mb-14 flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3 sm:gap-6 bg-[#0d1323]/40 border border-white/5 p-3 sm:p-4 rounded-2xl backdrop-blur-md shadow-xl select-none">
         
         {/* Right side: Type toggles and Dropdowns */}
         <div className="flex flex-wrap items-center gap-4">
@@ -276,8 +276,8 @@ function SearchPageContent() {
         </div>
 
         {/* Left side: Stars Rating Filter */}
-        <div className="flex items-center gap-2.5 bg-[#070a13] px-4 py-2.5 rounded-xl border border-white/5">
-          <span className="text-xs text-gray-500 font-bold ml-1">التقييم:</span>
+        <div className="flex flex-wrap items-center gap-2.5 bg-[#070a13] px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-white/5">
+          <span className="text-xs text-gray-500 font-bold">التقييم:</span>
           <div className="flex flex-row-reverse items-center gap-1">
             {[9, 8, 7, 6, 5].map((ratingVal) => {
               const strRating = ratingVal.toString();
