@@ -181,7 +181,6 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             {/* End spacer to replace padding and avoid RTL bugs */}
             <div className="w-1 sm:w-4 shrink-0 pointer-events-none opacity-0"></div>
           </div>
-          </div>
         </div>
       )}
       </div>
