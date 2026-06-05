@@ -11,7 +11,7 @@ export default async function Home() {
 
   let carouselVideos = [];
   if (promoVideos && promoVideos.length > 0) {
-    carouselVideos = promoVideos.slice(0, 15);
+    carouselVideos = promoVideos;
   }
 
   // Sort movies by rating to get "Featured Movies"
