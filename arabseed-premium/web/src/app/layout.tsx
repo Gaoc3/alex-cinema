@@ -53,9 +53,7 @@ export default function RootLayout({
  
                   <div className="flex items-center gap-1.5 sm:gap-4 lg:gap-6 shrink-0">
                       <SearchBar />
-                      <button className="w-8 h-8 sm:w-11 sm:h-11 rounded-full glass-panel border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-alex-primary transition-all hover-scale shadow-lg">
-                          <i className="fa-regular fa-bell text-gray-300 text-sm sm:text-base lg:text-lg"></i>
-                      </button>
+
                       <button className="hidden sm:flex w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 border-alex-primary/50 overflow-hidden hover:border-alex-primary transition-all hover-scale shadow-[0_0_15px_rgba(229,9,20,0.3)]">
                           <img src="https://ui-avatars.com/api/?name=User&background=121826&color=e50914" alt="Profile" className="w-full h-full object-cover" />
                       </button>
