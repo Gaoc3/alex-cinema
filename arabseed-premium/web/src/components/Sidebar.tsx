@@ -243,10 +243,10 @@ export default function Sidebar() {
 
             {/* أحدث الحلقات */}
             <Link 
-              href="/new-releases?type=episodes" 
+              href="/series" 
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
-                isActive('/new-releases?type=episodes') 
+                isActive('/series') 
                   ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
@@ -259,26 +259,26 @@ export default function Sidebar() {
 
             {/* المصارعة الحرة */}
             <Link 
-              href="/movies?category=80" 
+              href="/movies?category=79" 
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
-                isActive('/movies?category=80') 
+                isActive('/movies?category=79') 
                   ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
                 <i className="fa-solid fa-mask text-lg w-5 text-center text-red-400"></i>
-                <span className="sidebar-label">المصارعة الحرة</span>
+                <span className="sidebar-label">المصارعة الحرة (رياضي)</span>
               </div>
             </Link>
 
             {/* الأطفال والكرتون */}
             <Link 
-              href="/movies?category=72" 
+              href="/movies?category=65" 
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
-                isActive('/movies?category=72') 
+                isActive('/movies?category=65') 
                   ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
