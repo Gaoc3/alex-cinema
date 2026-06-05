@@ -69,7 +69,7 @@ export default function Sidebar() {
         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 transition-opacity duration-300 lg:hidden pointer-events-none opacity-0 sidebar-overlay"
       />
       
-      <aside className="fixed top-0 right-0 h-full w-72 z-40 bg-[#070a13] border-l border-white/5 flex flex-col sidebar shadow-2xl">
+      <aside className="fixed top-0 right-0 h-screen w-72 z-40 bg-[#070a13] border-l border-white/5 flex flex-col sidebar shadow-2xl overflow-hidden">
         {/* Decorative Glow */}
         <div className="absolute top-10 right-0 w-32 h-32 bg-alex-primary/5 rounded-full blur-[60px] pointer-events-none"></div>
 

@@ -342,7 +342,7 @@ export default function WatchContainer({ video, seasons, episodes }: WatchContai
               <div className="flex-1">
                 <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white leading-tight mb-3 tracking-tight drop-shadow-md">{displayTitle}</h1>
                 {displayEnTitle && (
-                  <h2 className="text-lg md:text-xl text-gray-400 font-en font-bold opacity-80">{displayEnTitle} ({video.year})</h2>
+                  <h2 className="text-lg md:text-xl text-gray-400 font-en font-bold opacity-80 text-left" dir="ltr">{displayEnTitle} ({video.year})</h2>
                 )}
                 
                 <div className="flex flex-wrap items-center gap-3 mt-6">
