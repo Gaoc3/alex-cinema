@@ -68,7 +68,7 @@ export default function SeriesNavigator({
             )}
           </div>
 
-          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 relative z-10 max-h-[220px] overflow-y-auto px-3 py-1 custom-scrollbar">
+          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-6 xl:grid-cols-8 gap-2 relative z-10 max-h-[220px] overflow-y-auto px-3 py-1 custom-scrollbar">
             {seasonEpisodes.map((ep) => (
               <button
                 key={ep.nb}
