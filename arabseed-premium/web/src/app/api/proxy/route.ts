@@ -87,7 +87,16 @@ export async function GET(req: NextRequest) {
       });
     }
   } catch (error: any) {
-    if (error?.name === 'AbortError') {
+    const errorStr = String(error);
+    const isAbort = 
+      error?.name === 'AbortError' || 
+      error?.name === 'ResponseAborted' || 
+      error?.message === 'ResponseAborted' ||
+      errorStr.includes('Abort') ||
+      errorStr.includes('aborted') ||
+      errorStr.includes('ResponseAborted');
+
+    if (isAbort) {
       return new NextResponse('Aborted', { status: 499 });
     }
     console.error('Proxy Error:', error);
