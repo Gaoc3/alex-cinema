@@ -69,7 +69,7 @@ export default function Sidebar() {
         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 transition-opacity duration-300 lg:hidden pointer-events-none opacity-0 sidebar-overlay"
       />
       
-      <aside className="fixed top-0 right-0 h-screen w-72 z-40 bg-[#070a13] border-l border-white/5 flex flex-col sidebar shadow-2xl overflow-hidden">
+      <aside className="fixed top-0 right-0 h-screen w-72 z-40 bg-[#070a13] border-l border-white/5 flex flex-col sidebar shadow-2xl overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
         {/* Decorative Glow */}
         <div className="absolute top-10 right-0 w-32 h-32 bg-alex-primary/5 rounded-full blur-[60px] pointer-events-none"></div>
 
@@ -176,10 +176,10 @@ export default function Sidebar() {
               </button>
               
               {/* Movies Submenu */}
-              <div className={`overflow-hidden transition-all duration-300 mr-8 space-y-1 mt-1 sidebar-submenu ${moviesOpen && !isCollapsed ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
-                <Link href="/movies" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white transition-all">كل الأفلام</Link>
-                <Link href="/movies?sort=stars" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white transition-all">الأعلى تقييماً</Link>
-                <Link href="/movies?category=84" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white transition-all">أفلام أكشن</Link>
+              <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] mr-8 space-y-1 mt-1 sidebar-submenu origin-top ${moviesOpen && !isCollapsed ? 'max-h-40 opacity-100 translate-y-0 scale-y-100' : 'max-h-0 opacity-0 -translate-y-2 scale-y-95 pointer-events-none'}`}>
+                <Link href="/movies" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white hover:translate-x-[-4px] transition-all">كل الأفلام</Link>
+                <Link href="/movies?sort=stars" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white hover:translate-x-[-4px] transition-all">الأعلى تقييماً</Link>
+                <Link href="/movies?category=84" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white hover:translate-x-[-4px] transition-all">أفلام أكشن</Link>
               </div>
             </div>
 
@@ -197,10 +197,10 @@ export default function Sidebar() {
               </button>
               
               {/* Series Submenu */}
-              <div className={`overflow-hidden transition-all duration-300 mr-8 space-y-1 mt-1 sidebar-submenu ${seriesOpen && !isCollapsed ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
-                <Link href="/series" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white transition-all">كل المسلسلات</Link>
-                <Link href="/series?sort=stars" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white transition-all">الأعلى تقييماً</Link>
-                <Link href="/series?category=62" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white transition-all">مسلسلات دراما</Link>
+              <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] mr-8 space-y-1 mt-1 sidebar-submenu origin-top ${seriesOpen && !isCollapsed ? 'max-h-40 opacity-100 translate-y-0 scale-y-100' : 'max-h-0 opacity-0 -translate-y-2 scale-y-95 pointer-events-none'}`}>
+                <Link href="/series" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white hover:translate-x-[-4px] transition-all">كل المسلسلات</Link>
+                <Link href="/series?sort=stars" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white hover:translate-x-[-4px] transition-all">الأعلى تقييماً</Link>
+                <Link href="/series?category=62" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white hover:translate-x-[-4px] transition-all">مسلسلات دراما</Link>
               </div>
             </div>
 
