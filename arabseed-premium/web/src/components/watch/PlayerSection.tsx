@@ -34,13 +34,13 @@ export default function PlayerSection({
               ? {
                   trailer: video.trailer,
                   stream_url: activeEpisodeDetails.streams?.length > 0 
-                    ? activeEpisodeDetails.streams[0].videoUrl 
+                    ? `/api/stream?url=${encodeURIComponent(activeEpisodeDetails.streams[0].videoUrl)}` 
                     : (activeEpisodeDetails.fileFile 
-                        ? `https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=https://cndw2.shabakaty.com/m240/${activeEpisodeDetails.fileFile}` 
+                        ? `/api/stream?url=${encodeURIComponent(`https://cndw2.shabakaty.com/m240/${activeEpisodeDetails.fileFile}`)}` 
                         : ''),
                   img: video.img,
                   ar_title: displayTitle,
-                  streams: activeEpisodeDetails.streams || [],
+                  streams: activeEpisodeDetails.streams?.map((s: any) => ({...s, videoUrl: `/api/stream?url=${encodeURIComponent(s.videoUrl)}`})) || [],
                   translations: activeEpisodeDetails.translations || [],
                   introSkipping: activeEpisodeDetails.introSkipping || [],
                   skippingDurations: activeEpisodeDetails.skippingDurations || null,
@@ -50,10 +50,12 @@ export default function PlayerSection({
                 }
               : {
                   trailer: video.trailer,
-                  stream_url: video.streams?.length > 0 ? video.streams[0].videoUrl : video.stream_url,
+                  stream_url: video.streams?.length > 0 
+                    ? `/api/stream?url=${encodeURIComponent(video.streams[0].videoUrl)}` 
+                    : (video.stream_url ? `/api/stream?url=${encodeURIComponent(video.stream_url)}` : ''),
                   img: video.img,
                   ar_title: displayTitle,
-                  streams: video.streams || [],
+                  streams: video.streams?.map((s: any) => ({...s, videoUrl: `/api/stream?url=${encodeURIComponent(s.videoUrl)}`})) || [],
                   translations: video.translations || [],
                   introSkipping: video.introSkipping || [],
                   skippingDurations: video.skippingDurations || null,
