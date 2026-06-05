@@ -66,7 +66,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
   const coverImgUrl = current.imgObjUrl || `https://cnth2.shabakaty.com/vascin-cover-images/${current.img}`;
 
   return (
-    <div className="relative w-full h-[650px] lg:h-[85vh] flex flex-col justify-end mt-0 overflow-hidden bg-black select-none group">
+    <div className="relative w-full h-[480px] sm:h-[580px] lg:h-[85vh] flex flex-col justify-end mt-0 overflow-hidden bg-black select-none group">
       {/* Background Image Carousel Slider */}
       <div className="absolute inset-0 w-full h-full">
         <div 
@@ -89,7 +89,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       </div>
       
       {/* Carousel Content */}
-      <div className="relative z-10 w-full flex flex-col justify-between h-full pt-24 lg:pt-32 pb-4 sm:pb-6">
+      <div className="relative z-10 w-full flex flex-col justify-between h-full pt-16 sm:pt-20 lg:pt-32 pb-2 sm:pb-4">
         
         {/* Top Text Section */}
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow flex flex-col justify-center mb-8">
@@ -113,7 +113,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             </span>
           </div>
           
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-4 leading-tight drop-shadow-2xl relative z-10 tracking-tight">
+          <h1 className="text-2xl sm:text-4xl lg:text-6xl font-black text-white mb-3 sm:mb-4 leading-tight drop-shadow-2xl relative z-10 tracking-tight">
             {current.ar_title}
           </h1>
           {current.en_title && current.en_title !== current.ar_title && (
@@ -147,7 +147,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           {/* Left Arrow (Goes to Next in RTL because next items are on the left) */}
           <button 
             onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
-            className="absolute left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/40 hover:bg-alex-primary/95 text-white border border-white/5 flex items-center justify-center transition-all duration-300 backdrop-blur-sm opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer"
+            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 hover:bg-alex-primary/95 text-white border border-white/10 flex items-center justify-center transition-all duration-300 backdrop-blur-sm sm:opacity-0 sm:group-hover:opacity-100 opacity-70 hover:scale-110 active:scale-95 cursor-pointer"
             aria-label="Next Slide"
           >
             <i className="fa-solid fa-chevron-left text-lg"></i>
@@ -156,7 +156,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           {/* Right Arrow (Goes to Previous in RTL because previous items are on the right) */}
           <button 
             onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
-            className="absolute right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/40 hover:bg-alex-primary/95 text-white border border-white/5 flex items-center justify-center transition-all duration-300 backdrop-blur-sm opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer"
+            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 hover:bg-alex-primary/95 text-white border border-white/10 flex items-center justify-center transition-all duration-300 backdrop-blur-sm sm:opacity-0 sm:group-hover:opacity-100 opacity-70 hover:scale-110 active:scale-95 cursor-pointer"
             aria-label="Previous Slide"
           >
             <i className="fa-solid fa-chevron-right text-lg"></i>
