@@ -66,7 +66,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
   const coverImgUrl = current.imgObjUrl || `https://cnth2.shabakaty.com/vascin-cover-images/${current.img}`;
 
   return (
-    <div className="relative w-full h-[480px] sm:h-[580px] lg:h-[85vh] flex flex-col justify-end mt-0 overflow-hidden bg-black select-none group">
+    <div className="relative w-full h-[85svh] min-h-[600px] sm:min-h-[auto] sm:h-[580px] lg:h-[85vh] flex flex-col justify-end mt-0 overflow-hidden bg-[#070a13] select-none group">
       {/* Background Image Carousel Slider */}
       <div className="absolute inset-0 w-full h-full">
         <div 
@@ -82,14 +82,15 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         </div>
         
         {/* Gradients blending cover image into the website background */}
-        {/* Bottom vertical fade */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/20 to-transparent z-[2]"></div>
-        {/* Smart localized horizontal fade (Netflix style): Covers only the right side for text readability */}
-        <div className="absolute inset-y-0 right-0 w-[80%] md:w-[60%] lg:w-[50%] bg-gradient-to-l from-[#070a13] via-[#070a13]/70 to-transparent z-[2]"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/40 sm:via-[#070a13]/20 to-transparent z-[2]"></div>
+        {/* Right gradient for text readability (RTL) - Start below navbar on mobile to keep navbar glassy */}
+        <div className="absolute top-14 sm:top-0 bottom-0 right-0 w-[90%] md:w-[60%] lg:w-[50%] bg-gradient-to-l from-[#070a13] via-[#070a13]/80 to-transparent z-[2]"></div>
+        {/* Top gradient for navbar readability if needed */}
+        <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-[#070a13]/40 to-transparent z-[2]"></div>
       </div>
       
-      {/* Carousel Content */}
-      <div className="relative z-10 w-full flex flex-col justify-between h-full pt-16 sm:pt-20 lg:pt-32 pb-2 sm:pb-4">
+      {/* Content Overlay */}
+      <div className="relative z-10 w-full flex flex-col justify-between h-full pt-20 sm:pt-20 lg:pt-32 pb-4 sm:pb-4">
         
         {/* Top Text Section */}
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow flex flex-col justify-center mb-8">
@@ -167,7 +168,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       {/* Slide Indicators / Thumbnails Row (Cinemana Style) */}
       {videos.length > 1 && (
         <div className="w-full z-20 mt-auto">
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full pt-6 pb-6 scroll-smooth">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full pt-4 pb-4 sm:pt-6 sm:pb-6 scroll-smooth">
             {/* Start spacer to replace padding and avoid RTL bugs */}
             <div className="w-1 sm:w-4 shrink-0 pointer-events-none opacity-0"></div>
           {videos.map((video, idx) => {
