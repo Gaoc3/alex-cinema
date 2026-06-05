@@ -66,7 +66,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
   const coverImgUrl = current.imgObjUrl || `https://cnth2.shabakaty.com/vascin-cover-images/${current.img}`;
 
   return (
-    <div className="relative w-full min-h-[600px] lg:min-h-[75vh] flex flex-col justify-end mt-0 overflow-hidden bg-black select-none group">
+    <div className="relative w-full h-[650px] lg:h-[85vh] flex flex-col justify-end mt-0 overflow-hidden bg-black select-none group">
       {/* Background Image Carousel Slider */}
       <div className="absolute inset-0 w-full h-full">
         <div 
