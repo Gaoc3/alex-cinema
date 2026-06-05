@@ -78,12 +78,12 @@ export default function Sidebar() {
           {/* Logo and Brand Name (Hidden on Collapsed) */}
           <div className="flex items-center gap-3 sidebar-brand-name">
             <Link href="/" className="flex items-center gap-3 group" onClick={closeSidebar}>
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300">
-                <i className="fa-solid fa-play text-white ml-0.5 text-base"></i>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300">
+                <i className="fa-solid fa-play text-white ml-0.5 text-sm"></i>
               </div>
               <div className="flex flex-col leading-none font-sans">
-                <span className="text-xl font-black font-en tracking-wider text-white">ALEX<span className="text-alex-primary">CINEMA</span></span>
-                <span className="text-[10px] text-gray-500 font-bold tracking-[0.1em] mt-1 uppercase">Premium</span>
+                <span className="text-lg font-black font-en tracking-wider text-white">ALEX<span className="text-alex-primary">CINEMA</span></span>
+                <span className="text-[9px] text-gray-500 font-bold tracking-[0.1em] mt-1 uppercase">Premium</span>
               </div>
             </Link>
           </div>
@@ -91,7 +91,7 @@ export default function Sidebar() {
           {/* Hamburger toggle button (Hidden on Collapsed) */}
           <button 
             onClick={toggleSidebar}
-            className="w-10 h-10 rounded-xl glass-panel border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-alex-primary transition-all hover-scale cursor-pointer sidebar-brand-name"
+            className="w-9 h-9 rounded-xl glass-panel border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-alex-primary transition-all hover-scale cursor-pointer sidebar-brand-name"
             aria-label="Collapse Sidebar"
           >
             <i className="fa-solid fa-bars text-gray-300 text-base"></i>
