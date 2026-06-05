@@ -25,15 +25,14 @@ export default function SeriesNavigator({
     <div className="grid grid-cols-12 gap-8 items-stretch">
       {/* Episodes Grid (lg:col-span-9) */}
       <div className="col-span-12 lg:col-span-9 flex flex-col">
-        <div className="glass-panel rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden border border-white/5 h-full flex flex-col justify-between">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px] pointer-events-none"></div>
+        <div className="glass-panel rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden border border-white/5 h-full flex flex-col gap-6">
           
           <div>
             <h3 className="text-lg font-black text-white mb-5 flex items-center gap-2.5 relative z-10">
               <div className="w-1.5 h-5.5 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.4)]"></div> حلقات المسلسل
             </h3>
 
-            {seasons.length > 1 && (
+            {seasons.length > 0 && (
               <div className="flex flex-wrap gap-2 pb-5 border-b border-white/5 mb-5 relative z-10">
                 {seasons.map((s) => (
                   <button
@@ -91,7 +90,6 @@ export default function SeriesNavigator({
       {/* Series Status Card (lg:col-span-3) */}
       <div className="col-span-12 lg:col-span-3 flex flex-col">
         <div className="glass-panel rounded-3xl p-6 shadow-2xl relative overflow-hidden border border-white/5 h-full flex flex-col justify-between">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-[50px] pointer-events-none"></div>
           
           <div className="relative z-10 flex-1 flex flex-col justify-between">
             <div>
