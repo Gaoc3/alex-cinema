@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
 interface Video {
@@ -22,6 +22,18 @@ interface HeroCarouselProps {
 export default function HeroCarousel({ videos }: HeroCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fade, setFade] = useState(true);
+  const thumbnailsRef = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Auto-scroll active thumbnail into view
+  useEffect(() => {
+    if (thumbnailsRef.current[currentIndex]) {
+      thumbnailsRef.current[currentIndex]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center'
+      });
+    }
+  }, [currentIndex]);
 
   useEffect(() => {
     if (videos.length <= 1) return;
@@ -157,6 +169,9 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             return (
               <button
                 key={video.nb}
+                ref={(el) => {
+                  thumbnailsRef.current[idx] = el;
+                }}
                 onClick={() => triggerSlideChange(idx)}
                 className={`relative w-28 sm:w-36 md:w-48 lg:w-56 aspect-[16/9] rounded-lg overflow-hidden border-2 transition-all duration-300 hover:scale-105 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none ${
                   currentIndex === idx 
