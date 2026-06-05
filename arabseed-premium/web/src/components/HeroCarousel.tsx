@@ -20,41 +20,47 @@ interface HeroCarouselProps {
 }
 
 export default function HeroCarousel({ videos }: HeroCarouselProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [bgIndex, setBgIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [fade, setFade] = useState(true);
   const thumbnailsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Auto-scroll active thumbnail into view
   useEffect(() => {
-    if (thumbnailsRef.current[currentIndex]) {
-      thumbnailsRef.current[currentIndex]?.scrollIntoView({
+    if (thumbnailsRef.current[activeIndex]) {
+      thumbnailsRef.current[activeIndex]?.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest',
         inline: 'center'
       });
     }
-  }, [currentIndex]);
+  }, [activeIndex]);
 
   useEffect(() => {
     if (videos.length <= 1) return;
     const interval = setInterval(() => {
-      triggerSlideChange((currentIndex + 1) % videos.length);
+      triggerSlideChange((activeIndex + 1) % videos.length);
     }, 7000); // 7 seconds per slide for better readability
     return () => clearInterval(interval);
-  }, [currentIndex, videos.length]);
+  }, [activeIndex, videos.length]);
 
   const triggerSlideChange = (nextIndex: number) => {
-    if (nextIndex === currentIndex) return;
+    if (nextIndex === activeIndex) return;
+    
+    // Update thumbnail highlight and scroll instantly
+    setActiveIndex(nextIndex);
+    
+    // Cross-fade the background and text
     setFade(false);
     setTimeout(() => {
-      setCurrentIndex(nextIndex);
+      setBgIndex(nextIndex);
       setFade(true);
     }, 300); // Matches transition time
   };
 
   if (!videos || videos.length === 0) return null;
 
-  const current = videos[currentIndex];
+  const current = videos[bgIndex];
 
   // Build the correct landscape cover image URL
   const coverImgUrl = current.imgObjUrl || `https://cnth2.shabakaty.com/vascin-cover-images/${current.img}`;
@@ -140,7 +146,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         <>
           {/* Left Arrow (Goes to Next in RTL because next items are on the left) */}
           <button 
-            onClick={() => triggerSlideChange((currentIndex + 1) % videos.length)}
+            onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
             className="absolute left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/40 hover:bg-alex-primary/95 text-white border border-white/5 flex items-center justify-center transition-all duration-300 backdrop-blur-sm opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer"
             aria-label="Next Slide"
           >
@@ -149,7 +155,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           
           {/* Right Arrow (Goes to Previous in RTL because previous items are on the right) */}
           <button 
-            onClick={() => triggerSlideChange((currentIndex - 1 + videos.length) % videos.length)}
+            onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
             className="absolute right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/40 hover:bg-alex-primary/95 text-white border border-white/5 flex items-center justify-center transition-all duration-300 backdrop-blur-sm opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer"
             aria-label="Previous Slide"
           >
@@ -161,7 +167,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       {/* Slide Indicators / Thumbnails Row (Cinemana Style) */}
       {videos.length > 1 && (
         <div className="w-full z-20 mt-auto">
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full pt-6 pb-6">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full pt-6 pb-6 scroll-smooth">
             {/* Start spacer to replace padding and avoid RTL bugs */}
             <div className="w-1 sm:w-4 shrink-0 pointer-events-none opacity-0"></div>
           {videos.map((video, idx) => {
@@ -174,7 +180,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                 }}
                 onClick={() => triggerSlideChange(idx)}
                 className={`relative w-28 sm:w-36 md:w-48 lg:w-56 aspect-[16/9] rounded-lg overflow-hidden border-2 transition-all duration-300 hover:scale-105 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none ${
-                  currentIndex === idx 
+                  activeIndex === idx 
                     ? 'border-alex-primary shadow-[0_0_12px_rgba(229,9,20,0.6)] scale-105' 
                     : 'border-white/10 hover:border-white/30'
                 }`}
@@ -188,7 +194,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                   style={{ imageRendering: 'high-quality' as any }}
                 />
                 <div className={`absolute inset-0 transition-colors duration-300 ${
-                  currentIndex === idx ? 'bg-transparent' : 'bg-black/50 hover:bg-black/35'
+                  activeIndex === idx ? 'bg-transparent' : 'bg-black/50 hover:bg-black/35'
                 }`}></div>
               </button>
             );
