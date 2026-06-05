@@ -71,7 +71,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       </div>
       
       {/* Carousel Content */}
-      <div className="relative z-10 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col justify-center h-full pb-28 pt-24">
+      <div className="relative z-10 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col justify-center h-full pb-32 md:pb-40 lg:pb-48 pt-24">
         <div 
           className={`max-w-3xl relative transition-all duration-500 transform text-right ${
             fade ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
