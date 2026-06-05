@@ -41,11 +41,11 @@ export default function RootLayout({
                       </div>
                       
                       <Link href="/" className="flex items-center gap-1.5 sm:gap-3 group hover-scale">
-                          <div className="w-7 h-7 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300">
-                              <i className="fa-solid fa-play text-white ml-0.5 text-[10px] sm:text-sm lg:text-lg"></i>
+                          <div className="w-6 h-6 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300">
+                              <i className="fa-solid fa-play text-white ml-0.5 text-[8px] sm:text-sm lg:text-lg"></i>
                           </div>
                           <div className="flex flex-col leading-none mt-0.5">
-                              <span className="text-base sm:text-2xl lg:text-3xl font-black font-en tracking-wider text-white drop-shadow-md">ALEX<span className="text-alex-primary">CINEMA</span></span>
+                              <span className="text-sm sm:text-2xl lg:text-3xl font-black font-en tracking-wider text-white drop-shadow-md">ALEX<span className="text-alex-primary">CINEMA</span></span>
                               <span className="hidden sm:block text-[10px] text-gray-400 font-bold tracking-[0.15em] mt-1 uppercase opacity-80">Premium Platform</span>
                           </div>
                       </Link>
