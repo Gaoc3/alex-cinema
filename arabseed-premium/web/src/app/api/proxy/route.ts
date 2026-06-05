@@ -43,8 +43,8 @@ export async function GET(req: NextRequest) {
     targetUrl += (targetUrl.includes('?') ? '&' : '?') + queryStr;
   }
 
-  const useTunnel = !endpoint.startsWith('http://') && !endpoint.startsWith('https://');
-  const finalFetchUrl = useTunnel ? `${TUNNEL_BASE}${encodeURIComponent(targetUrl)}` : targetUrl;
+  const isCinemana = targetUrl.includes('shabakaty.com');
+  const finalFetchUrl = isCinemana ? `${TUNNEL_BASE}${encodeURIComponent(targetUrl)}` : targetUrl;
 
   try {
     const response = await fetch(finalFetchUrl, {
