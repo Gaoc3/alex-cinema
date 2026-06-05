@@ -76,28 +76,37 @@ function SeriesContent() {
       const catParam = selectedCategory ? `&category_id=${selectedCategory}` : '';
       const starParam = selectedRating ? `&star=>=${selectedRating}` : '';
       
-      const searchUrl = `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=&staffTitle=&page=${page - 1}&year=${yearRange}&type=series${catParam}${starParam}`;
+      const apiPage1 = (page - 1) * 2;
+      const apiPage2 = apiPage1 + 1;
+      
+      const searchUrl1 = `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=&staffTitle=&page=${apiPage1}&year=${yearRange}&type=series${catParam}${starParam}`;
+      const searchUrl2 = `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=&staffTitle=&page=${apiPage2}&year=${yearRange}&type=series${catParam}${starParam}`;
 
       try {
-        const res = await fetch(searchUrl);
-        if (res.ok) {
-          const data = await res.json();
-          let list = Array.isArray(data) ? data : [];
+        const [res1, res2] = await Promise.all([fetch(searchUrl1), fetch(searchUrl2)]);
+        let list: VideoItem[] = [];
+        
+        if (res1.ok) {
+          const data1 = await res1.json();
+          if (Array.isArray(data1)) list.push(...data1);
+        }
+        if (res2.ok) {
+          const data2 = await res2.json();
+          if (Array.isArray(data2)) list.push(...data2);
+        }
 
-          // Client-side Sorting
-          if (selectedSort === 'recent') {
-            list = [...list].sort((a, b) => parseInt(b.nb) - parseInt(a.nb));
-          } else if (selectedSort === 'stars') {
-            list = [...list].sort((a, b) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0'));
-          } else if (selectedSort === 'year') {
-            list = [...list].sort((a, b) => parseInt(b.year || '0') - parseInt(a.year || '0'));
-          } else if (selectedSort === 'name') {
-            list = [...list].sort((a, b) => (a.ar_title || '').localeCompare(b.ar_title || ''));
-          }
+        // Client-side Sorting
+        if (selectedSort === 'recent') {
+          list = [...list].sort((a, b) => parseInt(b.nb) - parseInt(a.nb));
+        } else if (selectedSort === 'stars') {
+          list = [...list].sort((a, b) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0'));
+        } else if (selectedSort === 'year') {
+          list = [...list].sort((a, b) => parseInt(b.year || '0') - parseInt(a.year || '0'));
+        } else if (selectedSort === 'name') {
+          list = [...list].sort((a, b) => (a.ar_title || '').localeCompare(b.ar_title || ''));
+        }
 
-          setSeries(list);
-        } else {
-          setSeries([]);
+        setSeries(list);
         }
       } catch (error) {
         console.error('Failed to load series:', error);
