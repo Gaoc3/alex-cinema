@@ -76,24 +76,37 @@ function SeriesContent() {
       const catParam = selectedCategory ? `&category_id=${selectedCategory}` : '';
       const starParam = selectedRating ? `&star=>=${selectedRating}` : '';
       
-      const apiPage1 = (page - 1) * 2;
-      const apiPage2 = apiPage1 + 1;
+      const ITEMS_PER_PAGE = 30;
+      const API_PAGE_SIZE = 12;
       
-      const searchUrl1 = `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=&staffTitle=&page=${apiPage1}&year=${yearRange}&type=series${catParam}${starParam}`;
-      const searchUrl2 = `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=&staffTitle=&page=${apiPage2}&year=${yearRange}&type=series${catParam}${starParam}`;
+      const startItem = (page - 1) * ITEMS_PER_PAGE;
+      const endItem = page * ITEMS_PER_PAGE - 1;
+      
+      const firstApiPage = Math.floor(startItem / API_PAGE_SIZE);
+      const lastApiPage = Math.floor(endItem / API_PAGE_SIZE);
+      
+      const apiPagesToFetch = [];
+      for (let i = firstApiPage; i <= lastApiPage; i++) {
+        apiPagesToFetch.push(i);
+      }
 
       try {
-        const [res1, res2] = await Promise.all([fetch(searchUrl1), fetch(searchUrl2)]);
-        let list: VideoItem[] = [];
+        const fetchPromises = apiPagesToFetch.map(apiPage => {
+          const url = `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=&staffTitle=&page=${apiPage}&year=${yearRange}&type=series${catParam}${starParam}`;
+          return fetch(url).then(res => res.ok ? res.json() : []);
+        });
         
-        if (res1.ok) {
-          const data1 = await res1.json();
-          if (Array.isArray(data1)) list.push(...data1);
-        }
-        if (res2.ok) {
-          const data2 = await res2.json();
-          if (Array.isArray(data2)) list.push(...data2);
-        }
+        const results = await Promise.all(fetchPromises);
+        let combinedList: VideoItem[] = [];
+        
+        results.forEach(data => {
+          if (Array.isArray(data)) {
+            combinedList.push(...data);
+          }
+        });
+        
+        const offset = startItem % API_PAGE_SIZE;
+        let list = combinedList.slice(offset, offset + ITEMS_PER_PAGE);
 
         // Client-side Sorting
         if (selectedSort === 'recent') {
