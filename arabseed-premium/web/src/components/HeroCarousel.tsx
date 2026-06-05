@@ -83,10 +83,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         
         {/* Gradients blending cover image into the website background */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/40 sm:via-[#070a13]/20 to-transparent z-[2]"></div>
-        {/* Right gradient for text readability (RTL) - Start below navbar on mobile to keep navbar glassy */}
-        <div className="absolute top-14 sm:top-0 bottom-0 right-0 w-[90%] md:w-[60%] lg:w-[50%] bg-gradient-to-l from-[#070a13] via-[#070a13]/80 to-transparent z-[2]"></div>
+        {/* Right gradient for text readability (RTL) - Full height, but semi-transparent on mobile for glassy navbar */}
+        <div className="absolute inset-y-0 right-0 w-[95%] md:w-[60%] lg:w-[50%] bg-gradient-to-l from-[#070a13]/80 via-[#070a13]/60 sm:from-[#070a13] sm:via-[#070a13]/80 to-transparent z-[2]"></div>
         {/* Top gradient for navbar readability if needed */}
-        <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-[#070a13]/40 to-transparent z-[2]"></div>
+        <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#070a13]/50 to-transparent z-[2]"></div>
       </div>
       
       {/* Content Overlay */}
