@@ -25,9 +25,8 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </head>
-      <body className="antialiased min-h-screen flex flex-col font-sans" suppressHydrationWarning>
-        
-        {/* Sidebar */}
+      <body className="antialiased min-h-screen font-sans" suppressHydrationWarning>
+        <div className="relative overflow-x-hidden w-full min-h-screen flex flex-col">        {/* Sidebar */}
         <Sidebar />
 
         {/* Navbar */}
@@ -92,7 +91,7 @@ export default function RootLayout({
                 </div>
             </div>
         </footer>
-
+        </div>
       </body>
     </html>
   );
