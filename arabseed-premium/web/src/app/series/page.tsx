@@ -177,19 +177,19 @@ function SeriesContent() {
   };
 
   const handleCategoryChange = (catId: string) => {
-    updateParams({ category: catId, page: '1' });
+    updateParams({ category: catId, page: '1', view: null });
   };
 
   const handleYearChange = (yearVal: string) => {
-    updateParams({ year: yearVal === '1900,2026' ? null : yearVal, page: '1' });
+    updateParams({ year: yearVal === '1900,2026' ? null : yearVal, page: '1', view: null });
   };
 
   const handleRatingChange = (ratingVal: string) => {
-    updateParams({ rating: ratingVal || null, page: '1' });
+    updateParams({ rating: ratingVal || null, page: '1', view: null });
   };
 
   const handleSortChange = (sortVal: string) => {
-    updateParams({ sort: sortVal, page: '1' });
+    updateParams({ sort: sortVal, page: '1', view: null });
   };
 
   return (
@@ -198,8 +198,8 @@ function SeriesContent() {
       <div className="flex items-center gap-4 mb-8">
         <div className="w-1.5 h-10 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
         <div>
-          <h1 className="text-4xl font-black text-white drop-shadow-md tracking-wide">أرشيف المسلسلات</h1>
-          <p className="text-gray-400 mt-1 text-sm font-medium">استخدم الفلاتر الجانبية والعلوية للوصول للمسلسلات المطلوبة</p>
+          <h1 className="text-4xl font-black text-white drop-shadow-md tracking-wide">{viewMode === 'episodes' ? 'أحدث الحلقات' : 'أرشيف المسلسلات'}</h1>
+          <p className="text-gray-400 mt-1 text-sm font-medium">{viewMode === 'episodes' ? 'المسلسلات التي أُضيفت لها حلقات جديدة مؤخراً' : 'استخدم الفلاتر الجانبية والعلوية للوصول للمسلسلات المطلوبة'}</p>
         </div>
       </div>
 
@@ -355,7 +355,7 @@ function SeriesContent() {
                   صفحة <span className="font-en text-blue-500 font-black mx-1">{page}</span>
                 </div>
 
-                {series.length >= 10 ? (
+                {series.length >= 20 ? (
                   <button 
                     onClick={() => updateParams({ page: (page + 1).toString() })}
                     className="flex items-center gap-2 bg-alex-primary text-white border border-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.3)] px-6 py-3.5 rounded-xl font-bold text-sm transition-all hover-scale cursor-pointer"
