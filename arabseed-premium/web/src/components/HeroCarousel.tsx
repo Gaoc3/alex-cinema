@@ -59,15 +59,15 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           <img 
             src={coverImgUrl} 
             alt={current.ar_title} 
-            className="w-full h-full object-cover object-center transform scale-100 transition-transform duration-[7s] hover:scale-105"
+            className="w-full h-full object-cover object-center transform scale-100 transition-transform duration-[7s] hover:scale-105 opacity-90 lg:opacity-95"
           />
         </div>
         
         {/* Gradients blending cover image into the website background */}
         {/* Bottom vertical fade */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/30 to-transparent z-[2]"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/25 to-transparent z-[2]"></div>
         {/* Right-to-left horizontal fade (RTL: solid dark on the right for text readability, clear on the left for artwork) */}
-        <div className="absolute inset-0 bg-gradient-to-l from-[#070a13]/85 via-[#070a13]/20 to-transparent z-[2]"></div>
+        <div className="absolute inset-0 bg-gradient-to-l from-[#070a13] via-[#070a13]/40 to-transparent z-[2]"></div>
       </div>
       
       {/* Carousel Content */}

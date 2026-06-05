@@ -174,11 +174,42 @@ body {
 .sidebar {
   transform: translateX(100%); /* Hidden by default on mobile/tablet */
   width: 18rem; /* Default wide width */
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 main, nav, footer {
-  transition: padding-right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-label {
+  display: inline-block;
+  opacity: 1;
+  max-width: 200px;
+  white-space: nowrap;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-brand-name {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  opacity: 1;
+  max-width: 200px;
+  white-space: nowrap;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-submenu {
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-collapsed-logo {
+  display: flex;
+  opacity: 0;
+  max-width: 0;
+  pointer-events: none;
+  overflow: hidden;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @media (min-width: 1024px) {
@@ -193,7 +224,7 @@ main, nav, footer {
     right: 18rem !important; /* w-72 (288px) */
     width: auto !important; /* overrides w-full */
     padding-right: 0 !important;
-    transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1), padding-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
 
   body.sidebar-collapsed nav#navbar {
@@ -213,19 +244,35 @@ main, nav, footer {
     padding-right: 5rem !important; /* Shrink the right layout gap to match w-20 */
   }
   
-  /* Hide labels, brand name, and submenus when collapsed */
-  body.sidebar-collapsed .sidebar-label,
-  body.sidebar-collapsed .sidebar-brand-name,
+  /* Hide labels, brand name, and submenus when collapsed using transitions */
+  body.sidebar-collapsed .sidebar-label {
+    opacity: 0 !important;
+    max-width: 0 !important;
+    transform: scale(0.9) !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+  }
+
+  body.sidebar-collapsed .sidebar-brand-name {
+    opacity: 0 !important;
+    max-width: 0 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+  }
+
   body.sidebar-collapsed .sidebar-submenu {
-    display: none !important;
+    max-height: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
   }
   
   /* Show centered logo only when collapsed */
-  .sidebar-collapsed-logo {
-    display: none;
-  }
   body.sidebar-collapsed .sidebar-collapsed-logo {
-    display: flex !important;
+    opacity: 1 !important;
+    max-width: 200px !important;
+    pointer-events: auto !important;
+    overflow: visible !important;
   }
   
   /* Center the menu items and icons when collapsed */
@@ -234,12 +281,14 @@ main, nav, footer {
     padding-left: 0 !important;
     padding-right: 0 !important;
     gap: 0 !important;
+    transition: justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1), gap 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   body.sidebar-collapsed .sidebar-link-btn {
     padding-left: 0 !important;
     padding-right: 0 !important;
     justify-content: center !important;
+    transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 

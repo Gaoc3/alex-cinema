@@ -22,9 +22,13 @@ export default function Sidebar() {
     window.addEventListener('sidebar-state-change', checkState);
     window.addEventListener('resize', checkState);
 
+    // Periodic check to ensure state is synchronized even if class changes without events
+    const interval = setInterval(checkState, 250);
+
     return () => {
       window.removeEventListener('sidebar-state-change', checkState);
       window.removeEventListener('resize', checkState);
+      clearInterval(interval);
     };
   }, []);
 
@@ -77,7 +81,7 @@ export default function Sidebar() {
               <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300">
                 <i className="fa-solid fa-play text-white ml-0.5 text-base"></i>
               </div>
-              <div className="flex flex-col leading-none">
+              <div className="flex flex-col leading-none font-sans">
                 <span className="text-xl font-black font-en tracking-wider text-white">ALEX<span className="text-alex-primary">CINEMA</span></span>
                 <span className="text-[10px] text-gray-500 font-bold tracking-[0.1em] mt-1 uppercase">Premium</span>
               </div>
@@ -212,6 +216,66 @@ export default function Sidebar() {
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
                 <i className="fa-solid fa-fire-flame-curved text-lg w-5 text-center text-red-500"></i>
                 <span className="sidebar-label">انمي</span>
+              </div>
+            </Link>
+
+            {/* أحدث الحلقات */}
+            <Link 
+              href="/new-releases?type=episodes" 
+              onClick={closeSidebar}
+              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
+                isActive('/new-releases?type=episodes') 
+                  ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-3.5 sidebar-item-content w-full">
+                <i className="fa-solid fa-clock text-lg w-5 text-center text-sky-400"></i>
+                <span className="sidebar-label">أحدث الحلقات</span>
+              </div>
+            </Link>
+
+            {/* المصارعة الحرة */}
+            <Link 
+              href="/movies?category=80" 
+              onClick={closeSidebar}
+              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
+                isActive('/movies?category=80') 
+                  ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-3.5 sidebar-item-content w-full">
+                <i className="fa-solid fa-mask text-lg w-5 text-center text-red-400"></i>
+                <span className="sidebar-label">المصارعة الحرة</span>
+              </div>
+            </Link>
+
+            {/* الأطفال والكرتون */}
+            <Link 
+              href="/movies?category=72" 
+              onClick={closeSidebar}
+              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
+                isActive('/movies?category=72') 
+                  ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-3.5 sidebar-item-content w-full">
+                <i className="fa-solid fa-child text-lg w-5 text-center text-green-400"></i>
+                <span className="sidebar-label">الأطفال والكرتون</span>
+              </div>
+            </Link>
+
+            {/* طلبات الأفلام */}
+            <Link 
+              href="#" 
+              onClick={closeSidebar}
+              className="flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn text-gray-400 hover:text-white hover:bg-white/5"
+            >
+              <div className="flex items-center gap-3.5 sidebar-item-content w-full">
+                <i className="fa-solid fa-paper-plane text-lg w-5 text-center text-amber-400"></i>
+                <span className="sidebar-label">طلبات الأفلام</span>
               </div>
             </Link>
 

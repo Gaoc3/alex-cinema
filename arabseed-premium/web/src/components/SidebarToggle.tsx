@@ -10,13 +10,24 @@ export default function SidebarToggle() {
     if (typeof window !== 'undefined') {
       const savedState = localStorage.getItem('sidebar-collapsed');
       if (savedState === 'true') {
-        setIsCollapsed(true);
         document.body.classList.add('sidebar-collapsed');
       } else {
-        setIsCollapsed(false);
         document.body.classList.remove('sidebar-collapsed');
       }
     }
+
+    const checkState = () => {
+      if (typeof document !== 'undefined') {
+        setIsCollapsed(document.body.classList.contains('sidebar-collapsed'));
+      }
+    };
+
+    checkState();
+
+    window.addEventListener('sidebar-state-change', checkState);
+    return () => {
+      window.removeEventListener('sidebar-state-change', checkState);
+    };
   }, []);
 
   const toggleSidebar = () => {
