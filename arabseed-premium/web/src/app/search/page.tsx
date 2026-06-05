@@ -96,7 +96,7 @@ function SearchPageContent() {
 
         if (fetchMovies) {
           moviesPromise = fetch(
-            `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=${queryEncoded}&page=0&year=${yearRange}&type=movies${categoryParam}${starParam}`,
+            `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=${yearRange}&type=movies${categoryParam}${starParam}`,
             { signal }
           )
             .then((res) => (res.ok ? res.json() : []))
@@ -105,7 +105,7 @@ function SearchPageContent() {
 
         if (fetchSeries) {
           seriesPromise = fetch(
-            `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=${queryEncoded}&page=0&year=${yearRange}&type=series${categoryParam}${starParam}`,
+            `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=${yearRange}&type=series${categoryParam}${starParam}`,
             { signal }
           )
             .then((res) => (res.ok ? res.json() : []))

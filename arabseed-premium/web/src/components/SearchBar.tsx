@@ -92,8 +92,8 @@ export default function SearchBar() {
       try {
         const queryEncoded = encodeURIComponent(query);
         const [resMovies, resSeries] = await Promise.all([
-          fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=${queryEncoded}&page=0&year=1900,2026&type=movies`, { signal }),
-          fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=${queryEncoded}&page=0&year=1900,2026&type=series`, { signal })
+          fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,2026&type=movies`, { signal }),
+          fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,2026&type=series`, { signal })
         ]);
 
         let moviesList: SearchResult[] = [];
