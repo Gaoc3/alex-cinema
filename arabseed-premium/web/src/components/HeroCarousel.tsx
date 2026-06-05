@@ -84,8 +84,6 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         {/* Gradients blending cover image into the website background */}
         {/* Bottom vertical fade */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/10 to-transparent z-[2]"></div>
-        {/* Right-to-left horizontal fade (RTL: semi-dark on the right for text readability, clear on the left for artwork) */}
-        <div className="absolute inset-0 bg-gradient-to-l from-[#070a13]/90 via-[#070a13]/10 to-transparent z-[2]"></div>
       </div>
       
       {/* Carousel Content */}
@@ -98,6 +96,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             fade ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
+          {/* Smart localized dark aura exactly behind the text */}
+          <div className="absolute -inset-y-24 -inset-x-24 bg-black/60 blur-[80px] pointer-events-none -z-10 rounded-full"></div>
+          <div className="absolute -inset-y-12 -inset-x-12 bg-black/80 blur-[40px] pointer-events-none -z-10 rounded-full"></div>
+
           {/* Decorative Glow */}
           <div className="absolute -top-20 -right-20 w-64 h-64 bg-alex-primary/20 rounded-full blur-[100px] pointer-events-none animate-glow"></div>
           
