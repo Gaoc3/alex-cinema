@@ -219,9 +219,9 @@ export default function Sidebar() {
               
               {/* Series Submenu */}
               <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] mr-8 space-y-1 mt-1 sidebar-submenu origin-top ${seriesOpen && !isCollapsed ? 'max-h-40 opacity-100 translate-y-0 scale-y-100' : 'max-h-0 opacity-0 -translate-y-2 scale-y-95 pointer-events-none'}`}>
-                <Link href="/series" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white hover:translate-x-[-4px] transition-all">كل المسلسلات</Link>
-                <Link href="/series?sort=stars" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white hover:translate-x-[-4px] transition-all">الأعلى تقييماً</Link>
-                <Link href="/series?category=62" onClick={closeSidebar} className="block py-2 px-4 text-sm font-semibold text-gray-400 hover:text-white hover:translate-x-[-4px] transition-all">مسلسلات دراما</Link>
+                <Link href="/series" onClick={closeSidebar} className={`block py-2 px-4 text-sm font-semibold transition-all ${isActive('/series') ? 'text-alex-primary translate-x-[-4px]' : 'text-gray-400 hover:text-white hover:translate-x-[-4px]'}`}>كل المسلسلات</Link>
+                <Link href="/series?sort=stars" onClick={closeSidebar} className={`block py-2 px-4 text-sm font-semibold transition-all ${isActive('/series?sort=stars') ? 'text-alex-primary translate-x-[-4px]' : 'text-gray-400 hover:text-white hover:translate-x-[-4px]'}`}>الأعلى تقييماً</Link>
+                <Link href="/series?category=62" onClick={closeSidebar} className={`block py-2 px-4 text-sm font-semibold transition-all ${isActive('/series?category=62') ? 'text-alex-primary translate-x-[-4px]' : 'text-gray-400 hover:text-white hover:translate-x-[-4px]'}`}>مسلسلات دراما</Link>
               </div>
             </div>
 
