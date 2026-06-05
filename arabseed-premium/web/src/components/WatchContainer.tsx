@@ -508,4 +508,5 @@ export default function WatchContainer({ video, seasons, episodes }: WatchContai
 
       </div>
     </div>
+  );
 }
