@@ -35,6 +35,11 @@ export default function RootLayout({
               <div className="flex items-center justify-between h-14 sm:h-20 lg:h-24">
                   {/* Logo - shown on mobile too */}
                   <div className="flex items-center gap-2 lg:gap-12 shrink-0">
+                      {/* Mobile Hamburger Menu (Right side in RTL) */}
+                      <div className="lg:hidden flex shrink-0">
+                        <SidebarToggle />
+                      </div>
+                      
                       <Link href="/" className="flex items-center gap-1.5 sm:gap-3 group hover-scale">
                           <div className="w-8 h-8 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_20px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_30px_rgba(229,9,20,0.8)] transition-all duration-300">
                               <i className="fa-solid fa-play text-white ml-0.5 text-xs sm:text-sm lg:text-lg"></i>
@@ -54,9 +59,6 @@ export default function RootLayout({
                       <button className="hidden sm:flex w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 border-alex-primary/50 overflow-hidden hover:border-alex-primary transition-all hover-scale shadow-[0_0_15px_rgba(229,9,20,0.3)]">
                           <img src="https://ui-avatars.com/api/?name=User&background=121826&color=e50914" alt="Profile" className="w-full h-full object-cover" />
                       </button>
-                      <div className="lg:hidden flex shrink-0">
-                        <SidebarToggle />
-                      </div>
                   </div>
               </div>
           </div>
