@@ -145,8 +145,8 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
 
       {/* Slide Indicators / Thumbnails Row (Cinemana Style) */}
       {videos.length > 1 && (
-        <div className="absolute bottom-5 left-0 right-0 z-20 w-full overflow-x-auto hide-scrollbar" dir="ltr">
-          <div className="flex flex-row-reverse gap-2 sm:gap-3 w-max mx-auto px-4 sm:px-8 pb-2">
+        <div className="absolute bottom-5 left-0 right-0 z-20 w-full">
+          <div className="flex gap-2 sm:gap-3 overflow-x-auto hide-scrollbar w-full px-4 sm:px-8 pb-2">
           {videos.map((video, idx) => {
             const thumbUrl = video.imgObjUrl || `https://cnth2.shabakaty.com/vascin-cover-images/${video.img}`;
             return (
