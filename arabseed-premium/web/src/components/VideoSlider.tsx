@@ -103,7 +103,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
                     <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-2xl backdrop-blur-md ${
                       accentColor === 'red' 
                         ? 'bg-alex-primary/90 shadow-[0_0_20px_rgba(229,9,20,0.5)]' 
-                        : 'bg-blue-600/90 shadow-[0_0_20px_rgba(59,130,246,0.5)]'
+                        : 'bg-alex-primary/90 shadow-[0_0_20px_rgba(59,130,246,0.5)]'
                     }`}>
                       <i className="fa-solid fa-play ml-1 text-xl"></i>
                     </div>

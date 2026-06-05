@@ -426,7 +426,7 @@ function SearchPageContent() {
 
                       {/* Play Hover Indicator */}
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 transform scale-50 group-hover/card:opacity-100 group-hover/card:scale-100 transition-all duration-300 z-20">
-                        <div className="w-14 h-14 rounded-full bg-blue-600/90 flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.5)] backdrop-blur-md">
+                        <div className="w-14 h-14 rounded-full bg-alex-primary/90 flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.5)] backdrop-blur-md">
                           <i className="fa-solid fa-play ml-1 text-xl"></i>
                         </div>
                       </div>
