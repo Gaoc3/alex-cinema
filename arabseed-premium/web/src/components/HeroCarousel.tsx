@@ -161,7 +161,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       {/* Slide Indicators / Thumbnails Row (Cinemana Style) */}
       {videos.length > 1 && (
         <div className="w-full z-20 mt-auto">
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full pb-4">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full pt-6 pb-6">
             {/* Start spacer to replace padding and avoid RTL bugs */}
             <div className="w-1 sm:w-4 shrink-0 pointer-events-none opacity-0"></div>
           {videos.map((video, idx) => {
