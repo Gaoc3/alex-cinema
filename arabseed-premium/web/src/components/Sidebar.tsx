@@ -76,10 +76,10 @@ export default function Sidebar() {
         {/* Sidebar Header (Cinemana Style) */}
         <div className="h-24 border-b border-white/5 flex items-center justify-between px-5 w-full shrink-0 relative z-20">
           {/* Logo and Brand Name (Hidden on Collapsed) */}
-          <div className="flex items-center gap-4 sidebar-brand-name">
-            <Link href="/" className="flex items-center gap-4 group" onClick={closeSidebar} dir="ltr">
+          <div className="flex items-center gap-3 sidebar-brand-name">
+            <Link href="/" className="flex items-center gap-3 group" onClick={closeSidebar}>
               <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300">
-                <i className="fa-solid fa-play text-white ml-1 text-base"></i>
+                <i className="fa-solid fa-play text-white ml-0.5 text-base"></i>
               </div>
               <div className="flex flex-col leading-none font-sans">
                 <span className="text-xl font-black font-en tracking-wider text-white">ALEX<span className="text-alex-primary">CINEMA</span></span>
