@@ -11,7 +11,7 @@ export default function MediaPoster({ img, imdbUrlRef }: MediaPosterProps) {
       
       <div className="relative flex-1 rounded-2xl overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.6)] border border-white/10 group min-h-[350px]">
         <img 
-          src={`https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=${encodeURIComponent(\'https://cnth2.shabakaty.com/vascin-poster-images/\' + (img))}`} 
+          src={`https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=${encodeURIComponent(https://cnth2.shabakaty.com/vascin-poster-images/' + (img))}`} 
           alt="Poster" 
           className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
         />
