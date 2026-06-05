@@ -172,6 +172,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
               </button>
             );
           })}
+          </div>
         </div>
       )}
     </div>
