@@ -303,7 +303,7 @@ function MoviesContent() {
                   صفحة <span className="font-en text-alex-primary font-black mx-1">{page}</span>
                 </div>
 
-                {movies.length === 24 ? (
+                {movies.length >= 10 ? (
                   <button 
                     onClick={() => updateParams({ page: (page + 1).toString() })}
                     className="flex items-center gap-2 bg-alex-primary text-white border border-alex-primary shadow-[0_0_15px_rgba(229,9,20,0.3)] px-6 py-3.5 rounded-xl font-bold text-sm transition-all hover-scale cursor-pointer"
