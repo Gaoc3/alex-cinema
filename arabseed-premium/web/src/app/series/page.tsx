@@ -107,7 +107,6 @@ function SeriesContent() {
         }
 
         setSeries(list);
-        }
       } catch (error) {
         console.error('Failed to load series:', error);
         setSeries([]);
