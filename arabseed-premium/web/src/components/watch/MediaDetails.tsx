@@ -16,7 +16,6 @@ export default function MediaDetails({
 }: MediaDetailsProps) {
   return (
     <div className="glass-panel rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden border border-white/5 flex flex-col justify-between h-full">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-alex-primary/5 rounded-full blur-[80px] pointer-events-none"></div>
       
       <div className="relative z-10 flex-1 flex flex-col justify-between">
         <div>

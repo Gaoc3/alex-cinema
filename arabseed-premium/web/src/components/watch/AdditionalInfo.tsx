@@ -10,7 +10,6 @@ interface AdditionalInfoProps {
 export default function AdditionalInfo({ kind, year, duration, itemDate }: AdditionalInfoProps) {
   return (
     <div className="glass-panel rounded-3xl p-6 shadow-2xl relative overflow-hidden border border-white/5 flex flex-col justify-between h-full">
-      <div className="absolute bottom-0 left-0 w-32 h-32 bg-alex-primary/5 rounded-full blur-[50px] pointer-events-none"></div>
       
       <div className="relative z-10 flex-1 flex flex-col justify-between">
         <div>
