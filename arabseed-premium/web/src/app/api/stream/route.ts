@@ -45,10 +45,7 @@ export async function GET(req: NextRequest) {
     
     if (contentLength) responseHeaders.set('Content-Length', contentLength);
     if (contentRange) responseHeaders.set('Content-Range', contentRange);
-    
-    // Explicitly allow ranges for video seeking
-    responseHeaders.set('Accept-Ranges', 'bytes');
-    if (acceptRanges) responseHeaders.set('Upstream-Accept-Ranges', acceptRanges);
+    if (acceptRanges) responseHeaders.set('Accept-Ranges', acceptRanges);
     
     // CORS
     responseHeaders.set('Access-Control-Allow-Origin', '*');
