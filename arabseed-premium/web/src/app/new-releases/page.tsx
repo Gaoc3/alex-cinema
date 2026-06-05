@@ -73,7 +73,7 @@ function NewReleasesContent() {
   };
 
   return (
-    <div className="min-h-screen pt-32 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 animate-fade-in-up">
+    <div className="min-h-screen pt-20 sm:pt-24 lg:pt-32 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 animate-fade-in-up">
       {/* Title */}
       <div className="flex items-center gap-4 mb-8">
         <div className="w-1.5 h-10 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
@@ -142,37 +142,37 @@ function NewReleasesContent() {
           </div>
 
           {/* Pagination Controls */}
-          <div className="flex items-center justify-center gap-4 mt-16">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-12 sm:mt-16">
             {page > 1 ? (
               <button 
                 onClick={() => setPage(page - 1)}
-                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/5 px-6 py-3.5 rounded-xl font-bold text-sm transition-all hover-scale cursor-pointer"
+                className="flex items-center gap-1.5 sm:gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/5 px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm transition-all hover-scale cursor-pointer"
               >
                 <i className="fa-solid fa-arrow-right"></i>
-                <span>الصفحة السابقة</span>
+                <span>السابقة</span>
               </button>
             ) : (
-              <div className="opacity-30 flex items-center gap-2 bg-white/5 text-gray-400 border border-white/5 px-6 py-3.5 rounded-xl font-bold text-sm cursor-not-allowed">
+              <div className="opacity-30 flex items-center gap-1.5 sm:gap-2 bg-white/5 text-gray-400 border border-white/5 px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm cursor-not-allowed">
                 <i className="fa-solid fa-arrow-right"></i>
-                <span>الصفحة السابقة</span>
+                <span>السابقة</span>
               </div>
             )}
             
-            <div className="glass-panel px-6 py-3.5 rounded-xl text-sm font-black text-gray-200 border border-white/10 shadow-lg">
-              صفحة <span className="font-en text-orange-500 font-black mx-1">{page}</span>
+            <div className="glass-panel px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl text-xs sm:text-sm font-black text-gray-200 border border-white/10 shadow-lg">
+              <span className="font-en text-orange-500 font-black mx-1">{page}</span>
             </div>
 
             {items.length >= 35 ? (
               <button 
                 onClick={() => setPage(page + 1)}
-                className="flex items-center gap-2 bg-orange-500 text-white border border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)] px-6 py-3.5 rounded-xl font-bold text-sm transition-all hover-scale cursor-pointer"
+                className="flex items-center gap-1.5 sm:gap-2 bg-orange-500 text-white border border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)] px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm transition-all hover-scale cursor-pointer"
               >
-                <span>الصفحة التالية</span>
+                <span>التالية</span>
                 <i className="fa-solid fa-arrow-left"></i>
               </button>
             ) : (
-              <div className="opacity-30 flex items-center gap-2 bg-white/5 text-gray-400 border border-white/5 px-6 py-3.5 rounded-xl font-bold text-sm cursor-not-allowed">
-                <span>الصفحة التالية</span>
+              <div className="opacity-30 flex items-center gap-1.5 sm:gap-2 bg-white/5 text-gray-400 border border-white/5 px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm cursor-not-allowed">
+                <span>التالية</span>
                 <i className="fa-solid fa-arrow-left"></i>
               </div>
             )}
