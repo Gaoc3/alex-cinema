@@ -303,7 +303,7 @@ function SeriesContent() {
                   صفحة <span className="font-en text-blue-500 font-black mx-1">{page}</span>
                 </div>
 
-                {series.length === 24 ? (
+                {series.length >= 10 ? (
                   <button 
                     onClick={() => updateParams({ page: (page + 1).toString() })}
                     className="flex items-center gap-2 bg-alex-primary text-white border border-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.3)] px-6 py-3.5 rounded-xl font-bold text-sm transition-all hover-scale cursor-pointer"
