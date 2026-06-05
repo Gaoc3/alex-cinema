@@ -1,4 +1,0 @@
-Status: 200
-Title: حلقة A Marvel Television Special Presentation: The Punisher: One Last Kill
-Is Series: False
-Seasons count: 0

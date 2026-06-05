@@ -1,51 +1,392 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALEX CINEMA | اليكس سينما</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        alex: {
+                            primary: '#e50914',
+                            dark: '#0b0f19',
+                            card: '#121826',
+                            hover: '#1f2937'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Cairo', 'sans-serif'],
+                        en: ['Outfit', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
 
-{% block title %}AleX CINEMA - أليكس سينما | الرئيسية{% endblock %}
-{% block page_id %}home{% endblock %}
-{% block nav_home %}active{% endblock %}
+        /* Glassmorphism */
+        .glass-nav {
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
 
-{% block content %}
-<!-- Giant Premium Trending Hero Slider -->
-<section class="hero-slider-section" id="hero-slider-area" style="display: none;">
-    <div class="hero-slider-container">
-        <div class="hero-slider-wrapper" id="hero-slider-wrapper">
-            <!-- Slides loaded dynamically -->
+        /* Hero Section Overlay */
+        .hero-gradient {
+            background: linear-gradient(0deg, #0b0f19 0%, rgba(11,15,25,0.8) 20%, rgba(11,15,25,0.4) 60%, rgba(11,15,25,0.1) 100%),
+                        linear-gradient(270deg, #0b0f19 0%, rgba(11,15,25,0.6) 30%, rgba(11,15,25,0) 100%);
+        }
+
+        /* Card Animations */
+        .movie-card {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+        }
+        
+        .movie-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(229, 9, 20, 0.15);
+        }
+
+        .movie-card img {
+            transition: transform 0.5s ease;
+        }
+
+        .movie-card:hover img {
+            transform: scale(1.05);
+        }
+
+        /* Scrollbar Hide */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Buttons & Badges */
+        .btn-primary {
+            background-color: #e50914;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #f6121d;
+            box-shadow: 0 0 15px rgba(229, 9, 20, 0.4);
+            transform: scale(1.02);
+        }
+
+        .category-tab {
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        .category-tab.active {
+            background-color: #e50914;
+            color: white;
+            font-weight: 700;
+        }
+        .category-tab:not(.active):hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .play-icon-overlay {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .movie-card:hover .play-icon-overlay {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Truncate multi-line */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;  
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 glass-nav transition-all duration-300" id="navbar">
+        <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                
+                <!-- Right Side: Logo & Links -->
+                <div class="flex items-center gap-10">
+                    <!-- Logo -->
+                    <a href="/" class="flex items-center gap-3 group">
+                        <div class="w-10 h-10 rounded-lg bg-[#e50914] flex items-center justify-center shadow-lg shadow-red-500/20 group-hover:scale-105 transition-transform">
+                            <i class="fa-solid fa-play text-white mr-1 text-sm"></i>
+                        </div>
+                        <div class="flex flex-col leading-none">
+                            <span class="text-2xl font-black font-en tracking-wider text-white">ALEX<span class="text-[#e50914]">CINEMA</span></span>
+                            <span class="text-[11px] text-gray-400 font-bold tracking-[0.1em] mt-1">اليكس سينما</span>
+                        </div>
+                    </a>
+                    
+                    <!-- Desktop Menu -->
+                    <div class="hidden lg:flex items-center gap-2">
+                        <a href="/" class="px-5 py-2.5 rounded-lg bg-white/10 text-white font-bold text-sm">الرئيسية</a>
+                        <a href="#" class="px-5 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 font-semibold text-sm transition-colors">الأفلام</a>
+                        <a href="#" class="px-5 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 font-semibold text-sm transition-colors">المسلسلات</a>
+                        <a href="#" class="px-5 py-2.5 rounded-lg text-[#e50914] hover:bg-[#e50914]/10 font-bold text-sm transition-colors flex items-center gap-2">
+                            <i class="fa-solid fa-fire text-xs"></i> ترندينغ
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Left Side: Search & Profile -->
+                <div class="flex items-center gap-5">
+                    <form action="/search" method="get" class="relative hidden md:block group">
+                        <input type="text" name="q" class="w-64 bg-alex-card border border-gray-800 rounded-full py-2.5 pr-11 pl-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#e50914] focus:ring-1 focus:ring-[#e50914] transition-all duration-300 focus:w-80" placeholder="ابحث عن فيلم أو مسلسل...">
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-[#e50914] transition-colors">
+                            <i class="fa-solid fa-search"></i>
+                        </div>
+                    </form>
+                    <button class="w-10 h-10 rounded-full bg-alex-card border border-gray-800 flex items-center justify-center hover:bg-gray-800 transition-colors">
+                        <i class="fa-regular fa-bell text-gray-400"></i>
+                    </button>
+                    <button class="w-10 h-10 rounded-full bg-gradient-to-tr from-gray-800 to-gray-700 border border-gray-600 flex items-center justify-center hover:border-gray-400 transition-colors overflow-hidden">
+                        <i class="fa-solid fa-user text-gray-300 text-sm"></i>
+                    </button>
+                </div>
+                
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section (Featured Movie) -->
+    {% if videos and videos|length > 0 %}
+    {% set featured = videos[0] %}
+    <div class="relative w-full h-[80vh] min-h-[600px] max-h-[800px] flex items-center mt-0">
+        <!-- Background Image -->
+        <div class="absolute inset-0 w-full h-full">
+            <!-- Fetching high-res image if possible, using poster for now -->
+            <img src="https://cnth2.shabakaty.com/vascin-poster-images/{{ featured.img }}" alt="{{ featured.ar_title }}" class="w-full h-full object-cover object-top opacity-60">
+            <div class="absolute inset-0 hero-gradient"></div>
         </div>
         
-        <!-- Slide Navigation Dots -->
-        <div class="hero-slider-dots" id="hero-slider-dots"></div>
-        
-        <!-- Slide Navigation Arrows -->
-        <button class="hero-slider-arrow prev" id="hero-slider-prev"><i class="fa-solid fa-chevron-right"></i></button>
-        <button class="hero-slider-arrow next" id="hero-slider-next"><i class="fa-solid fa-chevron-left"></i></button>
-    </div>
-</section>
-
-<!-- Search Results Catalog / Home Catalog -->
-<section class="catalog-section" id="catalog-area">
-    <div class="section-header" id="results-header-container" style="display: none;">
-        <h2 class="section-title" id="results-title-text"><i class="fa-solid fa-square-poll-horizontal"></i> نتائج البحث</h2>
-        <span class="results-count" id="results-count-badge">0 نتيجة</span>
-    </div>
-    
-    <!-- Loading Indicator -->
-    <div class="loader-container" id="spinner-loader">
-        <div class="cyber-spinner"></div>
-        <p class="loading-text">جاري إحضار أحدث الأفلام والمسلسلات...</p>
-    </div>
-    
-    <!-- Grid Layout / Carousels Container -->
-    <div class="movie-grid-container" id="cards-grid-container">
-        <div class="movie-grid" id="cards-grid">
-            <!-- Cards or slider rows injected via JavaScript -->
+        <div class="relative z-10 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-20">
+            <div class="max-w-3xl">
+                <!-- Badges -->
+                <div class="flex flex-wrap items-center gap-3 mb-5">
+                    <span class="px-3 py-1 bg-[#e50914] text-white text-xs font-bold rounded shadow-lg shadow-red-500/20">
+                        حصرياً
+                    </span>
+                    <span class="flex items-center gap-1 text-yellow-400 text-sm font-bold bg-black/50 border border-white/10 px-3 py-1 rounded backdrop-blur-md">
+                        <i class="fa-solid fa-star text-xs"></i> {{ featured.stars }}
+                    </span>
+                    <span class="text-gray-300 text-sm font-bold bg-black/50 border border-white/10 px-3 py-1 rounded backdrop-blur-md">
+                        <span class="font-en">{{ featured.year }}</span>
+                    </span>
+                    <span class="text-gray-300 text-sm font-bold bg-black/50 border border-white/10 px-3 py-1 rounded backdrop-blur-md">
+                        {% if featured.kind == '1' %}فيلم{% else %}مسلسل{% endif %}
+                    </span>
+                </div>
+                
+                <!-- Title -->
+                <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black text-white mb-3 leading-tight drop-shadow-2xl">
+                    {{ featured.ar_title }}
+                </h1>
+                {% if featured.en_title and featured.en_title != featured.ar_title %}
+                <h2 class="text-2xl sm:text-3xl text-gray-400 font-bold font-en mb-6 drop-shadow-lg">
+                    {{ featured.en_title }}
+                </h2>
+                {% endif %}
+                
+                <!-- Description -->
+                <p class="text-gray-300 text-lg sm:text-xl mb-10 line-clamp-3 leading-relaxed max-w-2xl font-medium drop-shadow-md">
+                    {{ featured.ar_content }}
+                </p>
+                
+                <!-- Actions -->
+                <div class="flex flex-wrap items-center gap-4">
+                    <a href="/watch/{{ featured.nb }}" class="flex items-center gap-3 btn-primary text-white px-8 py-4 rounded-lg font-bold text-lg">
+                        <i class="fa-solid fa-play"></i>
+                        <span>شاهد الآن</span>
+                    </a>
+                    {% if featured.trailer %}
+                    <a href="{{ featured.trailer }}" target="_blank" class="flex items-center gap-3 bg-gray-800/80 text-white border border-gray-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-700 hover:border-gray-400 backdrop-blur-md transition-all">
+                        <i class="fa-solid fa-film"></i>
+                        <span>الإعلان الترويجي</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
-    
-    <!-- Empty State -->
-    <div class="empty-state" id="empty-results-state" style="display: none;">
-        <i class="fa-solid fa-clapperboard empty-icon"></i>
-        <h3>لم يتم العثور على نتائج!</h3>
-        <p>عذراً، لا يوجد بيانات لعرضها في الوقت الحالي.</p>
+    {% endif %}
+
+    <!-- Categories Carousel -->
+    <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 -mt-8 mb-12">
+        <div class="flex items-center gap-3 overflow-x-auto pb-4 hide-scrollbar">
+            <a href="#" class="category-tab active px-6 py-2.5 rounded-full text-sm border border-transparent shadow-lg shadow-red-500/20">الكل</a>
+            {% for cat in categories %}
+            <a href="#" class="category-tab px-6 py-2.5 rounded-full text-sm text-gray-300 bg-alex-card border border-gray-800 hover:text-white hover:border-gray-600 shadow-sm">
+                {{ cat.title }}
+            </a>
+            {% endfor %}
+        </div>
     </div>
-</section>
-{% endblock %}
+
+    <!-- Main Content Grid -->
+    <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+        
+        <!-- Section Header -->
+        <div class="flex items-end justify-between mb-8">
+            <div class="flex items-center gap-4">
+                <div class="w-1.5 h-8 bg-[#e50914] rounded-full"></div>
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-black text-white">أحدث الإضافات</h2>
+                    <p class="text-gray-400 mt-1 text-sm font-medium">أفضل الأفلام والمسلسلات المضافة حديثاً</p>
+                </div>
+            </div>
+            <a href="#" class="text-gray-400 hover:text-white font-bold text-sm flex items-center gap-2 group hidden sm:flex transition-colors">
+                عرض الكل <i class="fa-solid fa-arrow-left text-xs transform group-hover:-translate-x-1 transition-transform"></i>
+            </a>
+        </div>
+
+        <!-- Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-10">
+            {% for video in videos[1:] %}
+            <a href="/watch/{{ video.nb }}" class="movie-card group block relative rounded-xl overflow-hidden bg-alex-card border border-gray-800/60">
+                
+                <!-- Poster Image -->
+                <div class="aspect-[2/3] w-full relative overflow-hidden bg-gray-900">
+                    <img src="https://cnth2.shabakaty.com/vascin-poster-images/{{ video.imgThumb }}" alt="{{ video.ar_title }}" class="object-cover w-full h-full" loading="lazy">
+                    
+                    <!-- Gradient overlay on image bottom -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#121826] via-transparent to-transparent opacity-90"></div>
+                    
+                    <!-- Top Badges -->
+                    <div class="absolute top-2.5 left-2.5">
+                        <div class="bg-black/70 backdrop-blur-md border border-white/10 px-2 py-1 rounded text-xs font-bold text-yellow-400 flex items-center gap-1">
+                            <i class="fa-solid fa-star text-[10px]"></i> <span class="font-en mt-0.5">{{ video.stars }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="absolute top-2.5 right-2.5">
+                        {% if video.kind == '1' %}
+                        <div class="bg-[#e50914] px-2 py-1 rounded text-[11px] font-bold text-white shadow-md">فيلم</div>
+                        {% else %}
+                        <div class="bg-blue-600 px-2 py-1 rounded text-[11px] font-bold text-white shadow-md">مسلسل</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Center Play Icon -->
+                    <div class="absolute inset-0 flex items-center justify-center play-icon-overlay">
+                        <div class="w-14 h-14 rounded-full bg-[#e50914]/90 backdrop-blur-sm flex items-center justify-center text-white shadow-lg shadow-red-500/40">
+                            <i class="fa-solid fa-play ml-1 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Area -->
+                <div class="p-4 relative">
+                    <!-- Title -->
+                    <h3 class="text-sm sm:text-base font-bold text-white line-clamp-2 group-hover:text-[#e50914] transition-colors leading-snug" title="{{ video.ar_title }}">
+                        {{ video.ar_title }}
+                    </h3>
+                    
+                    <!-- Meta info (Year & Category) -->
+                    <div class="flex items-center justify-between mt-3">
+                        <span class="text-xs text-gray-400 font-en font-semibold bg-gray-800/50 px-2 py-1 rounded">{{ video.year }}</span>
+                        
+                        {% if video.categories and video.categories|length > 0 %}
+                        <span class="text-[11px] text-gray-300 font-medium">
+                            {{ video.categories[0].ar_title }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 bg-[#0b0f19] pt-16 pb-8 mt-auto relative z-10">
+        <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-10 mb-12">
+                <!-- Branding -->
+                <div>
+                    <a href="/" class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-[#e50914] flex items-center justify-center">
+                            <i class="fa-solid fa-play text-white mr-1 text-sm"></i>
+                        </div>
+                        <div class="flex flex-col leading-none">
+                            <span class="text-2xl font-black font-en tracking-wider text-white">ALEX<span class="text-[#e50914]">CINEMA</span></span>
+                        </div>
+                    </a>
+                    <p class="text-gray-400 text-sm leading-relaxed max-w-sm">
+                        منصة أليكس سينما هي واجهتك الأولى لمشاهدة أحدث الأفلام والمسلسلات بجودة عالية وبدون تقطيع. تجربة سينمائية متكاملة.
+                    </p>
+                </div>
+                
+                <!-- Quick Links -->
+                <div>
+                    <h4 class="text-white font-bold mb-4">روابط سريعة</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-[#e50914] transition-colors">الأفلام الأجنبية</a></li>
+                        <li><a href="#" class="hover:text-[#e50914] transition-colors">المسلسلات الحصرية</a></li>
+                        <li><a href="#" class="hover:text-[#e50914] transition-colors">الأكثر مشاهدة (ترندينغ)</a></li>
+                        <li><a href="#" class="hover:text-[#e50914] transition-colors">تطبيق الهاتف</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Social -->
+                <div>
+                    <h4 class="text-white font-bold mb-4">تابعنا على</h4>
+                    <div class="flex gap-3">
+                        <a href="#" class="w-10 h-10 rounded-lg bg-alex-card border border-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#e50914] hover:border-[#e50914] transition-all">
+                            <i class="fa-brands fa-twitter"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-lg bg-alex-card border border-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#e50914] hover:border-[#e50914] transition-all">
+                            <i class="fa-brands fa-telegram"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-lg bg-alex-card border border-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#e50914] hover:border-[#e50914] transition-all">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                <p class="text-gray-500 text-sm">
+                    جميع الحقوق محفوظة لـ <span class="font-en text-gray-300">ALEX CINEMA</span> &copy; 2026
+                </p>
+                <div class="flex gap-4 text-sm text-gray-500">
+                    <a href="#" class="hover:text-gray-300 transition-colors">شروط الاستخدام</a>
+                    <a href="#" class="hover:text-gray-300 transition-colors">سياسة الخصوصية</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navbar background transition on scroll
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 10) {
+                nav.classList.add('shadow-lg', 'shadow-black/50');
+            } else {
+                nav.classList.remove('shadow-lg', 'shadow-black/50');
+            }
+        });
+    </script>
+</body>
+</html>

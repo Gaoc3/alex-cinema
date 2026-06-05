@@ -1385,11 +1385,13 @@ html {
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     white-space: nowrap;
 }
-.season-btn:hover {
-    background: rgba(124, 58, 237, 0.15);
-    border-color: rgba(124, 58, 237, 0.3);
-    color: #fff;
-    transform: translateY(-1.5px);
+@media (hover: hover) {
+    .season-btn:hover {
+        background: rgba(124, 58, 237, 0.15);
+        border-color: rgba(124, 58, 237, 0.3);
+        color: #fff;
+        transform: translateY(-1.5px);
+    }
 }
 .season-btn.active {
     background: linear-gradient(135deg, #7c3aed, #4f46e5);
@@ -1516,16 +1518,18 @@ html {
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     color: var(--accent-violet);
 }
-.episode-btn:hover {
-    background: rgba(124, 58, 237, 0.08);
-    border-color: rgba(124, 58, 237, 0.35);
-    color: #fff;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-}
-.episode-btn:hover::before {
-    opacity: 0.8;
-    transform: translateY(0);
+@media (hover: hover) {
+    .episode-btn:hover {
+        background: rgba(124, 58, 237, 0.08);
+        border-color: rgba(124, 58, 237, 0.35);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+    }
+    .episode-btn:hover::before {
+        opacity: 0.8;
+        transform: translateY(0);
+    }
 }
 .episode-btn.active {
     background: linear-gradient(135deg, #6d28d9, #4f46e5);
