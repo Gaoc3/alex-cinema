@@ -21,7 +21,7 @@ export default function PlayerSection({
   playNextEpisode
 }: PlayerSectionProps) {
   return (
-    <div className="bg-black rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-white/10 relative group transition-all duration-300 hover:border-alex-primary/30 h-full flex flex-col justify-center min-h-[350px]">
+    <div className="bg-black rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-white/10 relative group transition-all duration-300 hover:border-alex-primary/30 h-full flex flex-col justify-center min-h-[220px] sm:min-h-[300px] lg:min-h-[350px]">
       {isLoadingStreams ? (
         <div className="aspect-video w-full flex flex-col items-center justify-center bg-alex-card">
           <div className="w-16 h-16 border-4 border-alex-primary border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_15px_rgba(229,9,20,0.3)]"></div>

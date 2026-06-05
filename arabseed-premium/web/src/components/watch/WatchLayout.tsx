@@ -46,7 +46,7 @@ export default function WatchLayout({
     <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto relative z-10">
       
       {/* Row 1: Player & Poster */}
-      <div className="grid grid-cols-12 gap-8 items-stretch">
+      <div className="grid grid-cols-12 gap-4 sm:gap-6 lg:gap-8 items-stretch">
         <div className="col-span-12 lg:col-span-9 flex flex-col justify-stretch">
           <PlayerSection 
             isLoadingStreams={isLoadingStreams}
@@ -64,7 +64,7 @@ export default function WatchLayout({
       </div>
 
       {/* Row 2: Details & Additional Info */}
-      <div className="grid grid-cols-12 gap-8 items-stretch">
+      <div className="grid grid-cols-12 gap-4 sm:gap-6 lg:gap-8 items-stretch">
         <div className="col-span-12 lg:col-span-9 flex flex-col">
           <MediaDetails 
             title={displayTitle}

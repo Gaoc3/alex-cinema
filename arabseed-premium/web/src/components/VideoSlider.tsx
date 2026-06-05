@@ -57,18 +57,18 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
         {/* Navigation Arrows */}
         <button 
           onClick={() => scroll('left')}
-          className="absolute -left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-gradient-to-r from-alex-primary to-[#b80009] text-white flex items-center justify-center transition-all duration-300 opacity-0 group-hover/slider:opacity-100 shadow-[0_0_20px_rgba(229,9,20,0.4)] hover:scale-110 active:scale-95 cursor-pointer select-none"
+          className="hidden sm:flex absolute -left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-r from-alex-primary to-[#b80009] text-white items-center justify-center transition-all duration-300 lg:opacity-0 lg:group-hover/slider:opacity-100 opacity-100 shadow-[0_0_20px_rgba(229,9,20,0.4)] hover:scale-110 active:scale-95 cursor-pointer select-none"
           aria-label="Scroll Left"
         >
-          <i className="fa-solid fa-chevron-left text-lg"></i>
+          <i className="fa-solid fa-chevron-left text-sm lg:text-lg"></i>
         </button>
 
         <button 
           onClick={() => scroll('right')}
-          className="absolute -right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-gradient-to-r from-alex-primary to-[#b80009] text-white flex items-center justify-center transition-all duration-300 opacity-0 group-hover/slider:opacity-100 shadow-[0_0_20px_rgba(229,9,20,0.4)] hover:scale-110 active:scale-95 cursor-pointer select-none"
+          className="hidden sm:flex absolute -right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-r from-alex-primary to-[#b80009] text-white items-center justify-center transition-all duration-300 lg:opacity-0 lg:group-hover/slider:opacity-100 opacity-100 shadow-[0_0_20px_rgba(229,9,20,0.4)] hover:scale-110 active:scale-95 cursor-pointer select-none"
           aria-label="Scroll Right"
         >
-          <i className="fa-solid fa-chevron-right text-lg"></i>
+          <i className="fa-solid fa-chevron-right text-sm lg:text-lg"></i>
         </button>
 
         {/* Horizontal Card Rail */}
