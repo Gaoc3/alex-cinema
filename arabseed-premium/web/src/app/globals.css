@@ -187,7 +187,7 @@ main, nav, footer {
   max-width: 200px;
   white-space: nowrap;
   transform: translateX(0) scale(1);
-  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.3s ease 0.2s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .sidebar-brand-name {
@@ -198,7 +198,7 @@ main, nav, footer {
   max-width: 300px;
   white-space: nowrap;
   transform: translateX(0);
-  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.3s ease 0.2s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .sidebar-submenu {
@@ -212,7 +212,7 @@ main, nav, footer {
   pointer-events: none;
   overflow: hidden;
   transform: scale(0.8);
-  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.1s ease 0s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @media (min-width: 1024px) {
@@ -254,6 +254,7 @@ main, nav, footer {
     transform: translateX(15px) scale(0.9) !important;
     pointer-events: none !important;
     overflow: hidden !important;
+    transition: opacity 0.1s ease 0s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
 
   body.sidebar-collapsed .sidebar-brand-name {
@@ -262,6 +263,7 @@ main, nav, footer {
     transform: translateX(20px) !important;
     pointer-events: none !important;
     overflow: hidden !important;
+    transition: opacity 0.1s ease 0s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
 
   body.sidebar-collapsed .sidebar-submenu {
@@ -278,6 +280,7 @@ main, nav, footer {
     pointer-events: auto !important;
     overflow: visible !important;
     transform: scale(1) !important;
+    transition: opacity 0.3s ease 0.2s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
   
   /* Center the menu items and icons when collapsed */
