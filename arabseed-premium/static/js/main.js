@@ -1442,7 +1442,7 @@ function loadPlayerSource(server, startTime = 0, autoplay = true) {
                     autoStartLoad: true
                 });
                 
-                previewHls.loadSource(server.url);
+                previewHls.loadSource(proxiedUrl);
                 previewHls.attachMedia(previewVideo);
                 state.previewHlsInstance = previewHls;
                 
