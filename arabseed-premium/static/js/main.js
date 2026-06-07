@@ -473,9 +473,10 @@ function renderLiveSearchResults(results, query) {
     
     displayResults.forEach((item) => {
         const posterSrc = item.poster || SVG_POSTER_PLACEHOLDER;
+        const proxiedPoster = getProxyImageUrl(posterSrc);
         html += `
-            <div class="live-search-item" data-url="${item.url}" data-title="${item.title.replace(/"/g, '&quot;')}" data-poster="${posterSrc}" data-type="${item.type || 'فيلم'}" data-rating="${item.rating || '7.8'}" data-quality="${item.quality || '1080p'}">
-                <img class="live-search-item-poster" src="${posterSrc}" alt="${item.title}" onerror="this.src='${SVG_POSTER_PLACEHOLDER}'" referrerpolicy="no-referrer">
+            <div class="live-search-item" data-url="${item.url}" data-title="${item.title.replace(/"/g, '&quot;')}" data-poster="${proxiedPoster}" data-type="${item.type || 'فيلم'}" data-rating="${item.rating || '7.8'}" data-quality="${item.quality || '1080p'}">
+                <img class="live-search-item-poster" src="${proxiedPoster}" alt="${item.title}" onerror="this.src='${SVG_POSTER_PLACEHOLDER}'" referrerpolicy="no-referrer">
                 <div class="live-search-item-info">
                     <div class="live-search-item-title">${item.title}</div>
                     <div class="live-search-item-meta">
