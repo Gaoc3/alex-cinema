@@ -63,7 +63,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
   const current = videos[bgIndex];
 
   // Build the correct landscape cover image URL
-  const coverImgUrl = current.imgObjUrl || `https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=${encodeURIComponent(\'https://cnth2.shabakaty.com/vascin-cover-images/' + (current.img))}`;
+  const coverImgUrl = current.imgObjUrl || `https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=${encodeURIComponent('https://cnth2.shabakaty.com/vascin-cover-images/' + (current.img))}`;
 
   return (
     <div className="relative w-full h-[85svh] min-h-[600px] sm:min-h-[auto] sm:h-[580px] lg:h-[85vh] flex flex-col justify-end mt-0 overflow-hidden bg-[#070a13] select-none group">
