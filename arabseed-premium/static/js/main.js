@@ -1567,10 +1567,10 @@ function loadPlayerSource(server, startTime = 0, autoplay = true) {
             
             const previewVideo = document.getElementById('plyr-preview-video');
             if (previewVideo) {
-                previewVideo.src = server.url;
+                previewVideo.src = proxiedUrl;
             }
             
-            video.src = server.url;
+            video.src = proxiedUrl;
             video.load(); // CRITICAL: Force native pipeline load
         }
     } else {
@@ -1615,10 +1615,10 @@ function loadPlayerSource(server, startTime = 0, autoplay = true) {
         
         const previewVideo = document.getElementById('plyr-preview-video');
         if (previewVideo) {
-            previewVideo.src = server.url;
+            previewVideo.src = proxiedUrl;
         }
         
-        video.src = server.url;
+        video.src = proxiedUrl;
         video.load(); // CRITICAL: Force native pipeline load to refresh play status
     }
 }
