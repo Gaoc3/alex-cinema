@@ -1342,6 +1342,11 @@ function loadPlayerSource(server, startTime = 0, autoplay = true) {
     state.currentPlayingServer = server;
     elements.playerServerBadge.innerText = server.server;
     
+    // Proxy Shabakaty stream URLs through our API to bypass ISP restrictions
+    const proxiedUrl = server.url.includes('shabakaty.com') 
+        ? `/api/stream?url=${encodeURIComponent(server.url)}` 
+        : server.url;
+    
     // Display Custom Elegant Loading Overlay inside player
     const customLoader = document.getElementById('player-custom-loader');
     const loaderStatus = document.getElementById('player-loader-status');
@@ -1368,7 +1373,7 @@ function loadPlayerSource(server, startTime = 0, autoplay = true) {
     const video = document.getElementById('video-player');
     if (!video) return;
     
-    // Check if progress exists in localStorage to resume playing
+    // Check if progress exists in localStorage to resume playing (use original URL for key consistency)
     let progressTime = startTime;
     if (progressTime === 0) {
         const savedTime = localStorage.getItem(getProgressKey(server.url));
@@ -1419,7 +1424,7 @@ function loadPlayerSource(server, startTime = 0, autoplay = true) {
                 hideLoaderSmoothly();
             }, 10000);
             
-            hls.loadSource(server.url);
+            hls.loadSource(proxiedUrl);
             hls.attachMedia(video);
             state.hlsInstance = hls;
             
