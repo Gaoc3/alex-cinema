@@ -618,7 +618,7 @@ function renderHeroSlider(slides) {
         
         slideEl.innerHTML = `
             <div class="hero-slide-bg">
-                <img class="hero-slide-bg-img" src="${slide.poster}" alt="" referrerpolicy="no-referrer">
+                <img class="hero-slide-bg-img" src="${getProxyImageUrl(slide.poster)}" alt="" referrerpolicy="no-referrer">
                 <div class="hero-slide-bg-overlay"></div>
             </div>
             <div class="hero-slide-content">
