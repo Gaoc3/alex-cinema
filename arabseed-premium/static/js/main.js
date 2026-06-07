@@ -834,7 +834,7 @@ async function openDetailsModal(item) {
     
     // Set static UI values
     elements.modalTitleText.innerText = item.title;
-    elements.modalPoster.src = item.poster || SVG_POSTER_PLACEHOLDER;
+    elements.modalPoster.src = getProxyImageUrl(item.poster || SVG_POSTER_PLACEHOLDER);
     const rawModalRating = item.rating || '7.8';
     const finalModalRating = (!isNaN(parseFloat(rawModalRating))) ? parseFloat(rawModalRating).toFixed(1) : rawModalRating;
     elements.modalRating.setAttribute('dir', 'ltr');
@@ -1951,7 +1951,7 @@ function launchPlayer(server, title) {
     video.setAttribute('controls', '');
     video.setAttribute('preload', 'auto');
     if (state.selectedItem && state.selectedItem.poster) {
-        video.setAttribute('poster', state.selectedItem.poster);
+        video.setAttribute('poster', getProxyImageUrl(state.selectedItem.poster));
     }
     
     elements.playerRenderArea.appendChild(video);
