@@ -172,7 +172,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             {/* Start spacer to replace padding and avoid RTL bugs */}
             <div className="w-1 sm:w-4 shrink-0 pointer-events-none opacity-0"></div>
           {videos.map((video, idx) => {
-            const thumbUrl = video.imgObjUrl || `https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=${encodeURIComponent(\'https://cnth2.shabakaty.com/vascin-cover-images/' + (video.img))}`;
+            const thumbUrl = video.imgObjUrl || `https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=${encodeURIComponent('https://cnth2.shabakaty.com/vascin-cover-images/' + (video.img))}`;
             return (
               <button
                 key={video.nb}
