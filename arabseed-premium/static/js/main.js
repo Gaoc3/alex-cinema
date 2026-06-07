@@ -22,6 +22,15 @@ const state = {
 // SVG Poster Fallback Data URL
 const SVG_POSTER_PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='450' viewBox='0 0 300 450'><rect width='100%' height='100%' fill='%2314171c'/><g transform='translate(100, 160)'><circle cx='50' cy='50' r='40' fill='%23e50914' opacity='0.15'/><path d='M10 20 L90 20 L80 90 L20 90 Z' fill='%23e50914' opacity='0.6'/><rect x='15' y='30' width='70' height='50' rx='4' fill='%23ef4444' opacity='0.8'/><polygon points='45,45 65,55 45,65' fill='%23ffffff'/><circle cx='50' cy='110' r='8' fill='%2310b981'/><circle cx='20' cy='110' r='6' fill='%23f59e0b'/><circle cx='80' cy='110' r='6' fill='%23f43f5e'/></g><text x='50%' y='360' font-family='Cairo, sans-serif' font-weight='700' font-size='16' fill='%239ca3af' text-anchor='middle'>لا يتوفر بوستر</text></svg>`;
 
+// Proxy helper for Shabakaty images
+function getProxyImageUrl(originalUrl) {
+    if (!originalUrl || originalUrl.startsWith('data:image')) return originalUrl;
+    if (originalUrl.includes('shabakaty.com')) {
+        return `/api/proxy?endpoint=${encodeURIComponent(originalUrl)}`;
+    }
+    return originalUrl;
+}
+
 // DOM Elements Cache
 const elements = {
     mobileMenuBtn: document.getElementById('mobile-menu-btn'),
