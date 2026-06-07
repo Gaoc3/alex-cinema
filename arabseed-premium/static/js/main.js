@@ -777,7 +777,7 @@ function renderCards(results) {
         
         card.innerHTML = `
             <div class="card-poster">
-                <img src="${posterUrl}" alt="${item.title}" class="card-poster-img" onerror="this.src='${SVG_POSTER_PLACEHOLDER}'" referrerpolicy="no-referrer">
+                <img src="${getProxyImageUrl(posterUrl)}" alt="${item.title}" class="card-poster-img" onerror="this.src='${SVG_POSTER_PLACEHOLDER}'" referrerpolicy="no-referrer">
                 
                 <div class="card-top-badges">
                     <div class="imdb-rating-badge" dir="ltr">
