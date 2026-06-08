@@ -1,0 +1,48 @@
+name: "ALEX CINEMA - Arabseed Premium"
+description: >
+  Premium streaming video platform that serves as an alternative frontend to the
+  Cinemana.shabakaty.com streaming service. Wraps the Cinemana Android API with
+  a modern web interface built with Next.js and a legacy Flask frontend. Routes
+  all requests through a CGI tunnel to bypass Shabakaty CDN IP restrictions.
+tech_stack:
+  backend:
+    - Python 3 / Flask (legacy)
+    - Jinja2
+    - BeautifulSoup (bs4)
+    - Playwright (QA automation)
+  frontend:
+    - Next.js 16.2.7 / React 19.2.4
+    - TypeScript 5.x
+    - Tailwind CSS 4.x
+    - Video.js / Plyr.js (legacy)
+    - hls.js
+    - Font Awesome 6.4.0
+    - Google Fonts (Cairo, Outfit)
+  tools:
+    - Node.js
+    - Cloudflare Tunnel (cloudflared)
+    - ESLint 9.x
+features:
+  - Hero carousel with featured videos
+  - Horizontal video sliders (latest, featured movies/series)
+  - Video playback with custom AlexPlayer
+  - Quality selection (multiple resolutions)
+  - Subtitle support (Arabic/English, SRT/VTT)
+  - Playback speed control (0.5x-2x)
+  - Series support (seasons/episodes)
+  - Next episode auto-play
+  - Advanced search with filters (type, genre, year, rating)
+  - Category/genre browsing
+  - Movies & series archives with pagination
+  - Like/dislike voting (localStorage)
+  - Favorites list (localStorage)
+  - Responsive RTL Arabic design
+  - API proxy with CORS and SRT-to-VTT conversion
+  - Video stream proxy with Range header support
+  - Cloudflare Tunnel for public exposure
+architecture:
+  - "Flask legacy app serves templates at /, /watch/<id>, /search"
+  - "Next.js modern app serves /, /watch/<id>, /search, /movies, /series, /new-releases"
+  - "All API requests go through CGI tunnel to bypass Shabakaty CDN restrictions"
+  - "Custom AlexPlayer built from scratch for video playback"
+  - "Both frontends share the same Cinemana API backend via shabakaty_api.py"
