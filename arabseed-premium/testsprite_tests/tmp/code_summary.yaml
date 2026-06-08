@@ -1,48 +1,62 @@
-name: "ALEX CINEMA - Arabseed Premium"
-description: >
-  Premium streaming video platform that serves as an alternative frontend to the
-  Cinemana.shabakaty.com streaming service. Wraps the Cinemana Android API with
-  a modern web interface built with Next.js and a legacy Flask frontend. Routes
-  all requests through a CGI tunnel to bypass Shabakaty CDN IP restrictions.
+project:
+  name: AleX Cinema (arabseed-premium)
+  description: "Arabic premium streaming platform that proxies content from the Cinemana/Shabakaty Android API. Dual-frontend (Flask + Next.js) with Netflix-like, ad-free UX for browsing, searching, and watching Arabic movies, series, and anime."
+  version: "1.0.0"
+  language: Python/TypeScript/JavaScript
+  package_manager: npm/pip
+
 tech_stack:
   backend:
-    - Python 3 / Flask (legacy)
-    - Jinja2
-    - BeautifulSoup (bs4)
-    - Playwright (QA automation)
-  frontend:
-    - Next.js 16.2.7 / React 19.2.4
-    - TypeScript 5.x
-    - Tailwind CSS 4.x
-    - Video.js / Plyr.js (legacy)
-    - hls.js
-    - Font Awesome 6.4.0
-    - Google Fonts (Cairo, Outfit)
-  tools:
+    - Python 3 + Flask
+    - Next.js 16.2.7 (App Router)
     - Node.js
-    - Cloudflare Tunnel (cloudflared)
-    - ESLint 9.x
+  frontend:
+    - React 19.2.4
+    - TypeScript 5
+    - Tailwind CSS 4
+    - Jinja2 templates (Flask legacy)
+  video_player:
+    - Video.js 8.23.7 (Next.js)
+    - Plyr.js 3.7.8 (Flask)
+    - HLS.js (streaming)
+  data_source:
+    - Cinemana/Shabakaty Android API (private)
+  proxy_tunnel:
+    - CGI tunnel via HF Space (mtsky-free-server-docker)
+    - Cloudflare tunnel (cloudflared.exe)
+  testing:
+    - Playwright (Python QA screenshots)
+    - Numerous JS API exploration scripts
+  styling:
+    - Cairo font (Arabic)
+    - Outfit/Inter fonts (English)
+    - Font Awesome 6
+    - Custom dark/cyberpunk theme (3119 lines CSS)
+
 features:
-  - Hero carousel with featured videos
-  - Horizontal video sliders (latest, featured movies/series)
-  - Video playback with custom AlexPlayer
-  - Quality selection (multiple resolutions)
-  - Subtitle support (Arabic/English, SRT/VTT)
-  - Playback speed control (0.5x-2x)
-  - Series support (seasons/episodes)
-  - Next episode auto-play
-  - Advanced search with filters (type, genre, year, rating)
-  - Category/genre browsing
-  - Movies & series archives with pagination
-  - Like/dislike voting (localStorage)
-  - Favorites list (localStorage)
-  - Responsive RTL Arabic design
-  - API proxy with CORS and SRT-to-VTT conversion
-  - Video stream proxy with Range header support
-  - Cloudflare Tunnel for public exposure
-architecture:
-  - "Flask legacy app serves templates at /, /watch/<id>, /search"
-  - "Next.js modern app serves /, /watch/<id>, /search, /movies, /series, /new-releases"
-  - "All API requests go through CGI tunnel to bypass Shabakaty CDN restrictions"
-  - "Custom AlexPlayer built from scratch for video playback"
-  - "Both frontends share the same Cinemana API backend via shabakaty_api.py"
+  - Hero carousel with auto-rotating featured content
+  - Category-based browsing (12+ genres)
+  - Video grids with poster, rating, year, type badges
+  - Full-text search with advanced filters (genre, year, rating, type)
+  - Dedicated movies archive page with pagination and sorting
+  - Dedicated series archive page with latest episodes view
+  - Full-featured video watch page:
+    - Multiple quality streams with resolution selector
+    - Subtitle tracks (Arabic/English) with SRT-to-VTT conversion
+    - Intro skipping (auto-skip intro/outro)
+    - Episode navigation for series
+    - Season selectors and episode grids
+    - Server/source selection
+    - Picture-in-picture
+    - Keyboard shortcuts and mobile gestures
+  - RTL support (Arabic-first design)
+  - Responsive design (desktop, tablet, mobile)
+  - Proxy API route (/api/proxy) tunneling all media through CGI tunnel
+  - Server-side caching (60s TTL)
+  - Binary media handling (JSON, images, videos, subtitles)
+
+deployment:
+  - Flask app (Python, port 5000)
+  - Next.js app (TypeScript, port 3000)
+  - CGI tunnel on HuggingFace Space
+  - Cloudflare tunnel for public access
