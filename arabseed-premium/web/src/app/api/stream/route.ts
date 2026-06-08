@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const TUNNEL_BASE = "https://mtsky-free-server-docker.hf.space/cgi-bin/api?url=";
+import { TUNNEL_BASE_URL } from '@/lib/config';
 
 export async function GET(req: NextRequest) {
   const url = req.nextUrl.searchParams.get('url');
@@ -13,7 +12,7 @@ export async function GET(req: NextRequest) {
     // Route the video request through the same tunnel proxy that the API uses,
     // because the Shabakaty CDN (cndw2.shabakaty.com) blocks direct connections
     // from non-Shabakaty IPs, which causes 503 errors.
-    const tunnelUrl = `${TUNNEL_BASE}${encodeURIComponent(url)}`;
+    const tunnelUrl = `${TUNNEL_BASE_URL}${encodeURIComponent(url)}`;
 
     const headers: Record<string, string> = {
       'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 9; SM-G973F Build/PPR1.180610.011)',

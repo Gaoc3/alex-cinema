@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const TUNNEL_BASE = "https://mtsky-free-server-docker.hf.space/cgi-bin/api?url=";
+import { TUNNEL_BASE_URL } from '@/lib/config';
 
 function convertSrtToVtt(srtText: string): string {
   let content = srtText;
@@ -44,7 +43,7 @@ export async function GET(req: NextRequest) {
   }
 
   const isCinemana = targetUrl.includes('shabakaty.com');
-  const finalFetchUrl = isCinemana ? `${TUNNEL_BASE}${encodeURIComponent(targetUrl)}` : targetUrl;
+  const finalFetchUrl = isCinemana ? `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}` : targetUrl;
 
   try {
     const response = await fetch(finalFetchUrl, {
@@ -60,32 +59,43 @@ export async function GET(req: NextRequest) {
     }
 
     const contentType = response.headers.get('content-type') || '';
+    
     if (contentType.includes('application/json')) {
       const data = await response.json();
       return NextResponse.json(data);
-    } else {
-      // Direct raw response for subtitles (text/vtt) or other files
-      const data = await response.text();
-      let responseContentType = contentType || 'text/plain';
-      let finalData = data;
-      
-      const lowerTarget = targetUrl.toLowerCase();
-      const lowerEndpoint = endpoint.toLowerCase();
-      
-      if (lowerTarget.includes('.vtt') || lowerEndpoint.includes('.vtt')) {
-        responseContentType = 'text/vtt';
-      } else if (lowerTarget.includes('.srt') || lowerEndpoint.includes('.srt')) {
-        responseContentType = 'text/vtt';
-        finalData = convertSrtToVtt(data);
-      }
-
-      return new NextResponse(finalData, {
+    }
+    
+    if (contentType.startsWith('image/') || contentType.startsWith('video/') || contentType === 'application/octet-stream') {
+      const arrayBuffer = await response.arrayBuffer();
+      return new NextResponse(arrayBuffer, {
         headers: {
-          'Content-Type': responseContentType,
+          'Content-Type': contentType,
           'Access-Control-Allow-Origin': '*'
         }
       });
     }
+    
+    // Text-based responses (subtitles, etc.)
+    const data = await response.text();
+    let responseContentType = contentType || 'text/plain';
+    let finalData = data;
+    
+    const lowerTarget = targetUrl.toLowerCase();
+    const lowerEndpoint = endpoint.toLowerCase();
+    
+    if (lowerTarget.includes('.vtt') || lowerEndpoint.includes('.vtt')) {
+      responseContentType = 'text/vtt';
+    } else if (lowerTarget.includes('.srt') || lowerEndpoint.includes('.srt')) {
+      responseContentType = 'text/vtt';
+      finalData = convertSrtToVtt(data);
+    }
+
+    return new NextResponse(finalData, {
+      headers: {
+        'Content-Type': responseContentType,
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
   } catch (error: any) {
     const errorStr = String(error);
     const isAbort = 
