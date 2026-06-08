@@ -42,8 +42,9 @@ export async function GET(req: NextRequest) {
     targetUrl += (targetUrl.includes('?') ? '&' : '?') + queryStr;
   }
 
-  const isCinemana = targetUrl.includes('shabakaty.com');
-  const finalFetchUrl = isCinemana ? `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}` : targetUrl;
+  // Only tunnel media CDNs (images, video), not API endpoints
+  const needsTunnel = /\.?cnth?2?\.shabakaty\.com|cndw2\.shabakaty\.com|cdn\.shabakaty\.com|contwatch\.shabakaty\.com/.test(targetUrl);
+  const finalFetchUrl = needsTunnel ? `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}` : targetUrl;
 
   try {
     const response = await fetch(finalFetchUrl, {
