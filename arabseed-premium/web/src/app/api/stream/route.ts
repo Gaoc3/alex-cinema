@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     const tunnelUrl = `${TUNNEL_BASE_URL}${encodeURIComponent(url)}`;
 
     const headers: Record<string, string> = {
-      'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 9; SM-G973F Build/PPR1.180610.011)',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     };
     
     // Forward the Range header for seeking support
