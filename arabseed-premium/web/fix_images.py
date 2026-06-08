@@ -1,7 +1,7 @@
 import os, glob, re
 
 target_dir = r'c:\Users\secon\.openclaw\workspace\student-grades-platform\arabseed-premium\web\src'
-pattern = re.compile(r'`https://mtskycinemana\.serveousercontent\.com/cgi-bin/api\?url=(https://cnth2\.shabakaty\.com/[^/]+)/\$\{([^`]+)\}`')
+pattern = re.compile(r'`https://mtsky-free-server-docker\.hf\.space/cgi-bin/api\?url=(https://cnth2\.shabakaty\.com/[^/]+)/\$\{([^`]+)\}`')
 
 count = 0
 for filepath in glob.glob(os.path.join(target_dir, '**', '*.tsx'), recursive=True):
