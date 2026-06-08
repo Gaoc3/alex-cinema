@@ -1,0 +1,42 @@
+[
+  {
+    "id": "TC001",
+    "title": "test_featured_content_discovery_api",
+    "description": "Verify that the homepage API returns the correct featured titles for the hero carousel, including proper rotation and accurate title details for playback options."
+  },
+  {
+    "id": "TC002",
+    "title": "test_category_based_browsing_api",
+    "description": "Test the category browsing API endpoint to ensure it returns the correct list of movies, series, and anime filtered by selected genre or category with accurate metadata."
+  },
+  {
+    "id": "TC003",
+    "title": "test_full_text_search_with_filters_api",
+    "description": "Validate the search API supports full-text queries and correctly applies filters such as genre, year, rating, and type, returning relevant and filtered results."
+  },
+  {
+    "id": "TC004",
+    "title": "test_movies_archive_browsing_api",
+    "description": "Check the movies archive API for correct pagination, sorting functionality, and accurate movie details when browsing through the movie grid."
+  },
+  {
+    "id": "TC005",
+    "title": "test_series_archive_browsing_api",
+    "description": "Ensure the series archive API returns the correct series list with latest episodes, supports browsing the series grid, and provides detailed episode listings."
+  },
+  {
+    "id": "TC006",
+    "title": "test_video_watching_and_playback_controls_api",
+    "description": "Verify the video playback API supports multiple quality streams, subtitle track selection, intro skipping, source switching, and returns correct playback URLs and metadata."
+  },
+  {
+    "id": "TC007",
+    "title": "test_series_navigation_during_playback_api",
+    "description": "Test the API endpoints that allow navigation between seasons and episodes during playback, ensuring correct episode data and seamless transitions."
+  },
+  {
+    "id": "TC008",
+    "title": "test_proxy_api_route_api",
+    "description": "Validate the /api/proxy endpoint correctly tunnels media requests through the CGI tunnel, handles caching with 60s TTL, and serves binary media such as JSON, images, videos, and subtitles."
+  }
+]
