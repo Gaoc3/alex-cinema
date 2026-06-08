@@ -26,9 +26,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing endpoint parameter' }, { status: 400 });
   }
 
-  // Remove endpoint parameter so we only forward the rest
-  searchParams.delete('endpoint');
-
   let targetUrl = '';
   if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
     targetUrl = endpoint;
@@ -36,7 +33,7 @@ export async function GET(req: NextRequest) {
     targetUrl = `https://cinemana.shabakaty.com/api/android/${endpoint}`;
   }
 
-  // Append other parameters to targetUrl if any exist
+  searchParams.delete('endpoint');
   const queryStr = searchParams.toString();
   if (queryStr) {
     targetUrl += (targetUrl.includes('?') ? '&' : '?') + queryStr;
@@ -50,68 +47,21 @@ export async function GET(req: NextRequest) {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       },
-      next: { revalidate: 60 }, // Cache for 60 seconds
-      signal: AbortSignal.timeout(30000)
+      next: { revalidate: 60 },
     });
 
     if (!response.ok) {
       throw new Error(`Tunnel returned ${response.status}`);
     }
 
-    const contentType = response.headers.get('content-type') || '';
-    
-    // First try JSON parse (tunnel always returns text/html even for JSON)
     const text = await response.text();
-    try {
-      const json = JSON.parse(text);
-      return NextResponse.json(json);
-    } catch {}
-    
-    if (contentType.startsWith('image/') || contentType.startsWith('video/') || contentType === 'application/octet-stream') {
-      const encoder = new TextEncoder();
-      const arrayBuffer = encoder.encode(text).buffer;
-      return new NextResponse(arrayBuffer, {
-        headers: {
-          'Content-Type': contentType,
-          'Access-Control-Allow-Origin': '*'
-        }
-      });
-    }
-    
-    // Text-based responses (subtitles, etc.)
-    let responseContentType = contentType || 'text/plain';
-    let finalData = text;
-    
-    const lowerTarget = targetUrl.toLowerCase();
-    const lowerEndpoint = endpoint.toLowerCase();
-    
-    if (lowerTarget.includes('.vtt') || lowerEndpoint.includes('.vtt')) {
-      responseContentType = 'text/vtt';
-    } else if (lowerTarget.includes('.srt') || lowerEndpoint.includes('.srt')) {
-      responseContentType = 'text/vtt';
-      finalData = convertSrtToVtt(text);
-    }
-
-    return new NextResponse(finalData, {
+    return new NextResponse(text, {
       headers: {
-        'Content-Type': responseContentType,
+        'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       }
     });
   } catch (error: any) {
-    const errorStr = String(error);
-    const isAbort = 
-      error?.name === 'AbortError' || 
-      error?.name === 'ResponseAborted' || 
-      error?.message === 'ResponseAborted' ||
-      errorStr.includes('Abort') ||
-      errorStr.includes('aborted') ||
-      errorStr.includes('ResponseAborted');
-
-    if (isAbort) {
-      return new NextResponse('Aborted', { status: 499 });
-    }
-    console.error('Proxy Error:', error);
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    return NextResponse.json({ error: 'ProxyError: ' + String(error.message || error) }, { status: 500 });
   }
 }
