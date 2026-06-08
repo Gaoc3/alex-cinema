@@ -219,7 +219,7 @@ export default function SearchBar() {
                     {/* Poster Image */}
                     <div className="w-14 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-md relative group-hover/item:border-alex-primary/30 transition-colors duration-300">
                       <img
-                        src={item.img ? `https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=${encodeURIComponent('https://cnth2.shabakaty.com/vascin-poster-images/' + (item.img))}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.ar_title)}`}
+                        src={item.img ? `/api/proxy?endpoint=${encodeURIComponent('https://cnth2.shabakaty.com/vascin-poster-images/' + (item.img))}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.ar_title)}`}
                         alt={item.ar_title}
                         className="w-full h-full object-cover transform group-hover/item:scale-105 transition-transform duration-500"
                         loading="lazy"
