@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const TUNNEL_BASE = "https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=";
+const TUNNEL_BASE = "https://mtsky-free-server-docker.hf.space/cgi-bin/api?url=";
 
 function convertSrtToVtt(srtText: string): string {
   let content = srtText;
