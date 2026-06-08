@@ -1,23 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TUNNEL_BASE_URL } from '@/lib/config';
 
-function convertSrtToVtt(srtText: string): string {
-  let content = srtText;
-  if (content.startsWith('\ufeff')) {
-    content = content.slice(1);
-  }
-  content = content.trim();
-  if (content.startsWith('WEBVTT')) {
-    return srtText;
-  }
-  // Replace line endings
-  content = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  // Replace comma with dot in timestamps: e.g. 00:01:20,123 --> 00:01:23,456
-  content = content.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
-  
-  return 'WEBVTT\n\n' + content;
-}
-
 export async function GET(req: NextRequest) {
   const searchParams = new URLSearchParams(req.nextUrl.searchParams);
   const endpoint = searchParams.get('endpoint');
@@ -42,26 +25,22 @@ export async function GET(req: NextRequest) {
   const isCinemana = targetUrl.includes('shabakaty.com');
   const finalFetchUrl = isCinemana ? `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}` : targetUrl;
 
-  try {
-    const response = await fetch(finalFetchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      },
-      next: { revalidate: 60 },
-    });
+  const response = await fetch(finalFetchUrl, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    },
+    next: { revalidate: 60 },
+  });
 
-    if (!response.ok) {
-      throw new Error(`Tunnel returned ${response.status}`);
-    }
-
-    const text = await response.text();
-    return new NextResponse(text, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
-    });
-  } catch (error: any) {
-    return NextResponse.json({ error: 'ProxyError: ' + String(error.message || error) }, { status: 500 });
+  if (!response.ok) {
+    return NextResponse.json({ error: `Tunnel returned ${response.status}` }, { status: response.status });
   }
+
+  const text = await response.text();
+  return new NextResponse(text, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    }
+  });
 }
