@@ -110,6 +110,6 @@ export async function GET(req: NextRequest) {
       return new NextResponse('Aborted', { status: 499 });
     }
     console.error('Proxy Error:', error);
-    return NextResponse.json({ error: 'Failed to fetch from proxy' }, { status: 500 });
+    return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
