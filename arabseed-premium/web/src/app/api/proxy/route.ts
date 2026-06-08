@@ -32,11 +32,10 @@ export async function GET(req: NextRequest) {
     next: { revalidate: 60 },
   });
 
-  if (!response.ok) {
-    const text2 = await response.text();
-    return new NextResponse(text2, {
-      headers: {
-        'Content-Type': 'application/json',
+  const text = await response.text();
+  return new NextResponse(text, {
+    headers: {
+      'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*'
     }
   });
