@@ -1,4 +1,4 @@
-const TUNNEL_BASE = "https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=";
+const TUNNEL_BASE = "https://mtsky-free-server-docker.hf.space/cgi-bin/api?url=";
 const fs = require('fs');
 
 async function fetchRaw(url) {

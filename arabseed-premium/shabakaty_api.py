@@ -4,7 +4,7 @@ import json
 
 class CinemanaAPI:
     def __init__(self):
-        self.tunnel_base = "https://mtskycinemana.serveousercontent.com/cgi-bin/api?url="
+        self.tunnel_base = "https://mtsky-free-server-docker.hf.space/cgi-bin/api?url="
         self.headers = {
             "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; SM-G973F Build/PPR1.180610.011)"
         }

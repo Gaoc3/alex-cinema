@@ -2,7 +2,7 @@ import requests
 import urllib.parse
 import json
 
-tunnel_base = "https://mtskycinemana.serveousercontent.com/cgi-bin/api?url="
+tunnel_base = "https://mtsky-free-server-docker.hf.space/cgi-bin/api?url="
 headers = {
     "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; SM-G973F Build/PPR1.180610.011)"
 }

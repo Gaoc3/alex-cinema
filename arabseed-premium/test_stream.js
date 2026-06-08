@@ -1,5 +1,5 @@
 // Test the tunnel proxy for video streaming
-const TUNNEL_BASE = "https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=";
+const TUNNEL_BASE = "https://mtsky-free-server-docker.hf.space/cgi-bin/api?url=";
 
 async function run() {
   const videoUrl = "https://cndw2.shabakaty.com/m240/6CE1089D-35E9-CEFD-0029-75D8B1D1E91E_video.mkv";

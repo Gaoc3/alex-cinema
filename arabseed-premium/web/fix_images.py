@@ -8,7 +8,7 @@ for filepath in glob.glob(os.path.join(target_dir, '**', '*.tsx'), recursive=Tru
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
     
-    new_content, num_subs = pattern.subn(r'`https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=${encodeURIComponent(\'\1/\' + (\2))}`', content)
+    new_content, num_subs = pattern.subn(r'`https://mtsky-free-server-docker.hf.space/cgi-bin/api?url=${encodeURIComponent(\'\1/\' + (\2))}`', content)
     
     if num_subs > 0:
         with open(filepath, 'w', encoding='utf-8') as f:
