@@ -60,13 +60,16 @@ export async function GET(req: NextRequest) {
 
     const contentType = response.headers.get('content-type') || '';
     
-    if (contentType.includes('application/json')) {
-      const data = await response.json();
-      return NextResponse.json(data);
-    }
+    // First try JSON parse (tunnel always returns text/html even for JSON)
+    const text = await response.text();
+    try {
+      const json = JSON.parse(text);
+      return NextResponse.json(json);
+    } catch {}
     
     if (contentType.startsWith('image/') || contentType.startsWith('video/') || contentType === 'application/octet-stream') {
-      const arrayBuffer = await response.arrayBuffer();
+      const encoder = new TextEncoder();
+      const arrayBuffer = encoder.encode(text).buffer;
       return new NextResponse(arrayBuffer, {
         headers: {
           'Content-Type': contentType,
@@ -76,9 +79,8 @@ export async function GET(req: NextRequest) {
     }
     
     // Text-based responses (subtitles, etc.)
-    const data = await response.text();
     let responseContentType = contentType || 'text/plain';
-    let finalData = data;
+    let finalData = text;
     
     const lowerTarget = targetUrl.toLowerCase();
     const lowerEndpoint = endpoint.toLowerCase();
@@ -87,7 +89,7 @@ export async function GET(req: NextRequest) {
       responseContentType = 'text/vtt';
     } else if (lowerTarget.includes('.srt') || lowerEndpoint.includes('.srt')) {
       responseContentType = 'text/vtt';
-      finalData = convertSrtToVtt(data);
+      finalData = convertSrtToVtt(text);
     }
 
     return new NextResponse(finalData, {
