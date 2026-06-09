@@ -22,7 +22,9 @@ export async function GET(req: NextRequest) {
     targetUrl += (targetUrl.includes('?') ? '&' : '?') + queryStr;
   }
 
-  const isCinemana = targetUrl.includes('shabakaty.com');
+  // Always tunnel shabakaty.com domains (API + CDN subdomains)
+  const isShabakaty = targetUrl.includes('shabakaty.com');
+  const finalFetchUrl = isShabakaty ? `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}` : targetUrl;
   const finalFetchUrl = isCinemana ? `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}` : targetUrl;
 
   const controller = new AbortController();
