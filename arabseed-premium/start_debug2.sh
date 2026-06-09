@@ -110,11 +110,11 @@ local function handle(client)
   if pid == -1 then target:close(); client:close(); return end
   if pid == 0 then
     pump(client, target, 300000)
-    target:shutdown(1); target:close()
+    target:shutdown("write"); target:close()
     os.exit(0)
   end
   pump(target, client, 300000)
-  client:shutdown(1)
+  client:shutdown("write")
   nixio.wait(pid)
   client:close(); target:close()
 end
