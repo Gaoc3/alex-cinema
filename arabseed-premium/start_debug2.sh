@@ -26,7 +26,7 @@ end
 
 local function parse_sni(data)
   if not data or #data < 5 or data:byte(1) ~= 0x16 then return nil end
-  local pos = 5 + 4 -- TLS record hdr (5) + handshake hdr type(1)+len(3) = 9
+  local pos = 10 -- 5 (TLS record) + 4 (handshake hdr) + 1 = 10
   if #data <= pos then return nil end
   pos = pos + 2  -- version (2)
   pos = pos + 32 -- random (32)
