@@ -25,17 +25,36 @@ export async function GET(req: NextRequest) {
   const isCinemana = targetUrl.includes('shabakaty.com');
   const finalFetchUrl = isCinemana ? `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}` : targetUrl;
 
-  const response = await fetch(finalFetchUrl, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  const text = await response.text();
-  return new NextResponse(text, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+  try {
+    const response = await fetch(finalFetchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      return NextResponse.json({ error: `Tunnel returned ${response.status}` }, { status: response.status });
     }
-  });
+
+    const text = await response.text();
+    return new NextResponse(text, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      return NextResponse.json({ error: 'Tunnel timeout' }, { status: 504 });
+    }
+    console.error('Proxy error:', error);
+    return NextResponse.json({ error: 'Proxy failed' }, { status: 500 });
+  }
 }
