@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
 
     try {
       const response = await fetch(tunnelUrl, {
-        headers: { 'User-Agent': ua },
+        headers: { 'User-Agent': ua, 'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8', 'Referer': 'https://cinemana.shabakaty.com/' },
         signal: tunnelController.signal,
       });
       clearTimeout(tunnelTimeout);
