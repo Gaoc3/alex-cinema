@@ -22,10 +22,20 @@ function buildResponse(upstreamRes: Response) {
 }
 
 export async function GET(req: NextRequest) {
-  const endpoint = req.nextUrl.searchParams.get('endpoint');
+  let endpoint = req.nextUrl.searchParams.get('endpoint');
 
   if (!endpoint) {
     return NextResponse.json({ error: 'Missing endpoint parameter' }, { status: 400 });
+  }
+
+  // Handle double-encoding: if endpoint is still percent-encoded, decode it
+  if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
+    try {
+      const decoded = decodeURIComponent(endpoint);
+      if (decoded.startsWith('http://') || decoded.startsWith('https://')) {
+        endpoint = decoded;
+      }
+    } catch { /* not valid percent-encoding, keep as-is */ }
   }
 
   let targetUrl = '';
