@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const ROUTER_CGI = 'http://192.168.1.1/cgi-bin/api?url=';
-const HF_TUNNEL = 'https://mtsky-free-server-docker.hf.space/cgi-bin/api?url=';
+const SERVEO_TUNNEL = 'https://mtskycinemana.serveousercontent.com/cgi-bin/proxy?url=';
 
 async function getTotalSize(url: string): Promise<number> {
   try {
@@ -49,8 +49,8 @@ async function fetchWithFallback(url: string, headers: Record<string, string>) {
     clearTimeout(cgiTimeout);
   }
 
-  // Last resort: HF Space tunnel
-  const tunnelUrl = HF_TUNNEL + encodeURIComponent(url);
+  // Last resort: serveo tunnel → router CGI
+  const tunnelUrl = SERVEO_TUNNEL + encodeURIComponent(url);
   const tunnelController = new AbortController();
   const tunnelTimeout = setTimeout(() => tunnelController.abort(), 20000);
 

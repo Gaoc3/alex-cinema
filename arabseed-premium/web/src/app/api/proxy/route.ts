@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const TUNNEL_BASE_URL = 'https://mtsky-free-server-docker.hf.space/cgi-bin/api?url=';
+const TUNNEL_BASE_URL = 'https://mtskycinemana.serveousercontent.com/cgi-bin/proxy?url=';
 
 function buildResponse(upstreamRes: Response) {
   const headers = new Headers();
