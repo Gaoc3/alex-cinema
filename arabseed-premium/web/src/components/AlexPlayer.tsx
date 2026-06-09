@@ -148,8 +148,11 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   // Helper to convert CDN URLs to proxy URLs
   const toProxyUrl = (url: string | undefined | null) => {
     if (!url) return null;
-    if (url.startsWith('/api/proxy')) return url; // Already proxied
-    return `/api/proxy?endpoint=${encodeURIComponent(url)}`;
+    if (url.startsWith('/api/proxy') || url.startsWith('/api/stream')) return url;
+    // Decode first to avoid double-encoding if URL already has percent-encoded chars
+    let clean = url;
+    try { clean = decodeURIComponent(url); } catch { /* not encoded, use as-is */ }
+    return `/api/proxy?endpoint=${encodeURIComponent(clean)}`;
   };
 
   // Parse direct streams on initialization or data change

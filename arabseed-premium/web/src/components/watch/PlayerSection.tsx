@@ -11,7 +11,12 @@ interface PlayerSectionProps {
   playNextEpisode: () => void;
 }
 
-const toProxyUrl = (url: string) => `/api/proxy?endpoint=${encodeURIComponent(url)}`;
+const toProxyUrl = (url: string) => {
+  // Decode first to avoid double-encoding if URL already has percent-encoded chars
+  let clean = url;
+  try { clean = decodeURIComponent(url); } catch { /* not encoded, use as-is */ }
+  return `/api/proxy?endpoint=${encodeURIComponent(clean)}`;
+};
 
 export default function PlayerSection({
   isLoadingStreams,
