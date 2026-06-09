@@ -52,47 +52,29 @@ export async function GET(req: NextRequest) {
     targetUrl += (targetUrl.includes('?') ? '&' : '?') + queryStr;
   }
 
-  const isVideo = targetUrl.includes('shabakaty.com') && (targetUrl.includes('mp4') || targetUrl.includes('video'));
-  const isShabakaty = targetUrl.includes('shabakaty.com');
   const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  const isShabakaty = targetUrl.includes('shabakaty.com');
+  const isVideo = isShabakaty && (targetUrl.includes('mp4') || targetUrl.includes('video'));
 
-  // Build headers for direct fetch (includes Range from client)
-  const directHeaders: Record<string, string> = {
+  // Build headers (includes Range from client)
+  const headers: Record<string, string> = {
     'User-Agent': ua,
     'Accept': isVideo ? 'video/mp4,video/*;q=0.9,*/*;q=0.8' : 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
     'Referer': 'https://cinemana.shabakaty.com/',
   };
   const range = req.headers.get('range');
-  if (range) directHeaders['Range'] = range;
+  if (range) headers['Range'] = range;
 
-  // Direct fetch (longer timeout for video files)
-  const directController = new AbortController();
-  const directTimeout = setTimeout(() => directController.abort(), isVideo ? 60000 : 25000);
-
-  try {
-    const response = await fetch(targetUrl, { headers: directHeaders, signal: directController.signal });
-    clearTimeout(directTimeout);
-
-    if (response.ok || response.status === 206) {
-      return buildResponse(response);
-    }
-    console.log(`Direct returned ${response.status} for ${targetUrl.substring(0, 80)}`);
-  } catch (e: any) {
-    clearTimeout(directTimeout);
-    if (e.name !== 'AbortError') console.log('Direct error:', e.message);
-  }
-
-  // Tunnel fallback
+  // Always go through HF Space tunnel → Router → CDN (no direct fetch)
   if (isShabakaty) {
-    const tunnelUrl = `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}`;
+    let tunnelUrl = `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}`;
+    // Add range as explicit param for router CGI compatibility
+    if (range) tunnelUrl += '&range=' + encodeURIComponent(range);
     const tunnelController = new AbortController();
-    const tunnelTimeout = setTimeout(() => tunnelController.abort(), isVideo ? 90000 : 20000);
+    const tunnelTimeout = setTimeout(() => tunnelController.abort(), isVideo ? 90000 : 30000);
 
     try {
-      const response = await fetch(tunnelUrl, {
-        headers: { 'User-Agent': ua, 'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8', 'Referer': 'https://cinemana.shabakaty.com/' },
-        signal: tunnelController.signal,
-      });
+      const response = await fetch(tunnelUrl, { headers, signal: tunnelController.signal });
       clearTimeout(tunnelTimeout);
 
       if (response.ok || response.status === 206) {
@@ -104,10 +86,20 @@ export async function GET(req: NextRequest) {
       if (e.name === 'AbortError') {
         return NextResponse.json({ error: 'Tunnel timeout' }, { status: 504 });
       }
+      return NextResponse.json({ error: `Tunnel error: ${e.message}` }, { status: 502 });
     }
   }
 
-  return NextResponse.json({ error: 'Both direct and tunnel failed' }, { status: 502 });
+  // Non-shabakaty URLs: direct fetch as fallback
+  const directController = new AbortController();
+  const directTimeout = setTimeout(() => directController.abort(), 25000);
+  try {
+    const response = await fetch(targetUrl, { headers, signal: directController.signal });
+    clearTimeout(directTimeout);
+    if (response.ok || response.status === 206) return buildResponse(response);
+  } catch { clearTimeout(directTimeout); }
+
+  return NextResponse.json({ error: 'Failed to fetch' }, { status: 502 });
 }
 
 export async function OPTIONS() {
