@@ -1,11 +1,10 @@
+# Fix SNI proxy and restart
 cat > /usr/bin/sni-proxy.lua << 'LUAEOF'
 #!/usr/bin/lua
 local nixio = require("nixio")
 local dns = {}
 
-local function has_bit(v, b)
-  return math.floor(v / b) % 2 == 1
-end
+local function has_bit(v, b) return math.floor(v / b) % 2 == 1 end
 
 local function resolve(name)
   if dns[name] then return dns[name] end
@@ -35,23 +34,21 @@ local function parse_sni(data)
   pos = pos + 2
   local ext_end = math.min(pos + ext_len, #data)
   while pos + 4 <= ext_end do
-    local ext_type = data:byte(pos) * 256 + data:byte(pos + 1)
-    local ext_data_len = data:byte(pos + 2) * 256 + data:byte(pos + 3)
+    local et = data:byte(pos) * 256 + data:byte(pos + 1)
+    local edl = data:byte(pos + 2) * 256 + data:byte(pos + 3)
     pos = pos + 4
-    if ext_end < pos + ext_data_len then break end
-    if ext_type == 0 then
-      local sni_pos = pos + 2
-      while sni_pos + 3 < pos + ext_data_len do
-        if data:byte(sni_pos) == 0 then
-          local name_len = data:byte(sni_pos + 1) * 256 + data:byte(sni_pos + 2)
-          if #data >= sni_pos + 3 + name_len then
-            return data:sub(sni_pos + 3, sni_pos + 3 + name_len - 1)
-          end
+    if ext_end < pos + edl then break end
+    if et == 0 then
+      local sp = pos + 2
+      while sp + 3 < pos + edl do
+        if data:byte(sp) == 0 then
+          local nl = data:byte(sp + 1) * 256 + data:byte(sp + 2)
+          if #data >= sp + 3 + nl then return data:sub(sp + 3, sp + 3 + nl - 1) end
         end
-        sni_pos = sni_pos + 3 + data:byte(sni_pos + 1) * 256 + data:byte(sni_pos + 2)
+        sp = sp + 3 + data:byte(sp + 1) * 256 + data:byte(sp + 2)
       end
     end
-    pos = pos + ext_data_len
+    pos = pos + edl
   end
   return nil
 end
@@ -74,7 +71,7 @@ local function pump(src, dst, ms)
 end
 
 local function handle(client)
-  local data, err = client:recv(8192)
+  local data = client:recv(8192)
   if not data or #data == 0 then client:close(); return end
   local sni = parse_sni(data)
   if not sni then client:close(); return end
@@ -82,7 +79,7 @@ local function handle(client)
   if not ip then client:close(); return end
   local target = nixio.socket("inet", "stream")
   if not target then client:close(); return end
-  local ok, err = target:connect(ip, 443)
+  local ok = target:connect(ip, 443)
   if not ok then target:close(); client:close(); return end
   target:send(data)
   local pid = nixio.fork()
@@ -102,17 +99,22 @@ local port = tonumber(arg[1]) or 8443
 local bind_addr = arg[2] or "127.0.0.1"
 local server = nixio.socket("inet", "stream")
 server:setopt("socket", "reuseaddr", 1)
-local ok, err = server:bind(bind_addr, port)
+local ok = server:bind(bind_addr, port)
 if not ok then server:close(); return end
 server:listen(50)
 while true do
-  local client, err = server:accept()
+  local client = server:accept()
   if client then
     local pid = nixio.fork()
-    if pid == 0 then server:close(); handle(client); os.exit(0)
+    if pid == 0 then
+      server:close()
+      handle(client)
+      os.exit(0)
     else
       client:close()
-      repeat local w, s = pcall(nixio.wait, -1, "nohang") until not w or w == 0
+      repeat
+        local wpid, status = pcall(nixio.wait, -1, "nohang")
+      until not wpid or wpid == 0
     end
   else
     nixio.nanosleep(0.1)
@@ -122,12 +124,8 @@ LUAEOF
 chmod +x /usr/bin/sni-proxy.lua
 
 killall lua 2>/dev/null; sleep 2
-echo "Starting proxy..."
 lua /usr/bin/sni-proxy.lua 8443 0.0.0.0 > /tmp/sni-proxy.log 2>&1 &
 sleep 3
-echo "=== PID ==="
+echo "=== Status ==="
 ps | grep sni-proxy | grep -v grep
-echo "=== Port ==="
 netstat -tlnp 2>/dev/null | grep :8443
-echo "=== Log ==="
-cat /tmp/sni-proxy.log 2>/dev/null
