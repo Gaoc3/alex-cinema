@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const TUNNEL_BASE_URL = 'http://192.168.1.1/cgi-bin/api?url=';
+const TUNNEL_BASE_URL = 'https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=';
 
 async function fetchWithFallback(url: string, headers: Record<string, string>) {
   // Try direct first
