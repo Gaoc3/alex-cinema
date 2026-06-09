@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const TUNNEL_BASE_URL = 'https://mtsky-free-server-docker.hf.space/cgi-bin/api?url=';
+const TUNNEL_BASE_URL = 'https://mtskycinemana.serveo.net/cgi-bin/api?url=';
 
 async function fetchWithFallback(url: string, headers: Record<string, string>) {
   // Try direct first
