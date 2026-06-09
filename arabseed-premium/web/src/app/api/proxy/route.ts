@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TUNNEL_BASE_URL } from '@/lib/config';
 
+async function fetchWithTimeout(url: string, signal: AbortSignal, isTunnel: boolean) {
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    },
+    signal,
+  });
+  return res;
+}
+
 export async function GET(req: NextRequest) {
   const searchParams = new URLSearchParams(req.nextUrl.searchParams);
   const endpoint = searchParams.get('endpoint');
@@ -22,41 +32,56 @@ export async function GET(req: NextRequest) {
     targetUrl += (targetUrl.includes('?') ? '&' : '?') + queryStr;
   }
 
-  // Always tunnel shabakaty.com domains (API + CDN subdomains)
   const isShabakaty = targetUrl.includes('shabakaty.com');
-  const finalFetchUrl = isShabakaty ? `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}` : targetUrl;
-  const finalFetchUrl = isCinemana ? `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}` : targetUrl;
+  const tunnelUrl = isShabakaty ? `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}` : targetUrl;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  // Try tunnel first with 20s timeout
+  const tunnelController = new AbortController();
+  const tunnelTimeout = setTimeout(() => tunnelController.abort(), 20000);
 
   try {
-    const response = await fetch(finalFetchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      },
-      signal: controller.signal,
-    });
+    const response = await fetchWithTimeout(tunnelUrl, tunnelController.signal, true);
+    clearTimeout(tunnelTimeout);
 
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      return NextResponse.json({ error: `Tunnel returned ${response.status}` }, { status: response.status });
+    if (response.ok) {
+      const text = await response.text();
+      return new NextResponse(text, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
     }
+    console.log(`Tunnel returned ${response.status}, trying direct...`);
+  } catch (e: any) {
+    clearTimeout(tunnelTimeout);
+    if (e.name !== 'AbortError') console.log('Tunnel error:', e.message);
+  }
 
-    const text = await response.text();
-    return new NextResponse(text, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
-    });
-  } catch (error: any) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      return NextResponse.json({ error: 'Tunnel timeout' }, { status: 504 });
+  // Fallback: direct fetch (works from this server's IP)
+  const directController = new AbortController();
+  const directTimeout = setTimeout(() => directController.abort(), 25000);
+
+  try {
+    const response = await fetchWithTimeout(targetUrl, directController.signal, false);
+    clearTimeout(directTimeout);
+
+    if (response.ok) {
+      const text = await response.text();
+      return new NextResponse(text, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
     }
-    console.error('Proxy error:', error);
+    return NextResponse.json({ error: `Direct fetch failed: ${response.status}` }, { status: response.status });
+  } catch (e: any) {
+    clearTimeout(directTimeout);
+    if (e.name === 'AbortError') {
+      return NextResponse.json({ error: 'Both tunnel and direct fetch timed out' }, { status: 504 });
+    }
+    console.error('Proxy error:', e);
     return NextResponse.json({ error: 'Proxy failed' }, { status: 500 });
   }
 }
