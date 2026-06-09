@@ -89,7 +89,7 @@ export async function OPTIONS() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers', 'Range',
+      'Access-Control-Allow-Headers': 'Range',
       'Access-Control-Max-Age': '86400',
     },
   });
