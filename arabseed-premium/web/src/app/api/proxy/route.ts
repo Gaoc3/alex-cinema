@@ -21,6 +21,44 @@ function buildResponse(upstreamRes: Response) {
   });
 }
 
+const cacheStore = new Map<string, { data: any; expires: number }>();
+
+function getCached(key: string, ttl: number) {
+  const cached = cacheStore.get(key);
+  if (cached && cached.expires > Date.now()) return cached.data;
+  cacheStore.delete(key);
+  return null;
+}
+
+function setCache(key: string, data: any, ttl: number) {
+  cacheStore.set(key, { data, expires: Date.now() + ttl });
+  if (cacheStore.size > 500) {
+    const oldest = cacheStore.entries().next().value;
+    if (oldest) cacheStore.delete(oldest[0]);
+  }
+}
+
+async function fetchWithRetry(url: string, options: RequestInit, retries = 2): Promise<Response> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(url, options);
+      if (res.ok || res.status === 206) return res;
+      if (res.status === 502 && i < retries - 1) {
+        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        continue;
+      }
+      return res;
+    } catch {
+      if (i < retries - 1) {
+        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        continue;
+      }
+      throw new Error('Tunnel unreachable after retries');
+    }
+  }
+  throw new Error('Tunnel unreachable after retries');
+}
+
 export async function GET(req: NextRequest) {
   let endpoint = req.nextUrl.searchParams.get('endpoint');
 
@@ -28,7 +66,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing endpoint parameter' }, { status: 400 });
   }
 
-  // Handle double-encoding: if endpoint is still percent-encoded, decode it
   if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
     try {
       const decoded = decodeURIComponent(endpoint);
@@ -54,9 +91,10 @@ export async function GET(req: NextRequest) {
 
   const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
   const isShabakaty = targetUrl.includes('shabakaty.com');
+  const isApi = isShabakaty && targetUrl.includes('/api/');
+  const isImage = isShabakaty && !isApi && (targetUrl.includes('poster') || targetUrl.includes('cover') || targetUrl.includes('.jpg') || targetUrl.includes('.png') || targetUrl.includes('.webp'));
   const isVideo = isShabakaty && (targetUrl.includes('mp4') || targetUrl.includes('video'));
 
-  // Build headers (includes Range from client)
   const headers: Record<string, string> = {
     'User-Agent': ua,
     'Accept': isVideo ? 'video/mp4,video/*;q=0.9,*/*;q=0.8' : 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
@@ -65,34 +103,45 @@ export async function GET(req: NextRequest) {
   const range = req.headers.get('range');
   if (range) headers['Range'] = range;
 
-  // Always go through HF Space tunnel → Router → CDN (no direct fetch)
   if (isShabakaty) {
     let tunnelUrl = `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}`;
-    // Add range as explicit param for router CGI compatibility
     if (range) tunnelUrl += '&range=' + encodeURIComponent(range);
-    const tunnelController = new AbortController();
-    const tunnelTimeout = setTimeout(() => tunnelController.abort(), isVideo ? 90000 : 30000);
+
+    const cacheKey = isApi ? targetUrl : '';
+    const cacheTtl = isApi ? 120000 : 0;
+
+    if (cacheKey) {
+      const cached = getCached(cacheKey, cacheTtl);
+      if (cached) return buildResponse(new Response(JSON.stringify(cached), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200,
+      }));
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), isVideo ? 90000 : 25000);
 
     try {
-      const response = await fetch(tunnelUrl, { headers, signal: tunnelController.signal });
-      clearTimeout(tunnelTimeout);
+      const response = await fetchWithRetry(tunnelUrl, { headers, signal: controller.signal });
+      clearTimeout(timeout);
 
       if (response.ok || response.status === 206) {
+        if (isApi) {
+          const clone = response.clone();
+          const data = await clone.json().catch(() => null);
+          if (data) setCache(cacheKey, data, cacheTtl);
+        }
         return buildResponse(response);
       }
-      return NextResponse.json({ error: `Tunnel returned ${response.status}` }, { status: response.status });
+      return NextResponse.json({ error: `Tunnel returned ${response.status}` }, { status: 502 });
     } catch (e: any) {
-      clearTimeout(tunnelTimeout);
-      if (e.name === 'AbortError') {
-        return NextResponse.json({ error: 'Tunnel timeout' }, { status: 504 });
-      }
-      return NextResponse.json({ error: `Tunnel error: ${e.message}` }, { status: 502 });
+      clearTimeout(timeout);
+      return NextResponse.json({ error: `Tunnel failed: ${e.message}` }, { status: 502 });
     }
   }
 
-  // Non-shabakaty URLs: direct fetch as fallback
   const directController = new AbortController();
-  const directTimeout = setTimeout(() => directController.abort(), 25000);
+  const directTimeout = setTimeout(() => directController.abort(), 15000);
   try {
     const response = await fetch(targetUrl, { headers, signal: directController.signal });
     clearTimeout(directTimeout);
