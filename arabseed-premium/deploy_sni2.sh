@@ -110,7 +110,7 @@ end
 local port = tonumber(arg[1]) or 8443
 local bind_addr = arg[2] or "127.0.0.1"
 local server = nixio.socket("inet", "stream")
-server:setopt("reuseaddr", 1)
+server:setopt("socket", "reuseaddr", 1)
 local ok, err = server:bind(bind_addr, port)
 if not ok then server:close(); return end
 server:listen(50)
