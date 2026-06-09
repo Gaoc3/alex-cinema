@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
         }
         return buildResponse(response);
       }
-      return NextResponse.json({ error: `Tunnel returned ${response.status}` }, { status: 502 });
+      return NextResponse.json({ error: `Tunnel returned ${response.status}` }, { status: response.status });
     } catch (e: any) {
       clearTimeout(timeout);
       return NextResponse.json({ error: `Tunnel failed: ${e.message}` }, { status: 502 });
