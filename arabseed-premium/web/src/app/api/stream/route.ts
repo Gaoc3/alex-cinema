@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const TUNNEL_BASE_URL = 'https://mtskycinemana.serveousercontent.com/cgi-bin/api?url=';
+const TUNNEL_BASE_URL = 'https://mtsky-free-server-docker.hf.space/cgi-bin/api?url=';
 
 async function fetchWithFallback(url: string, headers: Record<string, string>) {
   // Try direct first
@@ -44,6 +44,8 @@ export async function GET(req: NextRequest) {
   try {
     const headers: Record<string, string> = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'video/mp4,video/*;q=0.9,*/*;q=0.8',
+      'Referer': 'https://cinemana.shabakaty.com/',
     };
     
     const range = req.headers.get('range');
