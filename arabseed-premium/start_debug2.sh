@@ -68,20 +68,23 @@ local function parse_sni(data)
   return nil
 end
 
+local IN = 1; local ERR = 8; local HUP = 16; local NVAL = 32
+
 local function pump(src, dst, ms)
   local deadline = nixio.gettimeofday() + ms / 1000
   while true do
     local now = nixio.gettimeofday()
     if now >= deadline then break end
-    local events = nixio.poll({src}, {}, {}, math.max(1, (deadline - now) * 1000))
-    if not events or #events == 0 then break end
-    local f = events[1].events
-    if nixio.poll_flags("err") + nixio.poll_flags("hup") + nixio.poll_flags("nval") then break end
-    local r = nixio.poll_flags("in")
-    if f % (r * 2) >= r then
-      local data, err = src:recv(16384)
-      if not data or #data == 0 then break end
-      if not dst:send(data) then break end
+    local n, revents = pcall(nixio.poll, {fd=src, events=IN}, math.max(1, (deadline - now) * 1000))
+    if not n or n == 0 then break end
+    if revents and revents[1] then
+      local f = revents[1].revents
+      if f % (ERR * 2) >= ERR or f % (HUP * 2) >= HUP or f % (NVAL * 2) >= NVAL then break end
+      if f % (IN * 2) >= IN then
+        local data = src:recv(16384)
+        if not data or #data == 0 then break end
+        if not dst:send(data) then break end
+      end
     end
   end
 end
