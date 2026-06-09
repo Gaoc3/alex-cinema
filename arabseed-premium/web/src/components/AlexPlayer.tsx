@@ -162,6 +162,8 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   useEffect(() => {
     setShowStreamError(false);
     setYoutubeFallback(false);
+    setRetryCount(0);
+    setLastErrorEvent(null);
     setIsPaused(true);
     setCurrentTime(0);
 
@@ -333,11 +335,29 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   };
 
   // Handle stream error, fallback to youtube
-  const handleStreamError = () => {
-    console.error("Direct stream failed to play. URL:", currentStreamUrl);
-    setShowStreamError(true);
+  const handleStreamError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    const video = e.currentTarget;
+    const mediaError = video.error;
+    const errMsg = mediaError ? `${mediaError.code}: ${mediaError.message}` : 'unknown';
+    console.error("Direct stream failed to play. URL:", currentStreamUrl, "Error:", errMsg);
+    setLastErrorEvent(errMsg);
+
     if (youtubeId) {
       setYoutubeFallback(true);
+    } else if (retryCount < MAX_RETRIES) {
+      // Retry with backoff: replace currentStreamUrl with itself to force reload
+      const nextRetry = retryCount + 1;
+      setRetryCount(nextRetry);
+      setTimeout(() => {
+        setCurrentStreamUrl((prev) => {
+          if (!prev) return prev;
+          // Toggle a cache-busting param to force re-fetch
+          const separator = prev.includes('?') ? '&' : '?';
+          return `${prev}${separator}_retry=${nextRetry}_${Date.now()}`;
+        });
+      }, 2000 * nextRetry);
+    } else {
+      setShowStreamError(true);
     }
   };
 
@@ -646,6 +666,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
           onError={handleStreamError}
+          crossOrigin="anonymous"
           onPlay={() => setIsPaused(false)}
           onPause={() => setIsPaused(true)}
           autoPlay
@@ -951,6 +972,25 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
       </div>
       <h2 className="text-2xl text-white font-black mb-2">البث غير متوفر حالياً</h2>
       <p className="text-gray-400 font-medium">عذراً، لم نتمكن من العثور على مسار البث المباشر لهذا المحتوى.</p>
+      {currentStreamUrl && showStreamError && (
+        <div className="mt-4 flex flex-col items-center gap-3">
+          <p className="text-xs text-gray-500 font-mono max-w-md text-center">{lastErrorEvent}</p>
+          <button
+            onClick={() => {
+              setShowStreamError(false);
+              setRetryCount(0);
+              setCurrentStreamUrl((prev) => {
+                if (!prev) return prev;
+                const sep = prev.includes('?') ? '&' : '?';
+                return `${prev}${sep}_manual_retry=${Date.now()}`;
+              });
+            }}
+            className="px-6 py-2 bg-alex-primary text-white rounded-xl font-bold text-sm hover:bg-alex-primary/80 transition-colors cursor-pointer"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      )}
     </div>
   );
 }
