@@ -11,6 +11,8 @@ interface PlayerSectionProps {
   playNextEpisode: () => void;
 }
 
+const toProxyUrl = (url: string) => `/api/proxy?endpoint=${encodeURIComponent(url)}`;
+
 export default function PlayerSection({
   isLoadingStreams,
   isSeries,
@@ -33,35 +35,35 @@ export default function PlayerSection({
             isSeries && activeEpisodeDetails
               ? {
                   trailer: video.trailer,
-                  stream_url: activeEpisodeDetails.streams?.length > 0 
-                    ? `/api/stream?url=${encodeURIComponent(activeEpisodeDetails.streams[0].videoUrl)}` 
+                  stream_url: toProxyUrl(activeEpisodeDetails.streams?.length > 0 
+                    ? activeEpisodeDetails.streams[0].videoUrl 
                     : (activeEpisodeDetails.fileFile 
-                        ? `/api/stream?url=${encodeURIComponent(`https://cndw2.shabakaty.com/m240/${activeEpisodeDetails.fileFile}`)}` 
-                        : ''),
-                  img: video.img,
+                        ? `https://cndw2.shabakaty.com/m240/${activeEpisodeDetails.fileFile}` 
+                        : '')),
+                  img: toProxyUrl(video.img),
                   ar_title: displayTitle,
-                  streams: activeEpisodeDetails.streams?.map((s: any) => ({...s, videoUrl: `/api/stream?url=${encodeURIComponent(s.videoUrl)}`})) || [],
+                  streams: activeEpisodeDetails.streams?.map((s: any) => ({...s, videoUrl: toProxyUrl(s.videoUrl)})) || [],
                   translations: activeEpisodeDetails.translations || [],
                   introSkipping: activeEpisodeDetails.introSkipping || [],
                   skippingDurations: activeEpisodeDetails.skippingDurations || null,
                   duration: activeEpisodeDetails.duration || activeEpisodeDetails.Duration || null,
-                  arTranslationFilePath: activeEpisodeDetails.arTranslationFilePath || '',
-                  enTranslationFilePath: activeEpisodeDetails.enTranslationFilePath || ''
+                  arTranslationFilePath: toProxyUrl(activeEpisodeDetails.arTranslationFilePath || ''),
+                  enTranslationFilePath: toProxyUrl(activeEpisodeDetails.enTranslationFilePath || '')
                 }
               : {
                   trailer: video.trailer,
-                  stream_url: video.streams?.length > 0 
-                    ? `/api/stream?url=${encodeURIComponent(video.streams[0].videoUrl)}` 
-                    : (video.stream_url ? `/api/stream?url=${encodeURIComponent(video.stream_url)}` : ''),
-                  img: video.img,
+                  stream_url: toProxyUrl(video.streams?.length > 0 
+                    ? video.streams[0].videoUrl 
+                    : (video.stream_url || '')),
+                  img: toProxyUrl(video.img),
                   ar_title: displayTitle,
-                  streams: video.streams?.map((s: any) => ({...s, videoUrl: `/api/stream?url=${encodeURIComponent(s.videoUrl)}`})) || [],
+                  streams: video.streams?.map((s: any) => ({...s, videoUrl: toProxyUrl(s.videoUrl)})) || [],
                   translations: video.translations || [],
                   introSkipping: video.introSkipping || [],
                   skippingDurations: video.skippingDurations || null,
                   duration: video.duration || video.Duration || null,
-                  arTranslationFilePath: video.arTranslationFilePath || '',
-                  enTranslationFilePath: video.enTranslationFilePath || ''
+                  arTranslationFilePath: toProxyUrl(video.arTranslationFilePath || ''),
+                  enTranslationFilePath: toProxyUrl(video.enTranslationFilePath || '')
                 }
           }
           onNextEpisode={hasNextEpisode ? playNextEpisode : undefined}
