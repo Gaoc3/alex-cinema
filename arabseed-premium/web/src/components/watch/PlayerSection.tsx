@@ -35,11 +35,11 @@ export default function PlayerSection({
             isSeries && activeEpisodeDetails
               ? {
                   trailer: video.trailer,
-                  stream_url: toProxyUrl(activeEpisodeDetails.streams?.length > 0 
-                    ? activeEpisodeDetails.streams[0].videoUrl 
+                  stream_url: activeEpisodeDetails.streams?.length > 0 
+                    ? toProxyUrl(activeEpisodeDetails.streams[0].videoUrl)
                     : (activeEpisodeDetails.fileFile 
                         ? toProxyUrl(`https://cndw2.shabakaty.com/m240/${activeEpisodeDetails.fileFile}`)
-                        : '')),
+                        : null),
                   img: toProxyUrl(video.img),
                   ar_title: displayTitle,
                   streams: activeEpisodeDetails.streams?.map((s: any) => ({...s, videoUrl: toProxyUrl(s.videoUrl)})) || [],
