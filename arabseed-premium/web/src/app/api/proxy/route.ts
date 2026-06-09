@@ -52,21 +52,22 @@ export async function GET(req: NextRequest) {
     targetUrl += (targetUrl.includes('?') ? '&' : '?') + queryStr;
   }
 
+  const isVideo = targetUrl.includes('shabakaty.com') && (targetUrl.includes('mp4') || targetUrl.includes('video'));
   const isShabakaty = targetUrl.includes('shabakaty.com');
   const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
   // Build headers for direct fetch (includes Range from client)
   const directHeaders: Record<string, string> = {
     'User-Agent': ua,
-    'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+    'Accept': isVideo ? 'video/mp4,video/*;q=0.9,*/*;q=0.8' : 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
     'Referer': 'https://cinemana.shabakaty.com/',
   };
   const range = req.headers.get('range');
   if (range) directHeaders['Range'] = range;
 
-  // Direct fetch
+  // Direct fetch (longer timeout for video files)
   const directController = new AbortController();
-  const directTimeout = setTimeout(() => directController.abort(), 25000);
+  const directTimeout = setTimeout(() => directController.abort(), isVideo ? 60000 : 25000);
 
   try {
     const response = await fetch(targetUrl, { headers: directHeaders, signal: directController.signal });
@@ -81,11 +82,11 @@ export async function GET(req: NextRequest) {
     if (e.name !== 'AbortError') console.log('Direct error:', e.message);
   }
 
-  // Tunnel fallback (no Range - tunnel CGI likely doesn't support it)
+  // Tunnel fallback
   if (isShabakaty) {
     const tunnelUrl = `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}`;
     const tunnelController = new AbortController();
-    const tunnelTimeout = setTimeout(() => tunnelController.abort(), 20000);
+    const tunnelTimeout = setTimeout(() => tunnelController.abort(), isVideo ? 90000 : 20000);
 
     try {
       const response = await fetch(tunnelUrl, {
