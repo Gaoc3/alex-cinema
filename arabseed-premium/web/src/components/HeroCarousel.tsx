@@ -173,8 +173,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full pt-4 pb-4 sm:pt-6 sm:pb-6 scroll-smooth">
             {/* Start spacer to replace padding and avoid RTL bugs */}
             <div className="w-1 sm:w-4 shrink-0 pointer-events-none opacity-0"></div>
-          {videos.map((video, idx) => {
-            const thumbUrl = video.imgObjUrl || `/api/proxy?endpoint=${encodeURIComponent('https://cnth2.shabakaty.com/vascin-cover-images/' + (video.img))}`;
+            {videos.map((video, idx) => {
+            const thumbUrl = video.imgObjUrl 
+              ? `/api/proxy?endpoint=${encodeURIComponent(video.imgObjUrl)}`
+              : `/api/proxy?endpoint=${encodeURIComponent('https://cnth2.shabakaty.com/vascin-cover-images/' + (video.img))}`;
             return (
               <button
                 key={video.nb}
