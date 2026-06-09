@@ -145,6 +145,13 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Helper to convert CDN URLs to proxy URLs
+  const toProxyUrl = (url: string | undefined | null) => {
+    if (!url) return null;
+    if (url.startsWith('/api/proxy')) return url; // Already proxied
+    return `/api/proxy?endpoint=${encodeURIComponent(url)}`;
+  };
+
   // Parse direct streams on initialization or data change
   useEffect(() => {
     setShowStreamError(false);
@@ -163,10 +170,10 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
     if (streams.length > 0) {
       const preferred = streams.find(s => s.resolution === '720p' || s.resolution === '1080p') || streams[0];
-      setCurrentStreamUrl(preferred.videoUrl);
+      setCurrentStreamUrl(toProxyUrl(preferred.videoUrl));
       setSelectedResolution(preferred.resolution);
     } else {
-      setCurrentStreamUrl(videoData.stream_url || null);
+      setCurrentStreamUrl(toProxyUrl(videoData.stream_url));
       setSelectedResolution('');
     }
   }, [videoData]);
