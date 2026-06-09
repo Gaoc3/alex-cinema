@@ -61,6 +61,9 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   const [selectedResolution, setSelectedResolution] = useState<string>('');
   const [showStreamError, setShowStreamError] = useState(false);
   const [youtubeFallback, setYoutubeFallback] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastErrorEvent, setLastErrorEvent] = useState<string | null>(null);
+  const MAX_RETRIES = 3;
 
   // Player Control states
   const [isPaused, setIsPaused] = useState(true);
