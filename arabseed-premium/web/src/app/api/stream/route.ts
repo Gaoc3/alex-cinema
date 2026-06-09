@@ -1,64 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const ROUTER_CGI = 'http://192.168.1.1/cgi-bin/api?url=';
-const SERVEO_TUNNEL = 'https://mtskycinemana.serveousercontent.com/cgi-bin/proxy?url=';
-
-async function getTotalSize(url: string): Promise<number> {
-  try {
-    const res = await fetch(url, {
-      method: 'HEAD',
-      signal: AbortSignal.timeout(10000),
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': '*/*',
-      },
-    });
-    return parseInt(res.headers.get('content-length') || '0');
-  } catch {
-    return 0;
-  }
-}
+const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://mtskycinemana.serveousercontent.com/cgi-bin/proxy?url=';
 
 async function fetchWithFallback(url: string, headers: Record<string, string>) {
-  // Try direct first
+  // Try direct first (works for non-CDN URLs)
   const directController = new AbortController();
-  const directTimeout = setTimeout(() => directController.abort(), 25000);
+  const directTimeout = setTimeout(() => directController.abort(), 15000);
 
   try {
     const res = await fetch(url, { headers, signal: directController.signal });
     clearTimeout(directTimeout);
-    if (res.ok || res.status === 206) return { type: 'direct' as const, res };
+    if (res.ok || res.status === 206) return { res };
   } catch {
     clearTimeout(directTimeout);
   }
 
-  // Fallback: router CGI (supports Range via query param)
-  const range = headers['Range'] || '';
-  let cgiUrl = ROUTER_CGI + encodeURIComponent(url);
-  if (range) {
-    cgiUrl += '&range=' + encodeURIComponent(range);
-  }
-  const cgiController = new AbortController();
-  const cgiTimeout = setTimeout(() => cgiController.abort(), 30000);
-
-  try {
-    const res = await fetch(cgiUrl, { signal: cgiController.signal });
-    clearTimeout(cgiTimeout);
-    if (res.ok) return { type: 'cgi' as const, res, range };
-  } catch {
-    clearTimeout(cgiTimeout);
-  }
-
-  // Last resort: serveo tunnel → router CGI
-  const tunnelUrl = SERVEO_TUNNEL + encodeURIComponent(url);
+  // Fallback: serveo tunnel → router CGI (curl)
+  const tunnelUrl = TUNNEL_BASE_URL + encodeURIComponent(url);
   const tunnelController = new AbortController();
-  const tunnelTimeout = setTimeout(() => tunnelController.abort(), 20000);
+  const tunnelTimeout = setTimeout(() => tunnelController.abort(), 30000);
 
   try {
     const res = await fetch(tunnelUrl, { headers, signal: tunnelController.signal });
     clearTimeout(tunnelTimeout);
-    if (res.ok) return { type: 'tunnel' as const, res };
-    return { type: 'tunnel' as const, res };
+    return { res };
   } catch (e: any) {
     clearTimeout(tunnelTimeout);
     throw e;
@@ -93,31 +58,14 @@ export async function GET(req: NextRequest) {
 
     const responseHeaders = new Headers();
     const contentType = res.headers.get('content-type');
-
     responseHeaders.set('Content-Type', contentType && contentType.includes('video') ? contentType : 'video/mp4');
     responseHeaders.set('Access-Control-Allow-Origin', '*');
     responseHeaders.set('Access-Control-Allow-Headers', 'Range');
     responseHeaders.set('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges');
 
-    // CGI fallback returns 200 even for range requests; fix it here
-    if (result.type === 'cgi' && range && res.status === 200) {
-      const totalSize = await getTotalSize(url);
-      if (totalSize > 0) {
-        const match = range.match(/bytes=(\d+)-(\d*)/);
-        if (match) {
-          const start = parseInt(match[1]);
-          const end = match[2] ? parseInt(match[2]) : totalSize - 1;
-          responseHeaders.set('Content-Range', `bytes ${start}-${end}/${totalSize}`);
-          responseHeaders.set('Accept-Ranges', 'bytes');
-        }
-      }
-      return new NextResponse(res.body as any, { status: 206, headers: responseHeaders });
-    }
-
     const contentLength = res.headers.get('content-length');
     const contentRange = res.headers.get('content-range');
     const acceptRanges = res.headers.get('accept-ranges');
-
     if (contentLength) responseHeaders.set('Content-Length', contentLength);
     if (contentRange) responseHeaders.set('Content-Range', contentRange);
     if (acceptRanges) responseHeaders.set('Accept-Ranges', acceptRanges);
