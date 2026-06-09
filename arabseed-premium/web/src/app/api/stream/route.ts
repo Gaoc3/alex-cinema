@@ -17,10 +17,10 @@ async function fetchWithFallback(url: string, headers: Record<string, string>) {
     if (e.name !== 'AbortError') console.log('Stream direct error:', e.message);
   }
 
-  // Fallback: tunnel
+  // Fallback: tunnel (short timeout since tunnel is often down)
   const tunnelUrl = `${TUNNEL_BASE_URL}${encodeURIComponent(url)}`;
   const tunnelController = new AbortController();
-  const tunnelTimeout = setTimeout(() => tunnelController.abort(), 20000);
+  const tunnelTimeout = setTimeout(() => tunnelController.abort(), 5000);
 
   try {
     const res = await fetch(tunnelUrl, { headers, signal: tunnelController.signal });
