@@ -55,11 +55,11 @@ export default function PlayerSection({
                   arTranslationFilePath: toProxyUrl(activeEpisodeDetails.arTranslationFilePath || ''),
                   enTranslationFilePath: toProxyUrl(activeEpisodeDetails.enTranslationFilePath || '')
                 }
-              : {
+                : {
                   trailer: video.trailer,
-                  stream_url: toProxyUrl(video.streams?.length > 0 
-                    ? video.streams[0].videoUrl 
-                    : (video.stream_url || '')),
+                  stream_url: video.streams?.length > 0 
+                    ? toProxyUrl(video.streams[0].videoUrl) 
+                    : toProxyUrl(video.stream_url),
                   img: toProxyUrl(video.img),
                   ar_title: displayTitle,
                   streams: video.streams?.map((s: any) => ({...s, videoUrl: toProxyUrl(s.videoUrl)})) || [],
