@@ -12,7 +12,7 @@ interface PlayerSectionProps {
 }
 
 const toProxyUrl = (url: string | undefined | null) => {
-  if (!url) return null;
+  if (!url) return undefined;
   let clean = url;
   try { clean = decodeURIComponent(url); } catch { /* not encoded, use as-is */ }
   return `/api/proxy?endpoint=${encodeURIComponent(clean)}`;

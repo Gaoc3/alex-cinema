@@ -6,7 +6,7 @@ interface Stream {
   name: string;
   resolution: string;
   container: string;
-  videoUrl: string;
+  videoUrl?: string | null;
 }
 
 interface Translation {
@@ -31,16 +31,16 @@ interface SkippingDurations {
 interface AlexPlayerProps {
   videoData: {
     trailer?: string;
-    stream_url?: string;
-    img?: string;
+    stream_url?: string | null;
+    img?: string | null;
     ar_title?: string;
     streams?: Stream[];
     translations?: Translation[];
     introSkipping?: IntroSkipping[];
     skippingDurations?: SkippingDurations | null;
     duration?: string | number | null;
-    arTranslationFilePath?: string;
-    enTranslationFilePath?: string;
+    arTranslationFilePath?: string | null;
+    enTranslationFilePath?: string | null;
   };
   onNextEpisode?: () => void;
 }
