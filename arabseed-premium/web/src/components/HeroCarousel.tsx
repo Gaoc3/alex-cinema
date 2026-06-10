@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Video {
   nb: string;
@@ -193,9 +194,11 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                 }`}
                 aria-label={`Go to slide ${idx + 1}`}
               >
-                <img 
+                <Image 
                   src={thumbUrl} 
-                  alt={video.ar_title} 
+                  alt={video.ar_title}
+                  fill
+                  sizes="(max-width: 640px) 112px, 224px"
                   className="w-full h-full object-cover transform-gpu"
                   loading="lazy"
                   style={{ imageRendering: 'high-quality' as any }}
