@@ -126,6 +126,13 @@ export async function GET(req: NextRequest) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 90000);
 
+  if (isImage) {
+    let upstreamRes = await fetchWithRetry(tunnelUrl, { headers, method: 'GET', redirect: 'follow' }, 1);
+    const response = buildResponse(upstreamRes);
+    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    return response;
+  }
+
   try {
     const response = await fetchWithRetry(tunnelUrl, { headers, signal: controller.signal });
     clearTimeout(timeout);
