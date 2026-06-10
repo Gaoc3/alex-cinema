@@ -21,4 +21,4 @@ response = requests.get(
     params=params,
     headers=headers,
 )
-print(response.content)
+print(response.status_code)
