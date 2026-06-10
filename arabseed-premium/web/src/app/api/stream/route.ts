@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       'Accept': 'video/mp4,video/*;q=0.9,*/*;q=0.8',
       'Referer': 'https://cinemana.shabakaty.com/',
+      'bypass-tunnel-reminder': 'true'
     };
 
     const range = req.headers.get('range');
