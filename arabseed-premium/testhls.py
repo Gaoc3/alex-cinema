@@ -22,4 +22,4 @@ response = requests.get(
     headers=headers,
     allow_redirects=False,
 )
-print(response.status_code)
+print(response.co)
