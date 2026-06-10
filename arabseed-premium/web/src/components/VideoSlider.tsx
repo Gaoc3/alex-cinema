@@ -90,9 +90,11 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
               >
                 {/* Poster Wrapper */}
                 <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
-                  <img 
+                  <Image 
                     src={`/api/proxy?endpoint=${encodeURIComponent('https://cnth2.shabakaty.com/vascin-poster-images/' + (video.img))}`} 
                     alt={video.ar_title} 
+                    fill
+                    sizes="(max-width: 640px) 170px, 190px"
                     className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
                     loading="lazy"
                   />
