@@ -76,10 +76,12 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             fade ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          <img 
+          <Image 
             src={coverImgUrl} 
             alt={current.ar_title} 
-            className="w-full h-full object-cover object-center transform scale-100 transition-transform duration-[7s] hover:scale-105"
+            fill
+            priority
+            className="object-cover object-center transform scale-100 transition-transform duration-[7s] hover:scale-105"
           />
         </div>
         
