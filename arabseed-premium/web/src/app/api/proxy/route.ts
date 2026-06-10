@@ -103,44 +103,53 @@ export async function GET(req: NextRequest) {
   const range = req.headers.get('range');
   if (range) headers['Range'] = range;
 
-  if (isShabakaty) {
-    let tunnelUrl = `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}`;
-    if (range) tunnelUrl += '&range=' + encodeURIComponent(range);
-
-    const cacheKey = isApi ? targetUrl : '';
-    const cacheTtl = isApi ? 120000 : 0;
-
-    if (cacheKey) {
-      const cached = getCached(cacheKey, cacheTtl);
-      if (cached) return buildResponse(new Response(JSON.stringify(cached), {
-        headers: { 'Content-Type': 'application/json' },
-        status: 200,
-      }));
-    }
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), isVideo ? 90000 : 25000);
-
+  // try direct fetch first for media; fall back to tunnel
+  if (isImage || isVideo) {
+    const dc = new AbortController();
+    const dt = setTimeout(() => dc.abort(), isVideo ? 60000 : 20000);
     try {
-      const response = await fetchWithRetry(tunnelUrl, { headers, signal: controller.signal });
-      clearTimeout(timeout);
-      if (response.ok || response.status === 206) {
-        if (isApi) {
-          const clone = response.clone();
-          const data = await clone.json().catch(() => null);
-          if (data) setCache(cacheKey, data, cacheTtl);
-        }
-        return buildResponse(response);
+      const r = await fetch(targetUrl, { headers, signal: dc.signal });
+      clearTimeout(dt);
+      if (r.ok || r.status === 206) return buildResponse(r);
+    } catch { clearTimeout(dt); }
+  }
+
+  let tunnelUrl = `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}`;
+  if (range) tunnelUrl += '&range=' + encodeURIComponent(range);
+
+  const cacheKey = isApi ? targetUrl : '';
+  const cacheTtl = isApi ? 120000 : 0;
+
+  if (cacheKey) {
+    const cached = getCached(cacheKey, cacheTtl);
+    if (cached) return buildResponse(new Response(JSON.stringify(cached), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 200,
+    }));
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 90000);
+
+  try {
+    const response = await fetchWithRetry(tunnelUrl, { headers, signal: controller.signal });
+    clearTimeout(timeout);
+    if (response.ok || response.status === 206) {
+      if (isApi) {
+        const clone = response.clone();
+        const data = await clone.json().catch(() => null);
+        if (data) setCache(cacheKey, data, cacheTtl);
       }
-      // tunnel failed – fall through to direct fetch below
-    } catch (e: any) {
-      clearTimeout(timeout);
-      // tunnel error – fall through to direct fetch below
+      return buildResponse(response);
     }
+    // tunnel failed – try direct fetch for non-media
+  } catch (e: any) {
+    clearTimeout(timeout);
+    // tunnel error – try direct fetch for non-media
   }
 
   const directController = new AbortController();
-  const directTimeout = setTimeout(() => directController.abort(), isVideo ? 60000 : 20000);
+  const directTimeout = setTimeout(() => directController.abort(), 30000);
   try {
     const response = await fetch(targetUrl, { headers, signal: directController.signal });
     clearTimeout(directTimeout);
