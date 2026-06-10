@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 interface MediaPosterProps {
   img: string;
@@ -10,9 +11,11 @@ export default function MediaPoster({ img, imdbUrlRef }: MediaPosterProps) {
     <div className="glass-panel rounded-3xl p-5 shadow-2xl relative overflow-hidden border border-white/5 flex flex-col h-full group">
       
       <div className="relative flex-1 rounded-2xl overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.6)] border border-white/10 group min-h-[350px]">
-        <img 
+        <Image 
           src={`/api/proxy?endpoint=${encodeURIComponent('https://cnth2.shabakaty.com/vascin-poster-images/' + (img))}`} 
-          alt="Poster" 
+          alt="Poster"
+          fill
+          sizes="(max-width: 768px) 100vw, 33vw"
           className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0e17] via-transparent to-transparent opacity-80"></div>
