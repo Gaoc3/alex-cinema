@@ -20,6 +20,6 @@ response = requests.get(
     'https://cdn.shabakaty.com/vascin24-mp4/3E1CDBD1-2F88-CF78-B248-AFD574FBF2B6_video.mp4',
     params=params,
     headers=headers,
-    allow_redirects=False=False,
+    allow_redirects=False,
 )
 print(response.status_code)
