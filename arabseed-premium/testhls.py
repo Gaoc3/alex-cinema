@@ -22,4 +22,4 @@ response = requests.get(
     headers=headers,
     allow_redirects=False,
 )
-print(response.co)
+print(response.json())
