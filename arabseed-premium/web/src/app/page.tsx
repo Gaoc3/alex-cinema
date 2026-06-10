@@ -28,7 +28,9 @@ export default async function Home() {
     <div className="animate-fade-in-up pb-20">
       {/* Hero Section Carousel */}
       {carouselVideos.length > 0 && (
-        <HeroCarousel videos={carouselVideos} />
+        <div className="-mt-16 sm:-mt-20 lg:mt-0 relative z-0">
+          <HeroCarousel videos={carouselVideos} />
+        </div>
       )}
 
       {/* Row Sliders */}
