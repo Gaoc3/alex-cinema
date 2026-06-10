@@ -1,3 +1,4 @@
+import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import { Cairo, Outfit } from "next/font/google";
 import "./globals.css";
@@ -52,7 +53,9 @@ export default function RootLayout({
                   </div>
  
                   <div className="flex items-center shrink-0">
-                      <SearchBar />
+                      <Suspense fallback={<div className="w-8 h-8 rounded-full bg-white/5 animate-pulse"></div>}>
+                          <SearchBar />
+                      </Suspense>
                   </div>
               </div>
           </div>
