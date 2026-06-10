@@ -27,10 +27,10 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </head>
       <body className="antialiased min-h-screen font-sans" suppressHydrationWarning>
-        <div className="relative overflow-x-hidden w-full min-h-screen flex flex-col">        {/* Sidebar */}
-        <Sidebar />
-
-        {/* Navbar */}
+        <div className="relative overflow-x-hidden w-full min-h-screen flex flex-col">
+          <Suspense fallback={null}>
+            <Sidebar />
+          </Suspense>        {/* Navbar */}
         <nav className="absolute w-full max-w-[100vw] z-40 transition-all duration-300" id="navbar">
           <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 lg:px-8">
               <div className="flex items-center justify-between gap-3 h-14 sm:h-20 lg:h-24">
