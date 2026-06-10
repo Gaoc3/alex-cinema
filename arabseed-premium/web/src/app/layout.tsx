@@ -31,7 +31,7 @@ export default function RootLayout({
         <Sidebar />
 
         {/* Navbar */}
-        <nav className="absolute w-full max-w-[100vw] z-40 bg-[#070a13]/60 backdrop-blur-2xl lg:bg-transparent lg:backdrop-blur-none border-b lg:border-none border-white/10 transition-all duration-300" id="navbar">
+        <nav className="absolute w-full max-w-[100vw] z-40 transition-all duration-300" id="navbar">
           <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 lg:px-8">
               <div className="flex items-center justify-between gap-3 h-14 sm:h-20 lg:h-24">
                   {/* Logo - shown on mobile too */}
