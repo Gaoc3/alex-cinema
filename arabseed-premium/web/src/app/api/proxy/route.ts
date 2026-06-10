@@ -124,7 +124,6 @@ export async function GET(req: NextRequest) {
     try {
       const response = await fetchWithRetry(tunnelUrl, { headers, signal: controller.signal });
       clearTimeout(timeout);
-
       if (response.ok || response.status === 206) {
         if (isApi) {
           const clone = response.clone();
@@ -133,15 +132,15 @@ export async function GET(req: NextRequest) {
         }
         return buildResponse(response);
       }
-      return NextResponse.json({ error: `Tunnel returned ${response.status}` }, { status: response.status });
+      // tunnel failed – fall through to direct fetch below
     } catch (e: any) {
       clearTimeout(timeout);
-      return NextResponse.json({ error: `Tunnel failed: ${e.message}` }, { status: 502 });
+      // tunnel error – fall through to direct fetch below
     }
   }
 
   const directController = new AbortController();
-  const directTimeout = setTimeout(() => directController.abort(), 15000);
+  const directTimeout = setTimeout(() => directController.abort(), isVideo ? 60000 : 20000);
   try {
     const response = await fetch(targetUrl, { headers, signal: directController.signal });
     clearTimeout(directTimeout);
