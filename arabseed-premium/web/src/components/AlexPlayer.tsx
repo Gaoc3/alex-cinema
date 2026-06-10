@@ -152,7 +152,6 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   const toProxyUrl = (url: string | undefined | null) => {
     if (!url) return null;
     if (url.startsWith('/api/proxy') || url.startsWith('/api/stream')) return url;
-    // Decode first to avoid double-encoding if URL already has percent-encoded chars
     let clean = url;
     try { clean = decodeURIComponent(url); } catch { /* not encoded, use as-is */ }
     return `/api/proxy?endpoint=${encodeURIComponent(clean)}`;
@@ -450,7 +449,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
       const wasPlaying = !video.paused;
 
       setSelectedResolution(stream.resolution);
-      setCurrentStreamUrl(stream.videoUrl);
+      setCurrentStreamUrl(toProxyUrl(stream.videoUrl));
       setActiveDropdown(null);
 
       const resumeSeek = () => {
