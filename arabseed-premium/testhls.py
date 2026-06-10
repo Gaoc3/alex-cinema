@@ -21,4 +21,4 @@ response = requests.get(
     params=params,
     headers=headers,
 )
-print(response.json() or response.content)
+print(response.content)
