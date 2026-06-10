@@ -11,8 +11,8 @@ interface PlayerSectionProps {
   playNextEpisode: () => void;
 }
 
-const toProxyUrl = (url: string) => {
-  // Decode first to avoid double-encoding if URL already has percent-encoded chars
+const toProxyUrl = (url: string | undefined | null) => {
+  if (!url) return null;
   let clean = url;
   try { clean = decodeURIComponent(url); } catch { /* not encoded, use as-is */ }
   return `/api/proxy?endpoint=${encodeURIComponent(clean)}`;
