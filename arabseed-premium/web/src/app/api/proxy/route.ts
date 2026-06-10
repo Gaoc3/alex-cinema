@@ -103,17 +103,6 @@ export async function GET(req: NextRequest) {
   const range = req.headers.get('range');
   if (range) headers['Range'] = range;
 
-  // try direct fetch first for media; fall back to tunnel
-  if (isImage || isVideo) {
-    const dc = new AbortController();
-    const dt = setTimeout(() => dc.abort(), isVideo ? 60000 : 20000);
-    try {
-      const r = await fetch(targetUrl, { headers, signal: dc.signal });
-      clearTimeout(dt);
-      if (r.ok || r.status === 206) return buildResponse(r);
-    } catch { clearTimeout(dt); }
-  }
-
   let tunnelUrl = `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}`;
   if (range) tunnelUrl += '&range=' + encodeURIComponent(range);
 
