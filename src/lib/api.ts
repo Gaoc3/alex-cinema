@@ -3,16 +3,50 @@ import { decryptData } from '@/utils/cryptoHelper';
 export async function fetchCinemana(endpoint: string, params: Record<string, string> = {}) {
   const queryString = new URLSearchParams(params).toString();
   const fullEndpoint = queryString ? `${endpoint}?${queryString}` : endpoint;
+  
+  const isServer = typeof window === 'undefined';
 
-  const baseUrl = typeof window !== 'undefined'
-    ? ''
-    : (process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'));
+  if (isServer) {
+    let targetUrl = `https://cinemana.shabakaty.com/api/android/${fullEndpoint}`;
+    const tunnelBase = (process.env.TUNNEL_BASE_URL || '').replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
+    if (tunnelBase) {
+      targetUrl = `${tunnelBase}/api/android/${fullEndpoint}`;
+    }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      const res = await fetch(targetUrl, {
+        cache: 'no-store',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'bypass-tunnel-reminder': 'true'
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) return null;
+      const text = await res.text();
+      try {
+        return JSON.parse(text); // Shabakaty returns raw JSON, no decryption needed on server directly
+      } catch {
+        return null;
+      }
+    } catch (e: any) {
+      clearTimeout(timeoutId);
+      if (e.name !== 'AbortError') console.error('[Server Fetch Error]:', e.message);
+      return null;
+    }
+  }
+
+  // Client-side fetch via our proxy
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
-    const res = await fetch(`${baseUrl}/api/proxy?endpoint=${encodeProxyUrl(fullEndpoint)}`, {
+    const res = await fetch(`/api/proxy?endpoint=${encodeProxyUrl(fullEndpoint)}`, {
       cache: 'no-store',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -27,7 +61,7 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
     return decryptData(data.payload);
   } catch (e: any) {
     clearTimeout(timeoutId);
-    if (e.name !== 'AbortError') console.error('Fetch error:', e.message);
+    if (e.name !== 'AbortError') console.error('[Client Fetch Error]:', e.message);
     return null;
   }
 }
