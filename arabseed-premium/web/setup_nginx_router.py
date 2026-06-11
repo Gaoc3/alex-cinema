@@ -58,6 +58,14 @@ http {
             proxy_set_header Referer "https://cinemana.shabakaty.com/";
         }
 
+        location /api/ {
+            proxy_pass https://cinemana.shabakaty.com/api/;
+            proxy_ssl_server_name on;
+            proxy_buffering off;
+            proxy_set_header Host cinemana.shabakaty.com;
+            proxy_set_header Referer "https://cinemana.shabakaty.com/";
+        }
+
         location /vascin-poster-images/ {
             proxy_pass https://cnth2.shabakaty.com/vascin-poster-images/;
             proxy_ssl_server_name on;
