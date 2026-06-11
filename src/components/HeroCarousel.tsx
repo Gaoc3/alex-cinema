@@ -15,6 +15,7 @@ interface Video {
   stars: string;
   year: string;
   trailer?: string;
+  kind?: string;
 }
 
 interface HeroCarouselProps {
@@ -134,7 +135,14 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           </p>
           
           <div className="flex flex-wrap items-center justify-start gap-4 relative z-10">
-            <Link href={`/watch/${current.nb}`} className="flex items-center gap-3 btn-primary text-white px-8 py-3.5 rounded-xl font-bold text-base hover-scale">
+            <Link 
+              href={`/watch/${current.nb}`} 
+              className={`flex items-center gap-3 text-white px-8 py-3.5 rounded-xl font-bold text-base hover-scale transition-colors duration-300 ${
+                current.kind === '2' 
+                  ? 'bg-blue-600 hover:bg-blue-700 shadow-[0_0_15px_rgba(37,99,235,0.4)]' 
+                  : 'btn-primary'
+              }`}
+            >
               <i className="fa-solid fa-play ml-1"></i>
               <span>شاهد الآن</span>
             </Link>
