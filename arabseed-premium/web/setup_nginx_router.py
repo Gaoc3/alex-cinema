@@ -58,6 +58,7 @@ http {
             proxy_set_header Range $http_range;
             proxy_set_header If-Range $http_if_range;
             
+            absolute_redirect off;
             proxy_redirect ~^https?://([^/]+)/(.*)$ /cndw/$1/$2;
         }
 
