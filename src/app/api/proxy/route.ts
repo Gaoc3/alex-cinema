@@ -3,14 +3,14 @@ import { encryptData } from '@/utils/cryptoHelper';
 
 const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com/cgi-bin/proxy?url=';
 
-function buildResponse(upstreamRes: Response, extraHeaders?: Record<string, string>) {
+function buildResponse(upstreamRes: Response, extraHeaders?: Record<string, string>, overrideBody?: string, overrideContentType?: string) {
   const headers = new Headers();
-  const contentType = upstreamRes.headers.get('content-type');
+  const contentType = overrideContentType || upstreamRes.headers.get('content-type');
   if (contentType) headers.set('Content-Type', contentType);
   const contentLength = upstreamRes.headers.get('content-length');
-  if (contentLength) headers.set('Content-Length', contentLength);
+  if (contentLength && !overrideBody) headers.set('Content-Length', contentLength);
   const contentRange = upstreamRes.headers.get('content-range');
-  if (contentRange) headers.set('Content-Range', contentRange);
+  if (contentRange && !overrideBody) headers.set('Content-Range', contentRange);
   const acceptRanges = upstreamRes.headers.get('accept-ranges');
   if (acceptRanges) headers.set('Accept-Ranges', acceptRanges);
   headers.set('Access-Control-Allow-Origin', '*');
@@ -22,10 +22,23 @@ function buildResponse(upstreamRes: Response, extraHeaders?: Record<string, stri
     }
   }
 
-  return new NextResponse(upstreamRes.body as any, {
+  return new NextResponse(overrideBody !== undefined ? overrideBody : (upstreamRes.body as any), {
     status: upstreamRes.status,
     headers,
   });
+}
+
+async function handleSrtResponse(response: Response, debugHeaders: Record<string, string>) {
+  try {
+    const srtText = await response.text();
+    // Convert SRT to VTT format (replace commas with dots in timestamps and add WEBVTT header)
+    const vttText = 'WEBVTT\n\n' + srtText.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+    const res = buildResponse(response, debugHeaders, vttText, 'text/vtt; charset=utf-8');
+    res.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    return res;
+  } catch (e) {
+    return buildResponse(response, debugHeaders);
+  }
 }
 
 function buildEncryptedJsonResponse(data: any, status = 200, extraHeaders?: Record<string, string>) {
@@ -134,6 +147,7 @@ export async function GET(req: NextRequest) {
   const isApi = isShabakaty && targetUrl.includes('/api/');
   const isImage = isShabakaty && !isApi && (targetUrl.includes('poster') || targetUrl.includes('cover') || targetUrl.includes('.jpg') || targetUrl.includes('.png') || targetUrl.includes('.webp'));
   const isVideo = isShabakaty && (targetUrl.includes('mp4') || targetUrl.includes('video'));
+  const isSrt = targetUrl.toLowerCase().includes('.srt');
 
   const headers: Record<string, string> = {
     'User-Agent': ua,
@@ -235,6 +249,7 @@ export async function GET(req: NextRequest) {
           return buildResponse(response, debugHeaders);
         }
       }
+      if (isSrt) return await handleSrtResponse(response, debugHeaders);
       return buildResponse(response, debugHeaders);
     }
     // tunnel failed – try direct fetch for non-media
@@ -248,7 +263,10 @@ export async function GET(req: NextRequest) {
   try {
     const response = await fetch(targetUrl, { headers, signal: directController.signal });
     clearTimeout(directTimeout);
-    if (response.ok || response.status === 206) return buildResponse(response, debugHeaders);
+    if (response.ok || response.status === 206) {
+      if (isSrt) return await handleSrtResponse(response, debugHeaders);
+      return buildResponse(response, debugHeaders);
+    }
   } catch { clearTimeout(directTimeout); }
 
   return NextResponse.json({ error: 'Failed to fetch', debug: debugHeaders }, { status: 502, headers: debugHeaders });
