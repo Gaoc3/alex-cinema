@@ -1,7 +1,6 @@
 {
-  "status": "init",
-  "scope": "codebase",
+  "status": "commited",
   "type": "backend",
-  "localEndpoint": "http://localhost:3000/",
-  "serverPort": 18008
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3000//"
 }
