@@ -43,25 +43,19 @@ http {
             proxy_set_header Host cdn.shabakaty.com;
             proxy_set_header Referer "https://cinemana.shabakaty.com/";
             
-            absolute_redirect off;
-            proxy_redirect ~^https?://([^/]+)/(.*)$ /cndw/$1/$2;
+            proxy_intercept_errors on;
+            error_page 301 302 307 = @handle_redirect;
         }
 
-        location ~ ^/cndw/([^/]+)/(.*)$ {
+        location @handle_redirect {
             resolver 8.8.8.8 1.1.1.1 ipv6=off;
-            set $target_host $1;
-            set $target_path $2;
-            
-            proxy_pass https://$target_host/$target_path$is_args$args;
+            set $saved_redirect_location '$upstream_http_location';
+            proxy_pass $saved_redirect_location;
             proxy_ssl_server_name on;
             proxy_buffering off;
-            proxy_set_header Host $target_host;
             proxy_set_header Range $http_range;
             proxy_set_header If-Range $http_if_range;
             proxy_set_header Referer "https://cinemana.shabakaty.com/";
-            
-            absolute_redirect off;
-            proxy_redirect ~^https?://([^/]+)/(.*)$ /cndw/$1/$2;
         }
 
         location /vascin-poster-images/ {
