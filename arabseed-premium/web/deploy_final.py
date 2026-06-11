@@ -42,7 +42,7 @@ while true do
                         end
                     end
                     os.remove('/tmp/h.txt')
-                    local cmd = 'LD_LIBRARY_PATH=/tmp/usr/lib:/tmp/lib /tmp/usr/bin/curl -s -k -D /tmp/h.txt ' .. range_header .. auth_header .. '-H \\'Host: cinemana.shabakaty.com\\' \\'' .. target_url .. '\\''
+                    local cmd = 'LD_LIBRARY_PATH=/tmp/usr/lib:/tmp/lib /tmp/usr/bin/curl --http1.1 -s -k -L -D /tmp/h.txt ' .. range_header .. auth_header .. '\\'' .. target_url .. '\\''
                     local handle = io.popen(cmd)
                     if handle then
                         nixio.nanosleep(0, 500000000)
@@ -50,8 +50,15 @@ while true do
                         if hfile then
                             local headers = hfile:read('*a')
                             hfile:close()
+                            
+                            -- Extract only the final HTTP headers in case of redirects
+                            local last_headers = headers:match(".*(HTTP/1%.[01].-\\r\\n\\r\\n)")
+                            if last_headers then
+                                headers = last_headers
+                            end
+                            
                             headers = headers:gsub('Transfer%-Encoding:%s*chunked\\r\\n', '')
-                            client:sendall(headers)
+                            client:write(headers)
                         else
                             client:sendall('HTTP/1.1 200 OK\\r\\nContent-Type: application/octet-stream\\r\\n\\r\\n')
                         end
