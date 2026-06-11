@@ -94,7 +94,7 @@ export default function SearchBar() {
 
     debounceTimer.current = setTimeout(async () => {
       try {
-        const queryEncoded = encodeProxyUrl(query);
+        const queryEncoded = encodeURIComponent(query);
         const [resMovies, resSeries] = await Promise.all([
           fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,2026&type=movies`, { signal }),
           fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,2026&type=series`, { signal })
@@ -167,7 +167,7 @@ export default function SearchBar() {
     e.preventDefault();
     if (query.trim()) {
       setShowDropdown(false);
-      router.push(`/search?q=${encodeProxyUrl(query.trim())}`);
+      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
     }
   };
 

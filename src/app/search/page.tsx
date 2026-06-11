@@ -85,7 +85,7 @@ function SearchPageContent() {
 
     async function performSearch() {
       setIsLoading(true);
-      const queryEncoded = encodeProxyUrl(query);
+      const queryEncoded = encodeURIComponent(query);
       const categoryParam = categoryId ? `&category_id=${categoryId}` : '';
       const starParam = starRating ? `&star=${starRating}` : '';
 
