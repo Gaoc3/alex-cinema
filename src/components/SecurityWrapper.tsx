@@ -27,32 +27,70 @@ export default function SecurityWrapper({ children }: { children: React.ReactNod
       if (e.ctrlKey && e.key === 'u') {
         e.preventDefault();
       }
+      // Ctrl+S (Save)
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+      }
     };
 
     document.addEventListener('contextmenu', handleContextMenu);
     document.addEventListener('keydown', handleKeyDown);
 
-    // 3. Debugger Loop Trap
-    // This will freeze the browser if DevTools is open.
-    // We run it every second to annoy any open DevTools.
+    // 3. Disable Console Logging
+    const noop = () => {};
+    const originalLog = console.log;
+    const originalInfo = console.info;
+    const originalWarn = console.warn;
+    const originalError = console.error;
+    
+    if (process.env.NODE_ENV === 'production') {
+      console.log = noop;
+      console.info = noop;
+      console.warn = noop;
+      console.error = noop;
+    }
+
+    // 4. Advanced DevTools Detection & Debugger Trap
+    const detectDevTools = () => {
+      const threshold = 160;
+      const widthDiff = window.outerWidth - window.innerWidth > threshold;
+      const heightDiff = window.outerHeight - window.innerHeight > threshold;
+      
+      if (widthDiff || heightDiff) {
+        // Obfuscate the page if DevTools are opened
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:#fff;font-family:sans-serif;font-size:24px;font-weight:bold;">غير مصرح لك باستعراض الأكواد 🚫</div>';
+      }
+    };
+
     const debuggerTrap = setInterval(() => {
+      detectDevTools();
+      if (process.env.NODE_ENV === 'production') {
+        console.clear();
+      }
       const start = new Date().getTime();
       // eslint-disable-next-line no-debugger
       debugger;
       const end = new Date().getTime();
-      // If it took more than 100ms, it means the debugger actually paused execution.
+      // If debugger paused execution
       if (end - start > 100) {
-        // We could theoretically redirect or clear the page here
-        // document.body.innerHTML = 'Nice try!';
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:#fff;font-family:sans-serif;font-size:24px;font-weight:bold;">تم رصد محاولة تتبع 🚫</div>';
       }
-    }, 1000);
+    }, 1500);
 
     return () => {
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('keydown', handleKeyDown);
       clearInterval(debuggerTrap);
+      
+      if (process.env.NODE_ENV === 'production') {
+        console.log = originalLog;
+        console.info = originalInfo;
+        console.warn = originalWarn;
+        console.error = originalError;
+      }
     };
   }, []);
 
   return <>{children}</>;
 }
+

@@ -4,6 +4,8 @@ const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001
 
 
 
+import { decryptUrl } from '@/utils/cryptoHelper';
+
 export const runtime = 'edge';
 
 export async function GET(req: NextRequest) {
@@ -13,10 +15,19 @@ export async function GET(req: NextRequest) {
     return new NextResponse('Missing URL parameter', { status: 400 });
   }
 
-  // Support Base64 encoded URLs to hide Shabakaty domains
+  // Support AES encrypted URLs to hide Shabakaty domains
   if (!urlStr.startsWith('http')) {
     try {
-      urlStr = Buffer.from(urlStr, 'base64').toString('utf-8');
+      const decrypted = decryptUrl(urlStr);
+      if (decrypted && decrypted.startsWith('http')) {
+        urlStr = decrypted;
+      } else {
+        // Fallback for old base64 cache if any
+        const decodedB64 = Buffer.from(urlStr, 'base64').toString('utf-8');
+        if (decodedB64.startsWith('http')) {
+          urlStr = decodedB64;
+        }
+      }
     } catch (e) {
       return new NextResponse('Invalid encoded URL', { status: 400 });
     }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { encryptData } from '@/utils/cryptoHelper';
+import { encryptData, decryptUrl, encryptUrl } from '@/utils/cryptoHelper';
 
 const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com/cgi-bin/proxy?url=';
 
@@ -103,12 +103,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing endpoint parameter' }, { status: 400 });
   }
 
-  // Attempt base64 decode if it doesn't look like a URL and has no slashes
+  // Attempt AES decrypt if it doesn't look like a URL and has no slashes
   if (!endpoint.includes('/') && /^[A-Za-z0-9+/=_-]+$/.test(endpoint)) {
     try {
-      const decodedB64 = Buffer.from(endpoint, 'base64').toString('utf-8');
-      if (decodedB64.startsWith('http') || decodedB64.includes('/')) {
-        endpoint = decodedB64;
+      const decrypted = decryptUrl(endpoint);
+      if (decrypted && (decrypted.startsWith('http') || decrypted.includes('/'))) {
+        endpoint = decrypted;
+      } else {
+        // Fallback for old base64 cache if any
+        const decodedB64 = Buffer.from(endpoint, 'base64').toString('utf-8');
+        if (decodedB64.startsWith('http') || decodedB64.includes('/')) {
+          endpoint = decodedB64;
+        }
       }
     } catch { /* ignore */ }
   }
@@ -234,11 +240,11 @@ export async function GET(req: NextRequest) {
           // Hide Shabakaty domains from the frontend response using Base64
           // Match both http and https, and handle varying numbers like cnth1, cnth2, etc.
           text = text.replace(/https?:\/\/(cdn|cnth[0-9]+|cndw[0-9]+|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match) => {
-            const b64 = Buffer.from(match).toString('base64');
+            const encrypted = encryptUrl(match);
             if (match.includes('mp4') || match.includes('video') || match.includes('m3u8')) {
-              return `/api/stream?url=${b64}`;
+              return `/api/stream?url=${encrypted}`;
             }
-            return `/api/proxy?endpoint=${b64}`;
+            return `/api/proxy?endpoint=${encrypted}`;
           });
           
           const data = JSON.parse(text);
