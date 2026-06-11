@@ -1,4 +1,6 @@
 'use client';
+import { decryptData } from '@/utils/cryptoHelper';
+
 import { encodeProxyUrl } from '@/utils/proxyHelper';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -102,11 +104,13 @@ export default function SearchBar() {
         let seriesList: SearchResult[] = [];
 
         if (resMovies.ok) {
-          const data = await resMovies.json();
+          const encrypted_data = await resMovies.json();
+      const data = decryptData(encrypted_data.payload);
           moviesList = Array.isArray(data) ? data : [];
         }
         if (resSeries.ok) {
-          const data = await resSeries.json();
+          const encrypted_data = await resSeries.json();
+      const data = decryptData(encrypted_data.payload);
           seriesList = Array.isArray(data) ? data : [];
         }
 

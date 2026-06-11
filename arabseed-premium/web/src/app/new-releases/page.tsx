@@ -1,4 +1,6 @@
 'use client';
+import { decryptData } from '@/utils/cryptoHelper';
+
 import { encodeProxyUrl } from '@/utils/proxyHelper';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -40,11 +42,13 @@ function NewReleasesContent() {
         let seriesList = [];
 
         if (moviesRes.ok) {
-          const data = await moviesRes.json();
+          const encrypted_data = await moviesRes.json();
+      const data = decryptData(encrypted_data.payload);
           moviesList = Array.isArray(data) ? data : [];
         }
         if (seriesRes.ok) {
-          const data = await seriesRes.json();
+          const encrypted_data = await seriesRes.json();
+      const data = decryptData(encrypted_data.payload);
           seriesList = Array.isArray(data) ? data : [];
         }
 
