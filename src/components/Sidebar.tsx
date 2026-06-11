@@ -132,9 +132,9 @@ export default function Sidebar() {
         </div>
 
         {/* Sidebar Scrollable Body */}
-        <div className="flex-grow overflow-y-auto hide-scrollbar px-4 py-6 space-y-7">
+        <div className="flex-grow overflow-y-auto hide-scrollbar px-4 py-6 space-y-7 flex flex-col justify-center">
           {/* Navigation Section */}
-          <div className="space-y-1.5">
+          <div className="space-y-3">
             {/* الصفحة الرئيسية */}
             <Link 
               href="/" 
@@ -298,108 +298,6 @@ export default function Sidebar() {
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
                 <i className="fa-solid fa-paper-plane text-lg w-5 text-center text-amber-400"></i>
                 <span className="sidebar-label">طلبات الأفلام</span>
-              </div>
-            </Link>
-
-            {/* Divider */}
-            <div className="border-t border-white/5 my-4 mx-2" />
-
-            {/* تابع المشاهدة */}
-            <Link 
-              href="#" 
-              onClick={closeSidebar}
-              className="flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn text-gray-400 hover:text-white hover:bg-white/5"
-            >
-              <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-play text-lg w-5 text-center text-blue-500"></i>
-                <span className="sidebar-label">تابع المشاهدة</span>
-              </div>
-            </Link>
-
-            {/* المشاهدة لاحقاً */}
-            <Link 
-              href="#" 
-              onClick={closeSidebar}
-              className="flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn text-gray-400 hover:text-white hover:bg-white/5"
-            >
-              <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-square-play text-lg w-5 text-center text-purple-400"></i>
-                <span className="sidebar-label">المشاهدة لاحقاً</span>
-              </div>
-            </Link>
-
-            {/* المفضلة */}
-            <Link 
-              href="#" 
-              onClick={closeSidebar}
-              className="flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn text-gray-400 hover:text-white hover:bg-white/5"
-            >
-              <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-heart text-lg w-5 text-center text-red-500"></i>
-                <span className="sidebar-label">المفضلة</span>
-              </div>
-            </Link>
-
-            {/* الاشتراكات */}
-            <Link 
-              href="#" 
-              onClick={closeSidebar}
-              className="flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn text-gray-400 hover:text-white hover:bg-white/5"
-            >
-              <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-eye text-lg w-5 text-center text-teal-400"></i>
-                <span className="sidebar-label">الاشتراكات</span>
-              </div>
-            </Link>
-
-            {/* سجل المشاهدة */}
-            <Link 
-              href="#" 
-              onClick={closeSidebar}
-              className="flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn text-gray-400 hover:text-white hover:bg-white/5"
-            >
-              <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-clock-rotate-left text-lg w-5 text-center text-indigo-400"></i>
-                <span className="sidebar-label">سجل المشاهدة</span>
-              </div>
-            </Link>
-
-            {/* Divider */}
-            <div className="border-t border-white/5 my-4 mx-2" />
-
-            {/* الإعدادات */}
-            <Link 
-              href="#" 
-              onClick={closeSidebar}
-              className="flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn text-gray-400 hover:text-white hover:bg-white/5"
-            >
-              <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-sliders text-lg w-5 text-center text-gray-400"></i>
-                <span className="sidebar-label">الإعدادات</span>
-              </div>
-            </Link>
-
-            {/* مركز المساعدة */}
-            <Link 
-              href="#" 
-              onClick={closeSidebar}
-              className="flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn text-gray-400 hover:text-white hover:bg-white/5"
-            >
-              <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-circle-question text-lg w-5 text-center text-gray-400"></i>
-                <span className="sidebar-label">مركز المساعدة</span>
-              </div>
-            </Link>
-
-            {/* تطبيقات شبكتي */}
-            <Link 
-              href="#" 
-              onClick={closeSidebar}
-              className="flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn text-gray-400 hover:text-white hover:bg-white/5"
-            >
-              <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-share-nodes text-lg w-5 text-center text-gray-400"></i>
-                <span className="sidebar-label">تطبيقات شبكتي</span>
               </div>
             </Link>
 
