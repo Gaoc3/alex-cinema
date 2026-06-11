@@ -38,7 +38,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
   if (!videos || videos.length === 0) return null;
 
   return (
-    <div className="relative max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 mb-16 group/slider">
+    <div className="relative max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-4 mb-16 group/slider">
       {/* Slider Title Header */}
       <div className="flex items-end justify-between mb-8">
         <div className="flex items-center gap-4">
