@@ -942,7 +942,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                   </button>
 
                   {activeDropdown === 'subtitles' && (
-                    <div className="absolute bottom-full right-0 mb-3 w-48 max-h-[65vh] overflow-y-auto bg-[#0a0e17]/95 border border-white/10 backdrop-blur-md rounded-2xl shadow-2xl z-50 flex flex-col p-2">
+                    <div className="absolute bottom-full right-0 mb-3 w-48 max-h-[65vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-2">
                       <div className="text-[10px] text-gray-400 font-bold mb-1 text-right px-1">لغة الترجمة</div>
                       <button 
                         onClick={() => { setSelectedLanguage('off'); setActiveDropdown(null); }}
@@ -1032,7 +1032,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                   </button>
 
                   {activeDropdown === 'quality' && (
-                    <div className="absolute bottom-full right-0 mb-3 w-28 md:w-32 max-h-[60vh] overflow-y-auto bg-[#0a0e17]/95 border border-white/10 backdrop-blur-md rounded-2xl shadow-2xl z-50 flex flex-col p-1.5">
+                    <div className="absolute bottom-full right-0 mb-3 w-28 md:w-32 max-h-[60vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-1.5">
                       {sortedStreams.map((stream) => (
                         <button 
                           key={stream.name}
@@ -1058,7 +1058,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                 </button>
 
                 {activeDropdown === 'speed' && (
-                  <div className="absolute bottom-full right-0 mb-3 w-24 md:w-28 max-h-[60vh] overflow-y-auto bg-[#0a0e17]/95 border border-white/10 backdrop-blur-md rounded-2xl shadow-2xl z-50 flex flex-col p-1.5 font-en">
+                  <div className="absolute bottom-full right-0 mb-3 w-24 md:w-28 max-h-[60vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-1.5 font-en">
                     {[0.5, 1, 1.25, 1.5, 2].map((rate) => (
                       <button 
                         key={rate}

@@ -31,14 +31,14 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </head>
-      <body className="antialiased min-h-screen font-sans bg-[#070a13]" suppressHydrationWarning>
+      <body className="antialiased min-h-screen font-sans bg-black" suppressHydrationWarning>
         <SecurityWrapper>
         
         {/* Liquid Glass Animated Background */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-          <div className="liquid-blob bg-alex-primary/30 w-[60vw] h-[60vw] sm:w-[40vw] sm:h-[40vw] top-[-10%] left-[-10%] animate-blob"></div>
-          <div className="liquid-blob bg-blue-600/30 w-[55vw] h-[55vw] sm:w-[35vw] sm:h-[35vw] top-[10%] right-[-10%] animate-blob-slow" style={{ animationDelay: '2s' }}></div>
-          <div className="liquid-blob bg-purple-600/30 w-[50vw] h-[50vw] sm:w-[30vw] sm:h-[30vw] bottom-[-20%] left-[40%] animate-blob" style={{ animationDelay: '4s' }}></div>
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/10 via-[#030409] to-[#010204]">
+          <div className="liquid-blob bg-alex-primary/25 w-[60vw] h-[60vw] sm:w-[50vw] sm:h-[50vw] top-[-10%] left-[-10%] animate-blob"></div>
+          <div className="liquid-blob bg-blue-600/25 w-[55vw] h-[55vw] sm:w-[45vw] sm:h-[45vw] top-[10%] right-[-10%] animate-blob-slow" style={{ animationDelay: '2s' }}></div>
+          <div className="liquid-blob bg-purple-600/20 w-[50vw] h-[50vw] sm:w-[40vw] sm:h-[40vw] bottom-[-20%] left-[40%] animate-blob" style={{ animationDelay: '4s' }}></div>
         </div>
 
         <div className="relative overflow-x-hidden w-full min-h-screen flex flex-col z-10">
@@ -84,7 +84,7 @@ export default function RootLayout({
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-white/5 bg-[#04060b] pt-16 pb-10 mt-auto relative z-10 lg:pr-72">
+        <footer className="border-t border-white/5 bg-black/20 backdrop-blur-2xl pt-16 pb-10 mt-auto relative z-10 lg:pr-72">
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-alex-primary to-transparent opacity-30"></div>
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">

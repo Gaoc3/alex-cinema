@@ -236,10 +236,10 @@ function SeriesContent() {
                 <select
                   value={selectedSort}
                   onChange={(e) => handleSortChange(e.target.value)}
-                  className="bg-[#0c1221] border border-white/5 text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer focus:border-blue-500/50 transition-all"
+                  className="bg-black/30 backdrop-blur-md border border-white/5 text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer focus:border-blue-500/50 transition-all shadow-inner"
                 >
                   {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    <option key={opt.value} value={opt.value} className="bg-[#0c1221] text-white">{opt.label}</option>
                   ))}
                 </select>
               </div>
@@ -250,10 +250,10 @@ function SeriesContent() {
                 <select
                   value={selectedRating}
                   onChange={(e) => handleRatingChange(e.target.value)}
-                  className="bg-[#0c1221] border border-white/5 text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer focus:border-blue-500/50 transition-all"
+                  className="bg-black/30 backdrop-blur-md border border-white/5 text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer focus:border-blue-500/50 transition-all shadow-inner"
                 >
                   {RATINGS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    <option key={opt.value} value={opt.value} className="bg-[#0c1221] text-white">{opt.label}</option>
                   ))}
                 </select>
               </div>
@@ -264,10 +264,10 @@ function SeriesContent() {
                 <select
                   value={selectedYear}
                   onChange={(e) => handleYearChange(e.target.value)}
-                  className="bg-[#0c1221] border border-white/5 text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer focus:border-blue-500/50 transition-all"
+                  className="bg-black/30 backdrop-blur-md border border-white/5 text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer focus:border-blue-500/50 transition-all shadow-inner"
                 >
                   {YEARS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    <option key={opt.value} value={opt.value} className="bg-[#0c1221] text-white">{opt.label}</option>
                   ))}
                 </select>
               </div>

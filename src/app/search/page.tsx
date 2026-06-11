@@ -184,13 +184,13 @@ function SearchPageContent() {
       </div>
 
       {/* ADVANCED FILTER BAR */}
-      <div className="mb-8 sm:mb-14 flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3 sm:gap-6 bg-[#0d1323]/40 border border-white/5 p-3 sm:p-4 rounded-2xl backdrop-blur-md shadow-xl select-none">
+      <div className="mb-8 sm:mb-14 flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3 sm:gap-6 glass-panel p-3 sm:p-4 rounded-2xl shadow-xl select-none">
         
         {/* Right side: Type toggles and Dropdowns */}
         <div className="flex flex-wrap items-center gap-4">
           
           {/* Movies / Series Toggle Button Pill */}
-          <div className="flex bg-[#070a13] p-1 rounded-xl border border-white/5">
+          <div className="flex bg-black/30 backdrop-blur-md p-1 rounded-xl border border-white/5 shadow-inner">
             <button
               onClick={() => setTypeFilter('all')}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -221,7 +221,7 @@ function SearchPageContent() {
           <div className="relative" ref={genreRef}>
             <button
               onClick={() => setIsGenreOpen(!isGenreOpen)}
-              className={`flex items-center gap-2 px-4 py-2.5 bg-[#070a13] border rounded-xl text-xs font-bold text-gray-300 hover:text-white hover:bg-white/5 transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2.5 bg-black/30 backdrop-blur-md border rounded-xl text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer ${
                 categoryId ? 'border-alex-primary/30 text-alex-primary' : 'border-white/5'
               }`}
             >
@@ -231,7 +231,7 @@ function SearchPageContent() {
             </button>
 
             {isGenreOpen && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-[#070a13] border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-1.5 max-h-72 overflow-y-auto custom-scrollbar">
+              <div className="absolute top-full right-0 mt-2 w-48 liquid-glass-heavy rounded-2xl shadow-2xl z-50 flex flex-col p-1.5 max-h-72 overflow-y-auto custom-scrollbar">
                 {GENRES.map((g) => (
                   <button
                     key={g.nb}
@@ -254,7 +254,7 @@ function SearchPageContent() {
           <div className="relative" ref={yearRef}>
             <button
               onClick={() => setIsYearOpen(!isYearOpen)}
-              className={`flex items-center gap-2 px-4 py-2.5 bg-[#070a13] border rounded-xl text-xs font-bold text-gray-300 hover:text-white hover:bg-white/5 transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2.5 bg-black/30 backdrop-blur-md border rounded-xl text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer ${
                 yearRange !== '1900,2026' ? 'border-alex-primary/30 text-alex-primary' : 'border-white/5'
               }`}
             >
@@ -264,7 +264,7 @@ function SearchPageContent() {
             </button>
 
             {isYearOpen && (
-              <div className="absolute top-full right-0 mt-2 w-40 bg-[#070a13] border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-1.5">
+              <div className="absolute top-full right-0 mt-2 w-40 liquid-glass-heavy rounded-2xl shadow-2xl z-50 flex flex-col p-1.5">
                 {YEARS.map((y) => (
                   <button
                     key={y.value}
@@ -286,7 +286,7 @@ function SearchPageContent() {
         </div>
 
         {/* Left side: Stars Rating Filter */}
-        <div className="flex flex-wrap items-center gap-2.5 bg-[#070a13] px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-white/5">
+        <div className="flex flex-wrap items-center gap-2.5 bg-black/30 backdrop-blur-md px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-white/5 shadow-inner">
           <span className="text-xs text-gray-500 font-bold">التقييم:</span>
           <div className="flex flex-row-reverse items-center gap-1">
             {[9, 8, 7, 6, 5].map((ratingVal) => {
