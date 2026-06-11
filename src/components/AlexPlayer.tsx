@@ -185,9 +185,9 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     setDuration(initialDuration);
 
     if (streams.length > 0) {
-      const preferred = streams.find(s => s.resolution === '1080p') || streams.find(s => s.resolution === '720p') || streams[0];
-      setCurrentStreamUrl(toProxyUrl(preferred.videoUrl));
-      setSelectedResolution(preferred.resolution);
+      const highestQuality = [...streams].sort((a, b) => (parseInt(b.resolution) || 0) - (parseInt(a.resolution) || 0))[0];
+      setCurrentStreamUrl(toProxyUrl(highestQuality.videoUrl));
+      setSelectedResolution(highestQuality.resolution);
     } else {
       setCurrentStreamUrl(toProxyUrl(videoData.stream_url));
       setSelectedResolution('');
