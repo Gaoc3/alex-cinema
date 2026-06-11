@@ -154,9 +154,33 @@ export async function GET(req: NextRequest) {
     clearTimeout(timeout);
     if (response.ok || response.status === 206) {
       if (isApi) {
-        const clone = response.clone();
-        const data = await clone.json().catch(() => null);
-        if (data) setCache(cacheKey, data, cacheTtl);
+        try {
+          let text = await response.text();
+          // Hide Shabakaty domains from the frontend response using Base64
+          text = text.replace(/https:\/\/(cdn|cnth2|cndw2|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match) => {
+            const b64 = Buffer.from(match).toString('base64');
+            if (match.includes('mp4') || match.includes('video') || match.includes('m3u8')) {
+              return `/api/stream?url=${b64}`;
+            }
+            return `/api/proxy?endpoint=${b64}`;
+          });
+          
+          const data = JSON.parse(text);
+          setCache(cacheKey, data, cacheTtl);
+
+          const newRes = new Response(text, { status: response.status, headers: response.headers });
+          const newHeaders = new Headers(newRes.headers);
+          newHeaders.delete('content-encoding');
+          newHeaders.delete('content-length');
+          newHeaders.set('Content-Type', 'application/json');
+          
+          return new NextResponse(text, {
+            status: response.status,
+            headers: buildResponse(new Response(null, { headers: newHeaders })).headers
+          });
+        } catch (err) {
+          return buildResponse(response);
+        }
       }
       return buildResponse(response);
     }
