@@ -60,17 +60,17 @@ while true do
                             headers = headers:gsub('Transfer%-Encoding:%s*chunked\\r\\n', '')
                             client:write(headers)
                         else
-                            client:sendall('HTTP/1.1 200 OK\\r\\nContent-Type: application/octet-stream\\r\\n\\r\\n')
+                            client:write('HTTP/1.1 200 OK\\r\\nContent-Type: application/octet-stream\\r\\n\\r\\n')
                         end
                         while true do
                             local chunk = handle:read(8192)
                             if not chunk or chunk == "" then break end
-                            client:sendall(chunk)
+                            client:write(chunk)
                         end
                         handle:close()
                     end
                 else
-                    client:sendall("HTTP/1.1 400 Bad Request\\r\\n\\r\\n")
+                    client:write("HTTP/1.1 400 Bad Request\\r\\n\\r\\n")
                 end
             end
         end)
