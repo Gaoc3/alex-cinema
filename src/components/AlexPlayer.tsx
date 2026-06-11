@@ -94,6 +94,8 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTapRef = useRef<{time: number}>({time: 0});
   const touchStartRef = useRef<{x: number, y: number, time: number} | null>(null);
+  const initialPinchDistance = useRef<number | null>(null);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   // Subtitle custom sizing state with localstorage persistence
   const [subtitleSize, setSubtitleSize] = useState<number>(() => {
@@ -402,25 +404,58 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    touchStartRef.current = {
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY,
-      time: Date.now()
-    };
+    if (e.touches.length === 1) {
+      touchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: Date.now()
+      };
+    } else if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      initialPinchDistance.current = dist;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      
+      if (initialPinchDistance.current !== null) {
+        const delta = dist - initialPinchDistance.current;
+        if (delta > 40 && !isZoomed) {
+          setIsZoomed(true); // Pinch out to zoom
+          initialPinchDistance.current = dist;
+        } else if (delta < -40 && isZoomed) {
+          setIsZoomed(false); // Pinch in to fit
+          initialPinchDistance.current = dist;
+        }
+      }
+    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!touchStartRef.current) return;
-    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
-    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
-    const dt = Date.now() - touchStartRef.current.time;
-    
-    // Vertical swipe detection for fullscreen toggle
-    if (dt < 400 && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
-      if (dy < 0 && !isFullscreen) toggleFullscreen();
-      else if (dy > 0 && isFullscreen) toggleFullscreen();
+    if (e.touches.length < 2) {
+      initialPinchDistance.current = null;
     }
-    touchStartRef.current = null;
+    
+    if (touchStartRef.current && e.changedTouches.length === 1) {
+      const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+      const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+      const dt = Date.now() - touchStartRef.current.time;
+      
+      // Vertical swipe detection for fullscreen toggle
+      if (dt < 400 && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
+        if (dy < 0 && !isFullscreen) toggleFullscreen();
+        else if (dy > 0 && isFullscreen) toggleFullscreen();
+      }
+      touchStartRef.current = null;
+    }
   };
 
   // Skip Intro Range Action
@@ -721,6 +756,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         className="relative w-full aspect-video bg-black rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10 select-none group/player touch-manipulation"
         dir="ltr"
         onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         {/* Dynamic Glow Overlay */}
@@ -747,12 +783,13 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         {/* The Native HTML5 Video Element */}
         <video
           ref={videoRef}
-          className="w-full h-full object-contain alex-video-cue cursor-pointer"
+          className={`w-full h-full alex-video-cue cursor-pointer transition-all duration-300 ${isZoomed ? 'object-cover' : 'object-contain'}`}
           style={{
             '--sub-size': `${subtitleSize}%`,
             '--sub-bg': showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent',
             '--sub-shadow': showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)',
-            '--sub-font': `'${selectedFont}', 'Outfit', sans-serif`
+            '--sub-font': `'${selectedFont}', 'Outfit', sans-serif`,
+            '--sub-offset-y': isZoomed ? '-12vh' : '-24px'
           } as React.CSSProperties}
           onPointerUp={handleVideoPointerUp}
           onTimeUpdate={handleTimeUpdate}
@@ -1034,6 +1071,15 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                   </div>
                 )}
               </div>
+
+              {/* Zoom Fill Toggle */}
+              <button 
+                onClick={() => setIsZoomed(!isZoomed)} 
+                className="text-white hover:text-alex-primary text-base md:text-xl transition-colors cursor-pointer w-6 h-6 flex items-center justify-center ml-1 md:ml-0"
+                title={isZoomed ? "تصغير للاحتواء" : "تكبير لملء الشاشة"}
+              >
+                <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-expand'}`}></i>
+              </button>
 
               {/* Fullscreen Toggle */}
               <button 

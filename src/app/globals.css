@@ -381,5 +381,6 @@ video.alex-video-cue::cue(font) {
   font-family: var(--sub-font, 'Tajawal', sans-serif) !important;
 }
 video.alex-video-cue::-webkit-media-text-track-container {
-  transform: translateY(-24px) !important;
+  transform: translateY(var(--sub-offset-y, -24px)) !important;
+  transition: transform 0.3s ease-out;
 }
