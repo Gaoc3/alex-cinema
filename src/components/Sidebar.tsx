@@ -90,11 +90,7 @@ export default function Sidebar() {
         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] transition-opacity duration-300 lg:hidden pointer-events-none opacity-0 sidebar-overlay"
       />
       
-      <aside className={`fixed z-[60] ios-glass flex flex-col sidebar overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-none lg:shadow-[0_8px_32px_rgba(0,0,0,0.3)] ${
-        isCollapsed 
-          ? 'top-0 right-0 h-screen w-[5.5rem] rounded-none border-r-0 border-y-0 lg:top-6 lg:right-6 lg:h-fit lg:max-h-[calc(100vh-3rem)] lg:rounded-3xl lg:border lg:border-white/10' 
-          : 'top-0 right-0 h-screen w-72 rounded-none border-r-0 border-y-0 lg:top-6 lg:right-6 lg:h-fit lg:max-h-[calc(100vh-3rem)] lg:rounded-3xl lg:border lg:border-white/10'
-      }`}>
+      <aside className="fixed top-0 right-0 h-screen w-72 z-[60] ios-glass flex flex-col sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 rounded-none">
 
         {/* Sidebar Header (Cinemana Style) */}
         <div className="h-24 border-b border-white/5 flex items-center justify-between pr-5 pl-3 w-full shrink-0 relative z-20">
@@ -102,7 +98,7 @@ export default function Sidebar() {
           {/* Logo and Brand Name (Hidden on Collapsed) */}
           <div className={`flex items-center gap-2.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-right ${isCollapsed ? 'opacity-0 max-w-0 overflow-hidden scale-90 pointer-events-none' : 'opacity-100 max-w-[300px] scale-100 delay-100'}`}>
             <Link href="/" className="flex items-center gap-2.5 group" onClick={closeSidebar}>
-              <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300">
+              <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center transition-all duration-300">
                 <i className="fa-solid fa-play text-white ml-0.5 text-base"></i>
               </div>
               <div className="flex flex-col leading-none font-sans">
@@ -112,22 +108,20 @@ export default function Sidebar() {
             </Link>
           </div>
 
-          {/* Sidebar Toggle Button (Shown ONLY when Expanded) */}
-          <div className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isCollapsed ? 'opacity-0 scale-50 pointer-events-none absolute' : 'opacity-100 scale-100 delay-150'}`}>
-            <button 
-              onClick={toggleSidebar}
-              className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300"
-              title="Collapse Sidebar"
-            >
-              <i className="fa-solid fa-chevron-right text-sm"></i>
-            </button>
-          </div>
+          {/* Hamburger toggle button (Hidden on Collapsed) */}
+          <button 
+            onClick={toggleSidebar}
+            className={`shrink-0 rounded-xl glass-panel border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-alex-primary transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${isCollapsed ? 'opacity-0 w-0 h-0 overflow-hidden scale-50 pointer-events-none border-0' : 'opacity-100 w-10 h-10 scale-100 delay-100 hover-scale'}`}
+            aria-label="Collapse Sidebar"
+          >
+            <i className="fa-solid fa-bars text-gray-300 text-base"></i>
+          </button>
 
           {/* Centered logo button (Shown ONLY on Collapsed) */}
           <div className={`w-full flex justify-center items-center absolute inset-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isCollapsed ? 'opacity-100 scale-100 delay-150 pointer-events-auto' : 'opacity-0 scale-50 pointer-events-none'}`}>
             <button 
               onClick={toggleSidebar}
-              className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.6)] hover:shadow-[0_0_25px_rgba(229,9,20,0.9)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
               title="Expand Sidebar"
             >
               <i className="fa-solid fa-play text-white ml-0.5 text-base"></i>
@@ -136,9 +130,10 @@ export default function Sidebar() {
         </div>
 
         {/* Sidebar Scrollable Body */}
-        <div className="overflow-y-auto hide-scrollbar px-4 py-6 flex flex-col justify-center">
-          {/* Navigation Section */}
-          <div className="space-y-3">
+        <div className="flex-grow overflow-y-auto hide-scrollbar px-4 flex flex-col">
+          <div className="min-h-full flex flex-col justify-center py-8">
+            {/* Navigation Section */}
+            <div className="space-y-4">
             {/* الصفحة الرئيسية */}
             <Link 
               href="/" 
@@ -308,6 +303,7 @@ export default function Sidebar() {
                 <span className="sidebar-label">الأطفال والكرتون</span>
               </div>
             </Link>
+          </div>
           </div>
         </div>
       </aside>
