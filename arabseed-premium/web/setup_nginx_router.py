@@ -107,10 +107,12 @@ start_service() {
     mkdir -p /tmp/usr /tmp/etc /tmp/lib /tmp/opkg-lists /tmp/nginx_client_temp /tmp/nginx_proxy_temp /tmp/nginx_fastcgi_temp /tmp/nginx_uwsgi_temp /tmp/nginx_scgi_temp
 
     # Setup opkg dest ram if missing
-    if ! grep -q "dest ram /tmp" /etc/opkg.conf; then
+    if [ ! -f /tmp/opkg.conf ]; then
         cp /etc/opkg.conf /tmp/opkg.conf
         sed -i 's|/var/opkg-lists|/tmp/opkg-lists|g' /tmp/opkg.conf
-        echo 'dest ram /tmp' >> /tmp/opkg.conf
+        if ! grep -q "dest ram /tmp" /tmp/opkg.conf; then
+            echo 'dest ram /tmp' >> /tmp/opkg.conf
+        fi
     fi
 
     # Install packages to RAM if not present
