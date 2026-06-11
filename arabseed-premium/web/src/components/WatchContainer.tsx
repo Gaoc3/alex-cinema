@@ -157,10 +157,10 @@ export default function WatchContainer({ video, seasons, episodes }: WatchContai
       let streams: any[] = [];
 
       if (infoRes.ok) {
-        info = await infoRes.json();
+        info = decryptData((await infoRes.json()).payload);
       }
       if (streamsRes.ok) {
-        streams = await streamsRes.json();
+        streams = decryptData((await streamsRes.json()).payload);
       }
 
       const combined = {
