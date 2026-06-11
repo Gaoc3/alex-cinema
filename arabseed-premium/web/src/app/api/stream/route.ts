@@ -1,24 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://mtskycinemana.serveousercontent.com/cgi-bin/proxy?url=';
+const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com/cgi-bin/proxy?url=';
 
-async function fetchWithFallback(url: string, headers: Record<string, string>) {
-  // Try direct first (works for non-CDN URLs)
-  const directController = new AbortController();
-  const directTimeout = setTimeout(() => directController.abort(), 15000);
-
-  try {
-    const res = await fetch(url, { headers, signal: directController.signal });
-    clearTimeout(directTimeout);
-    if (res.ok || res.status === 206) return { res };
-  } catch {
-    clearTimeout(directTimeout);
+async function fetchFromTunnel(url: string, headers: Record<string, string>, range?: string | null) {
+  let tunnelUrl = TUNNEL_BASE_URL + encodeURIComponent(url);
+  if (range) {
+    tunnelUrl += '&range=' + encodeURIComponent(range);
   }
 
-  // Fallback: serveo tunnel → router CGI (curl)
-  const tunnelUrl = TUNNEL_BASE_URL + encodeURIComponent(url);
   const tunnelController = new AbortController();
-  const tunnelTimeout = setTimeout(() => tunnelController.abort(), 30000);
+  const tunnelTimeout = setTimeout(() => tunnelController.abort(), 60000);
 
   try {
     const res = await fetch(tunnelUrl, { headers, signal: tunnelController.signal });
@@ -50,7 +41,7 @@ export async function GET(req: NextRequest) {
       headers['Range'] = range;
     }
 
-    const result = await fetchWithFallback(url, headers);
+    const result = await fetchFromTunnel(url, headers, range);
     const res = result.res;
 
     if (!res.ok && res.status !== 206) {
