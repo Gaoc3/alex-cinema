@@ -35,10 +35,13 @@ export default function RootLayout({
         <SecurityWrapper>
         
         {/* Liquid Glass Animated Background */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/10 via-[#030409] to-[#010204]">
-          <div className="liquid-blob bg-alex-primary/25 w-[60vw] h-[60vw] sm:w-[50vw] sm:h-[50vw] top-[-10%] left-[-10%] animate-blob"></div>
-          <div className="liquid-blob bg-blue-600/25 w-[55vw] h-[55vw] sm:w-[45vw] sm:h-[45vw] top-[10%] right-[-10%] animate-blob-slow" style={{ animationDelay: '2s' }}></div>
-          <div className="liquid-blob bg-purple-600/20 w-[50vw] h-[50vw] sm:w-[40vw] sm:h-[40vw] bottom-[-20%] left-[40%] animate-blob" style={{ animationDelay: '4s' }}></div>
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#0a1128] via-[#030409] to-black">
+          {/* Main Left Blob */}
+          <div className="liquid-blob bg-alex-primary/40 w-[80vw] h-[80vw] sm:w-[60vw] sm:h-[60vw] top-[-20%] left-[-20%] animate-blob"></div>
+          {/* Main Right Blob (Behind Sidebar) */}
+          <div className="liquid-blob bg-blue-600/40 w-[70vw] h-[70vw] sm:w-[50vw] sm:h-[50vw] top-0 right-[-15%] animate-blob-slow" style={{ animationDelay: '2s' }}></div>
+          {/* Bottom Center Blob */}
+          <div className="liquid-blob bg-purple-600/30 w-[60vw] h-[60vw] sm:w-[40vw] sm:h-[40vw] bottom-[-30%] left-[30%] animate-blob" style={{ animationDelay: '4s' }}></div>
         </div>
 
         <div className="relative overflow-x-hidden w-full min-h-screen flex flex-col z-10">

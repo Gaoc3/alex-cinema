@@ -90,7 +90,7 @@ export default function Sidebar() {
         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] transition-opacity duration-300 lg:hidden pointer-events-none opacity-0 sidebar-overlay"
       />
       
-      <aside className="fixed top-0 right-0 h-screen w-72 z-[60] bg-black/20 backdrop-blur-[40px] saturate-150 border-l border-white/5 flex flex-col sidebar shadow-[-10px_0_30px_rgba(0,0,0,0.5)] overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
+      <aside className="fixed top-0 right-0 h-screen w-72 z-[60] bg-white/5 backdrop-blur-[40px] saturate-150 border-l border-white/10 flex flex-col sidebar shadow-[-10px_0_30px_rgba(0,0,0,0.5)] overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
         {/* Decorative Glow */}
         <div className="absolute top-10 right-0 w-32 h-32 bg-alex-primary/5 rounded-full blur-[60px] pointer-events-none"></div>
 
@@ -141,7 +141,7 @@ export default function Sidebar() {
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
                 isActive('/') 
-                  ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
+                  ? 'bg-alex-primary/20 border border-alex-primary/50 text-white shadow-[0_0_20px_rgba(229,9,20,0.3)] backdrop-blur-md' 
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -157,7 +157,7 @@ export default function Sidebar() {
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
                 isActive('/new-releases')
-                  ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
+                  ? 'bg-alex-primary/20 border border-alex-primary/50 text-white shadow-[0_0_20px_rgba(229,9,20,0.3)] backdrop-blur-md' 
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -173,7 +173,7 @@ export default function Sidebar() {
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
                 pathname === '/movies' && isActive('/movies?sort=stars')
-                  ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
+                  ? 'bg-alex-primary/20 border border-alex-primary/50 text-white shadow-[0_0_20px_rgba(229,9,20,0.3)] backdrop-blur-md' 
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -231,7 +231,7 @@ export default function Sidebar() {
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
                 isActive('/series?category=57') 
-                  ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
+                  ? 'bg-alex-primary/20 border border-alex-primary/50 text-white shadow-[0_0_20px_rgba(229,9,20,0.3)] backdrop-blur-md' 
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -247,7 +247,7 @@ export default function Sidebar() {
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
                 isActive('/series?view=episodes') 
-                  ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
+                  ? 'bg-alex-primary/20 border border-alex-primary/50 text-white shadow-[0_0_20px_rgba(229,9,20,0.3)] backdrop-blur-md' 
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -263,7 +263,7 @@ export default function Sidebar() {
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
                 isActive('/movies?category=79') 
-                  ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
+                  ? 'bg-alex-primary/20 border border-alex-primary/50 text-white shadow-[0_0_20px_rgba(229,9,20,0.3)] backdrop-blur-md' 
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -279,7 +279,7 @@ export default function Sidebar() {
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
                 isActive('/movies?category=57') 
-                  ? 'bg-alex-primary text-white shadow-[0_0_15px_rgba(229,9,20,0.3)]' 
+                  ? 'bg-alex-primary/20 border border-alex-primary/50 text-white shadow-[0_0_20px_rgba(229,9,20,0.3)] backdrop-blur-md' 
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >

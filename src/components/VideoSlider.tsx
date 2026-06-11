@@ -59,7 +59,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
         {/* Navigation Arrows */}
         <button 
           onClick={() => scroll('left')}
-          className="hidden sm:flex absolute -left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-r from-alex-primary to-[#b80009] text-white items-center justify-center transition-all duration-300 lg:opacity-0 lg:group-hover/slider:opacity-100 opacity-100 shadow-[0_0_20px_rgba(229,9,20,0.4)] hover:scale-110 active:scale-95 cursor-pointer select-none"
+          className="hidden sm:flex absolute -left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-alex-primary/20 border border-alex-primary/50 backdrop-blur-md text-white items-center justify-center transition-all duration-300 lg:opacity-0 lg:group-hover/slider:opacity-100 opacity-100 shadow-[0_0_20px_rgba(229,9,20,0.4)] hover:bg-alex-primary/40 hover:scale-110 active:scale-95 cursor-pointer select-none"
           aria-label="Scroll Left"
         >
           <i className="fa-solid fa-chevron-left text-sm lg:text-lg"></i>
@@ -67,7 +67,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
 
         <button 
           onClick={() => scroll('right')}
-          className="hidden sm:flex absolute -right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-r from-alex-primary to-[#b80009] text-white items-center justify-center transition-all duration-300 lg:opacity-0 lg:group-hover/slider:opacity-100 opacity-100 shadow-[0_0_20px_rgba(229,9,20,0.4)] hover:scale-110 active:scale-95 cursor-pointer select-none"
+          className="hidden sm:flex absolute -right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-alex-primary/20 border border-alex-primary/50 backdrop-blur-md text-white items-center justify-center transition-all duration-300 lg:opacity-0 lg:group-hover/slider:opacity-100 opacity-100 shadow-[0_0_20px_rgba(229,9,20,0.4)] hover:bg-alex-primary/40 hover:scale-110 active:scale-95 cursor-pointer select-none"
           aria-label="Scroll Right"
         >
           <i className="fa-solid fa-chevron-right text-sm lg:text-lg"></i>
@@ -104,10 +104,10 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
 
                   {/* Play Hover Indicator */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 transform scale-50 group-hover/card:opacity-100 group-hover/card:scale-100 transition-all duration-300 z-20">
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-2xl backdrop-blur-md ${
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-2xl backdrop-blur-md border ${
                       accentColor === 'red' 
-                        ? 'bg-alex-primary/90 shadow-[0_0_20px_rgba(229,9,20,0.5)]' 
-                        : 'bg-alex-primary/90 shadow-[0_0_20px_rgba(59,130,246,0.5)]'
+                        ? 'bg-alex-primary/30 border-alex-primary/50 shadow-[0_0_20px_rgba(229,9,20,0.5)]' 
+                        : 'bg-blue-600/30 border-blue-600/50 shadow-[0_0_20px_rgba(59,130,246,0.5)]'
                     }`}>
                       <i className="fa-solid fa-play ml-1 text-xl"></i>
                     </div>
