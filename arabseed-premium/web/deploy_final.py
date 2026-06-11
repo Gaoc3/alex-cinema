@@ -5,7 +5,8 @@ def run(cmd):
     subprocess.run(['python', 'C:\\Users\\secon\\.gemini\\antigravity\\brain\\a5b6273e-343c-4f30-b900-0eabe75fef0d\\scratch\\ssh_router.py', cmd])
 
 # 1. proxy.lua
-proxy_lua = """local nixio = require('nixio')
+proxy_lua = """cat << 'EOF' > /etc/config/proxy.lua
+local nixio = require('nixio')
 local host = '0.0.0.0'
 local port = 8080
 
@@ -58,12 +59,13 @@ while true do
         client:close()
     end
 end
+EOF
 """
-with open('proxy.lua', 'w', newline='\n') as f: f.write(proxy_lua)
-subprocess.run(['scp', '-i', 'C:\\Users\\secon\\.openclaw\\workspace\\student-grades-platform\\arabseed-premium\\web\\dropbear_rsa', '-o', 'StrictHostKeyChecking=no', '-o', 'HostKeyAlgorithms=+ssh-rsa', '-o', 'PubkeyAcceptedKeyTypes=+ssh-rsa', '-P', '22', 'proxy.lua', 'root@192.168.1.1:/etc/config/proxy.lua'])
+run(proxy_lua)
 
 # 2. cinemana init script
-init_script = """#!/bin/sh /etc/rc.common
+init_script = """cat << 'EOF' > /etc/init.d/cinemana
+#!/bin/sh /etc/rc.common
 START=99
 USE_PROCD=1
 
@@ -88,9 +90,9 @@ start_service() {
     procd_set_param respawn
     procd_close_instance
 }
+EOF
 """
-with open('cinemana', 'w', newline='\n') as f: f.write(init_script)
-subprocess.run(['scp', '-i', 'C:\\Users\\secon\\.openclaw\\workspace\\student-grades-platform\\arabseed-premium\\web\\dropbear_rsa', '-o', 'StrictHostKeyChecking=no', '-o', 'HostKeyAlgorithms=+ssh-rsa', '-o', 'PubkeyAcceptedKeyTypes=+ssh-rsa', '-P', '22', 'cinemana', 'root@192.168.1.1:/etc/init.d/cinemana'])
+run(init_script)
 
 # 3. enable and start
 run('chmod +x /etc/init.d/cinemana; /etc/init.d/cinemana enable; /etc/init.d/cinemana restart')
