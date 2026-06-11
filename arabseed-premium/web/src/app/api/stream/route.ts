@@ -5,10 +5,19 @@ const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001
 
 
 export async function GET(req: NextRequest) {
-  const urlStr = req.nextUrl.searchParams.get('url');
+  let urlStr = req.nextUrl.searchParams.get('url');
 
   if (!urlStr) {
     return new NextResponse('Missing URL parameter', { status: 400 });
+  }
+
+  // Support Base64 encoded URLs to hide Shabakaty domains
+  if (!urlStr.startsWith('http')) {
+    try {
+      urlStr = Buffer.from(urlStr, 'base64').toString('utf-8');
+    } catch (e) {
+      return new NextResponse('Invalid encoded URL', { status: 400 });
+    }
   }
 
   try {
