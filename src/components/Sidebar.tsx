@@ -91,8 +91,6 @@ export default function Sidebar() {
       />
       
       <aside className="fixed top-0 right-0 h-screen w-72 z-[60] ios-glass flex flex-col sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 rounded-none">
-        {/* Decorative Glow */}
-        <div className="absolute top-10 right-0 w-32 h-32 bg-alex-primary/5 rounded-full blur-[60px] pointer-events-none"></div>
 
         {/* Sidebar Header (Cinemana Style) */}
         <div className="h-24 border-b border-white/5 flex items-center justify-between pr-5 pl-3 w-full shrink-0 relative z-20">
@@ -132,7 +130,7 @@ export default function Sidebar() {
         </div>
 
         {/* Sidebar Scrollable Body */}
-        <div className="flex-grow overflow-y-auto hide-scrollbar px-4 py-8">
+        <div className="flex-grow overflow-y-auto hide-scrollbar px-4 py-8 flex flex-col">
           {/* Navigation Section */}
           <div className="space-y-2">
             {/* الصفحة الرئيسية */}
@@ -290,6 +288,16 @@ export default function Sidebar() {
             </Link>
 
 
+          </div>
+
+          {/* Sidebar Footer */}
+          <div className="mt-auto pt-12 pb-4 w-full flex flex-col items-center justify-center gap-4 opacity-50 hover:opacity-100 transition-opacity duration-300">
+            <div className="flex items-center gap-4">
+                <a href="#" className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-alex-primary transition-all hover-scale"><i className="fa-brands fa-twitter text-sm"></i></a>
+                <a href="#" className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-alex-primary transition-all hover-scale"><i className="fa-brands fa-instagram text-sm"></i></a>
+                <a href="#" className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-alex-primary transition-all hover-scale"><i className="fa-brands fa-telegram text-sm"></i></a>
+            </div>
+            <p className="text-[11px] font-medium text-gray-500 font-en tracking-wider">ALEX CINEMA &copy; 2026</p>
           </div>
         </div>
       </aside>
