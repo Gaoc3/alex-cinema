@@ -16,43 +16,40 @@ if not server then os.exit(1) end
 while true do
     local client = server:accept()
     if client then
-        local req = client:recv(4096)
+        local req = client:recv(8192)
         if req and req ~= '' then
             local method, path = req:match('^(%A+)%s+(%S+)%s+HTTP/')
-            if path then
-                local target_url = 'http://api.cinemana.earthlink.iq' .. path
-                local range_header = ''
-                local auth_header = ''
-                for line in req:gmatch('[^\\r\\n]+') do
-                    local key, val = line:match('^(.-):%s*(.*)')
-                    if key then
-                        if key:lower() == 'range' then
-                            range_header = '-H \\'Range: ' .. val .. '\\' '
-                        elseif key:lower() == 'authorization' then
-                            auth_header = '-H \\'Authorization: ' .. val .. '\\' '
+            if method and path then
+                local backend = nixio.connect('api.cinemana.earthlink.iq', '80', 'inet', 'stream')
+                if backend then
+                    local body_start = req:find('\\r\\n\\r\\n', 1, true)
+                    local req_head = req:sub(1, body_start and (body_start - 1) or #req)
+                    local req_body = body_start and req:sub(body_start + 4) or ''
+                    
+                    local new_req = method .. ' ' .. path .. ' HTTP/1.1\\r\\n'
+                    new_req = new_req .. 'Host: api.cinemana.earthlink.iq\\r\\n'
+                    
+                    for line in req_head:gmatch('[^\\r\\n]+') do
+                        local key, val = line:match('^(.-):%s*(.*)')
+                        if key then
+                            local kl = key:lower()
+                            if kl ~= 'host' and kl ~= 'connection' then
+                                new_req = new_req .. key .. ': ' .. val .. '\\r\\n'
+                            end
                         end
                     end
-                end
-                os.remove('/tmp/h.txt')
-                local cmd = 'curl -s -D /tmp/h.txt ' .. range_header .. auth_header .. '-H \\'Host: api.cinemana.earthlink.iq\\' \\'' .. target_url .. '\\''
-                local handle = io.popen(cmd)
-                if handle then
-                    nixio.nanosleep(0, 500000000)
-                    local hfile = io.open('/tmp/h.txt', 'r')
-                    if hfile then
-                        local headers = hfile:read('*a')
-                        hfile:close()
-                        headers = headers:gsub('Transfer%-Encoding:%s*chunked\\r\\n', '')
-                        client:sendall(headers)
-                    else
-                        client:sendall('HTTP/1.1 200 OK\\r\\nContent-Type: application/octet-stream\\r\\n\\r\\n')
-                    end
+                    new_req = new_req .. 'Connection: close\\r\\n\\r\\n' .. req_body
+                    
+                    backend:sendall(new_req)
+                    
                     while true do
-                        local chunk = handle:read(4096)
-                        if not chunk then break end
+                        local chunk = backend:recv(8192)
+                        if not chunk or chunk == '' then break end
                         client:sendall(chunk)
                     end
-                    handle:close()
+                    backend:close()
+                else
+                    client:sendall('HTTP/1.1 502 Bad Gateway\\r\\nConnection: close\\r\\n\\r\\n')
                 end
             end
         end
