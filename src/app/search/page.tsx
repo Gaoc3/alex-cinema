@@ -325,7 +325,7 @@ function SearchPageContent() {
         </div>
       ) : totalResults === 0 ? (
         /* Empty State */
-        <div className="flex flex-col items-center justify-center py-24 glass-panel rounded-3xl relative overflow-hidden">
+        <div className="flex flex-col items-center justify-center py-24 ios-glass rounded-3xl relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0a0e17]/80"></div>
           <i className="fa-solid fa-search text-6xl text-gray-700 mb-6 drop-shadow-lg relative z-10 animate-pulse"></i>
           <h2 className="text-3xl font-black text-gray-400 mb-2 relative z-10">لا توجد نتائج مطابقة لتصفيتك</h2>

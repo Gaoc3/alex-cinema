@@ -185,8 +185,8 @@ function MoviesContent() {
               onClick={() => handleCategoryChange(cat.id)}
               className={`flex-shrink-0 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 selectedCategory === cat.id
-                  ? 'bg-alex-primary text-white shadow-[0_0_10px_rgba(229,9,20,0.4)]'
-                  : 'glass-panel text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'ios-active'
+                  : 'ios-button text-gray-400 hover:text-white'
               }`}
             >
               {cat.title}
@@ -197,7 +197,7 @@ function MoviesContent() {
         {/* Left Column (Top Filters and Main Grid) */}
         <div className="flex-grow">
           {/* Top Horizontal Filter Bar */}
-          <div className="glass-panel p-5 rounded-2xl mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div className="ios-glass p-5 rounded-2xl mb-8 flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-4">
               {/* صنف حسب */}
               <div className="flex items-center gap-2">
@@ -205,7 +205,7 @@ function MoviesContent() {
                 <select
                   value={selectedSort}
                   onChange={(e) => handleSortChange(e.target.value)}
-                  className="bg-black/30 backdrop-blur-md border border-white/5 text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer focus:border-alex-primary/50 transition-all shadow-inner"
+                  className="ios-button text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer"
                 >
                   {SORT_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value} className="bg-[#0c1221] text-white">{opt.label}</option>
@@ -219,7 +219,7 @@ function MoviesContent() {
                 <select
                   value={selectedRating}
                   onChange={(e) => handleRatingChange(e.target.value)}
-                  className="bg-black/30 backdrop-blur-md border border-white/5 text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer focus:border-alex-primary/50 transition-all shadow-inner"
+                  className="ios-button text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer"
                 >
                   {RATINGS.map((opt) => (
                     <option key={opt.value} value={opt.value} className="bg-[#0c1221] text-white">{opt.label}</option>
@@ -233,7 +233,7 @@ function MoviesContent() {
                 <select
                   value={selectedYear}
                   onChange={(e) => handleYearChange(e.target.value)}
-                  className="bg-black/30 backdrop-blur-md border border-white/5 text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer focus:border-alex-primary/50 transition-all shadow-inner"
+                  className="ios-button text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer"
                 >
                   {YEARS.map((opt) => (
                     <option key={opt.value} value={opt.value} className="bg-[#0c1221] text-white">{opt.label}</option>
@@ -310,7 +310,7 @@ function MoviesContent() {
                 {page > 1 ? (
                   <button 
                     onClick={() => updateParams({ page: (page - 1).toString() })}
-                    className="flex items-center gap-1.5 sm:gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/5 px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm transition-all hover-scale cursor-pointer"
+                    className="flex items-center gap-1.5 sm:gap-2 ios-button px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm cursor-pointer"
                   >
                     <i className="fa-solid fa-arrow-right"></i>
                     <span>الصفحة السابقة</span>
@@ -322,14 +322,14 @@ function MoviesContent() {
                   </div>
                 )}
                 
-                <div className="glass-panel px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl text-xs sm:text-sm font-black text-gray-200 border border-white/10 shadow-lg">
+                <div className="ios-glass px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl text-xs sm:text-sm font-black text-gray-200">
                   صفحة <span className="font-en text-alex-primary font-black mx-1">{page}</span>
                 </div>
 
                 {movies.length >= 10 ? (
                   <button 
                     onClick={() => updateParams({ page: (page + 1).toString() })}
-                    className="flex items-center gap-1.5 sm:gap-2 bg-alex-primary text-white border border-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.3)] px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm transition-all hover-scale cursor-pointer"
+                    className="flex items-center gap-1.5 sm:gap-2 ios-active px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm cursor-pointer"
                   >
                     <span>الصفحة التالية</span>
                     <i className="fa-solid fa-arrow-left"></i>
@@ -352,7 +352,7 @@ function MoviesContent() {
 
         {/* Right Column (Category Sidebar Selector for Desktop) */}
         <aside className="hidden lg:block w-64 flex-shrink-0">
-          <div className="glass-panel rounded-2xl p-5 sticky top-32 space-y-4">
+          <div className="ios-glass rounded-2xl p-5 sticky top-32 space-y-4">
             <h3 className="text-sm font-bold text-gray-400 border-b border-white/5 pb-3">تصنيفات الأفلام</h3>
             <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-1 hide-scrollbar">
               {CATEGORIES.map((cat) => (
@@ -361,8 +361,8 @@ function MoviesContent() {
                   onClick={() => handleCategoryChange(cat.id)}
                   className={`w-full text-right px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
                     selectedCategory === cat.id
-                      ? 'bg-alex-primary text-white shadow-[0_0_10px_rgba(229,9,20,0.4)] font-black'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? 'ios-active font-black'
+                      : 'ios-button text-gray-400 hover:text-white'
                   }`}
                 >
                   <span>{cat.title}</span>

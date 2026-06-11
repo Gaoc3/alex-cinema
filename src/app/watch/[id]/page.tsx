@@ -12,7 +12,7 @@ export default async function WatchPage({ params }: { params: Promise<{ id: stri
   if (!video) {
     return (
       <div className="flex-grow flex items-center justify-center min-h-[60vh] animate-fade-in-up">
-        <div className="text-center glass-panel p-12 rounded-3xl relative overflow-hidden">
+        <div className="text-center ios-glass p-12 rounded-3xl relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0a0e17]/80"></div>
           <i className="fa-solid fa-triangle-exclamation text-6xl text-alex-primary mb-6 drop-shadow-lg relative z-10 animate-pulse"></i>
           <h1 className="text-3xl font-black text-white relative z-10 mb-2">عذراً، لم نتمكن من جلب تفاصيل الفيديو</h1>

@@ -54,7 +54,7 @@ export default function SidebarToggle() {
   return (
     <button 
       onClick={toggleSidebar}
-      className="w-8 h-8 sm:w-11 sm:h-11 rounded-full glass-panel border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-alex-primary transition-all hover-scale shadow-lg"
+      className="w-8 h-8 sm:w-11 sm:h-11 rounded-full ios-button flex items-center justify-center hover:text-alex-primary"
       aria-label="Toggle Sidebar"
     >
       <i className="fa-solid fa-bars text-gray-300 text-sm sm:text-base"></i>

@@ -186,7 +186,7 @@ export default function SearchBar() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim().length >= 2 && setShowDropdown(true)}
           autoComplete="off"
-          className="w-40 sm:w-64 md:w-72 lg:w-80 glass-panel border border-white/10 rounded-full py-2 sm:py-2.5 lg:py-3 pr-9 pl-9 sm:pr-10 sm:pl-10 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-alex-primary focus:bg-black/40 focus:ring-1 focus:ring-alex-primary transition-all duration-300 shadow-inner"
+          className="w-40 sm:w-64 md:w-72 lg:w-80 ios-glass rounded-full py-2 sm:py-2.5 lg:py-3 pr-9 pl-9 sm:pr-10 sm:pl-10 text-xs sm:text-sm text-white placeholder-gray-400 focus:outline-none focus:border-alex-primary focus:bg-white/10 focus:ring-1 focus:ring-alex-primary shadow-inner"
           placeholder="ابحث..."
         />
         <div className="absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-alex-primary transition-colors">
@@ -203,7 +203,7 @@ export default function SearchBar() {
 
       {/* Live Search Results Dropdown */}
       {showDropdown && query.trim().length >= 2 && (results.length > 0 || !isLoading) && (
-        <div className="fixed inset-x-2 top-[72px] sm:absolute sm:top-full sm:left-0 sm:right-auto sm:w-[450px] lg:w-[500px] mt-3 liquid-glass-heavy rounded-[22px] overflow-hidden z-50 animate-fade-in-up py-3 group/scrollbar">
+        <div className="fixed inset-x-2 top-[72px] sm:absolute sm:top-full sm:left-0 sm:right-auto sm:w-[450px] lg:w-[500px] mt-3 ios-glass-heavy rounded-[22px] overflow-hidden z-50 animate-fade-in-up py-3 group/scrollbar">
           
           <div 
             ref={containerRef}
