@@ -17,9 +17,40 @@ export async function GET(req: NextRequest) {
     
     // Construct the Nginx proxy path
     // e.g., https://cinemanamtsky001.serveousercontent.com/vascin24-mp4/...
-    const redirectUrl = `${tunnelBase}${targetUrl.pathname}${targetUrl.search}`;
+    const proxyUrl = `${tunnelBase}${targetUrl.pathname}${targetUrl.search}`;
     
-    return NextResponse.redirect(redirectUrl, 302);
+    // Fetch the stream from the tunnel
+    const response = await fetch(proxyUrl, {
+      headers: {
+        ...(req.headers.get('range') ? { range: req.headers.get('range')! } : {})
+      }
+    });
+
+    // Extract headers to forward to the client
+    const headers = new Headers();
+    const headersToForward = [
+      'content-type',
+      'content-length',
+      'content-range',
+      'accept-ranges',
+    ];
+
+    headersToForward.forEach(headerName => {
+      if (response.headers.has(headerName)) {
+        headers.set(headerName, response.headers.get(headerName)!);
+      }
+    });
+
+    // Add CORS headers for the video player
+    headers.set('Access-Control-Allow-Origin', '*');
+    headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    headers.set('Access-Control-Allow-Headers', 'Range');
+    
+    // Stream the body directly to the client
+    return new NextResponse(response.body, {
+      status: response.status,
+      headers
+    });
   } catch (error: any) {
     console.error('Stream proxy error:', error?.message || error);
     return new NextResponse('Invalid URL or stream proxy failed', { status: 400 });
