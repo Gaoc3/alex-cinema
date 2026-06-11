@@ -20,7 +20,7 @@ while true do
         pcall(function()
             local req = client:recv(8192)
             if req and req ~= '' then
-                local method, path = req:match("^(%A+)%s+(%S+)%s+HTTP/")
+                local method, path = req:match("^(%a+)%s+(%S+)%s+HTTP/")
                 local target_url
                 if path then
                     target_url = path:match("/cgi%-bin/proxy%?url=(.+)") or path:match("/%?url=(.+)")
