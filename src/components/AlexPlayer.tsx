@@ -747,9 +747,6 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
             <span className="w-2.5 h-2.5 rounded-full bg-alex-primary animate-pulse"></span>
             {videoData.ar_title}
           </h3>
-          <span className="text-[11px] font-en font-bold px-3 py-1 bg-white/10 text-gray-300 border border-white/5 rounded-full backdrop-blur-md shadow">
-            Cinemana Premium Mode
-          </span>
         </div>
 
         {/* OVERLAY ACTIONS (Skip Intro / Skip Outro) */}
