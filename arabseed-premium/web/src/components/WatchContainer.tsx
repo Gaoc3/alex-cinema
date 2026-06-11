@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { decryptData } from '@/utils/cryptoHelper';
 import WatchLayout from './watch/WatchLayout';
 
 interface Stream {
