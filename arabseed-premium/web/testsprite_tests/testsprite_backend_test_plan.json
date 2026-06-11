@@ -1,0 +1,32 @@
+[
+  {
+    "id": "TC001",
+    "title": "get stream with valid video url",
+    "description": "Test GET /api/stream with a valid external video URL query parameter to verify it returns HTTP 200 and streams the video content successfully."
+  },
+  {
+    "id": "TC002",
+    "title": "get stream without url parameter",
+    "description": "Test GET /api/stream without the required url query parameter to verify it returns HTTP 502 Bad Gateway indicating upstream fetch failure."
+  },
+  {
+    "id": "TC003",
+    "title": "get stream with invalid video url",
+    "description": "Test GET /api/stream with a malformed or unreachable video URL to verify it returns HTTP 502 Bad Gateway and handles stream load failure properly."
+  },
+  {
+    "id": "TC004",
+    "title": "get proxy with valid image endpoint",
+    "description": "Test GET /api/proxy with a valid image URL in the endpoint query parameter to verify it returns HTTP 200 and the proxied image bytes."
+  },
+  {
+    "id": "TC005",
+    "title": "get proxy without endpoint parameter",
+    "description": "Test GET /api/proxy without the required endpoint query parameter to verify it returns HTTP 400 Bad Request and client shows an error or fallback image."
+  },
+  {
+    "id": "TC006",
+    "title": "get proxy with invalid image endpoint",
+    "description": "Test GET /api/proxy with a malformed or inaccessible image URL in the endpoint query parameter to verify it returns HTTP 500 Internal Server Error and client handles image load failure."
+  }
+]
