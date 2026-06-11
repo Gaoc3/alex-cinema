@@ -244,23 +244,43 @@ export default function Sidebar() {
               href="/series?view=episodes" 
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
-                isActive('/series?view=episodes') 
+            <Link 
+              href="/series" 
+              onClick={closeSidebar}
+              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
+                isActive('/series') 
                   ? 'ios-active' 
                   : 'ios-button text-gray-400 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-clock text-lg w-5 text-center text-sky-400"></i>
-                <span className="sidebar-label">أحدث الحلقات</span>
+                <i className="fa-solid fa-tv text-lg w-5 text-center text-purple-400"></i>
+                <span className="sidebar-label">المسلسلات</span>
+              </div>
+            </Link>
+
+            {/* الانمي */}
+            <Link 
+              href="/movies?category=23" 
+              onClick={closeSidebar}
+              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
+                isActive('/movies?category=23') 
+                  ? 'ios-active' 
+                  : 'ios-button text-gray-400 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3.5 sidebar-item-content w-full">
+                <i className="fa-solid fa-dragon text-lg w-5 text-center text-orange-400"></i>
+                <span className="sidebar-label">الأنمي</span>
               </div>
             </Link>
 
             {/* المصارعة الحرة */}
             <Link 
-              href="/movies?category=79" 
+              href="/movies?category=63" 
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
-                isActive('/movies?category=79') 
+                isActive('/movies?category=63') 
                   ? 'ios-active' 
                   : 'ios-button text-gray-400 hover:text-white'
               }`}
@@ -286,18 +306,6 @@ export default function Sidebar() {
                 <span className="sidebar-label">الأطفال والكرتون</span>
               </div>
             </Link>
-
-
-          </div>
-
-          {/* Sidebar Footer */}
-          <div className="mt-auto pt-12 pb-4 w-full flex flex-col items-center justify-center gap-4 opacity-50 hover:opacity-100 transition-opacity duration-300">
-            <div className="flex items-center gap-4">
-                <a href="#" className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-alex-primary transition-all hover-scale"><i className="fa-brands fa-twitter text-sm"></i></a>
-                <a href="#" className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-alex-primary transition-all hover-scale"><i className="fa-brands fa-instagram text-sm"></i></a>
-                <a href="#" className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-alex-primary transition-all hover-scale"><i className="fa-brands fa-telegram text-sm"></i></a>
-            </div>
-            <p className="text-[11px] font-medium text-gray-500 font-en tracking-wider">ALEX CINEMA &copy; 2026</p>
           </div>
         </div>
       </aside>

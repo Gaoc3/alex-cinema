@@ -85,7 +85,7 @@ export default function RootLayout({
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                     <Link href="/" className="flex items-center gap-3 hover-scale">
-                        <div className="w-10 h-10 rounded-xl bg-alex-primary flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)]">
+                        <div className="w-10 h-10 rounded-xl bg-alex-primary flex items-center justify-center">
                             <i className="fa-solid fa-play text-white ml-0.5 text-sm"></i>
                         </div>
                         <div className="flex flex-col leading-none">
