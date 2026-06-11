@@ -31,17 +31,25 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </head>
-      <body className="antialiased min-h-screen font-sans" suppressHydrationWarning>
+      <body className="antialiased min-h-screen font-sans bg-[#070a13]" suppressHydrationWarning>
         <SecurityWrapper>
-        <div className="relative overflow-x-hidden w-full min-h-screen flex flex-col">
+        
+        {/* Liquid Glass Animated Background */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="liquid-blob bg-alex-primary/15 w-[50vw] h-[50vw] sm:w-[40vw] sm:h-[40vw] top-[-10%] left-[-10%] animate-blob"></div>
+          <div className="liquid-blob bg-blue-600/10 w-[45vw] h-[45vw] sm:w-[35vw] sm:h-[35vw] bottom-[-10%] right-[-10%] animate-blob-slow" style={{ animationDelay: '2s' }}></div>
+          <div className="liquid-blob bg-purple-600/10 w-[40vw] h-[40vw] sm:w-[30vw] sm:h-[30vw] top-[40%] left-[60%] animate-blob" style={{ animationDelay: '4s' }}></div>
+        </div>
+
+        <div className="relative overflow-x-hidden w-full min-h-screen flex flex-col z-10">
           <Suspense fallback={null}>
             <Sidebar />
           </Suspense>        {/* Navbar */}
-        <nav className="absolute w-full max-w-[100vw] z-40 transition-all duration-300 pointer-events-none" id="navbar">
+        <nav className="absolute w-full max-w-[100vw] z-40 transition-all duration-300 pointer-events-none pt-2 sm:pt-4" id="navbar">
           <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 lg:px-8">
-              <div className="flex items-center justify-between gap-3 h-14 sm:h-20 lg:h-24">
+              <div className="flex items-center justify-between gap-3 h-14 sm:h-16 lg:h-20 liquid-glass pointer-events-auto px-4 sm:px-6">
                   {/* Logo - shown on mobile only */}
-                  <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 lg:hidden pointer-events-auto">
+                  <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 lg:hidden">
                       {/* Mobile Hamburger Menu (Right side in RTL) */}
                       <div className="flex shrink-0">
                         <SidebarToggle />
@@ -61,7 +69,7 @@ export default function RootLayout({
                   {/* Desktop spacer to push search bar to left since logo is hidden on desktop */}
                   <div className="hidden lg:block flex-1 pointer-events-none"></div>
  
-                  <div className="flex items-center shrink-0 pointer-events-auto">
+                  <div className="flex items-center shrink-0">
                       <Suspense fallback={<div className="w-8 h-8 rounded-full bg-white/5 animate-pulse"></div>}>
                           <SearchBar />
                       </Suspense>

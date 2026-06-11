@@ -90,7 +90,7 @@ export default function Sidebar() {
         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] transition-opacity duration-300 lg:hidden pointer-events-none opacity-0 sidebar-overlay"
       />
       
-      <aside className="fixed top-0 right-0 h-screen w-72 z-[60] bg-[#070a13] border-l border-white/5 flex flex-col sidebar shadow-2xl overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
+      <aside className="fixed top-0 right-0 h-screen w-72 z-[60] bg-[#0a0f1c]/40 backdrop-blur-[32px] saturate-200 border-l border-white/10 flex flex-col sidebar shadow-[-20px_0_50px_rgba(0,0,0,0.5)] overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
         {/* Decorative Glow */}
         <div className="absolute top-10 right-0 w-32 h-32 bg-alex-primary/5 rounded-full blur-[60px] pointer-events-none"></div>
 

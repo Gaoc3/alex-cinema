@@ -100,14 +100,14 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       <div className="relative z-10 w-full flex flex-col justify-between h-full pt-20 sm:pt-20 lg:pt-32">
         
         {/* Top Text Section */}
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow flex flex-col justify-center mb-8">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow flex flex-col justify-center mb-8 mt-10 lg:mt-0">
         <div 
-          className={`max-w-3xl relative transition-all duration-500 transform text-right ${
+          className={`max-w-3xl relative transition-all duration-500 transform text-right p-6 sm:p-10 rounded-3xl liquid-glass border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ${
             fade ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
           {/* Decorative Glow */}
-          <div className="absolute -top-20 -right-20 w-64 h-64 bg-alex-primary/20 rounded-full blur-[100px] pointer-events-none animate-glow"></div>
+          <div className="absolute -top-20 -right-20 w-64 h-64 bg-alex-primary/20 rounded-full blur-[100px] pointer-events-none animate-blob"></div>
           
           <div className="flex flex-wrap items-center justify-start gap-3 mb-5 relative z-10">
             <span className="px-4 py-1.5 bg-alex-primary text-white text-xs font-bold rounded-md shadow-[0_0_15px_rgba(229,9,20,0.5)]">

@@ -87,7 +87,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
               <Link 
                 key={video.nb} 
                 href={`/watch/${video.nb}`} 
-                className="w-[170px] sm:w-[190px] flex-shrink-0 group/card block relative snap-start"
+                className="w-[170px] sm:w-[190px] flex-shrink-0 group/card block relative snap-start liquid-glass p-2 sm:p-2.5 rounded-[1.5rem]"
                 style={{ animationDelay: `${index * 25}ms` }}
               >
                 {/* Poster Wrapper */}
