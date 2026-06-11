@@ -36,9 +36,9 @@ export default function RootLayout({
         
         {/* Liquid Glass Animated Background */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-          <div className="liquid-blob bg-alex-primary/15 w-[50vw] h-[50vw] sm:w-[40vw] sm:h-[40vw] top-[-10%] left-[-10%] animate-blob"></div>
-          <div className="liquid-blob bg-blue-600/10 w-[45vw] h-[45vw] sm:w-[35vw] sm:h-[35vw] bottom-[-10%] right-[-10%] animate-blob-slow" style={{ animationDelay: '2s' }}></div>
-          <div className="liquid-blob bg-purple-600/10 w-[40vw] h-[40vw] sm:w-[30vw] sm:h-[30vw] top-[40%] left-[60%] animate-blob" style={{ animationDelay: '4s' }}></div>
+          <div className="liquid-blob bg-alex-primary/30 w-[60vw] h-[60vw] sm:w-[40vw] sm:h-[40vw] top-[-10%] left-[-10%] animate-blob"></div>
+          <div className="liquid-blob bg-blue-600/30 w-[55vw] h-[55vw] sm:w-[35vw] sm:h-[35vw] top-[10%] right-[-10%] animate-blob-slow" style={{ animationDelay: '2s' }}></div>
+          <div className="liquid-blob bg-purple-600/30 w-[50vw] h-[50vw] sm:w-[30vw] sm:h-[30vw] bottom-[-20%] left-[40%] animate-blob" style={{ animationDelay: '4s' }}></div>
         </div>
 
         <div className="relative overflow-x-hidden w-full min-h-screen flex flex-col z-10">
@@ -47,7 +47,7 @@ export default function RootLayout({
           </Suspense>        {/* Navbar */}
         <nav className="absolute w-full max-w-[100vw] z-40 transition-all duration-300 pointer-events-none pt-2 sm:pt-4" id="navbar">
           <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 lg:px-8">
-              <div className="flex items-center justify-between gap-3 h-14 sm:h-16 lg:h-20 liquid-glass pointer-events-auto px-4 sm:px-6">
+              <div className="flex items-center justify-between gap-3 h-14 sm:h-16 lg:h-20 pointer-events-auto px-4 sm:px-6">
                   {/* Logo - shown on mobile only */}
                   <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 lg:hidden">
                       {/* Mobile Hamburger Menu (Right side in RTL) */}

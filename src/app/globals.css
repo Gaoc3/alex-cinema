@@ -103,7 +103,6 @@ html {
 .liquid-blob {
   position: absolute;
   filter: blur(80px);
-  opacity: 0.4;
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
