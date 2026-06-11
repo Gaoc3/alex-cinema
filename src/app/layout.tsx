@@ -42,7 +42,7 @@ export default function RootLayout({
             <Sidebar />
           </Suspense>        {/* Navbar */}
         <nav className="absolute w-full max-w-[100vw] z-40 transition-all duration-300 pointer-events-none pt-2 sm:pt-4" id="navbar">
-          <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="w-full px-2 sm:px-4 lg:px-8">
               <div className="flex items-center justify-between gap-3 h-14 sm:h-16 lg:h-20 pointer-events-auto px-4 sm:px-6">
                   {/* Logo - shown on mobile only */}
                   <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 lg:hidden">
@@ -82,7 +82,7 @@ export default function RootLayout({
         {/* Footer */}
         <footer className="border-t border-white/5 bg-black/20 backdrop-blur-2xl pt-16 pb-10 mt-auto relative z-10 lg:pr-72">
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-alex-primary to-transparent opacity-30"></div>
-            <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="w-full px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                     <Link href="/" className="flex items-center gap-3 hover-scale">
                         <div className="w-10 h-10 rounded-xl bg-alex-primary flex items-center justify-center">
