@@ -244,18 +244,14 @@ export default function Sidebar() {
               href="/series?view=episodes" 
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
-            <Link 
-              href="/series" 
-              onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
-                isActive('/series') 
+                isActive('/series?view=episodes') 
                   ? 'ios-active' 
                   : 'ios-button text-gray-400 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-tv text-lg w-5 text-center text-purple-400"></i>
-                <span className="sidebar-label">المسلسلات</span>
+                <i className="fa-solid fa-clock text-lg w-5 text-center text-sky-400"></i>
+                <span className="sidebar-label">أحدث الحلقات</span>
               </div>
             </Link>
 
