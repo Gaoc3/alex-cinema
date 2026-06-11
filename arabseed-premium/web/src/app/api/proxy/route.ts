@@ -109,8 +109,14 @@ export async function GET(req: NextRequest) {
   const range = req.headers.get('range');
   if (range) headers['Range'] = range;
 
-  let tunnelUrl = `${TUNNEL_BASE_URL}${encodeURIComponent(targetUrl)}`;
-  if (range) tunnelUrl += '&range=' + encodeURIComponent(range);
+  let tunnelUrl = targetUrl;
+  try {
+    const tUrl = new URL(targetUrl);
+    const tunnelBase = (process.env.TUNNEL_BASE_URL || '').replace(/\/$/, '');
+    if (tunnelBase && tUrl.pathname.startsWith('/vascin-poster-images/')) {
+      tunnelUrl = `${tunnelBase}${tUrl.pathname}${tUrl.search}`;
+    }
+  } catch (e) { }
 
   const cacheKey = isApi ? targetUrl : '';
   const cacheTtl = isApi ? 120000 : 0;
