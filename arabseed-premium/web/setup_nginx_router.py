@@ -79,6 +79,7 @@ start_service() {
 
     # Start Nginx
     procd_open_instance "nginx"
+    procd_set_param env LD_LIBRARY_PATH="/tmp/usr/lib:/tmp/lib"
     procd_set_param command /tmp/usr/sbin/nginx -c /tmp/nginx_proxy.conf -g "daemon off;"
     procd_set_param respawn
     procd_close_instance
