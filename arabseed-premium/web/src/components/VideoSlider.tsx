@@ -1,5 +1,5 @@
-import { encodeProxyUrl } from '@/utils/proxyHelper';
 'use client';
+import { encodeProxyUrl } from '@/utils/proxyHelper';
 
 import React, { useRef } from 'react';
 import Link from 'next/link';
