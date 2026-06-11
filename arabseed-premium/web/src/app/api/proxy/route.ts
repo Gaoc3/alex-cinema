@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { encryptData } from '@/utils/cryptoHelper';
+
 const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com/cgi-bin/proxy?url=';
 
 function buildResponse(upstreamRes: Response) {
@@ -18,7 +20,18 @@ function buildResponse(upstreamRes: Response) {
   return new NextResponse(upstreamRes.body as any, {
     status: upstreamRes.status,
     headers,
-  });
+  
+}
+
+function buildEncryptedJsonResponse(data: any, status = 200) {
+  const encryptedPayload = encryptData(data);
+  return new NextResponse(JSON.stringify({ payload: encryptedPayload }), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    }
+  
 }
 
 const cacheStore = new Map<string, { data: any; expires: number }>();
@@ -31,7 +44,7 @@ function getCached(key: string, ttl: number) {
 }
 
 function setCache(key: string, data: any, ttl: number) {
-  cacheStore.set(key, { data, expires: Date.now() + ttl });
+  cacheStore.set(key, { data, expires: Date.now() + ttl 
   if (cacheStore.size > 500) {
     const oldest = cacheStore.entries().next().value;
     if (oldest) cacheStore.delete(oldest[0]);
@@ -63,7 +76,7 @@ export async function GET(req: NextRequest) {
   let endpoint = req.nextUrl.searchParams.get('endpoint');
 
   if (!endpoint) {
-    return NextResponse.json({ error: 'Missing endpoint parameter' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing endpoint parameter' }, { status: 400 
   }
 
   // Attempt base64 decode if it doesn't look like a URL and has no slashes
@@ -133,10 +146,7 @@ export async function GET(req: NextRequest) {
 
   if (cacheKey) {
     const cached = getCached(cacheKey, cacheTtl);
-    if (cached) return buildResponse(new Response(JSON.stringify(cached), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 200,
-    }));
+    if (cached) return buildEncryptedJsonResponse(cached, 200);
   }
 
   const controller = new AbortController();
@@ -150,7 +160,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const response = await fetchWithRetry(tunnelUrl, { headers: { ...headers, 'Bypass-Tunnel-Reminder': 'true' }, signal: controller.signal });
+    const response = await fetchWithRetry(tunnelUrl, { headers: { ...headers, 'Bypass-Tunnel-Reminder': 'true' }, signal: controller.signal 
     clearTimeout(timeout);
     if (response.ok || response.status === 206) {
       if (isApi) {
@@ -163,42 +173,34 @@ export async function GET(req: NextRequest) {
               return `/api/stream?url=${b64}`;
             }
             return `/api/proxy?endpoint=${b64}`;
-          });
+          
           
           const data = JSON.parse(text);
           setCache(cacheKey, data, cacheTtl);
-
-          const newRes = new Response(text, { status: response.status, headers: response.headers });
-          const newHeaders = new Headers(newRes.headers);
-          newHeaders.delete('content-encoding');
-          newHeaders.delete('content-length');
-          newHeaders.set('Content-Type', 'application/json');
           
-          return new NextResponse(text, {
-            status: response.status,
-            headers: buildResponse(new Response(null, { headers: newHeaders })).headers
-          });
+          return buildEncryptedJsonResponse(data, response.status);
         } catch (err) {
           return buildResponse(response);
         }
       }
       return buildResponse(response);
     }
-    // tunnel failed – try direct fetch for non-media
+    // tunnel failed â€“ try direct fetch for non-media
   } catch (e: any) {
     clearTimeout(timeout);
-    // tunnel error – try direct fetch for non-media
+    // tunnel error â€“ try direct fetch for non-media
   }
 
   const directController = new AbortController();
   const directTimeout = setTimeout(() => directController.abort(), 30000);
   try {
-    const response = await fetch(targetUrl, { headers, signal: directController.signal });
+    const response = await fetch(targetUrl, { headers, signal: directController.signal 
     clearTimeout(directTimeout);
     if (response.ok || response.status === 206) return buildResponse(response);
   } catch { clearTimeout(directTimeout); }
 
-  return NextResponse.json({ error: 'Failed to fetch' }, { status: 502 });
+  return NextResponse.json({ error: 'Failed to fetch' }, { status: 502 
+
 }
 
 export async function OPTIONS() {
@@ -210,5 +212,5 @@ export async function OPTIONS() {
       'Access-Control-Allow-Headers': 'Range',
       'Access-Control-Max-Age': '86400',
     },
-  });
+  
 }
