@@ -41,6 +41,23 @@ http {
             proxy_set_header Range $http_range;
             proxy_set_header If-Range $http_if_range;
             proxy_set_header Host cdn.shabakaty.com;
+            
+            proxy_redirect ~^https?://([^/]+)/(.*)$ /cndw/$1/$2;
+        }
+
+        location ~ ^/cndw/([^/]+)/(.*)$ {
+            resolver 8.8.8.8 1.1.1.1 ipv6=off;
+            set $target_host $1;
+            set $target_path $2;
+            
+            proxy_pass https://$target_host/$target_path$is_args$args;
+            proxy_ssl_server_name on;
+            proxy_buffering off;
+            proxy_set_header Host $target_host;
+            proxy_set_header Range $http_range;
+            proxy_set_header If-Range $http_if_range;
+            
+            proxy_redirect ~^https?://([^/]+)/(.*)$ /cndw/$1/$2;
         }
 
         location /vascin-poster-images/ {
