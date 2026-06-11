@@ -87,7 +87,7 @@ start_service() {
     # Start SSH Tunnel using localhost.run
     procd_open_instance "ssh_tunnel"
     procd_set_param env LD_LIBRARY_PATH="/tmp/usr/lib:/tmp/lib"
-    procd_set_param command /tmp/usr/libexec/ssh-openssh -i /etc/config/serveo_rsa -o StrictHostKeyChecking=no -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes -R 80:127.0.0.1:8080 nokey@localhost.run
+    procd_set_param command /tmp/usr/libexec/ssh-openssh -i /etc/config/serveo_rsa -o StrictHostKeyChecking=no -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes -R 80:127.0.0.1:8080 nokey@localhost.run > /tmp/tunnel.log 2>&1
     procd_set_param respawn
     procd_close_instance
 }
