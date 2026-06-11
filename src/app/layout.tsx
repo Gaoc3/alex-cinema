@@ -35,14 +35,7 @@ export default function RootLayout({
         <SecurityWrapper>
         
         {/* Liquid Glass Animated Background */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#0a1128] via-[#030409] to-black">
-          {/* Main Left Blob */}
-          <div className="liquid-blob bg-alex-primary/40 w-[80vw] h-[80vw] sm:w-[60vw] sm:h-[60vw] top-[-20%] left-[-20%] animate-blob"></div>
-          {/* Main Right Blob (Behind Sidebar) */}
-          <div className="liquid-blob bg-blue-600/40 w-[70vw] h-[70vw] sm:w-[50vw] sm:h-[50vw] top-0 right-[-15%] animate-blob-slow" style={{ animationDelay: '2s' }}></div>
-          {/* Bottom Center Blob */}
-          <div className="liquid-blob bg-purple-600/30 w-[60vw] h-[60vw] sm:w-[40vw] sm:h-[40vw] bottom-[-30%] left-[30%] animate-blob" style={{ animationDelay: '4s' }}></div>
-        </div>
+        <div className="liquid-bg"></div>
 
         <div className="relative overflow-x-hidden w-full min-h-screen flex flex-col z-10">
           <Suspense fallback={null}>

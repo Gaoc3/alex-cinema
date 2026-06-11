@@ -110,7 +110,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           <div className="absolute inset-0 bg-black/20 blur-3xl rounded-full pointer-events-none -z-10"></div>
           
           <div className="flex flex-wrap items-center justify-start gap-3 mb-5 relative z-10">
-            <span className="px-4 py-1.5 bg-alex-primary/20 border border-alex-primary/50 backdrop-blur-sm text-white text-xs font-bold rounded-md shadow-[0_0_15px_rgba(229,9,20,0.3)]">
+            <span className="px-4 py-1.5 ios-active text-white text-xs font-bold rounded-md">
               حصرياً
             </span>
             <span className="flex items-center gap-1.5 text-yellow-400 text-sm font-bold glass-panel px-4 py-1.5 rounded-md">
@@ -137,17 +137,17 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           <div className="flex flex-wrap items-center justify-start gap-4 relative z-10">
             <Link 
               href={`/watch/${current.nb}`} 
-              className={`flex items-center gap-3 text-white px-8 py-3.5 rounded-xl font-bold text-base hover-scale backdrop-blur-md transition-all duration-300 border ${
+              className={`flex items-center gap-3 px-8 py-3.5 rounded-xl font-bold text-base ${
                 current.kind === '2' 
-                  ? 'bg-blue-600/20 border-blue-600/50 hover:bg-blue-600/30 shadow-[0_0_20px_rgba(37,99,235,0.3)]' 
-                  : 'bg-alex-primary/20 border-alex-primary/50 hover:bg-alex-primary/30 shadow-[0_0_20px_rgba(229,9,20,0.3)]'
+                  ? 'ios-button bg-blue-600/30 border-blue-600/50 text-white' 
+                  : 'ios-active text-white'
               }`}
             >
               <i className="fa-solid fa-play ml-1"></i>
               <span>شاهد الآن</span>
             </Link>
             {current.trailer && (
-              <a href={current.trailer} target="_blank" rel="noreferrer" className="flex items-center gap-3 bg-white/5 border border-white/20 backdrop-blur-md text-white hover:bg-white/10 px-8 py-3.5 rounded-xl font-bold text-base transition-all hover-scale">
+              <a href={current.trailer} target="_blank" rel="noreferrer" className="flex items-center gap-3 ios-button text-white px-8 py-3.5 rounded-xl font-bold text-base">
                 <i className="fa-solid fa-film ml-1"></i>
                 <span>الإعلان الترويجي</span>
               </a>

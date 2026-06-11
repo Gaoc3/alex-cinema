@@ -90,7 +90,7 @@ export default function Sidebar() {
         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] transition-opacity duration-300 lg:hidden pointer-events-none opacity-0 sidebar-overlay"
       />
       
-      <aside className="fixed top-0 right-0 h-screen w-72 z-[60] bg-white/5 backdrop-blur-[40px] saturate-150 border-l border-white/10 flex flex-col sidebar shadow-[-10px_0_30px_rgba(0,0,0,0.5)] overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
+      <aside className="fixed top-0 right-0 h-screen w-72 z-[60] ios-glass flex flex-col sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 rounded-none">
         {/* Decorative Glow */}
         <div className="absolute top-10 right-0 w-32 h-32 bg-alex-primary/5 rounded-full blur-[60px] pointer-events-none"></div>
 
@@ -139,10 +139,10 @@ export default function Sidebar() {
             <Link 
               href="/" 
               onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
+              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
                 isActive('/') 
-                  ? 'bg-alex-primary/20 border border-alex-primary/50 text-white shadow-[0_0_20px_rgba(229,9,20,0.3)] backdrop-blur-md' 
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'ios-active' 
+                  : 'ios-button text-gray-400 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
@@ -155,10 +155,10 @@ export default function Sidebar() {
             <Link 
               href="/new-releases" 
               onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
+              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
                 isActive('/new-releases')
-                  ? 'bg-alex-primary/20 border border-alex-primary/50 text-white shadow-[0_0_20px_rgba(229,9,20,0.3)] backdrop-blur-md' 
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'ios-active' 
+                  : 'ios-button text-gray-400 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
@@ -173,8 +173,8 @@ export default function Sidebar() {
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
                 pathname === '/movies' && isActive('/movies?sort=stars')
-                  ? 'bg-alex-primary/20 border border-alex-primary/50 text-white shadow-[0_0_20px_rgba(229,9,20,0.3)] backdrop-blur-md' 
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'ios-active' 
+                  : 'ios-button text-gray-400 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
@@ -229,10 +229,10 @@ export default function Sidebar() {
             <Link 
               href="/series?category=57" 
               onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
+              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
                 isActive('/series?category=57') 
-                  ? 'bg-alex-primary/20 border border-alex-primary/50 text-white shadow-[0_0_20px_rgba(229,9,20,0.3)] backdrop-blur-md' 
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'ios-active' 
+                  : 'ios-button text-gray-400 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
@@ -245,10 +245,10 @@ export default function Sidebar() {
             <Link 
               href="/series?view=episodes" 
               onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
+              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
                 isActive('/series?view=episodes') 
-                  ? 'bg-alex-primary/20 border border-alex-primary/50 text-white shadow-[0_0_20px_rgba(229,9,20,0.3)] backdrop-blur-md' 
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'ios-active' 
+                  : 'ios-button text-gray-400 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
@@ -261,10 +261,10 @@ export default function Sidebar() {
             <Link 
               href="/movies?category=79" 
               onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
+              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
                 isActive('/movies?category=79') 
-                  ? 'bg-alex-primary/20 border border-alex-primary/50 text-white shadow-[0_0_20px_rgba(229,9,20,0.3)] backdrop-blur-md' 
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'ios-active' 
+                  : 'ios-button text-gray-400 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
@@ -277,10 +277,10 @@ export default function Sidebar() {
             <Link 
               href="/movies?category=57" 
               onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
+              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
                 isActive('/movies?category=57') 
-                  ? 'bg-alex-primary/20 border border-alex-primary/50 text-white shadow-[0_0_20px_rgba(229,9,20,0.3)] backdrop-blur-md' 
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'ios-active' 
+                  : 'ios-button text-gray-400 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
