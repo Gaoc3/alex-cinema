@@ -5,13 +5,14 @@ def run(cmd):
     subprocess.run(['python', 'C:\\Users\\secon\\.gemini\\antigravity\\brain\\a5b6273e-343c-4f30-b900-0eabe75fef0d\\scratch\\ssh_router.py', cmd])
 
 # 1. proxy.lua
-proxy_lua = """cat << 'EOF' > /etc/config/proxy.lua
+proxy_lua = """cat << 'EOF' > /tmp/proxy.lua
 local nixio = require('nixio')
 local host = '0.0.0.0'
 local port = 8080
 
 local server = nixio.bind(host, port)
 if not server then os.exit(1) end
+server:listen(128)
 
 while true do
     local client = server:accept()
@@ -83,7 +84,7 @@ start_service() {
     fi
 
     procd_open_instance "lua_proxy"
-    procd_set_param command lua /etc/config/proxy.lua
+    procd_set_param command lua /tmp/proxy.lua
     procd_set_param respawn
     procd_close_instance
 
