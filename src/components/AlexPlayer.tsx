@@ -89,6 +89,12 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   // Dropdown menus visibility
   const [activeDropdown, setActiveDropdown] = useState<'quality' | 'speed' | 'subtitles' | null>(null);
 
+  // Gesture State
+  const [showSeekAnimation, setShowSeekAnimation] = useState<'forward' | 'backward' | null>(null);
+  const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTapRef = useRef<{time: number}>({time: 0});
+  const touchStartRef = useRef<{x: number, y: number, time: number} | null>(null);
+
   // Subtitle custom sizing state with localstorage persistence
   const [subtitleSize, setSubtitleSize] = useState<number>(() => {
     if (typeof window !== 'undefined') {
@@ -334,6 +340,87 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         setIsPaused(true);
       }
     }
+  };
+
+  // Gesture Handlers
+  const handleSeekForward = (seconds: number = 10) => {
+    const video = videoRef.current;
+    if (video) {
+      video.currentTime = Math.min(video.duration || 0, video.currentTime + seconds);
+      setShowSeekAnimation('forward');
+      setTimeout(() => setShowSeekAnimation(null), 600);
+    }
+  };
+
+  const handleSeekBackward = (seconds: number = 10) => {
+    const video = videoRef.current;
+    if (video) {
+      video.currentTime = Math.max(0, video.currentTime - seconds);
+      setShowSeekAnimation('backward');
+      setTimeout(() => setShowSeekAnimation(null), 600);
+    }
+  };
+
+  const handleVideoPointerUp = (e: React.PointerEvent<HTMLVideoElement>) => {
+    if (activeDropdown !== null) {
+      setActiveDropdown(null);
+      return;
+    }
+
+    const now = Date.now();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const isTouch = e.pointerType === 'touch';
+
+    if (now - lastTapRef.current.time < 300) {
+      // Double tap!
+      if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+      lastTapRef.current = { time: 0 };
+      
+      if (clickX < rect.width * 0.35) {
+        handleSeekBackward(10);
+      } else if (clickX > rect.width * 0.65) {
+        handleSeekForward(10);
+      } else {
+        toggleFullscreen();
+      }
+    } else {
+      // Single tap
+      lastTapRef.current = { time: now };
+      if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+      
+      if (isTouch) {
+        // Delay slightly so double tap can intercept, otherwise toggle controls UI
+        tapTimeoutRef.current = setTimeout(() => {
+          setShowControls(prev => !prev);
+        }, 250);
+      } else {
+        // Desktop mouse click: Toggle play/pause instantly
+        togglePlay();
+      }
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+      time: Date.now()
+    };
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!touchStartRef.current) return;
+    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+    const dt = Date.now() - touchStartRef.current.time;
+    
+    // Vertical swipe detection for fullscreen toggle
+    if (dt < 400 && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
+      if (dy < 0 && !isFullscreen) toggleFullscreen();
+      else if (dy > 0 && isFullscreen) toggleFullscreen();
+    }
+    touchStartRef.current = null;
   };
 
   // Skip Intro Range Action
@@ -631,29 +718,43 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     return (
       <div 
         ref={containerRef}
-        className="relative w-full aspect-video bg-black rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10 select-none group/player"
+        className="relative w-full aspect-video bg-black rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10 select-none group/player touch-manipulation"
         dir="ltr"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Dynamic Glow Overlay */}
         <div className="absolute inset-0 z-[-1] opacity-25 blur-[100px] scale-105 pointer-events-none transition-all duration-1000 bg-[#e50914]/20"></div>
 
+        {/* Double Tap Seek Animations */}
+        {showSeekAnimation === 'forward' && (
+          <div className="absolute inset-y-0 right-0 w-1/3 bg-white/10 flex flex-col items-center justify-center rounded-l-[100%] animate-pulse z-30 pointer-events-none transition-all">
+            <div className="flex gap-1 text-white text-3xl md:text-5xl drop-shadow-lg">
+              <i className="fa-solid fa-forward"></i>
+            </div>
+            <span className="text-white font-black mt-2 text-sm md:text-base drop-shadow-md">+10 ثوانٍ</span>
+          </div>
+        )}
+        {showSeekAnimation === 'backward' && (
+          <div className="absolute inset-y-0 left-0 w-1/3 bg-white/10 flex flex-col items-center justify-center rounded-r-[100%] animate-pulse z-30 pointer-events-none transition-all">
+            <div className="flex gap-1 text-white text-3xl md:text-5xl drop-shadow-lg">
+              <i className="fa-solid fa-backward"></i>
+            </div>
+            <span className="text-white font-black mt-2 text-sm md:text-base drop-shadow-md">-10 ثوانٍ</span>
+          </div>
+        )}
+
         {/* The Native HTML5 Video Element */}
         <video
           ref={videoRef}
-          className="w-full h-full object-contain alex-video-cue"
+          className="w-full h-full object-contain alex-video-cue cursor-pointer"
           style={{
             '--sub-size': `${subtitleSize}%`,
             '--sub-bg': showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent',
             '--sub-shadow': showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)',
             '--sub-font': `'${selectedFont}', 'Outfit', sans-serif`
           } as React.CSSProperties}
-          onClick={() => {
-            if (activeDropdown !== null) {
-              setActiveDropdown(null);
-            } else {
-              togglePlay();
-            }
-          }}
+          onPointerUp={handleVideoPointerUp}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
           onError={handleStreamError}
