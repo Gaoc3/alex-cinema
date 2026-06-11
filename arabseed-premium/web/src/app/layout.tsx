@@ -6,6 +6,7 @@ import Link from "next/link";
 import SearchBar from "@/components/SearchBar";
 import Sidebar from "@/components/Sidebar";
 import SidebarToggle from "@/components/SidebarToggle";
+import SecurityWrapper from "@/components/SecurityWrapper";
 import Script from "next/script";
 
 const cairo = Cairo({ subsets: ["arabic"], variable: "--font-cairo" });
@@ -27,6 +28,7 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </head>
       <body className="antialiased min-h-screen font-sans" suppressHydrationWarning>
+        <SecurityWrapper>
         <div className="relative overflow-x-hidden w-full min-h-screen flex flex-col">
           <Suspense fallback={null}>
             <Sidebar />
@@ -91,6 +93,7 @@ export default function RootLayout({
             </div>
         </footer>
         </div>
+        </SecurityWrapper>
       </body>
     </html>
   );
