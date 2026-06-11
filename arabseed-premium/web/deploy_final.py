@@ -70,7 +70,7 @@ START=99
 USE_PROCD=1
 
 start_service() {
-    if [ ! -f /tmp/usr/bin/ssh ]; then
+    if [ ! -f /tmp/usr/libexec/ssh-openssh ]; then
         mkdir -p /tmp/usr /tmp/etc /tmp/lib /tmp/opkg-lists
         cp /etc/opkg.conf /tmp/opkg.conf
         sed -i 's|/var/opkg-lists|/tmp/opkg-lists|g' /tmp/opkg.conf
@@ -86,7 +86,7 @@ start_service() {
 
     procd_open_instance "ssh_tunnel"
     procd_set_param env LD_LIBRARY_PATH="/tmp/usr/lib:/tmp/lib"
-    procd_set_param command /tmp/usr/bin/ssh -i /etc/config/serveo_rsa -o StrictHostKeyChecking=no -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes -R cinemanamtsky001:80:127.0.0.1:8080 serveo.net
+    procd_set_param command /tmp/usr/libexec/ssh-openssh -i /etc/config/serveo_rsa -o StrictHostKeyChecking=no -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes -R cinemanamtsky001:80:127.0.0.1:8080 serveo.net
     procd_set_param respawn
     procd_close_instance
 }
