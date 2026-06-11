@@ -47,6 +47,17 @@ http {
             proxy_intercept_errors on;
             error_page 301 302 307 = @handle_redirect;
         }
+
+        location @handle_redirect {
+            resolver 8.8.8.8 1.1.1.1 ipv6=off;
+            set $saved_redirect_location '$upstream_http_location';
+            proxy_pass $saved_redirect_location;
+            proxy_ssl_server_name on;
+            proxy_buffering off;
+            proxy_set_header Range $http_range;
+            proxy_set_header If-Range $http_if_range;
+            proxy_set_header Referer "https://cinemana.shabakaty.com/";
+        }
     }
 }
 EOF

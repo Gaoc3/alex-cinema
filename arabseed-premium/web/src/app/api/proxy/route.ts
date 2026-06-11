@@ -112,9 +112,9 @@ export async function GET(req: NextRequest) {
   let tunnelUrl = targetUrl;
   try {
     const tUrl = new URL(targetUrl);
-    const tunnelBase = (process.env.TUNNEL_BASE_URL || '').replace(/\/$/, '');
+    const tunnelBase = (process.env.TUNNEL_BASE_URL || '').replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
     if (tunnelBase && tUrl.hostname.includes('shabakaty.com')) {
-      tunnelUrl = `${tunnelBase}${tUrl.pathname}${tUrl.search}`;
+      tunnelUrl = `${tunnelBase}/proxy/${tUrl.hostname}${tUrl.pathname}${tUrl.search}`;
     }
   } catch (e) { }
 
