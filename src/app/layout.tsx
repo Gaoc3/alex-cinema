@@ -83,14 +83,7 @@ export default function RootLayout({
         <footer className="pt-16 pb-10 mt-auto relative z-10 lg:pr-72">
             <div className="w-full px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                    <Link href="/" className="flex items-center gap-3 hover-scale">
-                        <div className="w-10 h-10 rounded-xl bg-alex-primary flex items-center justify-center">
-                            <i className="fa-solid fa-play text-white ml-0.5 text-sm"></i>
-                        </div>
-                        <div className="flex flex-col leading-none">
-                            <span className="text-2xl font-black font-en tracking-wider text-white">ALEX<span className="text-alex-primary">CINEMA</span></span>
-                        </div>
-                    </Link>
+
                     <div className="flex items-center gap-4">
                         <a href="#" className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-white hover:bg-alex-primary transition-all hover-scale"><i className="fa-brands fa-twitter"></i></a>
                         <a href="#" className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-white hover:bg-alex-primary transition-all hover-scale"><i className="fa-brands fa-instagram"></i></a>
