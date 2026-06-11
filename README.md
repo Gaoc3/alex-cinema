@@ -1,58 +1,36 @@
-# Student Grades Platform (FastAPI)
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-مشروع ويب حديث لإدارة درجات الطلاب بلغة Python.
+## Getting Started
 
-## Features
-
-- تسجيل دخول وإنشاء حساب للدكاترة (Cookie Session + JWT)
-- عزل بيانات كل دكتور في **قاعدة بيانات مستقلة** داخل `data/tenants/doctor_<id>.db`
-- إدارة الطلاب: إضافة، تعديل، بحث، حذف
-- إدارة الدرجات: Midterm, Attendance, Quizzes (عدد متغير), Assignment, Report
-- كل مكون درجة قابل للتخصيص (من كم)
-- نشر درجات جزئية/كلية للطلاب عبر QR
-- إرسال QR لكل طالب عبر البريد الإلكتروني
-- صلاحية QR لمدة 3 أيام + تنظيف تلقائي
-- إشعار للدكتور عند فتح الطالب للرابط
-- مسح سجل الإشعارات الأقدم من 30 يوم (تنظيف يومي تلقائي)
-- واجهة حديثة مع Light/Dark mode في كل الصفحات
-- إعداد الجامعة والشعار من `config/university.json`
-
-## Quick Start
+First, run the development server:
 
 ```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-copy .env.example .env
-uvicorn app.main:app --reload
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-ثم افتح:
-- `http://127.0.0.1:8000/login`
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Security Notes
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-- ORM parameterized queries (ضد SQL Injection)
-- Security headers middleware
-- HttpOnly cookie + SameSite
-- Rate limiting عبر `slowapi`
-- يفضّل وضعه خلف Nginx/Cloudflare للإنتاج (WAF + DDoS edge protection)
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## University Branding Config
+## Learn More
 
-عدّل الملف:
+To learn more about Next.js, take a look at the following resources:
 
-`config/university.json`
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-```json
-{
-  "university_name": "University Name Here",
-  "university_logo_path": "/static/images/university-logo.png",
-  "college_name": "College Name Here",
-  "support_email": "support@university.edu"
-}
-```
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Auto Git Sync
-This repository is configured with auto-sync, automatically backing up changes to GitHub.
+## Deploy on Vercel
 
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

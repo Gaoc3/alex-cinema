@@ -1,24 +1,30 @@
 {
-  "dependencies": {
-    "playwright": "^1.60.0"
-  },
-  "name": "student-grades-platform",
-  "version": "1.0.0",
-  "description": "مشروع ويب حديث لإدارة درجات الطلاب بلغة Python.",
-  "main": "index.js",
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Gaoc3/student-grades-platform.git"
+  "dependencies": {
+    "@types/video.js": "^7.3.58",
+    "crypto-js": "^4.2.0",
+    "next": "^16.2.7",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "video.js": "^8.23.7"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/Gaoc3/student-grades-platform/issues"
-  },
-  "homepage": "https://github.com/Gaoc3/student-grades-platform#readme"
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/crypto-js": "^4.2.2",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.7",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
 }
