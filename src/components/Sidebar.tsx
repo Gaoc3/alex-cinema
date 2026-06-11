@@ -132,9 +132,9 @@ export default function Sidebar() {
         </div>
 
         {/* Sidebar Scrollable Body */}
-        <div className="flex-grow overflow-y-auto hide-scrollbar px-4 py-6 space-y-7 flex flex-col justify-center">
+        <div className="flex-grow overflow-y-auto hide-scrollbar px-4 py-8">
           {/* Navigation Section */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {/* الصفحة الرئيسية */}
             <Link 
               href="/" 
@@ -289,17 +289,6 @@ export default function Sidebar() {
               </div>
             </Link>
 
-            {/* طلبات الأفلام */}
-            <Link 
-              href="#" 
-              onClick={closeSidebar}
-              className="flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn text-gray-400 hover:text-white hover:bg-white/5"
-            >
-              <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-paper-plane text-lg w-5 text-center text-amber-400"></i>
-                <span className="sidebar-label">طلبات الأفلام</span>
-              </div>
-            </Link>
 
           </div>
         </div>
