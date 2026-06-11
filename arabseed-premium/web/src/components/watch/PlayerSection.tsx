@@ -14,7 +14,6 @@ interface PlayerSectionProps {
 const toProxyUrl = (url: string | undefined | null) => {
   if (!url) return undefined;
   let clean = url;
-  try { clean = decodeURIComponent(url); } catch { /* not encoded, use as-is */ }
   
   // Use stream API for videos to support seeking and range requests
   if (clean.includes('.mp4') || clean.includes('video')) {
