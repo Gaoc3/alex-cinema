@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@700&family=Cairo:wght@700&family=Amiri:ital,wght@0,700;1,700&family=Outfit:wght@600&display=swap');
 
 @theme {
   --color-alex-primary: #e50914;
