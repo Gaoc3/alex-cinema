@@ -1,5 +1,6 @@
 'use client';
 import { encodeProxyUrl } from '@/utils/proxyHelper';
+import { decryptData } from '@/utils/cryptoHelper';
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';

@@ -1,5 +1,6 @@
 'use client';
 import { encodeProxyUrl } from '@/utils/proxyHelper';
+import { decryptData } from '@/utils/cryptoHelper';
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
@@ -93,7 +94,7 @@ function SeriesContent() {
 
           const fetchPromises = apiPagesToFetch.map(apiPage => {
             const url = `/api/proxy?endpoint=latestSeries/level/2/itemsPerPage/${API_PAGE_SIZE}/page/${apiPage}/`;
-            return fetch(url).then(res => res.ok ? res.json() : []);
+            return fetch(url).then(res => res.ok ? res.json().then(d => decryptData(d.payload)) : []);
           });
 
           const results = await Promise.all(fetchPromises);
@@ -127,7 +128,7 @@ function SeriesContent() {
 
           const fetchPromises = apiPagesToFetch.map(apiPage => {
             const url = `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=&staffTitle=&page=${apiPage}&year=${yearRange}&type=series${catParam}${starParam}`;
-            return fetch(url).then(res => res.ok ? res.json() : []);
+            return fetch(url).then(res => res.ok ? res.json().then(d => decryptData(d.payload)) : []);
           });
 
           const results = await Promise.all(fetchPromises);
