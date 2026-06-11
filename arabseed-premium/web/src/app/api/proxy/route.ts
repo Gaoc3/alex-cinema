@@ -113,8 +113,12 @@ export async function GET(req: NextRequest) {
   try {
     const tUrl = new URL(targetUrl);
     const tunnelBase = (process.env.TUNNEL_BASE_URL || '').replace(/\/$/, '');
-    if (tunnelBase && tUrl.pathname.startsWith('/vascin-poster-images/')) {
-      tunnelUrl = `${tunnelBase}${tUrl.pathname}${tUrl.search}`;
+    if (tunnelBase) {
+      if (tUrl.hostname === 'cinemana.shabakaty.com' && tUrl.pathname.startsWith('/api/')) {
+        tunnelUrl = `${tunnelBase}${tUrl.pathname}${tUrl.search}`;
+      } else if (tUrl.pathname.startsWith('/vascin-poster-images/')) {
+        tunnelUrl = `${tunnelBase}${tUrl.pathname}${tUrl.search}`;
+      }
     }
   } catch (e) { }
 
