@@ -42,6 +42,7 @@ http {
             proxy_set_header If-Range $http_if_range;
             proxy_set_header Host cdn.shabakaty.com;
             
+            absolute_redirect off;
             proxy_redirect ~^https?://([^/]+)/(.*)$ /cndw/$1/$2;
         }
 
