@@ -66,6 +66,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing endpoint parameter' }, { status: 400 });
   }
 
+  // Attempt base64 decode if it doesn't look like a URL and has no slashes
+  if (!endpoint.includes('/') && /^[A-Za-z0-9+/=_-]+$/.test(endpoint)) {
+    try {
+      const decodedB64 = Buffer.from(endpoint, 'base64').toString('utf-8');
+      if (decodedB64.startsWith('http') || decodedB64.includes('/')) {
+        endpoint = decodedB64;
+      }
+    } catch { /* ignore */ }
+  }
+
   if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
     try {
       const decoded = decodeURIComponent(endpoint);
