@@ -33,28 +33,31 @@ export default function RootLayout({
           <Suspense fallback={null}>
             <Sidebar />
           </Suspense>        {/* Navbar */}
-        <nav className="absolute w-full max-w-[100vw] z-40 transition-all duration-300" id="navbar">
+        <nav className="absolute w-full max-w-[100vw] z-40 transition-all duration-300 pointer-events-none" id="navbar">
           <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 lg:px-8">
               <div className="flex items-center justify-between gap-3 h-14 sm:h-20 lg:h-24">
-                  {/* Logo - shown on mobile too */}
-                  <div className="flex items-center gap-1.5 sm:gap-3 lg:gap-12 shrink-0">
+                  {/* Logo - shown on mobile only */}
+                  <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 lg:hidden pointer-events-auto">
                       {/* Mobile Hamburger Menu (Right side in RTL) */}
-                      <div className="lg:hidden flex shrink-0">
+                      <div className="flex shrink-0">
                         <SidebarToggle />
                       </div>
                       
                       <Link href="/" className="flex items-center gap-1.5 sm:gap-3 group hover-scale">
-                          <div className="w-6 h-6 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300">
-                              <i className="fa-solid fa-play text-white ml-0.5 text-[8px] sm:text-sm lg:text-lg"></i>
+                          <div className="w-6 h-6 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300">
+                              <i className="fa-solid fa-play text-white ml-0.5 text-[8px] sm:text-sm"></i>
                           </div>
                           <div className="flex flex-col leading-none mt-0.5">
-                              <span className="text-sm sm:text-2xl lg:text-3xl font-black font-en tracking-wider text-white drop-shadow-md">ALEX<span className="text-alex-primary">CINEMA</span></span>
+                              <span className="text-sm sm:text-2xl font-black font-en tracking-wider text-white drop-shadow-md">ALEX<span className="text-alex-primary">CINEMA</span></span>
                               <span className="hidden sm:block text-[10px] text-gray-400 font-bold tracking-[0.15em] mt-1 uppercase opacity-80">Premium Platform</span>
                           </div>
                       </Link>
                   </div>
+
+                  {/* Desktop spacer to push search bar to left since logo is hidden on desktop */}
+                  <div className="hidden lg:block flex-1 pointer-events-none"></div>
  
-                  <div className="flex items-center shrink-0">
+                  <div className="flex items-center shrink-0 pointer-events-auto">
                       <Suspense fallback={<div className="w-8 h-8 rounded-full bg-white/5 animate-pulse"></div>}>
                           <SearchBar />
                       </Suspense>
