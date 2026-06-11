@@ -1,9 +1,9 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { encryptData } from '@/utils/cryptoHelper';
 
 const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com/cgi-bin/proxy?url=';
 
-function buildResponse(upstreamRes: Response) {
+function buildResponse(upstreamRes: Response, extraHeaders?: Record<string, string>) {
   const headers = new Headers();
   const contentType = upstreamRes.headers.get('content-type');
   if (contentType) headers.set('Content-Type', contentType);
@@ -14,7 +14,13 @@ function buildResponse(upstreamRes: Response) {
   const acceptRanges = upstreamRes.headers.get('accept-ranges');
   if (acceptRanges) headers.set('Accept-Ranges', acceptRanges);
   headers.set('Access-Control-Allow-Origin', '*');
-  headers.set('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges');
+  headers.set('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges, X-Debug-Tunnel, X-Debug-Base, X-Debug-Target');
+
+  if (extraHeaders) {
+    for (const [k, v] of Object.entries(extraHeaders)) {
+      headers.set(k, v);
+    }
+  }
 
   return new NextResponse(upstreamRes.body as any, {
     status: upstreamRes.status,
@@ -22,14 +28,20 @@ function buildResponse(upstreamRes: Response) {
   });
 }
 
-function buildEncryptedJsonResponse(data: any, status = 200) {
+function buildEncryptedJsonResponse(data: any, status = 200, extraHeaders?: Record<string, string>) {
   const encryptedPayload = encryptData(data);
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+  });
+  if (extraHeaders) {
+    for (const [k, v] of Object.entries(extraHeaders)) {
+      headers.set(k, v);
+    }
+  }
   return new NextResponse(JSON.stringify({ payload: encryptedPayload }), {
     status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    }
+    headers
   });
 }
 
@@ -140,12 +152,19 @@ export async function GET(req: NextRequest) {
     }
   } catch (e) { }
 
+  // Add debug headers
+  const debugHeaders = {
+    'X-Debug-Tunnel': tunnelUrl,
+    'X-Debug-Base': process.env.TUNNEL_BASE_URL || 'MISSING',
+    'X-Debug-Target': targetUrl
+  };
+
   const cacheKey = isApi ? targetUrl : '';
   const cacheTtl = isApi ? 120000 : 0;
 
   if (cacheKey) {
     const cached = getCached(cacheKey, cacheTtl);
-    if (cached) return buildEncryptedJsonResponse(cached, 200);
+    if (cached) return buildEncryptedJsonResponse(cached, 200, debugHeaders);
   }
 
   const controller = new AbortController();
@@ -153,7 +172,7 @@ export async function GET(req: NextRequest) {
 
   if (isImage) {
     let upstreamRes = await fetchWithRetry(tunnelUrl, { headers: { ...headers, 'Bypass-Tunnel-Reminder': 'true' }, method: 'GET', redirect: 'follow' }, 1);
-    const response = buildResponse(upstreamRes);
+    const response = buildResponse(upstreamRes, debugHeaders);
     response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
     return response;
   }
@@ -177,12 +196,12 @@ export async function GET(req: NextRequest) {
           const data = JSON.parse(text);
           setCache(cacheKey, data, cacheTtl);
 
-          return buildEncryptedJsonResponse(data, response.status);
+          return buildEncryptedJsonResponse(data, response.status, debugHeaders);
         } catch (err) {
-          return buildResponse(response);
+          return buildResponse(response, debugHeaders);
         }
       }
-      return buildResponse(response);
+      return buildResponse(response, debugHeaders);
     }
     // tunnel failed – try direct fetch for non-media
   } catch (e: any) {
@@ -195,10 +214,10 @@ export async function GET(req: NextRequest) {
   try {
     const response = await fetch(targetUrl, { headers, signal: directController.signal });
     clearTimeout(directTimeout);
-    if (response.ok || response.status === 206) return buildResponse(response);
+    if (response.ok || response.status === 206) return buildResponse(response, debugHeaders);
   } catch { clearTimeout(directTimeout); }
 
-  return NextResponse.json({ error: 'Failed to fetch' }, { status: 502 });
+  return NextResponse.json({ error: 'Failed to fetch', debug: debugHeaders }, { status: 502, headers: debugHeaders });
 }
 
 export async function OPTIONS() {
