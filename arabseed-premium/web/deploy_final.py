@@ -1,0 +1,96 @@
+import subprocess
+
+def run(cmd):
+    print(f"Running: {cmd}")
+    subprocess.run(['python', 'C:\\Users\\secon\\.gemini\\antigravity\\brain\\a5b6273e-343c-4f30-b900-0eabe75fef0d\\scratch\\ssh_router.py', cmd])
+
+# 1. proxy.lua
+proxy_lua = """local nixio = require('nixio')
+local host = '0.0.0.0'
+local port = 8080
+
+local server = nixio.bind(host, port)
+if not server then os.exit(1) end
+
+while true do
+    local client = server:accept()
+    if client then
+        local req = client:recv(4096)
+        if req and req ~= '' then
+            local method, path = req:match('^(%A+)%s+(%S+)%s+HTTP/')
+            if path then
+                local target_url = 'http://api.cinemana.earthlink.iq' .. path
+                local range_header = ''
+                local auth_header = ''
+                for line in req:gmatch('[^\\r\\n]+') do
+                    local key, val = line:match('^(.-):%s*(.*)')
+                    if key then
+                        if key:lower() == 'range' then
+                            range_header = '-H \\'Range: ' .. val .. '\\' '
+                        elseif key:lower() == 'authorization' then
+                            auth_header = '-H \\'Authorization: ' .. val .. '\\' '
+                        end
+                    end
+                end
+                os.remove('/tmp/h.txt')
+                local cmd = 'curl -s -D /tmp/h.txt ' .. range_header .. auth_header .. '-H \\'Host: api.cinemana.earthlink.iq\\' \\'' .. target_url .. '\\''
+                local handle = io.popen(cmd)
+                if handle then
+                    nixio.nanosleep(0, 500000000)
+                    local hfile = io.open('/tmp/h.txt', 'r')
+                    if hfile then
+                        local headers = hfile:read('*a')
+                        hfile:close()
+                        headers = headers:gsub('Transfer%-Encoding:%s*chunked\\r\\n', '')
+                        client:sendall(headers)
+                    else
+                        client:sendall('HTTP/1.1 200 OK\\r\\nContent-Type: application/octet-stream\\r\\n\\r\\n')
+                    end
+                    while true do
+                        local chunk = handle:read(4096)
+                        if not chunk then break end
+                        client:sendall(chunk)
+                    end
+                    handle:close()
+                end
+            end
+        end
+        client:close()
+    end
+end
+"""
+with open('proxy.lua', 'w', newline='\n') as f: f.write(proxy_lua)
+subprocess.run(['scp', '-i', 'C:\\Users\\secon\\.openclaw\\workspace\\student-grades-platform\\arabseed-premium\\web\\dropbear_rsa', '-o', 'StrictHostKeyChecking=no', '-o', 'HostKeyAlgorithms=+ssh-rsa', '-o', 'PubkeyAcceptedKeyTypes=+ssh-rsa', '-P', '22', 'proxy.lua', 'root@192.168.1.1:/etc/config/proxy.lua'])
+
+# 2. cinemana init script
+init_script = """#!/bin/sh /etc/rc.common
+START=99
+USE_PROCD=1
+
+start_service() {
+    if [ ! -f /tmp/usr/bin/ssh ]; then
+        mkdir -p /tmp/usr /tmp/etc /tmp/lib /tmp/opkg-lists
+        cp /etc/opkg.conf /tmp/opkg.conf
+        sed -i 's|/var/opkg-lists|/tmp/opkg-lists|g' /tmp/opkg.conf
+        echo 'dest ram /tmp' >> /tmp/opkg.conf
+        opkg -f /tmp/opkg.conf update
+        opkg -f /tmp/opkg.conf --dest ram install openssh-client
+    fi
+
+    procd_open_instance "lua_proxy"
+    procd_set_param command lua /etc/config/proxy.lua
+    procd_set_param respawn
+    procd_close_instance
+
+    export LD_LIBRARY_PATH=/tmp/usr/lib:/tmp/lib
+    procd_open_instance "ssh_tunnel"
+    procd_set_param command /tmp/usr/bin/ssh -i /etc/config/serveo_rsa -o StrictHostKeyChecking=no -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes -R cinemanamtsky001:80:127.0.0.1:8080 serveo.net
+    procd_set_param respawn
+    procd_close_instance
+}
+"""
+with open('cinemana', 'w', newline='\n') as f: f.write(init_script)
+subprocess.run(['scp', '-i', 'C:\\Users\\secon\\.openclaw\\workspace\\student-grades-platform\\arabseed-premium\\web\\dropbear_rsa', '-o', 'StrictHostKeyChecking=no', '-o', 'HostKeyAlgorithms=+ssh-rsa', '-o', 'PubkeyAcceptedKeyTypes=+ssh-rsa', '-P', '22', 'cinemana', 'root@192.168.1.1:/etc/init.d/cinemana'])
+
+# 3. enable and start
+run('chmod +x /etc/init.d/cinemana; /etc/init.d/cinemana enable; /etc/init.d/cinemana restart')
