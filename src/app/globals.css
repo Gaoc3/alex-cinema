@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@700&family=Cairo:wght@700&family=Amiri:ital,wght@0,700;1,700&family=Outfit:wght@600&display=swap');
 
 @theme {
   --color-alex-primary: #e50914;
@@ -355,4 +356,30 @@ body.sidebar-open .sidebar-overlay {
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(229, 9, 20, 0.8);
+}
+
+/* Subtitle Settings (Controlled via CSS Variables from React) */
+video.alex-video-cue::cue {
+  font-size: var(--sub-size, 100%) !important;
+  background: var(--sub-bg, rgba(0, 0, 0, 0.65)) !important;
+  background-color: var(--sub-bg, rgba(0, 0, 0, 0.65)) !important;
+  color: #ffffff !important;
+  text-shadow: var(--sub-shadow, none) !important;
+  font-family: var(--sub-font, 'Tajawal', sans-serif) !important;
+}
+video.alex-video-cue::cue(span),
+video.alex-video-cue::cue(div),
+video.alex-video-cue::cue(b),
+video.alex-video-cue::cue(i),
+video.alex-video-cue::cue(u),
+video.alex-video-cue::cue(c),
+video.alex-video-cue::cue(font) {
+  background: var(--sub-bg, rgba(0, 0, 0, 0.65)) !important;
+  background-color: var(--sub-bg, rgba(0, 0, 0, 0.65)) !important;
+  color: #ffffff !important;
+  text-shadow: var(--sub-shadow, none) !important;
+  font-family: var(--sub-font, 'Tajawal', sans-serif) !important;
+}
+video.alex-video-cue::-webkit-media-text-track-container {
+  transform: translateY(-24px) !important;
 }

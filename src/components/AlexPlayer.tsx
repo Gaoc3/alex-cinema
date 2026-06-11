@@ -292,27 +292,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     }
   }, [selectedLanguage, currentStreamUrl]);
 
-  // Force Chromium repaint on subtitle style changes
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || selectedLanguage === 'off') return;
-    
-    const syncRepaint = () => {
-      for (let i = 0; i < video.textTracks.length; i++) {
-        const track = video.textTracks[i];
-        if (track.language === selectedLanguage && track.mode === 'showing') {
-          track.mode = 'hidden';
-          setTimeout(() => {
-            if (track.language === selectedLanguage) {
-              track.mode = 'showing';
-            }
-          }, 30);
-        }
-      }
-    };
-    
-    syncRepaint();
-  }, [showSubtitleBg, subtitleSize, selectedFont]);
+  // Subtitle styles are now applied via CSS Variables on the video element in globals.css
 
   // Control bar auto-hide logic
   const handleMouseMove = () => {
@@ -657,55 +637,16 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         {/* Dynamic Glow Overlay */}
         <div className="absolute inset-0 z-[-1] opacity-25 blur-[100px] scale-105 pointer-events-none transition-all duration-1000 bg-[#e50914]/20"></div>
 
-        {/* Dynamic Subtitle Font Style Injection */}
-        <style dangerouslySetInnerHTML={{ __html: `
-          @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@700&family=Cairo:wght@700&family=Amiri:ital,wght@0,700;1,700&family=Outfit:wght@600&display=swap');
-          
-          .alex-video-cue::cue {
-            font-size: ${subtitleSize}% !important;
-            background: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
-            background-color: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
-            color: #ffffff !important;
-            text-shadow: ${showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)'} !important;
-            font-family: '${selectedFont}', 'Outfit', sans-serif !important;
-          }
-          .alex-video-cue::cue(span),
-          .alex-video-cue::cue(div),
-          .alex-video-cue::cue(b),
-          .alex-video-cue::cue(i),
-          .alex-video-cue::cue(u),
-          .alex-video-cue::cue(c),
-          .alex-video-cue::cue(font) {
-            background: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
-            background-color: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
-            color: #ffffff !important;
-            text-shadow: ${showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)'} !important;
-            font-family: '${selectedFont}', 'Outfit', sans-serif !important;
-          }
-          .alex-video-cue::-webkit-media-text-track-container {
-            transform: translateY(-24px) !important;
-          }
-          /* Generic fallback selectors */
-          video::cue {
-            background: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
-            background-color: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
-          }
-          video::cue(span),
-          video::cue(div),
-          video::cue(b),
-          video::cue(i),
-          video::cue(u),
-          video::cue(c),
-          video::cue(font) {
-            background: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
-            background-color: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
-          }
-        ` }} />
-
         {/* The Native HTML5 Video Element */}
         <video
           ref={videoRef}
           className="w-full h-full object-contain alex-video-cue"
+          style={{
+            '--sub-size': `${subtitleSize}%`,
+            '--sub-bg': showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent',
+            '--sub-shadow': showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)',
+            '--sub-font': `'${selectedFont}', 'Outfit', sans-serif`
+          } as React.CSSProperties}
           onClick={() => {
             if (activeDropdown !== null) {
               setActiveDropdown(null);
