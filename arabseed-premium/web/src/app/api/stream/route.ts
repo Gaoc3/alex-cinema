@@ -15,9 +15,9 @@ export async function GET(req: NextRequest) {
     const targetUrl = new URL(urlStr);
     const tunnelBase = TUNNEL_BASE_URL.replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
     
-    // Construct the universal Nginx proxy path
-    // e.g., https://cinemanamtsky001.serveousercontent.com/proxy/cdn.shabakaty.com/vascin24-mp4/...
-    const redirectUrl = `${tunnelBase}/proxy/${targetUrl.hostname}${targetUrl.pathname}${targetUrl.search}`;
+    // Construct the Nginx proxy path
+    // e.g., https://cinemanamtsky001.serveousercontent.com/vascin24-mp4/...
+    const redirectUrl = `${tunnelBase}${targetUrl.pathname}${targetUrl.search}`;
     
     return NextResponse.redirect(redirectUrl, 302);
   } catch (error: any) {
