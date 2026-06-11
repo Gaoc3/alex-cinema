@@ -154,7 +154,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           {/* Left Arrow (Goes to Next in RTL because next items are on the left) */}
           <button 
             onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
-            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 hover:bg-alex-primary/95 text-white border border-white/10 flex items-center justify-center transition-all duration-300 backdrop-blur-sm sm:opacity-0 sm:group-hover:opacity-100 opacity-70 hover:scale-110 active:scale-95 cursor-pointer"
+            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 md:hover:bg-alex-primary/95 text-white border border-white/10 flex items-center justify-center transition-all duration-300 backdrop-blur-sm sm:opacity-0 sm:group-hover:opacity-100 opacity-70 md:hover:scale-110 active:scale-95 cursor-pointer"
             aria-label="Next Slide"
           >
             <i className="fa-solid fa-chevron-left text-lg"></i>
@@ -163,7 +163,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           {/* Right Arrow (Goes to Previous in RTL because previous items are on the right) */}
           <button 
             onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
-            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 hover:bg-alex-primary/95 text-white border border-white/10 flex items-center justify-center transition-all duration-300 backdrop-blur-sm sm:opacity-0 sm:group-hover:opacity-100 opacity-70 hover:scale-110 active:scale-95 cursor-pointer"
+            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 md:hover:bg-alex-primary/95 text-white border border-white/10 flex items-center justify-center transition-all duration-300 backdrop-blur-sm sm:opacity-0 sm:group-hover:opacity-100 opacity-70 md:hover:scale-110 active:scale-95 cursor-pointer"
             aria-label="Previous Slide"
           >
             <i className="fa-solid fa-chevron-right text-lg"></i>
@@ -188,10 +188,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                   thumbnailsRef.current[idx] = el;
                 }}
                 onClick={() => triggerSlideChange(idx)}
-                className={`relative w-28 sm:w-36 md:w-48 lg:w-56 aspect-[16/9] rounded-lg overflow-hidden border-2 transition-all duration-300 hover:scale-105 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none ${
+                className={`relative w-28 sm:w-36 md:w-48 lg:w-56 aspect-[16/9] rounded-lg overflow-hidden border-2 transition-all duration-300 md:hover:scale-105 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none ${
                   activeIndex === idx 
                     ? 'border-alex-primary shadow-[0_0_12px_rgba(229,9,20,0.6)] scale-105' 
-                    : 'border-white/10 hover:border-white/30'
+                    : 'border-white/10 md:hover:border-white/30'
                 }`}
                 aria-label={`Go to slide ${idx + 1}`}
               >
@@ -205,7 +205,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                   style={{ imageRendering: 'high-quality' as any }}
                 />
                 <div className={`absolute inset-0 transition-colors duration-300 ${
-                  activeIndex === idx ? 'bg-transparent' : 'bg-black/50 hover:bg-black/35'
+                  activeIndex === idx ? 'bg-transparent' : 'bg-black/50 md:hover:bg-black/35'
                 }`}></div>
               </button>
             );
