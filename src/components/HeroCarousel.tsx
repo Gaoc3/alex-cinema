@@ -96,7 +96,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       </div>
       
       {/* Content Overlay */}
-      <div className="relative z-10 w-full flex flex-col justify-between h-full pt-20 sm:pt-20 lg:pt-32 pb-4 sm:pb-4">
+      <div className="relative z-10 w-full flex flex-col justify-between h-full pt-20 sm:pt-20 lg:pt-32">
         
         {/* Top Text Section */}
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow flex flex-col justify-center mb-8">

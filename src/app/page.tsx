@@ -36,7 +36,7 @@ export default async function Home() {
       )}
 
       {/* Row Sliders */}
-      <div className="mt-12 space-y-6">
+      <div className="mt-4 sm:mt-6">
         {/* الإصدارات الجديدة */}
         {latestMovies && latestMovies.length > 0 && (
           <VideoSlider 
