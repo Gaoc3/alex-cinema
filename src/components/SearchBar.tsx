@@ -225,7 +225,7 @@ export default function SearchBar() {
                     {/* Poster Image */}
                     <div className="w-14 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-md relative group-hover/item:border-alex-primary/30 transition-colors duration-300">
                       <Image
-                        src={item.img ? `/api/proxy?endpoint=${encodeProxyUrl('https://cnth2.shabakaty.com/vascin-poster-images/' + (item.img))}` : `https://ui-avatars.com/api/?name=${encodeProxyUrl(item.ar_title)}`}
+                        src={item.img ? `/api/proxy?endpoint=${encodeProxyUrl(item.img.startsWith('http') ? item.img : 'https://cnth2.shabakaty.com/vascin-poster-images/' + item.img)}` : `https://ui-avatars.com/api/?name=${encodeProxyUrl(item.ar_title)}`}
                         alt={item.ar_title}
                         fill
                         sizes="56px"

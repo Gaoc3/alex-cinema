@@ -218,7 +218,8 @@ export async function GET(req: NextRequest) {
         try {
           let text = await response.text();
           // Hide Shabakaty domains from the frontend response using Base64
-          text = text.replace(/https:\/\/(cdn|cnth2|cndw2|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match) => {
+          // Match both http and https, and handle varying numbers like cnth1, cnth2, etc.
+          text = text.replace(/https?:\/\/(cdn|cnth[0-9]+|cndw[0-9]+|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match) => {
             const b64 = Buffer.from(match).toString('base64');
             if (match.includes('mp4') || match.includes('video') || match.includes('m3u8')) {
               return `/api/stream?url=${b64}`;

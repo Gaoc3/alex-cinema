@@ -67,7 +67,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
   // Build the correct landscape cover image URL (proxy all external URLs)
   const coverImgUrl = current.imgObjUrl 
     ? `/api/proxy?endpoint=${encodeProxyUrl(current.imgObjUrl)}`
-    : `/api/proxy?endpoint=${encodeProxyUrl('https://cnth2.shabakaty.com/vascin-cover-images/' + (current.img))}`;
+    : `/api/proxy?endpoint=${encodeProxyUrl(current.img.startsWith('http') ? current.img : 'https://cnth2.shabakaty.com/vascin-cover-images/' + current.img)}`;
 
   return (
     <div className="relative w-full h-[85svh] min-h-[600px] sm:min-h-[auto] sm:h-[580px] lg:h-[85vh] flex flex-col justify-end mt-0 overflow-hidden bg-[#070a13] select-none group">
@@ -180,7 +180,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             {videos.map((video, idx) => {
             const thumbUrl = video.imgObjUrl 
               ? `/api/proxy?endpoint=${encodeProxyUrl(video.imgObjUrl)}`
-              : `/api/proxy?endpoint=${encodeProxyUrl('https://cnth2.shabakaty.com/vascin-cover-images/' + (video.img))}`;
+              : `/api/proxy?endpoint=${encodeProxyUrl(video.img.startsWith('http') ? video.img : 'https://cnth2.shabakaty.com/vascin-cover-images/' + video.img)}`;
             return (
               <button
                 key={video.nb}

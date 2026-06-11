@@ -2,6 +2,7 @@
 import { encodeProxyUrl } from '@/utils/proxyHelper';
 
 import React, { useEffect, useRef, useState } from 'react';
+import Hls from 'hls.js';
 
 interface Stream {
   name: string;
@@ -155,6 +156,12 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     if (url.startsWith('/api/proxy') || url.startsWith('/api/stream')) return url;
     let clean = url;
     try { clean = decodeURIComponent(url); } catch { /* not encoded, use as-is */ }
+    
+    // Support streaming proxy for video and playlist formats
+    if (clean.includes('.mp4') || clean.includes('video') || clean.includes('.m3u8') || clean.includes('.ts')) {
+      return `/api/stream?url=${encodeProxyUrl(clean)}`;
+    }
+    
     return `/api/proxy?endpoint=${encodeProxyUrl(clean)}`;
   };
 
@@ -185,6 +192,46 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
       setSelectedResolution('');
     }
   }, [videoData]);
+
+  // HLS stream logic
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !currentStreamUrl) return;
+
+    let hls: Hls | null = null;
+
+    if (currentStreamUrl.includes('.m3u8')) {
+      if (Hls.isSupported()) {
+        hls = new Hls({
+          startLevel: -1,
+          capLevelToPlayerSize: true,
+        });
+        hls.loadSource(currentStreamUrl);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          if (!isPaused) {
+            video.play().catch(() => {});
+          }
+        });
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            console.error("HLS error:", data);
+            hls?.destroy();
+          }
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = currentStreamUrl;
+      }
+    } else {
+      video.src = currentStreamUrl;
+    }
+
+    return () => {
+      if (hls) {
+        hls.destroy();
+      }
+    };
+  }, [currentStreamUrl]);
 
   // Sync volume and mute states
   useEffect(() => {
@@ -342,20 +389,21 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     console.error("Direct stream failed to play. URL:", currentStreamUrl, "Error:", errMsg);
     setLastErrorEvent(errMsg);
 
-    if (youtubeId) {
-      setYoutubeFallback(true);
-    } else if (retryCount < MAX_RETRIES) {
-      // Retry with backoff: replace currentStreamUrl with itself to force reload
+    if (retryCount < MAX_RETRIES) {
+      // Retry with backoff before giving up and falling back to YouTube
       const nextRetry = retryCount + 1;
       setRetryCount(nextRetry);
       setTimeout(() => {
         setCurrentStreamUrl((prev) => {
           if (!prev) return prev;
-          // Toggle a cache-busting param to force re-fetch
-          const separator = prev.includes('?') ? '&' : '?';
-          return `${prev}${separator}_retry=${nextRetry}_${Date.now()}`;
+          // Clean up old retry params to prevent infinite query string growth
+          let cleanUrl = prev.replace(/(&|\?)_retry=\d+_\d+/g, '');
+          const separator = cleanUrl.includes('?') ? '&' : '?';
+          return `${cleanUrl}${separator}_retry=${nextRetry}_${Date.now()}`;
         });
       }, 2000 * nextRetry);
+    } else if (youtubeId) {
+      setYoutubeFallback(true);
     } else {
       setShowStreamError(true);
     }
@@ -654,7 +702,6 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         {/* The Native HTML5 Video Element */}
         <video
           ref={videoRef}
-          src={currentStreamUrl}
           className="w-full h-full object-contain alex-video-cue"
           onClick={() => {
             if (activeDropdown !== null) {

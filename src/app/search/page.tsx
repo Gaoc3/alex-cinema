@@ -363,7 +363,7 @@ function SearchPageContent() {
                     {/* Poster Wrapper */}
                     <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
                       <img 
-                        src={`/api/proxy?endpoint=${encodeProxyUrl('https://cnth2.shabakaty.com/vascin-poster-images/' + (video.img || video.imgMediumThumb || video.imgThumb))}`} 
+                        src={`/api/proxy?endpoint=${encodeProxyUrl((video.img || video.imgMediumThumb || video.imgThumb || '')?.startsWith('http') ? (video.img || video.imgMediumThumb || video.imgThumb || '') : 'https://cnth2.shabakaty.com/vascin-poster-images/' + (video.img || video.imgMediumThumb || video.imgThumb || ''))}`} 
                         alt={video.ar_title} 
                         className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
                         loading="lazy"
@@ -427,7 +427,7 @@ function SearchPageContent() {
                     {/* Poster Wrapper */}
                     <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
                       <img 
-                        src={`/api/proxy?endpoint=${encodeProxyUrl('https://cnth2.shabakaty.com/vascin-poster-images/' + (video.img || video.imgMediumThumb || video.imgThumb))}`} 
+                        src={`/api/proxy?endpoint=${encodeProxyUrl((video.img || video.imgMediumThumb || video.imgThumb || '')?.startsWith('http') ? (video.img || video.imgMediumThumb || video.imgThumb || '') : 'https://cnth2.shabakaty.com/vascin-poster-images/' + (video.img || video.imgMediumThumb || video.imgThumb || ''))}`} 
                         alt={video.ar_title} 
                         className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
                         loading="lazy"

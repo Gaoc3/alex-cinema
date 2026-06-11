@@ -4,6 +4,8 @@ const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001
 
 
 
+export const runtime = 'edge';
+
 export async function GET(req: NextRequest) {
   let urlStr = req.nextUrl.searchParams.get('url');
 
@@ -24,13 +26,14 @@ export async function GET(req: NextRequest) {
     const targetUrl = new URL(urlStr);
     const tunnelBase = TUNNEL_BASE_URL.replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
     
-    // Construct the Nginx proxy path
-    // e.g., https://cinemanamtsky001.serveousercontent.com/vascin24-mp4/...
+    // Nginx on the router handles the path directly
     const proxyUrl = `${tunnelBase}${targetUrl.pathname}${targetUrl.search}`;
     
     // Fetch the stream from the tunnel
     const response = await fetch(proxyUrl, {
       headers: {
+        'bypass-tunnel-reminder': 'true',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         ...(req.headers.get('range') ? { range: req.headers.get('range')! } : {})
       }
     });
@@ -49,6 +52,18 @@ export async function GET(req: NextRequest) {
         headers.set(headerName, response.headers.get(headerName)!);
       }
     });
+
+    // Force essential video streaming headers if missing
+    headers.set('Accept-Ranges', 'bytes');
+    
+    // Fix Content-Type if it defaults to generic octet-stream for mp4
+    if (urlStr.includes('.mp4') && headers.get('content-type') === 'binary/octet-stream') {
+      headers.set('Content-Type', 'video/mp4');
+    } else if (urlStr.includes('.m3u8')) {
+      headers.set('Content-Type', 'application/vnd.apple.mpegurl');
+    } else if (urlStr.includes('.ts')) {
+      headers.set('Content-Type', 'video/mp2t');
+    }
 
     // Add CORS headers for the video player
     headers.set('Access-Control-Allow-Origin', '*');

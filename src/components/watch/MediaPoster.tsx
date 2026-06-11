@@ -13,7 +13,7 @@ export default function MediaPoster({ img, imdbUrlRef }: MediaPosterProps) {
       
       <div className="relative flex-1 rounded-2xl overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.6)] border border-white/10 group min-h-[350px]">
         <Image 
-          src={`/api/proxy?endpoint=${encodeProxyUrl('https://cnth2.shabakaty.com/vascin-poster-images/' + (img))}`} 
+          src={`/api/proxy?endpoint=${encodeProxyUrl(img.startsWith('http') ? img : 'https://cnth2.shabakaty.com/vascin-poster-images/' + img)}`} 
           alt="Poster"
           fill
           sizes="(max-width: 768px) 100vw, 33vw"
