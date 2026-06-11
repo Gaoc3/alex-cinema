@@ -147,9 +147,7 @@ export async function GET(req: NextRequest) {
   try {
     const tUrl = new URL(targetUrl);
     const tunnelBase = (process.env.TUNNEL_BASE_URL || '').replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
-    // Only tunnel API requests to cinemana.shabakaty.com, NOT CDN images from cnth2/cndw2
-    const isCinemanaApi = tUrl.hostname === 'cinemana.shabakaty.com';
-    if (tunnelBase && isCinemanaApi) {
+    if (tunnelBase && tUrl.hostname.includes('shabakaty.com')) {
       tunnelUrl = `${tunnelBase}${tUrl.pathname}${tUrl.search}`;
     }
   } catch (e) { }
@@ -173,10 +171,43 @@ export async function GET(req: NextRequest) {
   const timeout = setTimeout(() => controller.abort(), 90000);
 
   if (isImage) {
-    let upstreamRes = await fetchWithRetry(tunnelUrl, { headers: { ...headers, 'Bypass-Tunnel-Reminder': 'true' }, method: 'GET', redirect: 'follow' }, 1);
-    const response = buildResponse(upstreamRes, debugHeaders);
-    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-    return response;
+    // Try tunnel first with a short timeout
+    const imgController = new AbortController();
+    const imgTimeout = setTimeout(() => imgController.abort(), 8000);
+    try {
+      const upstreamRes = await fetch(tunnelUrl, { 
+        headers: { ...headers, 'Bypass-Tunnel-Reminder': 'true' }, 
+        method: 'GET', 
+        redirect: 'follow',
+        signal: imgController.signal
+      });
+      clearTimeout(imgTimeout);
+      if (upstreamRes.ok || upstreamRes.status === 206) {
+        const response = buildResponse(upstreamRes, debugHeaders);
+        response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+        return response;
+      }
+    } catch { clearTimeout(imgTimeout); }
+
+    // Fallback: try direct fetch
+    const directImgController = new AbortController();
+    const directImgTimeout = setTimeout(() => directImgController.abort(), 8000);
+    try {
+      const directRes = await fetch(targetUrl, {
+        headers,
+        method: 'GET',
+        redirect: 'follow',
+        signal: directImgController.signal
+      });
+      clearTimeout(directImgTimeout);
+      if (directRes.ok || directRes.status === 206) {
+        const response = buildResponse(directRes, debugHeaders);
+        response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+        return response;
+      }
+    } catch { clearTimeout(directImgTimeout); }
+
+    return NextResponse.json({ error: 'Image fetch failed' }, { status: 502 });
   }
 
   try {
