@@ -80,8 +80,7 @@ export default function RootLayout({
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-white/5 bg-black/20 backdrop-blur-2xl pt-16 pb-10 mt-auto relative z-10 lg:pr-72">
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-alex-primary to-transparent opacity-30"></div>
+        <footer className="pt-16 pb-10 mt-auto relative z-10 lg:pr-72">
             <div className="w-full px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                     <Link href="/" className="flex items-center gap-3 hover-scale">
