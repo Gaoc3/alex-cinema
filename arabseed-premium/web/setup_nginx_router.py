@@ -34,57 +34,14 @@ http {
         server_name localhost;
         resolver 8.8.8.8 1.1.1.1;
 
-        location /vascin24-mp4/ {
-            proxy_pass https://cdn.shabakaty.com/vascin24-mp4/;
-            proxy_ssl_server_name on;
-            proxy_buffering off;
-            proxy_set_header Range $http_range;
-            proxy_set_header If-Range $http_if_range;
-            proxy_set_header Host cdn.shabakaty.com;
-            proxy_set_header Referer "https://cinemana.shabakaty.com/";
-            
-            proxy_intercept_errors on;
-            error_page 301 302 307 = @handle_redirect;
-        }
-
-        location @handle_redirect {
+        location ~ ^/proxy/([^/]+)/(.*)$ {
             resolver 8.8.8.8 1.1.1.1 ipv6=off;
-            set $saved_redirect_location '$upstream_http_location';
-            proxy_pass $saved_redirect_location;
+            proxy_pass https://$1/$2$is_args$args;
             proxy_ssl_server_name on;
             proxy_buffering off;
             proxy_set_header Range $http_range;
             proxy_set_header If-Range $http_if_range;
-            proxy_set_header Referer "https://cinemana.shabakaty.com/";
-        }
-
-        location /api/ {
-            proxy_pass https://cinemana.shabakaty.com/api/;
-            proxy_ssl_server_name on;
-            proxy_buffering off;
-            proxy_set_header Host cinemana.shabakaty.com;
-            proxy_set_header Referer "https://cinemana.shabakaty.com/";
-        }
-
-        location /vascin-poster-images/ {
-            proxy_pass https://cnth2.shabakaty.com/vascin-poster-images/;
-            proxy_ssl_server_name on;
-            proxy_set_header Host cnth2.shabakaty.com;
-        }
-
-        location /vascin-cover-images/ {
-            proxy_pass https://cnth2.shabakaty.com/vascin-cover-images/;
-            proxy_ssl_server_name on;
-            proxy_set_header Host cnth2.shabakaty.com;
-        }
-
-        location /m240/ {
-            proxy_pass https://cndw2.shabakaty.com/m240/;
-            proxy_ssl_server_name on;
-            proxy_buffering off;
-            proxy_set_header Range $http_range;
-            proxy_set_header If-Range $http_if_range;
-            proxy_set_header Host cndw2.shabakaty.com;
+            proxy_set_header Host $1;
             proxy_set_header Referer "https://cinemana.shabakaty.com/";
             
             proxy_intercept_errors on;
