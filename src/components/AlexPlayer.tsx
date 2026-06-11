@@ -449,11 +449,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
       const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
       const dt = Date.now() - touchStartRef.current.time;
       
-      // Vertical swipe detection for fullscreen toggle
-      if (dt < 400 && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
-        if (dy < 0 && !isFullscreen) toggleFullscreen();
-        else if (dy > 0 && isFullscreen) toggleFullscreen();
-      }
+      // Swipe detection removed
       touchStartRef.current = null;
     }
   };
@@ -753,7 +749,11 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     return (
       <div 
         ref={containerRef}
-        className="relative w-full aspect-video bg-black rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10 select-none group/player touch-manipulation"
+        className={`relative w-full bg-black overflow-hidden select-none group/player touch-manipulation transition-all duration-300 ${
+          isFullscreen 
+            ? 'h-screen w-screen rounded-none border-none fixed inset-0 z-[100]' 
+            : 'aspect-video rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10'
+        }`}
         dir="ltr"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -789,7 +789,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
             '--sub-bg': showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent',
             '--sub-shadow': showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)',
             '--sub-font': `'${selectedFont}', 'Outfit', sans-serif`,
-            '--sub-offset-y': isZoomed ? '-12vh' : '-24px'
+            '--sub-offset-y': isZoomed || isFullscreen ? (showControls ? '-10vh' : '-24px') : (showControls ? '-60px' : '-24px')
           } as React.CSSProperties}
           onPointerUp={handleVideoPointerUp}
           onTimeUpdate={handleTimeUpdate}
@@ -853,7 +853,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         )}
 
         {/* BOTTOM CUSTOM CONTROL BAR */}
-        <div className={`absolute bottom-0 inset-x-0 p-4 md:p-6 bg-gradient-to-t from-black/95 via-black/60 to-transparent flex flex-col gap-4 transition-all duration-300 transform z-30 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`absolute bottom-0 inset-x-0 p-3 md:p-6 pb-6 md:pb-8 bg-gradient-to-t from-black/95 via-black/80 to-transparent flex flex-col gap-3 transition-all duration-300 transform z-30 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           
           {/* Custom Timeline Progress Slider */}
           <div className="flex items-center gap-2 md:gap-4 w-full">
@@ -942,7 +942,10 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                   </button>
 
                   {activeDropdown === 'subtitles' && (
-                    <div className="absolute bottom-full right-0 mb-3 w-48 max-h-[65vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-2">
+                    <div 
+                      className="absolute bottom-full right-0 mb-3 w-48 max-h-[65vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-2"
+                      onPointerUp={(e) => e.stopPropagation()}
+                    >
                       <div className="text-[10px] text-gray-400 font-bold mb-1 text-right px-1">لغة الترجمة</div>
                       <button 
                         onClick={() => { setSelectedLanguage('off'); setActiveDropdown(null); }}
@@ -1032,7 +1035,10 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                   </button>
 
                   {activeDropdown === 'quality' && (
-                    <div className="absolute bottom-full right-0 mb-3 w-28 md:w-32 max-h-[60vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-1.5">
+                    <div 
+                      className="absolute bottom-full right-0 mb-3 w-28 md:w-32 max-h-[60vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-1.5"
+                      onPointerUp={(e) => e.stopPropagation()}
+                    >
                       {sortedStreams.map((stream) => (
                         <button 
                           key={stream.name}
@@ -1058,7 +1064,10 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                 </button>
 
                 {activeDropdown === 'speed' && (
-                  <div className="absolute bottom-full right-0 mb-3 w-24 md:w-28 max-h-[60vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-1.5 font-en">
+                  <div 
+                    className="absolute bottom-full right-0 mb-3 w-24 md:w-28 max-h-[60vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-1.5 font-en"
+                    onPointerUp={(e) => e.stopPropagation()}
+                  >
                     {[0.5, 1, 1.25, 1.5, 2].map((rate) => (
                       <button 
                         key={rate}
@@ -1071,15 +1080,6 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                   </div>
                 )}
               </div>
-
-              {/* Zoom Fill Toggle */}
-              <button 
-                onClick={() => setIsZoomed(!isZoomed)} 
-                className="text-white hover:text-alex-primary text-base md:text-xl transition-colors cursor-pointer w-6 h-6 flex items-center justify-center ml-1 md:ml-0"
-                title={isZoomed ? "تصغير للاحتواء" : "تكبير لملء الشاشة"}
-              >
-                <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-expand'}`}></i>
-              </button>
 
               {/* Fullscreen Toggle */}
               <button 
