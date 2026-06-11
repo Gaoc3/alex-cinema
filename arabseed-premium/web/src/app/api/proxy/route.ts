@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://mtskycinemana.serveousercontent.com/cgi-bin/proxy?url=';
+const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com/cgi-bin/proxy?url=';
 
 function buildResponse(upstreamRes: Response) {
   const headers = new Headers();
