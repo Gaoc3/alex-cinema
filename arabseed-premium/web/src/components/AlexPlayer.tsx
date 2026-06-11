@@ -1,3 +1,4 @@
+import { encodeProxyUrl } from '@/utils/proxyHelper';
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -154,7 +155,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     if (url.startsWith('/api/proxy') || url.startsWith('/api/stream')) return url;
     let clean = url;
     try { clean = decodeURIComponent(url); } catch { /* not encoded, use as-is */ }
-    return `/api/proxy?endpoint=${encodeURIComponent(clean)}`;
+    return `/api/proxy?endpoint=${encodeProxyUrl(clean)}`;
   };
 
   // Parse direct streams on initialization or data change
@@ -508,7 +509,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   };
 
   const vttTranslations = getVttTracks();
-  const getSubtitlesProxyUrl = (url: string) => `/api/proxy?endpoint=${encodeURIComponent(url)}`;
+  const getSubtitlesProxyUrl = (url: string) => `/api/proxy?endpoint=${encodeProxyUrl(url)}`;
 
   // Keyboard Shortcuts Handler
   useEffect(() => {

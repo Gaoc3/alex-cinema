@@ -1,3 +1,4 @@
+import { encodeProxyUrl } from '@/utils/proxyHelper';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
@@ -8,7 +9,7 @@ export async function GET(req: NextRequest) {
   }
 
   const targetUrl = 'https://cinemana.shabakaty.com/api/android/ar/video/info/20512';
-  const finalUrl = `${tunnelBase}${encodeURIComponent(targetUrl)}`;
+  const finalUrl = `${tunnelBase}${encodeProxyUrl(targetUrl)}`;
 
   try {
     const response = await fetch(finalUrl, {

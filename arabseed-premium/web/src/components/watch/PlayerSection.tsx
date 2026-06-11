@@ -1,3 +1,4 @@
+import { encodeProxyUrl } from '@/utils/proxyHelper';
 import React from 'react';
 import AlexPlayer from '../AlexPlayer';
 
@@ -17,10 +18,10 @@ const toProxyUrl = (url: string | undefined | null) => {
   
   // Use stream API for videos to support seeking and range requests
   if (clean.includes('.mp4') || clean.includes('video')) {
-    return `/api/stream?url=${encodeURIComponent(clean)}`;
+    return `/api/stream?url=${encodeProxyUrl(clean)}`;
   }
   
-  return `/api/proxy?endpoint=${encodeURIComponent(clean)}`;
+  return `/api/proxy?endpoint=${encodeProxyUrl(clean)}`;
 };
 
 export default function PlayerSection({

@@ -1,3 +1,4 @@
+import { encodeProxyUrl } from '@/utils/proxyHelper';
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -65,8 +66,8 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
 
   // Build the correct landscape cover image URL (proxy all external URLs)
   const coverImgUrl = current.imgObjUrl 
-    ? `/api/proxy?endpoint=${encodeURIComponent(current.imgObjUrl)}`
-    : `/api/proxy?endpoint=${encodeURIComponent('https://cnth2.shabakaty.com/vascin-cover-images/' + (current.img))}`;
+    ? `/api/proxy?endpoint=${encodeProxyUrl(current.imgObjUrl)}`
+    : `/api/proxy?endpoint=${encodeProxyUrl('https://cnth2.shabakaty.com/vascin-cover-images/' + (current.img))}`;
 
   return (
     <div className="relative w-full h-[85svh] min-h-[600px] sm:min-h-[auto] sm:h-[580px] lg:h-[85vh] flex flex-col justify-end mt-0 overflow-hidden bg-[#070a13] select-none group">
@@ -178,8 +179,8 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             <div className="w-1 sm:w-4 shrink-0 pointer-events-none opacity-0"></div>
             {videos.map((video, idx) => {
             const thumbUrl = video.imgObjUrl 
-              ? `/api/proxy?endpoint=${encodeURIComponent(video.imgObjUrl)}`
-              : `/api/proxy?endpoint=${encodeURIComponent('https://cnth2.shabakaty.com/vascin-cover-images/' + (video.img))}`;
+              ? `/api/proxy?endpoint=${encodeProxyUrl(video.imgObjUrl)}`
+              : `/api/proxy?endpoint=${encodeProxyUrl('https://cnth2.shabakaty.com/vascin-cover-images/' + (video.img))}`;
             return (
               <button
                 key={video.nb}

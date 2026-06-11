@@ -1,3 +1,4 @@
+import { encodeProxyUrl } from '@/utils/proxyHelper';
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -91,7 +92,7 @@ export default function SearchBar() {
 
     debounceTimer.current = setTimeout(async () => {
       try {
-        const queryEncoded = encodeURIComponent(query);
+        const queryEncoded = encodeProxyUrl(query);
         const [resMovies, resSeries] = await Promise.all([
           fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,2026&type=movies`, { signal }),
           fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,2026&type=series`, { signal })
@@ -162,7 +163,7 @@ export default function SearchBar() {
     e.preventDefault();
     if (query.trim()) {
       setShowDropdown(false);
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+      router.push(`/search?q=${encodeProxyUrl(query.trim())}`);
     }
   };
 
@@ -220,7 +221,7 @@ export default function SearchBar() {
                     {/* Poster Image */}
                     <div className="w-14 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-md relative group-hover/item:border-alex-primary/30 transition-colors duration-300">
                       <Image
-                        src={item.img ? `/api/proxy?endpoint=${encodeURIComponent('https://cnth2.shabakaty.com/vascin-poster-images/' + (item.img))}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.ar_title)}`}
+                        src={item.img ? `/api/proxy?endpoint=${encodeProxyUrl('https://cnth2.shabakaty.com/vascin-poster-images/' + (item.img))}` : `https://ui-avatars.com/api/?name=${encodeProxyUrl(item.ar_title)}`}
                         alt={item.ar_title}
                         fill
                         sizes="56px"
