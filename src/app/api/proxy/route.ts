@@ -147,7 +147,9 @@ export async function GET(req: NextRequest) {
   try {
     const tUrl = new URL(targetUrl);
     const tunnelBase = (process.env.TUNNEL_BASE_URL || '').replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
-    if (tunnelBase && tUrl.hostname.includes('shabakaty.com')) {
+    // Only tunnel API requests to cinemana.shabakaty.com, NOT CDN images from cnth2/cndw2
+    const isCinemanaApi = tUrl.hostname === 'cinemana.shabakaty.com';
+    if (tunnelBase && isCinemanaApi) {
       tunnelUrl = `${tunnelBase}${tUrl.pathname}${tUrl.search}`;
     }
   } catch (e) { }

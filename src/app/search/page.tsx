@@ -101,8 +101,12 @@ function SearchPageContent() {
             `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=${yearRange}&type=movies${categoryParam}${starParam}`,
             { signal }
           )
-            .then((res) => (res.ok ? res.json() : []))
-            .then((data) => (Array.isArray(data) ? data : []));
+            .then((res) => (res.ok ? res.json() : null))
+            .then((encrypted) => {
+              if (!encrypted || !encrypted.payload) return [];
+              const data = decryptData(encrypted.payload);
+              return Array.isArray(data) ? data : [];
+            });
         }
 
         if (fetchSeries) {
@@ -110,8 +114,12 @@ function SearchPageContent() {
             `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=${yearRange}&type=series${categoryParam}${starParam}`,
             { signal }
           )
-            .then((res) => (res.ok ? res.json() : []))
-            .then((data) => (Array.isArray(data) ? data : []));
+            .then((res) => (res.ok ? res.json() : null))
+            .then((encrypted) => {
+              if (!encrypted || !encrypted.payload) return [];
+              const data = decryptData(encrypted.payload);
+              return Array.isArray(data) ? data : [];
+            });
         }
 
         const [moviesData, seriesData] = await Promise.all([moviesPromise, seriesPromise]);
