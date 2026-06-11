@@ -159,7 +159,8 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     
     // Support streaming proxy for video and playlist formats
     if (clean.includes('.mp4') || clean.includes('video') || clean.includes('.m3u8') || clean.includes('.ts')) {
-      return `/api/stream?url=${encodeProxyUrl(clean)}`;
+      const ext = clean.includes('.m3u8') ? '.m3u8' : clean.includes('.ts') ? '.ts' : '.mp4';
+      return `/api/stream?url=${encodeProxyUrl(clean)}&ext=${ext}`;
     }
     
     return `/api/proxy?endpoint=${encodeProxyUrl(clean)}`;
