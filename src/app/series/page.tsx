@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 'use client';
 import { encodeProxyUrl } from '@/utils/proxyHelper';
 import { decryptData } from '@/utils/cryptoHelper';

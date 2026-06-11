@@ -2,6 +2,8 @@ import { getPromoVideos, getLatestMovies, getLatestSeries } from '@/lib/api';
 import HeroCarousel from '@/components/HeroCarousel';
 import VideoSlider from '@/components/VideoSlider';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   const [promoVideos, latestMovies, latestSeries] = await Promise.all([
     getPromoVideos(),

@@ -13,6 +13,7 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
 
   try {
     const res = await fetch(`${baseUrl}/api/proxy?endpoint=${encodeProxyUrl(fullEndpoint)}`, {
+      cache: 'no-store',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'bypass-tunnel-reminder': 'true'

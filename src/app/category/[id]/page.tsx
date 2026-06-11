@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { encodeProxyUrl } from '@/utils/proxyHelper';
 import { getMoviesByCategory } from '@/lib/api';
 import Link from 'next/link';
