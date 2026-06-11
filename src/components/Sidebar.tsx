@@ -130,10 +130,10 @@ export default function Sidebar() {
         </div>
 
         {/* Sidebar Scrollable Body */}
-        <div className="flex-grow overflow-y-auto hide-scrollbar px-4 flex flex-col">
-          <div className="min-h-full flex flex-col justify-center py-8">
-            {/* Navigation Section */}
-            <div className="space-y-4">
+        <div className="flex-grow overflow-y-auto hide-scrollbar px-4 py-8 flex flex-col">
+          <div className="flex-grow min-h-[20px]" /> {/* Top spacer */}
+          {/* Navigation Section */}
+          <div className="space-y-4">
             {/* الصفحة الرئيسية */}
             <Link 
               href="/" 
@@ -304,7 +304,7 @@ export default function Sidebar() {
               </div>
             </Link>
           </div>
-          </div>
+          <div className="flex-grow min-h-[20px]" /> {/* Bottom spacer */}
         </div>
       </aside>
     </>
