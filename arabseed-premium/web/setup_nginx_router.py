@@ -41,6 +41,7 @@ http {
             proxy_set_header Range $http_range;
             proxy_set_header If-Range $http_if_range;
             proxy_set_header Host cdn.shabakaty.com;
+            proxy_set_header Referer "https://cinemana.shabakaty.com/";
             
             absolute_redirect off;
             proxy_redirect ~^https?://([^/]+)/(.*)$ /cndw/$1/$2;
@@ -57,6 +58,7 @@ http {
             proxy_set_header Host $target_host;
             proxy_set_header Range $http_range;
             proxy_set_header If-Range $http_if_range;
+            proxy_set_header Referer "https://cinemana.shabakaty.com/";
             
             absolute_redirect off;
             proxy_redirect ~^https?://([^/]+)/(.*)$ /cndw/$1/$2;
