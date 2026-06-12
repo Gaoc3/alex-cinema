@@ -48,7 +48,12 @@ export async function GET(req: NextRequest) {
     // which breaks the <video crossOrigin="anonymous"> tag in the browser.
     const proxyUrl = `/tunnel${safePath}`;
     
-    return NextResponse.redirect(new URL(proxyUrl, req.url));
+    const response = NextResponse.redirect(new URL(proxyUrl, req.url));
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Range');
+    
+    return response;
   } catch (error: any) {
     console.error('Stream redirect error:', error?.message || error);
     return new NextResponse('Stream redirect failed', { status: 502 });
