@@ -47,7 +47,7 @@ function buildEncryptedJsonResponse(data: any, status = 200, extraHeaders?: Reco
   const headers = new Headers({
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+    'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
   });
   if (extraHeaders) {
     for (const [k, v] of Object.entries(extraHeaders)) {
