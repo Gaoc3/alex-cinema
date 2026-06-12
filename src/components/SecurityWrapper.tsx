@@ -50,37 +50,9 @@ export default function SecurityWrapper({ children }: { children: React.ReactNod
       console.error = noop;
     }
 
-    // 4. Advanced DevTools Detection & Debugger Trap
-    const detectDevTools = () => {
-      const threshold = 160;
-      const widthDiff = window.outerWidth - window.innerWidth > threshold;
-      const heightDiff = window.outerHeight - window.innerHeight > threshold;
-      
-      if (widthDiff || heightDiff) {
-        // Obfuscate the page if DevTools are opened
-        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:#fff;font-family:sans-serif;font-size:24px;font-weight:bold;">غير مصرح لك باستعراض الأكواد 🚫</div>';
-      }
-    };
-
-    const debuggerTrap = setInterval(() => {
-      detectDevTools();
-      if (process.env.NODE_ENV === 'production') {
-        console.clear();
-      }
-      const start = new Date().getTime();
-      // eslint-disable-next-line no-debugger
-      debugger;
-      const end = new Date().getTime();
-      // If debugger paused execution
-      if (end - start > 100) {
-        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:#fff;font-family:sans-serif;font-size:24px;font-weight:bold;">تم رصد محاولة تتبع 🚫</div>';
-      }
-    }, 1500);
-
     return () => {
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('keydown', handleKeyDown);
-      clearInterval(debuggerTrap);
       
       if (process.env.NODE_ENV === 'production') {
         console.log = originalLog;
