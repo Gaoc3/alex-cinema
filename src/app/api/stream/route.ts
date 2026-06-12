@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
     headers.set('Access-Control-Allow-Headers', 'Range');
     
     // Return the response body directly as a Web Stream (perfect for Edge runtime)
-    return new NextResponse(response.body as any, {
+    return new NextResponse(response.body || '', {
       status: response.status,
       headers
     });

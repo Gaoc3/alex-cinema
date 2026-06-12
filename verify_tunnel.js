@@ -1,25 +1,10 @@
 async function verify() {
-  console.log("1. Testing Next.js API /api/stream?ref=...");
+  console.log("1. Testing Next.js API /api/stream?ref=... directly for streaming");
   
   const testRefUrl = 'http://localhost:3000/api/stream?ref=ZtfXgC6Uyx2KkqvNW-JkVnt1Pr5TGKGhofZ6ZrddPUJWpdA1CXeAjghnpD4jyQFRNTq6xHfJiV1Eezo6Bui9trVSTYXgSvyZVXFM60HkHKu9Syb3sdpKWBfYXfPEBqz3XM_eCc8ZpUG9SqzQy_bQIP4l58OlvKOc49lZOZ4qA422hUIBP636OET9NnHQnfCpKRaVyFZBU5h2IyxKloxLtvwSOLy7lb7godfFRAuferrMvkiqPiD3wlW1gSa3g1G7iit6XyEz1M-sqedUOb2ebHMM8SE7XIWs2vHwjJU3248Yioj1bqxptQnkHfyrmD23rHOTkwfLYZnFtj2OLuM1sQ';
   
   try {
-    const resRedirect = await fetch(testRefUrl, { redirect: 'manual' });
-    console.log("Redirect Status:", resRedirect.status);
-    console.log("Redirect Location:", resRedirect.headers.get('location'));
-    
-    if (resRedirect.status !== 302) {
-      console.error("FAILED: Expected 302 redirect");
-      return;
-    }
-    
-    const location = resRedirect.headers.get('location');
-    console.log("\n2. Testing the redirected Location (/tunnel/...) with a Range request...");
-    
-    // Convert to absolute URL if necessary
-    const targetUrl = new URL(location, 'http://localhost:3000').href;
-    
-    const resStream = await fetch(targetUrl, { 
+    const resStream = await fetch(testRefUrl, { 
       headers: { 'Range': 'bytes=0-1000' }
     });
     
@@ -29,7 +14,7 @@ async function verify() {
     console.log("Stream Content-Range:", resStream.headers.get('content-range'));
     
     if (resStream.status === 206) {
-      console.log("\nSUCCESS: Next.js rewrites correctly proxied the byte-range chunk from Serveo!");
+      console.log("\nSUCCESS: Next.js Edge route correctly proxied the byte-range chunk from Serveo!");
     } else {
       console.error("\nFAILED: Expected 206 Partial Content, got", resStream.status);
       const errText = await resStream.text();
