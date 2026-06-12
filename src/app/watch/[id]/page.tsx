@@ -3,7 +3,6 @@ import { getVideoDetails, getSeriesSeasons, getSeriesEpisodes } from '@/lib/api'
 import WatchContainer from '@/components/WatchContainer';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
 
 export default async function WatchPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
