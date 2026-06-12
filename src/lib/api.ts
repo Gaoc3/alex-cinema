@@ -1,6 +1,6 @@
 import { decryptData } from '@/utils/cryptoHelper';
 
-export async function fetchCinemana(endpoint: string, params: Record<string, string> = {}) {
+export async function fetchCinemana(endpoint: string, params: Record<string, string> = {}, revalidate: number = 3600) {
   const queryString = new URLSearchParams(params).toString();
   const fullEndpoint = queryString ? `${endpoint}?${queryString}` : endpoint;
   
@@ -18,7 +18,7 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
 
     try {
       const res = await fetch(targetUrl, {
-        cache: 'no-store',
+        next: { revalidate },
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'bypass-tunnel-reminder': 'true'
