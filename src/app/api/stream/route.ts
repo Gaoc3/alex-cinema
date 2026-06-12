@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       } catch { /* ignore */ }
     } else {
       try {
-        const decoded = Buffer.from(urlParam, 'base64').toString('utf-8');
+        const decoded = atob(urlParam);
         if (decoded.startsWith('http')) {
           const parsed = new URL(decoded);
           path = parsed.pathname + parsed.search;
