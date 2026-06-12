@@ -46,39 +46,17 @@ export async function GET(req: NextRequest) {
     const safePath = finalPath.startsWith('/') ? finalPath : `/${finalPath}`;
     const proxyUrl = `${base}${safePath}`;
 
-    // Fetch the stream from the tunnel using Web Streams
-    const response = await fetch(proxyUrl, {
-      cache: 'no-store',
-      headers: {
-        'bypass-tunnel-reminder': 'true',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        ...(req.headers.get('range') ? { range: req.headers.get('range')! } : {})
-      }
-    });
+    // Vercel CANNOT proxy large video streams reliably:
+    // 1. Node.js API hits 4.5MB/10s limits (PIPELINE_ERROR_READ).
+    // 2. Rewrites hit 60s connection drops (Freezing).
+    // 3. Edge Runtime strips Content-Length header, breaking Range requests completely.
+    // The ONLY reliable solution is a direct 302 redirect to the secure Serveo tunnel.
+    // Serveo acts as a Reverse Proxy and hides the user's real IP automatically.
 
-    const headers = new Headers();
-    const headersToForward = ['content-type', 'content-length', 'content-range', 'accept-ranges'];
-    headersToForward.forEach(h => {
-      if (response.headers.has(h)) headers.set(h, response.headers.get(h)!);
-    });
-
-    headers.set('Accept-Ranges', 'bytes');
-    if (path.includes('.mp4') && headers.get('content-type') === 'binary/octet-stream') headers.set('Content-Type', 'video/mp4');
-    else if (path.includes('.m3u8')) headers.set('Content-Type', 'application/vnd.apple.mpegurl');
-    else if (path.includes('.ts')) headers.set('Content-Type', 'video/mp2t');
-
-    headers.set('Access-Control-Allow-Origin', '*');
-    headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    headers.set('Access-Control-Allow-Headers', 'Range');
-    
-    // Return the response body directly as a Web Stream (perfect for Edge runtime)
-    return new NextResponse(response.body || '', {
-      status: response.status,
-      headers
-    });
+    return NextResponse.redirect(proxyUrl, 302);
   } catch (error: any) {
-    console.error('Stream proxy error:', error?.message || error);
-    return new NextResponse('Stream proxy failed', { status: 502 });
+    console.error('Stream redirect error:', error?.message || error);
+    return new NextResponse('Stream redirect failed', { status: 502 });
   }
 }
 
