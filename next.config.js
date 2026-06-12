@@ -19,10 +19,20 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    const tunnelBase = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com';
+    const base = tunnelBase.replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
+    return [
+      {
+        source: '/tunnel/:path*',
+        destination: `${base}/:path*`,
+      },
+    ];
+  },
   async headers() {
     return [
       {
-        source: '/(.*)',
+        source: '/((?!tunnel/).*)',
         headers: [
           {
             key: 'Cache-Control',

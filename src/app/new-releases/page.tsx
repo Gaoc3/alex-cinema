@@ -1,8 +1,7 @@
 'use client';
 import { decryptData } from '@/utils/cryptoHelper';
 
-import { encodeProxyUrl } from '@/utils/proxyHelper';
-
+import { getImageUrl } from '@/utils/imageHelper';
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -107,7 +106,7 @@ function NewReleasesContent() {
                 {/* Poster Wrapper */}
                 <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
                   <img 
-                    src={`/api/proxy?endpoint=${encodeProxyUrl(video.img.startsWith('http') ? video.img : 'https://cnth2.shabakaty.com/vascin-poster-images/' + video.img)}`} 
+                    src={getImageUrl(video.img, 'poster')}
                     alt={video.ar_title} 
                     className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
                     loading="lazy"

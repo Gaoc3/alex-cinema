@@ -1,4 +1,3 @@
-import { encodeProxyUrl } from '@/utils/proxyHelper';
 import React from 'react';
 import AlexPlayer from '../AlexPlayer';
 
@@ -14,14 +13,7 @@ interface PlayerSectionProps {
 
 const toProxyUrl = (url: string | undefined | null) => {
   if (!url) return undefined;
-  let clean = url;
-  
-  // Use stream API for videos to support seeking and range requests
-  if (clean.includes('.mp4') || clean.includes('video')) {
-    return `/api/stream?url=${encodeProxyUrl(clean)}`;
-  }
-  
-  return `/api/proxy?endpoint=${encodeProxyUrl(clean)}`;
+  return url;
 };
 
 export default function PlayerSection({
@@ -48,9 +40,7 @@ export default function PlayerSection({
                   trailer: video.trailer,
                   stream_url: activeEpisodeDetails.streams?.length > 0 
                     ? toProxyUrl(activeEpisodeDetails.streams[0].videoUrl)
-                    : (activeEpisodeDetails.fileFile 
-                        ? toProxyUrl(`https://cndw2.shabakaty.com/m240/${activeEpisodeDetails.fileFile}`)
-                        : null),
+                    : toProxyUrl(activeEpisodeDetails.stream_url),
                   img: toProxyUrl(video.img),
                   ar_title: displayTitle,
                   streams: activeEpisodeDetails.streams?.map((s: any) => ({...s, videoUrl: toProxyUrl(s.videoUrl)})) || [],

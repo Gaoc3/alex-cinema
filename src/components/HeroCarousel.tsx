@@ -1,5 +1,5 @@
 'use client';
-import { encodeProxyUrl } from '@/utils/proxyHelper';
+import { getVideoImageUrl } from '@/utils/imageHelper';
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -65,13 +65,11 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
 
   const current = videos[bgIndex];
 
-  // Build the correct landscape cover image URL (proxy all external URLs)
-  const coverImgUrl = current.imgObjUrl 
-    ? `/api/proxy?endpoint=${encodeProxyUrl(current.imgObjUrl)}`
-    : `/api/proxy?endpoint=${encodeProxyUrl(current.img.startsWith('http') ? current.img : 'https://cnth2.shabakaty.com/vascin-cover-images/' + current.img)}`;
+  // Build the correct landscape cover image URL
+  const coverImgUrl = getVideoImageUrl(current, 'cover');
 
   return (
-    <div className="relative w-full h-[85svh] min-h-[600px] sm:min-h-[auto] sm:h-[580px] lg:h-[85vh] flex flex-col justify-end mt-0 overflow-hidden bg-[#070a13] select-none group">
+    <div className="relative w-full h-[85svh] min-h-[600px] sm:min-h-[auto] sm:h-[580px] lg:h-[85vh] flex flex-col justify-end mt-0 overflow-hidden bg-transparent select-none group">
       {/* Background Image Carousel Slider */}
       <div className="absolute inset-0 w-full h-full">
         <div 
@@ -89,7 +87,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         </div>
         
         {/* Gradients blending cover image into the website background */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/40 sm:via-[#070a13]/20 to-transparent z-[2]"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/80 sm:via-[#070a13]/40 to-transparent z-[2]"></div>
         {/* Right gradient for text readability (RTL) - Full height, but semi-transparent on mobile for glassy navbar */}
         <div className="absolute inset-y-0 right-0 w-[95%] md:w-[60%] lg:w-[50%] bg-gradient-to-l from-[#070a13]/80 via-[#070a13]/60 sm:from-[#070a13] sm:via-[#070a13]/80 to-transparent z-[2]"></div>
         {/* Top gradient for navbar readability if needed */}
@@ -180,16 +178,12 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         </>
       )}
 
-      {/* Slide Indicators / Thumbnails Row (Cinemana Style) */}
+      {/* Slide Indicators / Thumbnails Row (Apple TV+ Style) */}
       {videos.length > 1 && (
-        <div className="w-full z-20 mt-auto">
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full pt-4 pb-4 sm:pt-6 sm:pb-6 scroll-smooth">
-            {/* Start spacer to replace padding and avoid RTL bugs */}
-            <div className="w-1 sm:w-4 shrink-0 pointer-events-none opacity-0"></div>
+        <div className="w-full z-20 mt-auto pb-2 sm:pb-6">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full px-4 lg:px-8 py-4 scroll-smooth">
             {videos.map((video, idx) => {
-            const thumbUrl = video.imgObjUrl 
-              ? `/api/proxy?endpoint=${encodeProxyUrl(video.imgObjUrl)}`
-              : `/api/proxy?endpoint=${encodeProxyUrl(video.img.startsWith('http') ? video.img : 'https://cnth2.shabakaty.com/vascin-cover-images/' + video.img)}`;
+            const thumbUrl = getVideoImageUrl(video, 'cover');
             return (
               <button
                 key={video.nb}
@@ -219,8 +213,6 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
               </button>
             );
           })}
-            {/* End spacer to replace padding and avoid RTL bugs */}
-            <div className="w-1 sm:w-4 shrink-0 pointer-events-none opacity-0"></div>
           </div>
         </div>
       )}

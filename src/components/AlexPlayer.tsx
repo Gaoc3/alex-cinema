@@ -1,5 +1,4 @@
 'use client';
-import { encodeProxyUrl } from '@/utils/proxyHelper';
 
 import React, { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
@@ -158,20 +157,12 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Helper to convert CDN URLs to proxy URLs
+  // Helper to proxy stream URLs — simplified since URLs are now pre-sanitized by the server
   const toProxyUrl = (url: string | undefined | null) => {
     if (!url) return null;
-    if (url.startsWith('/api/proxy') || url.startsWith('/api/stream')) return url;
-    let clean = url;
-    try { clean = decodeURIComponent(url); } catch { /* not encoded, use as-is */ }
-    
-    // Support streaming proxy for video and playlist formats
-    if (clean.includes('.mp4') || clean.includes('video') || clean.includes('.m3u8') || clean.includes('.ts')) {
-      const ext = clean.includes('.m3u8') ? '.m3u8' : clean.includes('.ts') ? '.ts' : '.mp4';
-      return `/api/stream?url=${encodeProxyUrl(clean)}&ext=${ext}`;
-    }
-    
-    return `/api/proxy?endpoint=${encodeProxyUrl(clean)}`;
+    const clean = url.trim();
+    if (clean.startsWith('/api/proxy') || clean.startsWith('/api/stream') || clean.startsWith('/api/img')) return clean;
+    return clean;
   };
 
   // Parse direct streams on initialization or data change
@@ -658,7 +649,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   };
 
   const vttTranslations = getVttTracks();
-  const getSubtitlesProxyUrl = (url: string) => `/api/proxy?endpoint=${encodeProxyUrl(url)}`;
+  const getSubtitlesProxyUrl = (url: string) => url;
 
   // Keyboard Shortcuts Handler
   useEffect(() => {

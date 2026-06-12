@@ -1,5 +1,5 @@
-import { encodeProxyUrl } from '@/utils/proxyHelper';
 import { decryptData } from '@/utils/cryptoHelper';
+
 export async function fetchCinemana(endpoint: string, params: Record<string, string> = {}) {
   const queryString = new URLSearchParams(params).toString();
   const fullEndpoint = queryString ? `${endpoint}?${queryString}` : endpoint;
@@ -30,7 +30,10 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
       if (!res.ok) return null;
       const text = await res.text();
       try {
-        return JSON.parse(text); // Shabakaty returns raw JSON, no decryption needed on server directly
+        const raw = JSON.parse(text);
+        // Sanitize all shabakaty URLs before data reaches client components
+        const { sanitizeVideoData } = await import('./serverCrypto');
+        return sanitizeVideoData(raw);
       } catch {
         return null;
       }
@@ -41,12 +44,12 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
     }
   }
 
-  // Client-side fetch via our proxy
+  // Client-side fetch via our proxy — NO encryption keys needed
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
-    const res = await fetch(`/api/proxy?endpoint=${encodeProxyUrl(fullEndpoint)}`, {
+    const res = await fetch(`/api/proxy?endpoint=${encodeURIComponent(fullEndpoint)}`, {
       cache: 'no-store',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -80,7 +83,6 @@ export async function getVideoDetails(id: string) {
   if (data) {
     try {
       const streams = await fetchCinemana(`transcoddedFiles/id/${id}`);
-      console.log(`[DEBUG] transcoddedFiles returned for ${id}:`, streams);
       data.streams = Array.isArray(streams) ? streams : [];
     } catch (e) {
       console.error('Error fetching streams:', e);
@@ -90,7 +92,15 @@ export async function getVideoDetails(id: string) {
     if (data.streams.length > 0) {
       data.stream_url = data.streams[0].videoUrl;
     } else if (data.fileFile) {
-      data.stream_url = `https://cndw2.shabakaty.com/m240/${data.fileFile}`;
+      // This URL will be sanitized by sanitizeVideoData (called inside fetchCinemana)
+      // But since we're constructing it here AFTER fetchCinemana returned,
+      // we need to sanitize it manually for server-side rendering
+      if (typeof window === 'undefined') {
+        const { sanitizeUrl } = await import('./serverCrypto');
+        data.stream_url = sanitizeUrl(`https://cndw2.shabakaty.com/m240/${data.fileFile}`);
+      } else {
+        data.stream_url = `/api/stream?ref=fallback`;
+      }
     }
   }
   return data;
@@ -100,3 +110,5 @@ export async function getSeriesEpisodes(seriesId: string) { return fetchCinemana
 export async function searchMovies(query: string, type: 'movies' | 'series' = 'movies') {
   return fetchCinemana('AdvancedSearch', { level: '1', videoTitle: query, staffTitle: query, page: '0', year: '1900,2026', type });
 }
+
+

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { encryptData, decryptUrl, encryptUrl } from '@/utils/cryptoHelper';
+import { encryptData } from '@/utils/cryptoHelper';
+import { encryptPath } from '@/lib/serverCrypto';
 
 const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com/cgi-bin/proxy?url=';
 
@@ -14,7 +15,7 @@ function buildResponse(upstreamRes: Response, extraHeaders?: Record<string, stri
   const acceptRanges = upstreamRes.headers.get('accept-ranges');
   if (acceptRanges) headers.set('Accept-Ranges', acceptRanges);
   headers.set('Access-Control-Allow-Origin', '*');
-  headers.set('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges, X-Debug-Tunnel, X-Debug-Base, X-Debug-Target');
+  headers.set('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges');
 
   if (extraHeaders) {
     for (const [k, v] of Object.entries(extraHeaders)) {
@@ -103,21 +104,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing endpoint parameter' }, { status: 400 });
   }
 
-  // Attempt AES decrypt if it doesn't look like a URL and has no slashes
-  if (!endpoint.includes('/') && /^[A-Za-z0-9+/=_-]+$/.test(endpoint)) {
-    try {
-      const decrypted = decryptUrl(endpoint);
-      if (decrypted && (decrypted.startsWith('http') || decrypted.includes('/'))) {
-        endpoint = decrypted;
-      } else {
-        // Fallback for old base64 cache if any
-        const decodedB64 = Buffer.from(endpoint, 'base64').toString('utf-8');
-        if (decodedB64.startsWith('http') || decodedB64.includes('/')) {
-          endpoint = decodedB64;
-        }
-      }
-    } catch { /* ignore */ }
-  }
+  // URL-decode the endpoint (client now sends encodeURIComponent instead of AES)
+  try {
+    endpoint = decodeURIComponent(endpoint);
+  } catch { /* not valid percent-encoding, keep as-is */ }
 
   if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
     try {
@@ -172,12 +162,8 @@ export async function GET(req: NextRequest) {
     }
   } catch (e) { }
 
-  // Add debug headers
-  const debugHeaders = {
-    'X-Debug-Tunnel': tunnelUrl,
-    'X-Debug-Base': process.env.TUNNEL_BASE_URL || 'MISSING',
-    'X-Debug-Target': targetUrl
-  };
+  // No debug headers — never leak internal URLs
+  const debugHeaders = {};
 
   const cacheKey = isApi ? targetUrl : '';
   const cacheTtl = isApi ? 120000 : 0;
@@ -237,14 +223,20 @@ export async function GET(req: NextRequest) {
       if (isApi) {
         try {
           let text = await response.text();
-          // Hide Shabakaty domains from the frontend response using Base64
-          // Match both http and https, and handle varying numbers like cnth1, cnth2, etc.
-          text = text.replace(/https?:\/\/(cdn|cnth[0-9]+|cndw[0-9]+|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match) => {
-            const encrypted = encryptUrl(match);
-            if (match.includes('mp4') || match.includes('video') || match.includes('m3u8')) {
-              return `/api/stream?url=${encrypted}`;
+          // Hide Shabakaty domains — encrypt ONLY the path with server-only key
+          text = text.replace(/https?:(?:\\?\/){2}(cdn|cnth[0-9]+|cndw[0-9]+|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match) => {
+            try {
+              const unescapedMatch = match.replace(/\\/g, '');
+              const parsed = new URL(unescapedMatch);
+              const pathWithSearch = parsed.pathname + parsed.search;
+              const enc = encryptPath(pathWithSearch);
+              if (match.includes('mp4') || match.includes('video') || match.includes('m3u8') || match.includes('.ts')) {
+                return `/api/stream?ref=${enc}`;
+              }
+              return `/api/img?ref=${enc}`;
+            } catch {
+              return match;
             }
-            return `/api/proxy?endpoint=${encrypted}`;
           });
           
           const data = JSON.parse(text);
@@ -275,7 +267,7 @@ export async function GET(req: NextRequest) {
     }
   } catch { clearTimeout(directTimeout); }
 
-  return NextResponse.json({ error: 'Failed to fetch', debug: debugHeaders }, { status: 502, headers: debugHeaders });
+  return NextResponse.json({ error: 'Failed to fetch' }, { status: 502 });
 }
 
 export async function OPTIONS() {
