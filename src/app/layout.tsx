@@ -12,9 +12,7 @@ import Script from "next/script";
 const cairo = Cairo({ subsets: ["arabic"], variable: "--font-cairo" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
-export const revalidate = 0;
-export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
+
 
 export const metadata: Metadata = {
   title: "ALEX CINEMA | اليكس سينما",
