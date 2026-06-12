@@ -32,10 +32,18 @@ export async function GET(req: NextRequest) {
 
   if (!path) return new NextResponse('Missing stream parameter', { status: 400 });
 
+  let finalPath = path;
+  if (path.startsWith('http')) {
+    try {
+      const parsed = new URL(path);
+      finalPath = parsed.pathname + parsed.search;
+    } catch { /* ignore */ }
+  }
+
   try {
     const tunnelBase = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com';
     const base = tunnelBase.replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
-    const safePath = path.startsWith('/') ? path : `/${path}`;
+    const safePath = finalPath.startsWith('/') ? finalPath : `/${finalPath}`;
     const proxyUrl = `${base}${safePath}`;
 
     // Fetch the stream from the tunnel using Web Streams
