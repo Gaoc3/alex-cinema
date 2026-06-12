@@ -55,6 +55,7 @@ export function sanitizeUrl(url: string): string {
 const URL_FIELDS = [
   'imgObjUrl', 'imgMediumThumb', 'imgThumb', 'imgBig',
   'stream_url', 'arTranslationFilePath', 'enTranslationFilePath',
+  'videoUrl' // ADDED THIS!
 ];
 
 /**
