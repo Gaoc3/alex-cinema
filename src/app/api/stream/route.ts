@@ -41,24 +41,14 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const tunnelBase = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com';
-    const base = tunnelBase.replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
     const safePath = finalPath.startsWith('/') ? finalPath : `/${finalPath}`;
-    const proxyUrl = `${base}${safePath}`;
-
-    // Vercel CANNOT proxy large video streams reliably:
-    // 1. Node.js API hits 4.5MB/10s limits (PIPELINE_ERROR_READ).
-    // 2. Rewrites hit 60s connection drops (Freezing).
-    // 3. Edge Runtime strips Content-Length header, breaking Range requests completely.
-    // The ONLY reliable solution is a direct 302 redirect to the secure Serveo tunnel.
-    // Serveo acts as a Reverse Proxy and hides the user's real IP automatically.
-
-    const response = NextResponse.redirect(proxyUrl, 302);
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Range');
     
-    return response;
+    // We MUST use the Next.js rewrite (/tunnel/...) because it makes the request SAME-ORIGIN.
+    // Direct redirects to Serveo fail because Serveo doesn't provide CORS headers, 
+    // which breaks the <video crossOrigin="anonymous"> tag in the browser.
+    const proxyUrl = `/tunnel${safePath}`;
+    
+    return NextResponse.redirect(new URL(proxyUrl, req.url));
   } catch (error: any) {
     console.error('Stream redirect error:', error?.message || error);
     return new NextResponse('Stream redirect failed', { status: 502 });
