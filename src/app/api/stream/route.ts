@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { decryptPath } from '@/lib/serverCrypto';
 
@@ -10,22 +12,14 @@ export async function GET(req: NextRequest) {
   let path: string | null = null;
 
   if (ref) {
-    // New server-encrypted path
     path = decryptPath(ref);
-    if (!path) {
-      return new NextResponse('Invalid ref parameter', { status: 400 });
-    }
   } else if (urlParam) {
-    // Legacy fallback: try to decode old formats
     if (urlParam.startsWith('http')) {
       try {
         const parsed = new URL(urlParam);
         path = parsed.pathname + parsed.search;
-      } catch {
-        return new NextResponse('Invalid URL', { status: 400 });
-      }
+      } catch { /* ignore */ }
     } else {
-      // Try base64 decode as final fallback
       try {
         const decoded = Buffer.from(urlParam, 'base64').toString('utf-8');
         if (decoded.startsWith('http')) {
@@ -36,9 +30,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  if (!path) {
-    return new NextResponse('Missing or invalid stream parameter', { status: 400 });
-  }
+  if (!path) return new NextResponse('Missing stream parameter', { status: 400 });
 
   try {
     const tunnelBase = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com';
@@ -46,14 +38,38 @@ export async function GET(req: NextRequest) {
     const safePath = path.startsWith('/') ? path : `/${path}`;
     const proxyUrl = `${base}${safePath}`;
 
-    // We no longer expose the tunnel URL directly to the browser.
-    // We redirect to the local /tunnel/ rewrite endpoint, which securely proxies the stream
-    // using Next.js native rewrites without memory buffering issues or exposing the target URL.
+    // Fetch the stream from the tunnel using Web Streams
+    const response = await fetch(proxyUrl, {
+      headers: {
+        'bypass-tunnel-reminder': 'true',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        ...(req.headers.get('range') ? { range: req.headers.get('range')! } : {})
+      }
+    });
+
+    const headers = new Headers();
+    const headersToForward = ['content-type', 'content-length', 'content-range', 'accept-ranges'];
+    headersToForward.forEach(h => {
+      if (response.headers.has(h)) headers.set(h, response.headers.get(h)!);
+    });
+
+    headers.set('Accept-Ranges', 'bytes');
+    if (path.includes('.mp4') && headers.get('content-type') === 'binary/octet-stream') headers.set('Content-Type', 'video/mp4');
+    else if (path.includes('.m3u8')) headers.set('Content-Type', 'application/vnd.apple.mpegurl');
+    else if (path.includes('.ts')) headers.set('Content-Type', 'video/mp2t');
+
+    headers.set('Access-Control-Allow-Origin', '*');
+    headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    headers.set('Access-Control-Allow-Headers', 'Range');
     
-    return NextResponse.redirect(new URL(`/tunnel${safePath}`, req.url), 302);
+    // Return the response body directly as a Web Stream (perfect for Edge runtime)
+    return new NextResponse(response.body as any, {
+      status: response.status,
+      headers
+    });
   } catch (error: any) {
-    console.error('Stream redirect error:', error?.message || error);
-    return new NextResponse('Stream redirect failed', { status: 502 });
+    console.error('Stream proxy error:', error?.message || error);
+    return new NextResponse('Stream proxy failed', { status: 502 });
   }
 }
 
