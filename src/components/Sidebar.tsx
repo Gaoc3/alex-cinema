@@ -121,10 +121,10 @@ export default function Sidebar() {
           <div className={`w-full flex justify-center items-center absolute inset-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isCollapsed ? 'opacity-100 scale-100 delay-150 pointer-events-auto' : 'opacity-0 scale-50 pointer-events-none'}`}>
             <button 
               onClick={toggleSidebar}
-              className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-[0_0_15px_rgba(229,9,20,0.3)] bg-black/40 border border-white/10"
               title="Expand Sidebar"
             >
-              <i className="fa-solid fa-play text-white ml-0.5 text-base"></i>
+              <img src="/logo.png" alt="AleX Cinema Logo" className="w-full h-full object-cover scale-[1.2]" />
             </button>
           </div>
         </div>

@@ -52,8 +52,8 @@ export default function RootLayout({
                       </div>
                       
                       <Link href="/" className="flex items-center gap-1.5 sm:gap-3 group hover-scale">
-                          <div className="w-6 h-6 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#e50914] to-[#8a0006] flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300">
-                              <i className="fa-solid fa-play text-white ml-0.5 text-[8px] sm:text-sm"></i>
+                          <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl overflow-hidden flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300 bg-black/40 border border-white/10">
+                              <img src="/logo.png" alt="AleX Cinema Logo" className="w-full h-full object-cover scale-[1.2]" />
                           </div>
                           <div className="flex flex-col leading-none mt-0.5">
                               <span className="text-sm sm:text-2xl font-black font-en tracking-wider text-white drop-shadow-md">ALEX<span className="text-alex-primary">CINEMA</span></span>
