@@ -2,7 +2,7 @@ const CryptoJS = require('crypto-js');
 
 async function test() {
   try {
-    const fullEndpoint = 'allVideoInfo/id/3087929';
+    const fullEndpoint = 'transcoddedFiles/id/3087929';
     const res = await fetch(`https://alex-cinema.vercel.app/api/proxy?endpoint=${encodeURIComponent(fullEndpoint)}`);
     const data = await res.json();
     console.log("Payload exists:", !!data.payload);
@@ -11,7 +11,7 @@ async function test() {
       const bytes = CryptoJS.AES.decrypt(data.payload, 'vA$c1n_S3cr3t_K3y_!2024');
       const decryptedData = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
       
-      const streamUrl = decryptedData.data?.streams?.[0]?.videoUrl || decryptedData.data?.translations?.[0]?.file;
+      const streamUrl = decryptedData[0]?.videoUrl;
       console.log("Decrypted Stream URL:", streamUrl);
       
       if (streamUrl) {
