@@ -53,7 +53,12 @@ export async function GET(req: NextRequest) {
     // The ONLY reliable solution is a direct 302 redirect to the secure Serveo tunnel.
     // Serveo acts as a Reverse Proxy and hides the user's real IP automatically.
 
-    return NextResponse.redirect(proxyUrl, 302);
+    const response = NextResponse.redirect(proxyUrl, 302);
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Range');
+    
+    return response;
   } catch (error: any) {
     console.error('Stream redirect error:', error?.message || error);
     return new NextResponse('Stream redirect failed', { status: 502 });
