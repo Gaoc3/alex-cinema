@@ -98,8 +98,8 @@ export default function Sidebar() {
           {/* Logo and Brand Name (Hidden on Collapsed) */}
           <div className={`flex items-center gap-2.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-right ${isCollapsed ? 'opacity-0 max-w-0 overflow-hidden scale-90 pointer-events-none' : 'opacity-100 max-w-[300px] scale-100 delay-100'}`}>
             <Link href="/" className="flex items-center gap-2.5 group" onClick={closeSidebar}>
-              <div className="w-12 h-12 shrink-0 rounded-xl overflow-hidden flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(229,9,20,0.3)] group-hover:shadow-[0_0_25px_rgba(229,9,20,0.5)] bg-black/40 border border-white/10">
-                <img src="/logo.png" alt="AleX Cinema Logo" className="w-full h-full object-cover scale-[1.2]" />
+              <div className="w-12 h-12 shrink-0 rounded-full overflow-hidden flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(229,9,20,0.3)] group-hover:shadow-[0_0_25px_rgba(229,9,20,0.5)] border border-white/10">
+                <img src="/logo.svg" alt="AleX Cinema Logo" className="w-full h-full object-cover scale-[1.05]" />
               </div>
               <div className="flex flex-col leading-none font-sans">
                 <span className="text-[19px] font-black font-en tracking-normal text-white">ALEX<span className="text-alex-primary">CINEMA</span></span>
