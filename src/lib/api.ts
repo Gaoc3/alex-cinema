@@ -8,7 +8,7 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
 
   if (isServer) {
     let targetUrl = `https://cinemana.shabakaty.com/api/android/${fullEndpoint}`;
-    const tunnelBase = (process.env.TUNNEL_BASE_URL || '').replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
+    const tunnelBase = (process.env.TUNNEL_BASE_URL || 'http://64.225.99.144').replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
     if (tunnelBase) {
       targetUrl = `${tunnelBase}/api/android/${fullEndpoint}`;
     }

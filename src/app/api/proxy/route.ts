@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { encryptData } from '@/utils/cryptoHelper';
 import { encryptPath } from '@/lib/serverCrypto';
 
-const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com/cgi-bin/proxy?url=';
+const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'http://64.225.99.144';
 
 function buildResponse(upstreamRes: Response, extraHeaders?: Record<string, string>, overrideBody?: string, overrideContentType?: string) {
   const headers = new Headers();
@@ -157,7 +157,7 @@ export async function GET(req: NextRequest) {
   let tunnelUrl = targetUrl;
   try {
     const tUrl = new URL(targetUrl);
-    const tunnelBase = (process.env.TUNNEL_BASE_URL || '').replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
+    const tunnelBase = TUNNEL_BASE_URL.replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
     if (tunnelBase && tUrl.hostname.includes('shabakaty.com')) {
       tunnelUrl = `${tunnelBase}${tUrl.pathname}${tUrl.search}`;
     }
