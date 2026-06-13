@@ -219,6 +219,46 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
     touchStartRef.current = null;
   };
 
+  const toggleFullscreen = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    triggerHaptic('light');
+    if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+      try {
+        if (containerRef.current?.requestFullscreen) {
+          await containerRef.current.requestFullscreen();
+        } else if ((containerRef.current as any)?.webkitRequestFullscreen) {
+          await (containerRef.current as any).webkitRequestFullscreen();
+        }
+        if (screen.orientation && screen.orientation.lock) {
+          await screen.orientation.lock('landscape').catch(() => {});
+        }
+      } catch (err) {}
+    } else {
+      try {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        }
+        if (screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
+      } catch (err) {}
+    }
+  };
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!(document.fullscreenElement || (document as any).webkitFullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+    };
+  }, []);
+
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
     triggerHaptic('medium');
@@ -357,10 +397,10 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
                 <i className="fa-solid fa-closed-captioning text-sm"></i>
               </button>
               <button 
-                onClick={() => setIsZoomed(!isZoomed)} 
+                onClick={toggleFullscreen} 
                 className="p-3 w-12 h-12 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors"
               >
-                <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-expand'} text-sm`}></i>
+                <i className={`fa-solid ${isFullscreen ? 'fa-compress' : 'fa-expand'} text-sm`}></i>
               </button>
             </div>
           </div>
