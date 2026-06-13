@@ -87,11 +87,11 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         </div>
         
         {/* Gradients blending cover image into the website background */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/80 sm:via-[#070a13]/40 to-transparent z-[2]"></div>
-        {/* Right gradient for text readability (RTL) - Full height, but semi-transparent on mobile for glassy navbar */}
-        <div className="absolute inset-y-0 right-0 w-[95%] md:w-[60%] lg:w-[50%] bg-gradient-to-l from-[#070a13]/80 via-[#070a13]/60 sm:from-[#070a13] sm:via-[#070a13]/80 to-transparent z-[2]"></div>
-        {/* Top gradient for navbar readability if needed */}
-        <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#070a13]/50 to-transparent z-[2]"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/40 to-transparent z-[2]"></div>
+        {/* Right vignette for text readability (RTL) - Smooth and expansive */}
+        <div className="absolute inset-y-0 right-0 w-full md:w-[80%] lg:w-[60%] bg-gradient-to-l from-[#070a13] via-[#070a13]/80 to-transparent z-[2]"></div>
+        {/* Top subtle gradient for navbar readability */}
+        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-[#070a13]/70 to-transparent z-[2]"></div>
       </div>
       
       {/* Content Overlay */}
@@ -106,48 +106,46 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           }`}
         >
           {/* Subtle text glow for readability over bright areas */}
-          <div className="absolute inset-0 bg-black/20 blur-3xl rounded-full pointer-events-none -z-10"></div>
+          <div className="absolute inset-0 bg-black/30 blur-3xl rounded-full pointer-events-none -z-10"></div>
           
-          <div className="flex flex-wrap items-center justify-start gap-3 mb-5 relative z-10">
-            <span className="px-4 py-1.5 ios-active text-white text-xs font-bold rounded-md">
+          <div className="flex flex-wrap items-center justify-start gap-3 sm:gap-4 mb-4 sm:mb-6 relative z-10 text-xs sm:text-sm md:text-base font-semibold text-gray-200">
+            <span className="px-3 py-1 bg-alex-primary text-white text-xs font-bold rounded shadow-[0_0_10px_rgba(229,9,20,0.4)]">
               حصرياً
             </span>
-            <span className="flex items-center gap-1.5 text-yellow-400 text-sm font-bold glass-panel px-4 py-1.5 rounded-md">
-              <i className="fa-solid fa-star text-xs"></i> <span className="font-en mt-0.5">{current.stars}</span>
+            <span className="flex items-center gap-1.5 text-yellow-400 drop-shadow-md">
+              <i className="fa-solid fa-star text-xs"></i> 
+              <span className="font-en mt-0.5">{current.stars}</span>
             </span>
-            <span className="text-gray-200 text-sm font-bold glass-panel px-4 py-1.5 rounded-md">
-              <span className="font-en">{current.year}</span>
-            </span>
+            <span className="w-1 h-1 rounded-full bg-gray-500"></span>
+            <span className="font-en tracking-wider drop-shadow-md">{current.year}</span>
+            <span className="w-1 h-1 rounded-full bg-gray-500"></span>
+            <span className="text-gray-300 drop-shadow-md">{current.kind === '2' ? 'مسلسل' : 'فيلم'}</span>
           </div>
           
-          <h1 className="text-2xl sm:text-4xl lg:text-6xl font-black text-white mb-3 sm:mb-4 leading-tight drop-shadow-2xl relative z-10 tracking-tight">
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-white mb-2 leading-tight drop-shadow-[0_0_30px_rgba(0,0,0,0.9)] relative z-10 tracking-tight">
             {current.ar_title}
           </h1>
           {current.en_title && current.en_title !== current.ar_title && (
-            <h2 className="text-lg sm:text-xl text-gray-400 font-bold font-en mb-6 drop-shadow-lg relative z-10">
+            <h2 className="text-lg sm:text-2xl text-gray-300 font-bold font-en mb-6 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] relative z-10 tracking-[0.2em] uppercase">
               {current.en_title}
             </h2>
           )}
           
-          <p className="text-gray-300 text-sm sm:text-base mb-8 line-clamp-3 leading-relaxed max-w-2xl font-medium drop-shadow-md relative z-10">
+          <p className="text-gray-200 text-sm sm:text-lg mb-8 sm:mb-10 line-clamp-3 leading-relaxed max-w-2xl font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] relative z-10">
             {current.ar_content}
           </p>
           
-          <div className="flex flex-wrap items-center justify-start gap-4 relative z-10">
+          <div className="flex flex-wrap items-center justify-start gap-4 sm:gap-5 relative z-10">
             <Link 
               href={`/watch/${current.nb}`} 
-              className={`flex items-center gap-3 px-8 py-3.5 rounded-xl font-bold text-base ${
-                current.kind === '2' 
-                  ? 'ios-button bg-blue-600/30 border-blue-600/50 text-white' 
-                  : 'ios-active text-white'
-              }`}
+              className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3 sm:py-4 rounded-full font-bold text-sm sm:text-base bg-white text-black hover:bg-gray-200 transition-all duration-300 hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.2)]"
             >
-              <i className="fa-solid fa-play ml-1"></i>
+              <i className="fa-solid fa-play ml-1 text-lg"></i>
               <span>شاهد الآن</span>
             </Link>
             {current.trailer && (
-              <a href={current.trailer} target="_blank" rel="noreferrer" className="flex items-center gap-3 ios-button text-white px-8 py-3.5 rounded-xl font-bold text-base">
-                <i className="fa-solid fa-film ml-1"></i>
+              <a href={current.trailer} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3 sm:py-4 rounded-full font-bold text-sm sm:text-base bg-white/10 text-white backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105 shadow-lg">
+                <i className="fa-regular fa-circle-play ml-1 text-xl"></i>
                 <span>الإعلان الترويجي</span>
               </a>
             )}
