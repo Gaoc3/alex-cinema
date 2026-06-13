@@ -355,23 +355,23 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
       >
         {/* Top Gradient & Title */}
         <div className="w-full pt-[env(safe-area-inset-top,16px)] px-[env(safe-area-inset-left,16px)] pb-10 bg-gradient-to-b from-black/80 via-black/30 to-transparent pointer-events-auto flex items-center justify-between">
-          <button onClick={() => window.history.back()} className="p-3 w-12 h-12 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-xl text-white">
-            <i className="fa-solid fa-chevron-left"></i>
+          <button className="p-3 text-white/90 hover:text-white transition-colors" onClick={() => window.history.back()}>
+            <i className="fa-solid fa-chevron-right text-xl"></i>
           </button>
-          <h1 className="text-white font-black text-sm drop-shadow-md truncate max-w-[60%] text-center">{videoData.ar_title}</h1>
-          <div className="w-12 h-12"></div> {/* Spacer for balance */}
+          <h2 className="text-white font-bold text-lg max-w-[70%] truncate text-center drop-shadow-md tracking-wide">
+            {videoData.ar_title}
+          </h2>
+          <div className="w-10"></div> {/* Spacer for center alignment */}
         </div>
 
-        {/* Center Big Play Button */}
+        {/* Center Big Play/Pause Button */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          {isPaused && (
-            <button 
-              onClick={togglePlay}
-              className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white text-3xl shadow-[0_0_40px_rgba(255,255,255,0.1)] active:scale-75 transition-transform duration-300 pointer-events-auto"
-            >
-              <i className="fa-solid fa-play ml-1"></i>
-            </button>
-          )}
+          <button 
+            onClick={togglePlay}
+            className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white text-3xl shadow-[0_0_40px_rgba(255,255,255,0.1)] active:scale-75 transition-transform duration-300 pointer-events-auto"
+          >
+            <i className={`fa-solid ${isPaused ? 'fa-play ml-1' : 'fa-pause'} `}></i>
+          </button>
         </div>
 
         {/* Bottom Liquid Glass Controls */}
