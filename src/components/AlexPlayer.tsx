@@ -1025,7 +1025,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                 label={track.name === 'arabic' ? 'العربية' : 'English'}
                 onLoad={(e) => {
                    const t = (e.target as HTMLTrackElement).track;
-                   t.mode = selectedLanguage === track.type ? 'hidden' : 'disabled';
+                   t.mode = selectedLanguage === track.type ? 'showing' : 'disabled';
                 }}
               />
             ))}
