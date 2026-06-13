@@ -103,6 +103,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
   }, [selectedFont]);
 
   const [selectedLanguage, setSelectedLanguage] = useState<string>('ar');
+  const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
 
   // Sync Text Tracks (Subtitles)
   useEffect(() => {
@@ -111,13 +112,14 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
       const tracks = video.textTracks;
       for (let i = 0; i < tracks.length; i++) {
         if (selectedLanguage === 'off') {
-          tracks[i].mode = 'hidden';
+          tracks[i].mode = 'disabled';
         } else if (tracks[i].language === selectedLanguage) {
-          tracks[i].mode = 'showing';
+          tracks[i].mode = 'hidden'; // Hidden allows parsing but not native rendering
         } else {
-          tracks[i].mode = 'hidden';
+          tracks[i].mode = 'disabled';
         }
       }
+      if (selectedLanguage === 'off') setCurrentSubtitle('');
     }
   }, [selectedLanguage, currentStreamUrl]);
 
@@ -453,22 +455,9 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <style>{`
-          video.alex-video-cue.cue-updater-${subtitleSize}-${showSubtitleBg ? '1' : '0'}-${selectedFont.replace(/\s+/g, '')}::cue {
-            font-size: ${subtitleSize}% !important;
-            background: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
-            background-color: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
-            text-shadow: ${showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)'} !important;
-            font-family: '${selectedFont}', 'Outfit', sans-serif !important;
-          }
-          video.alex-video-cue::-webkit-media-text-track-container {
-            transform: translateY(${isFullscreen ? (showControls ? '-10vh' : '-24px') : (showControls ? '-60px' : '-24px')}) !important;
-            transition: transform 0.3s ease-out;
-          }
-        `}</style>
         <video
           ref={videoRef}
-          className={`w-full h-full alex-video-cue cue-updater-${subtitleSize}-${showSubtitleBg ? '1' : '0'}-${selectedFont.replace(/\s+/g, '')} transition-transform duration-300 ${isZoomed ? 'scale-[1.1] sm:scale-125 object-cover' : 'object-contain'}`}
+          className={`w-full h-full transition-transform duration-300 ${isZoomed ? 'scale-[1.1] sm:scale-125 object-cover' : 'object-contain'}`}
           style={{ 
             filter: `brightness(${brightness})`
           } as React.CSSProperties}
@@ -476,7 +465,28 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
           onPlay={() => setIsPaused(false)}
           onPause={() => setIsPaused(true)}
           onTimeUpdate={() => {
-            if (!isScrubbing) setCurrentTime(videoRef.current?.currentTime || 0);
+            if (!isScrubbing && videoRef.current) {
+               setCurrentTime(videoRef.current.currentTime);
+               
+               // Real-time subtitle extraction
+               if (selectedLanguage !== 'off') {
+                 let activeText = '';
+                 for (let i = 0; i < videoRef.current.textTracks.length; i++) {
+                   const track = videoRef.current.textTracks[i];
+                   if (track.language === selectedLanguage && track.activeCues && track.activeCues.length > 0) {
+                     const texts = [];
+                     for (let j = 0; j < track.activeCues.length; j++) {
+                       texts.push((track.activeCues[j] as VTTCue).text);
+                     }
+                     activeText = texts.join('\n');
+                     break;
+                   }
+                 }
+                 if (currentSubtitle !== activeText) setCurrentSubtitle(activeText);
+               } else if (currentSubtitle !== '') {
+                 setCurrentSubtitle('');
+               }
+            }
           }}
           onLoadedMetadata={() => setDuration(videoRef.current?.duration || 0)}
         >
@@ -488,14 +498,39 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
               srcLang={track.type}
               label={track.name === 'arabic' ? 'العربية' : 'English'}
               default={selectedLanguage === track.type}
-              onLoad={(e) => {
-                 const t = (e.target as HTMLTrackElement).track;
-                 t.mode = selectedLanguage === track.type ? 'showing' : 'hidden';
-              }}
             />
           ))}
         </video>
       </div>
+
+      {/* Custom React Subtitle Overlay (100% Real-time styling) */}
+      {currentSubtitle && (
+        <div 
+          className="absolute left-0 w-full text-center pointer-events-none flex flex-col items-center justify-end z-20 transition-all duration-300"
+          style={{ 
+             bottom: showControls ? '70px' : '30px',
+             padding: '0 5%'
+          }}
+        >
+          {currentSubtitle.split('\n').map((line, idx) => (
+            <span 
+              key={idx} 
+              className="inline-block"
+              style={{
+                fontSize: `${(subtitleSize / 100) * 16}px`,
+                fontFamily: `'${selectedFont}', 'Outfit', sans-serif`,
+                backgroundColor: showSubtitleBg ? 'rgba(0,0,0,0.65)' : 'transparent',
+                color: 'white',
+                padding: showSubtitleBg ? '3px 6px' : '0',
+                lineHeight: '1.4',
+                whiteSpace: 'pre-wrap',
+                textShadow: showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)'
+              }}
+              dangerouslySetInnerHTML={{ __html: line }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Double Tap Seek Overlay */}
       {showSeekAnimation === 'forward' && (
