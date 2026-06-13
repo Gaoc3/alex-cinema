@@ -15,11 +15,19 @@ export function getImageUrl(
 ): string {
   if (!imgField) return '';
   // Already a proxied/rewritten URL from sanitized server data
-  if (imgField.startsWith('/api/')) return imgField;
-  // External URL that wasn't sanitized (shouldn't happen, but safety net)
-  if (imgField.startsWith('http')) return `/api/img?type=${type}&file=${encodeURIComponent(imgField.split('/').pop() || imgField)}`;
+  if (imgField.startsWith('/api/') || imgField.startsWith('/tunnel/')) return imgField;
+  if (imgField.startsWith('http')) {
+      try {
+          const parsed = new URL(imgField);
+          return `/tunnel${parsed.pathname}${parsed.search}`;
+      } catch {
+          const basePath = type === 'poster' ? '/vascin-poster-images/' : '/vascin-cover-images/';
+          return `/tunnel${basePath}${encodeURIComponent(imgField.split('/').pop() || imgField)}`;
+      }
+  }
   // Plain filename — construct the simple proxy URL
-  return `/api/img?type=${type}&file=${encodeURIComponent(imgField)}`;
+  const basePath = type === 'poster' ? '/vascin-poster-images/' : '/vascin-cover-images/';
+  return `/tunnel${basePath}${encodeURIComponent(imgField)}`;
 }
 
 /**
