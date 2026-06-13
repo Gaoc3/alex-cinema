@@ -270,17 +270,33 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     const video = videoRef.current;
     if (video) {
       const syncTracks = () => {
+        let newActiveText = '';
         for (let i = 0; i < video.textTracks.length; i++) {
           const track = video.textTracks[i];
           if (selectedLanguage === 'off') {
             track.mode = 'disabled';
           } else if (track.language === selectedLanguage) {
-            track.mode = 'showing'; // 'showing' guarantees 100% real-time parsing. We hide it natively via CSS.
+            track.mode = 'hidden'; // 'hidden' guarantees native cues aren't rendered, but activeCues is populated
+            
+            // Manually extract current subtitle if paused or activeCues hasn't fired yet
+            if (track.activeCues && track.activeCues.length > 0) {
+              const texts = [];
+              for (let j = 0; j < track.activeCues.length; j++) {
+                texts.push((track.activeCues[j] as VTTCue).text);
+              }
+              newActiveText = texts.join('\n');
+            } else if (track.cues && track.cues.length > 0) {
+              const currentTime = video.currentTime;
+              const active = Array.from(track.cues).filter((cue: any) => currentTime >= cue.startTime && currentTime <= cue.endTime);
+              if (active.length > 0) {
+                newActiveText = active.map((cue: any) => cue.text).join('\n');
+              }
+            }
           } else {
             track.mode = 'disabled';
           }
         }
-        if (selectedLanguage === 'off') setCurrentSubtitle('');
+        setCurrentSubtitle(newActiveText);
       };
 
       // Run once immediately
