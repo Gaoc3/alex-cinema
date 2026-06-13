@@ -577,9 +577,9 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
           setIsFullscreen(true);
           
           // Try to lock orientation to landscape on mobile
-          if (screen.orientation && screen.orientation.lock) {
+          if (screen.orientation && (screen.orientation as any).lock) {
             try {
-              await screen.orientation.lock('landscape');
+              await (screen.orientation as any).lock('landscape');
             } catch (err) {
               console.warn('Orientation lock failed:', err);
             }
@@ -598,8 +598,8 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
           setIsFullscreen(false);
           
           // Unlock orientation
-          if (screen.orientation && screen.orientation.unlock) {
-            screen.orientation.unlock();
+          if (screen.orientation && (screen.orientation as any).unlock) {
+            (screen.orientation as any).unlock();
           }
         } catch (err) {
           console.error("Exit fullscreen failed:", err);
