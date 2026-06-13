@@ -40,7 +40,7 @@ export default async function WatchPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative pt-24 animate-fade-in-up overflow-x-clip z-[60]">
+    <div className="min-h-screen flex flex-col relative pt-24 animate-fade-in-up overflow-x-clip z-10">
       <div 
         className="fixed inset-0 z-[-1] opacity-20 blur-[60px] bg-cover bg-center saturate-150 transform scale-110"
         style={{ backgroundImage: `url(${getVideoImageUrl(video as any, 'poster')})` }}
