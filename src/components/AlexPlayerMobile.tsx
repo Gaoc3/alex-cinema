@@ -305,7 +305,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
   return (
     <div 
       ref={containerRef}
-      className={`relative w-full aspect-video sm:h-full bg-black overflow-hidden select-none font-ar ${isFullscreen ? 'fixed inset-0 z-[9999] !h-[100dvh]' : ''}`}
+      className={`relative w-full aspect-video sm:h-full bg-black overflow-hidden select-none font-ar ${isFullscreen ? 'fixed inset-0 z-[9999] !h-[100dvh]' : 'max-h-[85dvh]'}`}
       style={{ '--ambient-color': ambientColor } as any}
     >
       {/* Cinematic Ambient Glow */}
@@ -354,7 +354,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         className={`absolute inset-0 z-30 flex flex-col justify-between pointer-events-none transition-opacity duration-300 ${showControls || isPaused ? 'opacity-100' : 'opacity-0'}`}
       >
         {/* Top Gradient & Title */}
-        <div className="w-full pt-[env(safe-area-inset-top,16px)] px-[env(safe-area-inset-left,16px)] pb-10 bg-gradient-to-b from-black/80 via-black/30 to-transparent pointer-events-auto flex items-center justify-between">
+        <div className="w-full pt-4 pl-[env(safe-area-inset-left,16px)] pr-[env(safe-area-inset-right,16px)] pb-10 bg-gradient-to-b from-black/80 via-black/30 to-transparent pointer-events-auto flex items-center justify-between">
           <button className="p-3 text-white/90 hover:text-white transition-colors" onClick={() => window.history.back()}>
             <i className="fa-solid fa-chevron-right text-xl"></i>
           </button>
