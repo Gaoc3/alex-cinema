@@ -485,9 +485,9 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         {/* Top Gradient & Title */}
         <div className="absolute top-0 left-0 w-full pt-4 px-4 sm:px-6 pb-6 bg-gradient-to-b from-black/80 via-black/30 to-transparent pointer-events-auto flex items-center justify-between">
           <button className="p-3 text-white/90 hover:text-white transition-colors" onClick={() => window.history.back()}>
-            <i className="fa-solid fa-chevron-right text-xl"></i>
+            <i className="fa-solid fa-chevron-right text-lg"></i>
           </button>
-          <h2 className="text-white font-bold text-lg max-w-[70%] truncate text-center drop-shadow-md tracking-wide">
+          <h2 className="text-white font-bold text-sm sm:text-base max-w-[70%] truncate text-center drop-shadow-md tracking-wide">
             {videoData.ar_title}
           </h2>
           <div className="w-10"></div> {/* Spacer for center alignment */}
@@ -497,7 +497,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <button 
             onClick={togglePlay}
-            className="w-14 h-14 rounded-full bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white text-2xl shadow-[0_0_40px_rgba(255,255,255,0.1)] active:scale-75 transition-transform duration-300 pointer-events-auto"
+            className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white text-xl shadow-[0_0_30px_rgba(255,255,255,0.1)] active:scale-75 transition-transform duration-300 pointer-events-auto"
           >
             <i className={`fa-solid ${isPaused ? 'fa-play ml-1' : 'fa-pause'} `}></i>
           </button>
