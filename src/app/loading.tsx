@@ -51,10 +51,6 @@ export default function GlobalLoading() {
                 <div key={cardIndex} className="w-[140px] sm:w-[180px] md:w-[220px] lg:w-[260px] flex-shrink-0 flex flex-col gap-3">
                   <div className="w-full aspect-[2/3] bg-white/5 rounded-2xl relative overflow-hidden animate-pulse">
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skeleton-shine"></div>
-                    {/* Logo watermark for premium feel */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                       <i className="fa-solid fa-play text-4xl"></i>
-                    </div>
                   </div>
                   <div className="h-5 bg-white/10 rounded w-full animate-pulse"></div>
                   <div className="flex justify-between items-center">
