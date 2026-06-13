@@ -887,11 +887,11 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         )}
 
         {/* BOTTOM CUSTOM CONTROL BAR */}
-        <div className={`absolute bottom-0 inset-x-0 p-3 md:p-6 pb-6 md:pb-8 bg-gradient-to-t from-black/95 via-black/80 to-transparent flex flex-col gap-3 transition-all duration-300 transform z-30 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`absolute bottom-0 inset-x-0 px-2 sm:px-6 pb-[calc(env(safe-area-inset-bottom)+12px)] md:pb-8 pt-10 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-2 md:gap-3 transition-all duration-300 transform z-30 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           
           {/* Custom Timeline Progress Slider */}
           <div className="flex items-center gap-2 md:gap-4 w-full">
-            <span className="text-[10px] md:text-xs font-en font-bold text-gray-300 min-w-[35px] md:min-w-[45px] text-left">
+            <span className="text-xs font-en font-bold text-gray-300 min-w-[35px] md:min-w-[45px] text-left">
               {formatTime(currentTime)}
             </span>
             <input
@@ -901,23 +901,23 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               value={currentTime}
               onChange={handleProgressChange}
               style={progressStyle}
-              className="flex-grow h-1 md:h-1.5 rounded-lg appearance-none cursor-pointer accent-alex-primary hover:h-2 transition-all outline-none"
+              className="flex-grow h-2 md:h-1.5 rounded-lg appearance-none cursor-pointer accent-alex-primary hover:h-2 transition-all outline-none"
             />
-            <span className="text-[10px] md:text-xs font-en font-bold text-gray-300 min-w-[35px] md:min-w-[45px] text-right">
+            <span className="text-xs font-en font-bold text-gray-300 min-w-[35px] md:min-w-[45px] text-right">
               {formatTime(duration)}
             </span>
           </div>
 
           {/* Controls Buttons */}
-          <div className="flex items-center justify-between relative">
+          <div className="flex items-center justify-between relative mt-1 md:mt-0">
             
             {/* Left Controls */}
-            <div className="flex items-center gap-3 md:gap-6">
+            <div className="flex items-center gap-2 md:gap-6">
               
               {/* Play / Pause */}
               <button 
                 onClick={togglePlay} 
-                className="text-white hover:text-alex-primary text-lg md:text-2xl transition-colors cursor-pointer w-6 h-6 flex items-center justify-center"
+                className="text-white hover:text-alex-primary text-xl md:text-2xl transition-colors cursor-pointer w-10 h-10 md:w-6 md:h-6 flex items-center justify-center"
               >
                 <i className={`fa-solid ${isPaused ? 'fa-play' : 'fa-pause'}`}></i>
               </button>
@@ -926,7 +926,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               {onNextEpisode && (
                 <button 
                   onClick={onNextEpisode} 
-                  className="text-white hover:text-alex-primary text-lg md:text-2xl transition-colors cursor-pointer w-6 h-6 flex items-center justify-center"
+                  className="text-white hover:text-alex-primary text-xl md:text-2xl transition-colors cursor-pointer w-10 h-10 md:w-6 md:h-6 flex items-center justify-center"
                   title="الحلقة التالية"
                 >
                   <i className="fa-solid fa-forward-step"></i>
@@ -934,7 +934,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               )}
 
               {/* Volume Controller */}
-              <div className="flex items-center gap-2 group/volume relative">
+              <div className="hidden md:flex items-center gap-2 group/volume relative">
                 <button 
                   onClick={() => setIsMuted(!isMuted)} 
                   className="text-white hover:text-alex-primary text-base md:text-xl transition-colors cursor-pointer w-6 h-6 flex items-center justify-center"
@@ -951,39 +951,39 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                     setVolume(parseFloat(e.target.value));
                     setIsMuted(false);
                   }}
-                  className="hidden md:block w-0 group-hover/volume:w-20 h-1 bg-white/20 rounded accent-alex-primary transition-all duration-300 opacity-0 group-hover/volume:opacity-100 cursor-pointer"
+                  className="w-0 group-hover/volume:w-20 h-1 bg-white/20 rounded accent-alex-primary transition-all duration-300 opacity-0 group-hover/volume:opacity-100 cursor-pointer"
                 />
               </div>
 
             </div>
 
             {/* Right Controls */}
-            <div className="flex items-center justify-end gap-1.5 md:gap-4 flex-wrap max-w-[65%] md:max-w-none">
+            <div className="flex items-center justify-end gap-1 md:gap-4 flex-nowrap">
               
               {/* Subtitles Menu */}
               {vttTranslations.length > 0 && (
                 <div className="relative dropdown-container">
                   <button 
                     onClick={() => setActiveDropdown(activeDropdown === 'subtitles' ? null : 'subtitles')}
-                    className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg md:rounded-xl border text-[10px] md:text-xs font-black transition-all ${
+                    className={`flex items-center justify-center gap-1.5 h-10 px-2 md:px-3 rounded-lg md:rounded-xl border text-[11px] md:text-xs font-black transition-all min-w-[40px] ${
                       selectedLanguage !== 'off' 
                         ? 'bg-alex-primary/20 text-alex-primary border-alex-primary/30 shadow' 
                         : 'ios-button text-gray-300 border-white/5 hover:ios-active'
                     }`}
                   >
-                    <i className="fa-solid fa-closed-captioning text-xs md:text-sm"></i>
-                    <span className="hidden sm:inline">الترجمة</span>
+                    <i className="fa-solid fa-closed-captioning text-base md:text-sm"></i>
+                    <span className="hidden md:inline">الترجمة</span>
                   </button>
 
                   {activeDropdown === 'subtitles' && (
                     <div 
-                      className="absolute bottom-full right-0 mb-3 w-48 max-h-[65vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-2"
+                      className="absolute bottom-full right-0 mb-3 w-[85vw] max-w-[250px] max-h-[60vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-3"
                       onPointerUp={(e) => e.stopPropagation()}
                     >
-                      <div className="text-[10px] text-gray-400 font-bold mb-1 text-right px-1">لغة الترجمة</div>
+                      <div className="text-xs text-gray-400 font-bold mb-2 text-right px-1">لغة الترجمة</div>
                       <button 
                         onClick={() => { setSelectedLanguage('off'); setActiveDropdown(null); }}
-                        className={`w-full text-right px-3 py-1.5 rounded-xl text-[11px] md:text-xs font-bold transition-all ${selectedLanguage === 'off' ? 'bg-alex-primary text-white font-black' : 'text-gray-300 hover:ios-button'}`}
+                        className={`w-full text-right px-4 py-2.5 rounded-xl text-xs font-bold transition-all mb-1 ${selectedLanguage === 'off' ? 'bg-alex-primary text-white font-black' : 'text-gray-300 hover:ios-button'}`}
                       >
                         إيقاف
                       </button>
@@ -991,16 +991,16 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                         <button 
                           key={track.id}
                           onClick={() => { setSelectedLanguage(track.type); setActiveDropdown(null); }}
-                          className={`w-full text-right px-3 py-1.5 rounded-xl text-[11px] md:text-xs font-bold transition-all ${selectedLanguage === track.type ? 'bg-alex-primary text-white font-black' : 'text-gray-300 hover:ios-button'}`}
+                          className={`w-full text-right px-4 py-2.5 rounded-xl text-xs font-bold transition-all mb-1 ${selectedLanguage === track.type ? 'bg-alex-primary text-white font-black' : 'text-gray-300 hover:ios-button'}`}
                         >
                           {track.name === 'arabic' ? 'العربية' : 'English'}
                         </button>
                       ))}
                       
                       {/* Font Selection Section */}
-                      <div className="border-t border-white/10 mt-2 pt-2 px-1 pb-1">
-                        <div className="text-[10px] text-gray-400 font-bold mb-1.5 text-right px-1">نوع الخط</div>
-                        <div className="flex flex-col gap-1 ios-button rounded-xl p-1">
+                      <div className="border-t border-white/10 mt-3 pt-3 px-1 pb-1">
+                        <div className="text-xs text-gray-400 font-bold mb-2 text-right px-1">نوع الخط</div>
+                        <div className="flex flex-col gap-1 ios-button rounded-xl p-1.5">
                           {[
                             { name: 'Tajawal', label: 'خط تجول' },
                             { name: 'Cairo', label: 'خط القاهرة' },
@@ -1009,7 +1009,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                             <button
                               key={f.name}
                               onClick={(e) => { e.stopPropagation(); setSelectedFont(f.name); }}
-                              className={`w-full text-right px-2 py-1 rounded-lg text-[10px] md:text-xs font-bold transition-all ${selectedFont === f.name ? 'bg-alex-primary text-white' : 'text-gray-300 hover:ios-button'}`}
+                              className={`w-full text-right px-3 py-2 rounded-lg text-xs font-bold transition-all ${selectedFont === f.name ? 'bg-alex-primary text-white' : 'text-gray-300 hover:ios-button'}`}
                               style={{ fontFamily: f.name }}
                             >
                               {f.label}
@@ -1019,20 +1019,20 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                       </div>
 
                       {/* Subtitle Font Size Widget */}
-                      <div className="border-t border-white/10 mt-2 pt-2 px-1 pb-1">
-                        <div className="text-[10px] text-gray-400 font-bold mb-1.5 text-right px-1">حجم الترجمة</div>
-                        <div className="flex items-center justify-between gap-1 ios-button rounded-xl p-1">
+                      <div className="border-t border-white/10 mt-3 pt-3 px-1 pb-1">
+                        <div className="text-xs text-gray-400 font-bold mb-2 text-right px-1">حجم الترجمة</div>
+                        <div className="flex items-center justify-between gap-2 ios-button rounded-xl p-1.5">
                           <button 
                             onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:ios-active text-white font-black text-xs cursor-pointer select-none"
+                            className="w-10 h-10 flex items-center justify-center rounded-lg hover:ios-active text-white font-black text-sm cursor-pointer select-none"
                             title="تصغير"
                           >
                             A-
                           </button>
-                          <span className="text-[10px] md:text-[11px] font-en font-bold text-gray-300 select-none min-w-[28px] text-center">{subtitleSize}%</span>
+                          <span className="text-xs font-en font-bold text-gray-300 select-none min-w-[35px] text-center">{subtitleSize}%</span>
                           <button 
                             onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:ios-active text-white font-black text-xs cursor-pointer select-none"
+                            className="w-10 h-10 flex items-center justify-center rounded-lg hover:ios-active text-white font-black text-sm cursor-pointer select-none"
                             title="تكبير"
                           >
                             A+
@@ -1041,11 +1041,11 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                       </div>
 
                       {/* Subtitle Background Toggle Switch */}
-                      <div className="border-t border-white/10 mt-2 pt-2 px-1 pb-1 flex items-center justify-between gap-2">
-                        <span className="text-[10px] text-gray-400 font-bold text-right select-none">خلفية الترجمة</span>
+                      <div className="border-t border-white/10 mt-3 pt-3 px-1 pb-1 flex items-center justify-between gap-2">
+                        <span className="text-xs text-gray-400 font-bold text-right select-none">خلفية الترجمة</span>
                         <button
                           onClick={(e) => { e.stopPropagation(); setShowSubtitleBg(prev => !prev); }}
-                          className={`w-10 h-5 rounded-full p-0.5 transition-colors duration-300 focus:outline-none flex items-center cursor-pointer ${
+                          className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 focus:outline-none flex items-center cursor-pointer ${
                             showSubtitleBg ? 'bg-alex-primary justify-end' : 'ios-active justify-start'
                           }`}
                         >
@@ -1062,22 +1062,22 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                 <div className="relative dropdown-container">
                   <button 
                     onClick={() => setActiveDropdown(activeDropdown === 'quality' ? null : 'quality')}
-                    className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 ios-button border border-white/5 hover:ios-active hover:border-white/10 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black text-gray-300 transition-all"
+                    className="flex items-center justify-center gap-1.5 h-10 px-2 md:px-3 ios-button border border-white/5 hover:ios-active hover:border-white/10 rounded-lg md:rounded-xl text-[11px] md:text-xs font-black text-gray-300 transition-all min-w-[40px]"
                   >
-                    <i className="fa-solid fa-sliders text-[10px] md:text-xs"></i>
-                    <span>{selectedResolution || 'الجودة'}</span>
+                    <i className="fa-solid fa-sliders text-base md:text-xs"></i>
+                    <span className="hidden md:inline">{selectedResolution || 'الجودة'}</span>
                   </button>
 
                   {activeDropdown === 'quality' && (
                     <div 
-                      className="absolute bottom-full right-0 mb-3 w-28 md:w-32 max-h-[60vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-1.5"
+                      className="absolute bottom-full right-0 mb-3 w-32 md:w-36 max-h-[50vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-2"
                       onPointerUp={(e) => e.stopPropagation()}
                     >
                       {sortedStreams.map((stream) => (
                         <button 
                           key={stream.name}
                           onClick={() => handleQualityChange(stream)}
-                          className={`w-full text-right px-3 py-2 rounded-xl text-[11px] md:text-xs font-bold transition-all ${selectedResolution === stream.resolution ? 'bg-alex-primary text-white' : 'text-gray-300 hover:ios-button'}`}
+                          className={`w-full text-right px-4 py-2.5 mb-1 rounded-xl text-xs font-bold transition-all ${selectedResolution === stream.resolution ? 'bg-alex-primary text-white' : 'text-gray-300 hover:ios-button'}`}
                         >
                           {stream.resolution}
                         </button>
@@ -1091,22 +1091,22 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               <div className="relative dropdown-container">
                 <button 
                   onClick={() => setActiveDropdown(activeDropdown === 'speed' ? null : 'speed')}
-                  className="flex items-center gap-1 px-2 md:px-3 py-1 md:py-1.5 ios-button border border-white/5 hover:ios-active hover:border-white/10 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black text-gray-300 transition-all font-en"
+                  className="flex items-center justify-center gap-1 h-10 px-2 md:px-3 ios-button border border-white/5 hover:ios-active hover:border-white/10 rounded-lg md:rounded-xl text-[11px] md:text-xs font-black text-gray-300 transition-all font-en min-w-[40px]"
                 >
-                  <i className="fa-solid fa-gauge text-[10px] md:text-xs"></i>
-                  <span>{playbackRate}x</span>
+                  <i className="fa-solid fa-gauge text-base md:text-xs"></i>
+                  <span className="hidden md:inline">{playbackRate}x</span>
                 </button>
 
                 {activeDropdown === 'speed' && (
                   <div 
-                    className="absolute bottom-full right-0 mb-3 w-24 md:w-28 max-h-[60vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-1.5 font-en"
+                    className="absolute bottom-full right-0 mb-3 w-28 md:w-32 max-h-[50vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col p-2 font-en"
                     onPointerUp={(e) => e.stopPropagation()}
                   >
                     {[0.5, 1, 1.25, 1.5, 2].map((rate) => (
                       <button 
                         key={rate}
                         onClick={() => { setPlaybackRate(rate); setActiveDropdown(null); }}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-[11px] md:text-xs font-bold transition-all ${playbackRate === rate ? 'bg-alex-primary text-white' : 'text-gray-300 hover:ios-button'}`}
+                        className={`w-full text-left px-4 py-2.5 mb-1 rounded-xl text-xs font-bold transition-all ${playbackRate === rate ? 'bg-alex-primary text-white' : 'text-gray-300 hover:ios-button'}`}
                       >
                         {rate}x
                       </button>
@@ -1118,7 +1118,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               {/* Fullscreen Toggle */}
               <button 
                 onClick={toggleFullscreen} 
-                className="text-white hover:text-alex-primary text-base md:text-xl transition-colors cursor-pointer w-6 h-6 flex items-center justify-center ml-1 md:ml-0"
+                className="text-white hover:text-alex-primary text-xl md:text-2xl transition-colors cursor-pointer w-10 h-10 flex items-center justify-center"
               >
                 <i className={`fa-solid ${isFullscreen ? 'fa-minimize' : 'fa-maximize'}`}></i>
               </button>
