@@ -275,7 +275,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
           if (selectedLanguage === 'off') {
             track.mode = 'disabled';
           } else if (track.language === selectedLanguage) {
-            track.mode = 'hidden'; // Hidden allows the browser to parse cues without rendering them, so we can render them manually
+            track.mode = 'showing'; // 'showing' guarantees 100% real-time parsing. We hide it natively via CSS.
           } else {
             track.mode = 'disabled';
           }
@@ -974,6 +974,19 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
         {/* The Native HTML5 Video Element */}
         <div className={`absolute inset-0 w-full h-full ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
+          <style>{`
+            /* Completely hide native subtitles so our React custom overlay can handle them flawlessly */
+            video::-webkit-media-text-track-display {
+              display: none !important;
+              opacity: 0 !important;
+            }
+            video::cue {
+              color: transparent !important;
+              background: transparent !important;
+              opacity: 0 !important;
+              text-shadow: none !important;
+            }
+          `}</style>
           <video
             ref={videoRef}
             className={`w-full h-full cursor-pointer transition-all duration-300 ${isZoomed ? 'object-cover' : 'object-contain'}`}
@@ -996,7 +1009,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                 label={track.name === 'arabic' ? 'العربية' : 'English'}
                 onLoad={(e) => {
                    const t = (e.target as HTMLTrackElement).track;
-                   t.mode = selectedLanguage === track.type ? 'hidden' : 'disabled';
+                   t.mode = selectedLanguage === track.type ? 'showing' : 'disabled';
                 }}
               />
             ))}
@@ -1161,7 +1174,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                   </button>
 
                   {activeDropdown === 'subtitles' && (
-                    <div className="absolute bottom-full right-0 mb-4 z-50">
+                    <div className="absolute bottom-full right-0 mb-4 z-50 w-[180px] bg-zinc-950/95 backdrop-blur-3xl border border-white/10 rounded-2xl p-2 shadow-2xl animate-fade-in-up origin-bottom-right scale-75 md:scale-90">
                       {renderSubtitlesMenu()}
                     </div>
                   )}
@@ -1180,7 +1193,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                   </button>
 
                   {activeDropdown === 'quality' && (
-                    <div className="absolute bottom-full right-0 mb-4 z-50">
+                    <div className="absolute bottom-full right-0 mb-4 z-50 w-[140px] bg-zinc-950/95 backdrop-blur-3xl border border-white/10 rounded-2xl p-2 shadow-2xl animate-fade-in-up origin-bottom-right scale-75 md:scale-90">
                       {renderQualityMenu()}
                     </div>
                   )}
@@ -1198,7 +1211,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                 </button>
 
                 {activeDropdown === 'speed' && (
-                  <div className="absolute bottom-full right-0 mb-4 z-50">
+                  <div className="absolute bottom-full right-0 mb-4 z-50 w-[140px] bg-zinc-950/95 backdrop-blur-3xl border border-white/10 rounded-2xl p-2 shadow-2xl animate-fade-in-up origin-bottom-right scale-75 md:scale-90">
                     {renderSpeedMenu()}
                   </div>
                 )}
