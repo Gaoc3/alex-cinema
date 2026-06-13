@@ -1031,6 +1031,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                 src={getSubtitlesProxyUrl(track.file)}
                 srcLang={track.type}
                 label={track.name === 'arabic' ? 'العربية' : 'English'}
+                onLoad={handleTimeUpdate}
               />
             ))}
           </video>
