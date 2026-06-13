@@ -952,7 +952,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         {/* The Native HTML5 Video Element */}
         <div className={`absolute inset-0 w-full h-full ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
           <style>{`
-            video.alex-video-cue::cue {
+            video.alex-video-cue.cue-updater-${subtitleSize}-${showSubtitleBg ? '1' : '0'}-${selectedFont.replace(/\s+/g, '')}::cue {
               font-size: ${subtitleSize}% !important;
               background: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
               background-color: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
@@ -966,7 +966,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
           `}</style>
           <video
             ref={videoRef}
-            className={`w-full h-full alex-video-cue cursor-pointer transition-all duration-300 ${isZoomed ? 'object-cover' : 'object-contain'}`}
+            className={`w-full h-full alex-video-cue cue-updater-${subtitleSize}-${showSubtitleBg ? '1' : '0'}-${selectedFont.replace(/\s+/g, '')} cursor-pointer transition-all duration-300 ${isZoomed ? 'object-cover' : 'object-contain'}`}
             onPointerUp={handleVideoPointerUp}
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}

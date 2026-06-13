@@ -454,7 +454,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         onTouchEnd={handleTouchEnd}
       >
         <style>{`
-          video.alex-video-cue::cue {
+          video.alex-video-cue.cue-updater-${subtitleSize}-${showSubtitleBg ? '1' : '0'}-${selectedFont.replace(/\s+/g, '')}::cue {
             font-size: ${subtitleSize}% !important;
             background: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
             background-color: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
@@ -468,7 +468,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         `}</style>
         <video
           ref={videoRef}
-          className={`w-full h-full alex-video-cue transition-transform duration-300 ${isZoomed ? 'scale-[1.1] sm:scale-125 object-cover' : 'object-contain'}`}
+          className={`w-full h-full alex-video-cue cue-updater-${subtitleSize}-${showSubtitleBg ? '1' : '0'}-${selectedFont.replace(/\s+/g, '')} transition-transform duration-300 ${isZoomed ? 'scale-[1.1] sm:scale-125 object-cover' : 'object-contain'}`}
           style={{ 
             filter: `brightness(${brightness})`
           } as React.CSSProperties}
