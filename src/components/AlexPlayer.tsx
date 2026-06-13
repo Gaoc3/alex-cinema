@@ -843,17 +843,17 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
       <div className="text-sm md:text-xs text-gray-400 font-bold mb-2">حجم الخط</div>
       <div className="flex items-center justify-between gap-4 bg-white/5 rounded-2xl md:rounded-xl p-2 mb-4">
         <button 
-          onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
-          className="w-12 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white font-black text-sm transition-colors"
-        >
-          A+
-        </button>
-        <span className="text-sm font-en font-bold text-white min-w-[40px] text-center">{subtitleSize}%</span>
-        <button 
           onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
           className="w-12 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white font-black text-sm transition-colors"
         >
           A-
+        </button>
+        <span className="text-sm font-en font-bold text-white min-w-[40px] text-center">{subtitleSize}%</span>
+        <button 
+          onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
+          className="w-12 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white font-black text-sm transition-colors"
+        >
+          A+
         </button>
       </div>
 
