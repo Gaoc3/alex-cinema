@@ -350,10 +350,16 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
           }
           lastTapRef.current.time = 0; // reset
         } else {
-          // Single tap -> Toggle controls
+          // Single tap
           lastTapRef.current.time = now;
           if (!activeSheet) {
-            setShowControls(prev => !prev);
+            if (showControls) {
+              // If controls are visible, clicking anywhere plays/pauses
+              togglePlay();
+            } else {
+              // If controls are hidden, show them
+              setShowControls(true);
+            }
             triggerHaptic('light');
           }
         }
