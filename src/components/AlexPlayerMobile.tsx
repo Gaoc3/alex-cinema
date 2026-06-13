@@ -498,7 +498,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
           <button 
             onClick={togglePlay}
             style={{ WebkitTapHighlightColor: 'transparent' }}
-            className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white text-2xl shadow-[0_0_30px_rgba(255,255,255,0.1)] active:scale-75 transition-transform duration-300 pointer-events-auto"
+            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white text-xl shadow-[0_0_30px_rgba(255,255,255,0.1)] active:scale-75 transition-transform duration-300 pointer-events-auto"
           >
             <i className={`fa-solid ${isPaused ? 'fa-play ml-1' : 'fa-pause'} `}></i>
           </button>
