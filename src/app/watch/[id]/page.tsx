@@ -45,7 +45,7 @@ export default async function WatchPage({ params }: { params: Promise<{ id: stri
         style={{ backgroundImage: `url(${getVideoImageUrl(video as any, 'poster')})` }}
       ></div>
 
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full z-10 flex-grow">
+      <div className="max-w-screen-2xl mx-auto px-0 sm:px-6 lg:px-8 py-0 sm:py-10 w-full z-10 flex-grow">
         <WatchContainer video={video} seasons={seasons} episodes={episodes} />
       </div>
     </div>

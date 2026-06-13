@@ -58,13 +58,13 @@ export default function WatchLayout({
             playNextEpisode={playNextEpisode}
           />
         </div>
-        <div className="col-span-12 lg:col-span-3 flex flex-col">
+        <div className="col-span-12 lg:col-span-3 flex flex-col px-4 sm:px-0 mt-4 sm:mt-0">
           <MediaPoster img={video.img} imdbUrlRef={video.imdbUrlRef} />
         </div>
       </div>
 
       {/* Row 2: Details & Additional Info */}
-      <div className="grid grid-cols-12 gap-4 sm:gap-6 lg:gap-8 items-stretch">
+      <div className="grid grid-cols-12 gap-4 sm:gap-6 lg:gap-8 items-stretch px-4 sm:px-0">
         <div className="col-span-12 lg:col-span-9 flex flex-col">
           <MediaDetails 
             title={displayTitle}
@@ -97,7 +97,8 @@ export default function WatchLayout({
 
       {/* Row 3: Seasons & Episodes (Series Only) */}
       {isSeries && episodes.length > 0 && (
-        <SeriesNavigator 
+        <div className="px-4 sm:px-0 pb-10 sm:pb-0">
+          <SeriesNavigator 
           seasons={seasons}
           episodes={episodes}
           currentSeason={currentSeason}
@@ -107,6 +108,7 @@ export default function WatchLayout({
           seasonEpisodes={seasonEpisodes}
           videoTitle={video.ar_title}
         />
+        </div>
       )}
     </div>
   );
