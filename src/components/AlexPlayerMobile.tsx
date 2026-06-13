@@ -336,6 +336,13 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (!touchStartRef.current) return;
+
+    // Ignore if tapping a button, input, or inside a dropdown to prevent accidental toggling
+    if ((e.target as HTMLElement).closest('button, input, .dropdown-container, .pointer-events-auto')) {
+       touchStartRef.current = null;
+       return;
+    }
+
     const now = Date.now();
     const dt = now - touchStartRef.current.time;
     
@@ -523,13 +530,16 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         </div>
 
         {/* Center Big Play Button */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-40">
           <button 
-            onClick={togglePlay}
+            onTouchEnd={(e) => { e.stopPropagation(); togglePlay(e as any); }}
+            onClick={(e) => { e.stopPropagation(); togglePlay(e); }}
             style={{ WebkitTapHighlightColor: 'transparent' }}
-            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white flex items-center justify-center text-black text-xl shadow-[0_10px_40px_rgba(0,0,0,0.6)] active:scale-90 transition-all duration-300 pointer-events-auto"
+            className="w-32 h-32 flex items-center justify-center pointer-events-auto"
           >
-            <i className={`fa-solid ${isPaused ? 'fa-play ml-1' : 'fa-pause'}`}></i>
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white flex items-center justify-center text-black text-xl shadow-[0_10px_40px_rgba(0,0,0,0.6)] active:scale-90 transition-all duration-300">
+              <i className={`fa-solid ${isPaused ? 'fa-play ml-1' : 'fa-pause'}`}></i>
+            </div>
           </button>
         </div>
 
