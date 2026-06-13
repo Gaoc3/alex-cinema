@@ -86,7 +86,16 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   const [showControls, setShowControls] = useState(true);
   
   // Dropdown menus visibility
-  const [activeDropdown, setActiveDropdown] = useState<'quality' | 'speed' | 'subtitles' | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<'quality' | 'speed' | 'subtitles' | 'settings' | null>(null);
+
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Gesture State
   const [showSeekAnimation, setShowSeekAnimation] = useState<'forward' | 'backward' | null>(null);
@@ -555,13 +564,47 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   };
 
   // Fullscreen helper
-  const toggleFullscreen = () => {
+  const toggleFullscreen = async () => {
     const container = containerRef.current;
     if (container) {
-      if (!document.fullscreenElement) {
-        container.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+      if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+        try {
+          if (container.requestFullscreen) {
+            await container.requestFullscreen();
+          } else if ((container as any).webkitRequestFullscreen) {
+            await (container as any).webkitRequestFullscreen();
+          }
+          setIsFullscreen(true);
+          
+          // Try to lock orientation to landscape on mobile
+          if (screen.orientation && screen.orientation.lock) {
+            try {
+              await screen.orientation.lock('landscape');
+            } catch (err) {
+              console.warn('Orientation lock failed:', err);
+            }
+          }
+        } catch (err) {
+          console.error("Fullscreen failed:", err);
+          setIsFullscreen(true); // CSS fallback
+        }
       } else {
-        document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+        try {
+          if (document.exitFullscreen) {
+            await document.exitFullscreen();
+          } else if ((document as any).webkitExitFullscreen) {
+            await (document as any).webkitExitFullscreen();
+          }
+          setIsFullscreen(false);
+          
+          // Unlock orientation
+          if (screen.orientation && screen.orientation.unlock) {
+            screen.orientation.unlock();
+          }
+        } catch (err) {
+          console.error("Exit fullscreen failed:", err);
+          setIsFullscreen(false); // CSS fallback
+        }
       }
     }
   };
@@ -740,10 +783,10 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     return (
       <div 
         ref={containerRef}
-        className={`relative w-full bg-black overflow-hidden select-none group/player touch-manipulation transition-all duration-300 ${
+        className={`relative bg-black overflow-hidden select-none group/player touch-manipulation transition-all duration-300 ${
           isFullscreen 
-            ? 'h-screen w-screen rounded-none border-none fixed inset-0 z-[100]' 
-            : 'aspect-video rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10'
+            ? 'fixed inset-0 w-screen h-screen z-[9999] rounded-none border-none' 
+            : 'w-full aspect-video rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10'
         }`}
         dir="ltr"
         onTouchStart={handleTouchStart}
