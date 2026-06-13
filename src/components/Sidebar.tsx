@@ -97,7 +97,7 @@ export default function Sidebar() {
           
           {/* Logo and Brand Name (Hidden on Collapsed) */}
           <div className={`flex items-center gap-2.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-right ${isCollapsed ? 'opacity-0 max-w-0 overflow-hidden scale-90 pointer-events-none' : 'opacity-100 max-w-[300px] scale-100 delay-100'}`}>
-            <Link href="/" className="flex items-center gap-2.5 group" onClick={closeSidebar}>
+            <Link href="/home" className="flex items-center gap-2.5 group" onClick={closeSidebar}>
               <div className="w-12 h-12 shrink-0 rounded-full overflow-hidden flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(229,9,20,0.3)] group-hover:shadow-[0_0_25px_rgba(229,9,20,0.5)] border border-white/10">
                 <img src="/logo.svg" alt="AleX Cinema Logo" className="w-full h-full object-cover scale-[1.05]" />
               </div>
@@ -136,10 +136,10 @@ export default function Sidebar() {
           <div className="space-y-4">
             {/* الصفحة الرئيسية */}
             <Link 
-              href="/" 
+              href="/home" 
               onClick={closeSidebar}
               className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
-                isActive('/') 
+                isActive('/home') 
                   ? 'ios-active' 
                   : 'ios-button text-gray-400 hover:text-white'
               }`}
