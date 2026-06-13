@@ -18,8 +18,9 @@ export default function MediaPoster({ img, imdbUrlRef }: MediaPosterProps) {
       <div className="relative flex-1 rounded-2xl overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.6)] border border-white/10 group min-h-[350px]">
         {/* Skeleton while loading */}
         {!isLoaded && (
-          <div className="absolute inset-0 bg-[#0c1221] animate-pulse flex items-center justify-center">
-             <i className="fa-solid fa-image text-gray-700 text-4xl"></i>
+          <div className="absolute inset-0 bg-[#0c1221] flex flex-col items-center justify-center">
+            <div className="w-12 h-12 rounded-full border-4 border-alex-primary/20 border-t-alex-primary animate-spin mb-4"></div>
+            <span className="text-gray-500 text-sm font-bold animate-pulse">جاري تحميل البوستر...</span>
           </div>
         )}
         <Image 
