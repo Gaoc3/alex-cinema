@@ -145,6 +145,8 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     return 'Tajawal';
   });
 
+  const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
+
   useEffect(() => {
     localStorage.setItem('alex_subtitle_font', selectedFont);
   }, [selectedFont]);
@@ -273,11 +275,12 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
           if (selectedLanguage === 'off') {
             track.mode = 'disabled';
           } else if (track.language === selectedLanguage) {
-            track.mode = 'showing';
+            track.mode = 'hidden'; // Hidden allows the browser to parse cues without rendering them, so we can render them manually
           } else {
             track.mode = 'disabled';
           }
         }
+        if (selectedLanguage === 'off') setCurrentSubtitle('');
       };
 
       // Run once immediately
@@ -524,14 +527,34 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
   // Track time updates
   const handleTimeUpdate = () => {
-    const video = videoRef.current;
-    if (video) {
-      const time = video.currentTime;
-      setCurrentTime(time);
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+      
+      // Real-time subtitle extraction
+      const video = videoRef.current;
+      if (selectedLanguage !== 'off') {
+        let activeText = '';
+        for (let i = 0; i < video.textTracks.length; i++) {
+          const track = video.textTracks[i];
+          if (track.language === selectedLanguage && track.activeCues && track.activeCues.length > 0) {
+            const texts = [];
+            for (let j = 0; j < track.activeCues.length; j++) {
+              texts.push((track.activeCues[j] as VTTCue).text);
+            }
+            activeText = texts.join('\n');
+            break;
+          }
+        }
+        if (currentSubtitle !== activeText) {
+           setCurrentSubtitle(activeText);
+        }
+      } else if (currentSubtitle !== '') {
+        setCurrentSubtitle('');
+      }
 
       // 1. Check Skip Intro Ranges
       const intro = videoData.introSkipping?.find(
-        range => time >= parseFloat(range.start) && time < parseFloat(range.end)
+        range => video.currentTime >= parseFloat(range.start) && video.currentTime < parseFloat(range.end)
       );
       setShowIntroSkip(!!intro);
 
@@ -951,22 +974,9 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
         {/* The Native HTML5 Video Element */}
         <div className={`absolute inset-0 w-full h-full ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
-          <style>{`
-            video.alex-video-cue.cue-updater-${subtitleSize}-${showSubtitleBg ? '1' : '0'}-${selectedFont.replace(/\s+/g, '')}::cue {
-              font-size: ${subtitleSize}% !important;
-              background: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
-              background-color: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
-              text-shadow: ${showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)'} !important;
-              font-family: '${selectedFont}', 'Outfit', sans-serif !important;
-            }
-            video.alex-video-cue::-webkit-media-text-track-container {
-              transform: translateY(${isZoomed || isFullscreen ? (showControls ? '-10vh' : '-24px') : (showControls ? '-60px' : '-24px')}) !important;
-              transition: transform 0.3s ease-out;
-            }
-          `}</style>
           <video
             ref={videoRef}
-            className={`w-full h-full alex-video-cue cue-updater-${subtitleSize}-${showSubtitleBg ? '1' : '0'}-${selectedFont.replace(/\s+/g, '')} cursor-pointer transition-all duration-300 ${isZoomed ? 'object-cover' : 'object-contain'}`}
+            className={`w-full h-full cursor-pointer transition-all duration-300 ${isZoomed ? 'object-cover' : 'object-contain'}`}
             onPointerUp={handleVideoPointerUp}
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
@@ -985,14 +995,39 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                 srcLang={track.type}
                 label={track.name === 'arabic' ? 'العربية' : 'English'}
                 default={selectedLanguage === track.type}
-                onLoad={(e) => {
-                   const t = (e.target as HTMLTrackElement).track;
-                   t.mode = selectedLanguage === track.type ? 'showing' : 'hidden';
-                }}
               />
             ))}
           </video>
         </div>
+
+        {/* Custom React Subtitle Overlay (100% Real-time styling) */}
+        {currentSubtitle && (
+          <div 
+            className="absolute left-0 w-full text-center pointer-events-none flex flex-col items-center justify-end z-20 transition-all duration-300"
+            style={{ 
+               bottom: isZoomed || isFullscreen ? (showControls ? '10vh' : '24px') : (showControls ? '80px' : '24px'),
+               padding: '0 5%'
+            }}
+          >
+            {currentSubtitle.split('\n').map((line, idx) => (
+              <span 
+                key={idx} 
+                className="inline-block"
+                style={{
+                  fontSize: `${(subtitleSize / 100) * (isMobile ? 16 : 24)}px`,
+                  fontFamily: `'${selectedFont}', 'Outfit', sans-serif`,
+                  backgroundColor: showSubtitleBg ? 'rgba(0,0,0,0.65)' : 'transparent',
+                  color: 'white',
+                  padding: showSubtitleBg ? '4px 8px' : '0',
+                  lineHeight: '1.4',
+                  whiteSpace: 'pre-wrap',
+                  textShadow: showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)'
+                }}
+                dangerouslySetInnerHTML={{ __html: line }}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Big Pulsing Center Play Button */}
         {isPaused && (
