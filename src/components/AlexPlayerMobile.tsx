@@ -47,7 +47,6 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState<number>(0);
   const [volume, setVolume] = useState(1);
-  const [brightness, setBrightness] = useState(1); // 0.2 to 1
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
@@ -304,36 +303,11 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
     }
   }, [selectedLanguage, currentStreamUrl]);
 
-  // 5. Gestures (Volume, Brightness, Double Tap)
+  // 5. Gestures (Double Tap)
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
     touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
     resetControlsTimeout();
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchStartRef.current || e.touches.length > 1) return;
-    const touch = e.touches[0];
-    const dx = touch.clientX - touchStartRef.current.x;
-    const dy = touch.clientY - touchStartRef.current.y;
-    
-    // Vertical swipe for Volume/Brightness
-    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
-      const isRightSide = touchStartRef.current.x > window.innerWidth / 2;
-      const change = dy > 0 ? -0.02 : 0.02; // Down is negative, Up is positive
-      
-      if (isRightSide) {
-        // Volume
-        const newVol = Math.max(0, Math.min(1, volume + change));
-        setVolume(newVol);
-        if (videoRef.current) videoRef.current.volume = newVol;
-      } else {
-        // Brightness filter
-        const newBright = Math.max(0.2, Math.min(1, brightness + change));
-        setBrightness(newBright);
-      }
-      touchStartRef.current.y = touch.clientY; // reset origin for continuous swipe
-    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -461,7 +435,6 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
       <div 
         className="absolute inset-0 z-10 flex items-center justify-center transition-all duration-300"
         onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         <style>{`
@@ -480,9 +453,6 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         <video
           ref={videoRef}
           className={`w-full h-full transition-transform duration-300 ${isZoomed ? 'scale-[1.1] sm:scale-125 object-cover' : 'object-contain'}`}
-          style={{ 
-            filter: `brightness(${brightness})`
-          } as React.CSSProperties}
           playsInline
           onPlay={() => setIsPaused(false)}
           onPause={() => setIsPaused(true)}
