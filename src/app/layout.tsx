@@ -35,7 +35,7 @@ export default function RootLayout({
         {/* Liquid Glass Animated Background */}
         <div className="liquid-bg"></div>
 
-        <div className="relative overflow-x-hidden w-full min-h-screen flex flex-col z-10">
+        <div className="relative overflow-x-clip w-full min-h-screen flex flex-col z-10">
           <Suspense fallback={null}>
             <Sidebar />
           </Suspense>        {/* Navbar */}
