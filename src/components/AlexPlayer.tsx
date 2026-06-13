@@ -803,7 +803,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
       <div className="text-sm md:text-xs text-gray-400 font-bold mb-2">لغة الترجمة</div>
       <div className="grid grid-cols-2 gap-2 mb-4">
         <button 
-          onClick={() => { setSelectedLanguage('off'); setActiveDropdown(null); }}
+          onClick={(e) => { e.stopPropagation(); setSelectedLanguage('off'); }}
           className={`px-3 py-3 md:py-2 rounded-xl md:rounded-lg text-xs font-bold transition-all ${selectedLanguage === 'off' ? 'bg-alex-primary text-white font-black shadow-lg' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
         >
           إيقاف
@@ -811,7 +811,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         {vttTranslations.map((track) => (
           <button 
             key={track.id}
-            onClick={() => { setSelectedLanguage(track.type); setActiveDropdown(null); }}
+            onClick={(e) => { e.stopPropagation(); setSelectedLanguage(track.type); }}
             className={`px-3 py-3 md:py-2 rounded-xl md:rounded-lg text-xs font-bold transition-all ${selectedLanguage === track.type ? 'bg-alex-primary text-white font-black shadow-lg' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
           >
             {track.name === 'arabic' ? 'العربية' : 'English'}
