@@ -20,7 +20,7 @@ const nextConfig = {
     ],
   },
   async rewrites() {
-    const tunnelBase = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com';
+    const tunnelBase = process.env.TUNNEL_BASE_URL || 'http://64.225.99.144';
     const base = tunnelBase.replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
     return [
       {
