@@ -1,5 +1,5 @@
 import React from 'react';
-import AlexPlayer from '../AlexPlayer';
+import PlayerWrapper from '../PlayerWrapper';
 
 interface PlayerSectionProps {
   isLoadingStreams: boolean;
@@ -33,7 +33,7 @@ export default function PlayerSection({
           <p className="text-gray-400 font-bold">جاري تحميل جودات البث المباشر...</p>
         </div>
       ) : (
-        <AlexPlayer 
+        <PlayerWrapper 
           videoData={
             isSeries && activeEpisodeDetails
               ? {
