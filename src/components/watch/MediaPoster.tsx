@@ -1,5 +1,7 @@
+'use client';
+
 import { getImageUrl } from '@/utils/imageHelper';
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 
 interface MediaPosterProps {
@@ -8,17 +10,26 @@ interface MediaPosterProps {
 }
 
 export default function MediaPoster({ img, imdbUrlRef }: MediaPosterProps) {
+  const [isLoaded, setIsLoaded] = useState(false);
+
   return (
     <div className="glass-panel rounded-3xl p-5 shadow-2xl relative overflow-hidden border border-white/5 flex flex-col h-full group">
       
       <div className="relative flex-1 rounded-2xl overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.6)] border border-white/10 group min-h-[350px]">
+        {/* Skeleton while loading */}
+        {!isLoaded && (
+          <div className="absolute inset-0 bg-[#0c1221] animate-pulse flex items-center justify-center">
+             <i className="fa-solid fa-image text-gray-700 text-4xl"></i>
+          </div>
+        )}
         <Image 
           src={getImageUrl(img, 'poster')} 
           alt="Poster"
           fill
           sizes="(max-width: 768px) 100vw, 33vw"
           priority={true}
-          className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+          onLoad={() => setIsLoaded(true)}
+          className={`absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-all duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0e17] via-transparent to-transparent opacity-80"></div>
         
