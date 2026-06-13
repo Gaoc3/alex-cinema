@@ -358,12 +358,21 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         const tapDelay = now - lastTapRef.current.time;
         if (tapDelay < 300) {
           // It's a double tap
-          triggerHaptic('seek');
-          const isRight = touchEndX > window.innerWidth / 2;
-          if (videoRef.current) {
-            videoRef.current.currentTime += isRight ? 10 : -10;
-            setShowSeekAnimation(isRight ? 'forward' : 'backward');
+          const third = window.innerWidth / 3;
+          if (touchEndX < third) {
+            triggerHaptic('seek');
+            if (videoRef.current) videoRef.current.currentTime -= 10;
+            setShowSeekAnimation('backward');
             setTimeout(() => setShowSeekAnimation(null), 600);
+          } else if (touchEndX > third * 2) {
+            triggerHaptic('seek');
+            if (videoRef.current) videoRef.current.currentTime += 10;
+            setShowSeekAnimation('forward');
+            setTimeout(() => setShowSeekAnimation(null), 600);
+          } else {
+            // Center double tap
+            triggerHaptic('medium');
+            setIsZoomed(z => !z);
           }
           lastTapRef.current.time = 0; // reset
         } else {
@@ -455,6 +464,19 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
+        <style>{`
+          /* Completely hide native subtitles so our React custom overlay can handle them flawlessly */
+          video::-webkit-media-text-track-display {
+            display: none !important;
+            opacity: 0 !important;
+          }
+          video::cue {
+            color: transparent !important;
+            background: transparent !important;
+            opacity: 0 !important;
+            text-shadow: none !important;
+          }
+        `}</style>
         <video
           ref={videoRef}
           className={`w-full h-full transition-transform duration-300 ${isZoomed ? 'scale-[1.1] sm:scale-125 object-cover' : 'object-contain'}`}
@@ -499,7 +521,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
               label={track.name === 'arabic' ? 'العربية' : 'English'}
               onLoad={(e) => {
                  const t = (e.target as HTMLTrackElement).track;
-                 t.mode = selectedLanguage === track.type ? 'hidden' : 'disabled';
+                 t.mode = selectedLanguage === track.type ? 'showing' : 'disabled';
               }}
             />
           ))}
@@ -623,17 +645,17 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
 
             {/* Compact Thumb Zones for Actions */}
             <div className="flex items-center gap-1">
-              <button onClick={() => setActiveSheet('speed')} className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors font-en text-xs font-bold">
+              <button onPointerUp={(e) => { e.stopPropagation(); setActiveSheet('speed'); }} className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors font-en text-xs font-bold">
                 {playbackRate}x
               </button>
-              <button onClick={() => setActiveSheet('quality')} className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors">
+              <button onPointerUp={(e) => { e.stopPropagation(); setActiveSheet('quality'); }} className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors">
                 <i className="fa-solid fa-sliders text-sm"></i>
               </button>
-              <button onClick={() => setActiveSheet('subtitles')} className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors">
+              <button onPointerUp={(e) => { e.stopPropagation(); setActiveSheet('subtitles'); }} className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors">
                 <i className="fa-solid fa-closed-captioning text-sm"></i>
               </button>
               <button 
-                onClick={toggleFullscreen} 
+                onPointerUp={(e) => { e.stopPropagation(); toggleFullscreen(e as any); }}
                 className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors"
               >
                 <i className={`fa-solid ${isFullscreen ? 'fa-compress' : 'fa-expand'} text-sm`}></i>
