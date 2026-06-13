@@ -58,10 +58,49 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
   // Bottom Sheets State
   const [activeSheet, setActiveSheet] = useState<'quality' | 'speed' | 'subtitles' | null>(null);
 
-  // Subtitles
+  // Subtitle custom sizing state with localstorage persistence
+  const [subtitleSize, setSubtitleSize] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('alex_subtitle_size');
+      if (saved) {
+        const parsed = parseInt(saved);
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+      }
+    }
+    return 100;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('alex_subtitle_size', String(subtitleSize));
+  }, [subtitleSize]);
+
+  // Subtitle custom background state with localstorage persistence
+  const [showSubtitleBg, setShowSubtitleBg] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('alex_show_subtitle_bg');
+      return saved !== 'false';
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('alex_show_subtitle_bg', String(showSubtitleBg));
+  }, [showSubtitleBg]);
+
+  // Subtitle custom font state with localstorage persistence
+  const [selectedFont, setSelectedFont] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('alex_subtitle_font');
+      if (saved) return saved;
+    }
+    return 'Tajawal';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('alex_subtitle_font', selectedFont);
+  }, [selectedFont]);
+
   const [selectedLanguage, setSelectedLanguage] = useState<string>('ar');
-  const [subtitleSize, setSubtitleSize] = useState<number>(100);
-  const [showSubtitleBg, setShowSubtitleBg] = useState<boolean>(true);
 
   // Gestures
   const touchStartRef = useRef<{x: number, y: number, time: number} | null>(null);
@@ -171,6 +210,78 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
     }, 500);
     return () => clearInterval(interval);
   }, []);
+
+  // Get Subtitle Track Files (Mapped to proxy and deduplicated)
+  const getVttTracks = () => {
+    const tracksMap = new Map<string, { id: string | number; name: string; type: string; file: string }>();
+    const translations = videoData.translations || [];
+    
+    // 1. Process translations array
+    if (translations && translations.length > 0) {
+      translations.forEach((t) => {
+        const fileUrl = t.file;
+        const isVtt = t.extention === 'vtt' || fileUrl.includes('.vtt');
+        const existing = tracksMap.get(t.type);
+        if (!existing || isVtt) {
+          tracksMap.set(t.type, {
+            id: t.id,
+            name: t.name,
+            type: t.type,
+            file: fileUrl
+          });
+        }
+      });
+    }
+
+    // 2. Fallback to individual file paths
+    if (tracksMap.size === 0) {
+      if (videoData.arTranslationFilePath) {
+        tracksMap.set('ar', { id: 'fallback-ar', name: 'arabic', type: 'ar', file: videoData.arTranslationFilePath });
+      }
+      if (videoData.enTranslationFilePath) {
+        tracksMap.set('en', { id: 'fallback-en', name: 'english', type: 'en', file: videoData.enTranslationFilePath });
+      }
+    }
+    return Array.from(tracksMap.values());
+  };
+
+  const vttTranslations = getVttTracks();
+
+  // Sync Text Tracks (Subtitles)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      const syncTracks = () => {
+        for (let i = 0; i < video.textTracks.length; i++) {
+          const track = video.textTracks[i];
+          if (selectedLanguage === 'off') {
+            track.mode = 'disabled';
+          } else if (track.language === selectedLanguage) {
+            track.mode = 'showing';
+          } else {
+            track.mode = 'disabled';
+          }
+        }
+      };
+
+      syncTracks();
+      video.addEventListener('play', syncTracks);
+      video.addEventListener('loadedmetadata', syncTracks);
+      video.addEventListener('loadeddata', syncTracks);
+      if (video.textTracks) {
+        video.textTracks.addEventListener('change', syncTracks);
+      }
+
+      return () => {
+        video.removeEventListener('play', syncTracks);
+        video.removeEventListener('loadedmetadata', syncTracks);
+        video.removeEventListener('loadeddata', syncTracks);
+        if (video.textTracks) {
+          video.textTracks.removeEventListener('change', syncTracks);
+        }
+      };
+    }
+  }, [selectedLanguage, currentStreamUrl]);
 
   // 5. Gestures (Volume, Brightness, Double Tap)
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -321,31 +432,49 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
       >
         <video
           ref={videoRef}
-          className={`w-full h-full transition-all duration-300 ${isZoomed ? 'object-cover' : 'object-contain'}`}
-          style={{ filter: `brightness(${brightness})` }}
+          className={`w-full h-full alex-video-cue transition-all duration-300 ${isZoomed ? 'object-cover' : 'object-contain'}`}
+          style={{ 
+            filter: `brightness(${brightness})`,
+            '--sub-size': `${subtitleSize}%`,
+            '--sub-bg': showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent',
+            '--sub-shadow': showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)',
+            '--sub-font': `'${selectedFont}', 'Outfit', sans-serif`,
+            '--sub-offset-y': isZoomed || isFullscreen ? (showControls ? '-10vh' : '-24px') : (showControls ? '-60px' : '-24px')
+          } as React.CSSProperties}
           playsInline
           onPlay={() => setIsPaused(false)}
           onPause={() => setIsPaused(true)}
           onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime || 0)}
           onLoadedMetadata={() => setDuration(videoRef.current?.duration || 0)}
-        />
+        >
+          {vttTranslations.map((track) => (
+            <track
+              key={track.id}
+              kind="subtitles"
+              src={track.file}
+              srcLang={track.type}
+              label={track.name === 'arabic' ? 'العربية' : 'English'}
+              default={track.type === 'ar'}
+            />
+          ))}
+        </video>
       </div>
 
       {/* Double Tap Seek Overlay */}
       {showSeekAnimation === 'forward' && (
         <div className="absolute right-0 inset-y-0 w-1/3 flex flex-col items-center justify-center z-20 pointer-events-none">
-          <div className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center animate-ping text-white text-3xl">
+          <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center animate-ping text-white text-2xl">
             <i className="fa-solid fa-forward"></i>
           </div>
-          <span className="text-white font-black mt-4 text-sm drop-shadow-md">+10</span>
+          <span className="text-white font-black mt-4 text-sm drop-shadow-md">+10 ثوانٍ</span>
         </div>
       )}
       {showSeekAnimation === 'backward' && (
         <div className="absolute left-0 inset-y-0 w-1/3 flex flex-col items-center justify-center z-20 pointer-events-none">
-          <div className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center animate-ping text-white text-3xl">
+          <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center animate-ping text-white text-2xl">
             <i className="fa-solid fa-backward"></i>
           </div>
-          <span className="text-white font-black mt-4 text-sm drop-shadow-md">-10</span>
+          <span className="text-white font-black mt-4 text-sm drop-shadow-md">-10 ثوانٍ</span>
         </div>
       )}
 
@@ -368,7 +497,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <button 
             onClick={togglePlay}
-            className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white text-3xl shadow-[0_0_40px_rgba(255,255,255,0.1)] active:scale-75 transition-transform duration-300 pointer-events-auto"
+            className="w-14 h-14 rounded-full bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white text-2xl shadow-[0_0_40px_rgba(255,255,255,0.1)] active:scale-75 transition-transform duration-300 pointer-events-auto"
           >
             <i className={`fa-solid ${isPaused ? 'fa-play ml-1' : 'fa-pause'} `}></i>
           </button>
@@ -429,9 +558,9 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
       </div>
 
       {/* Spring Physics Bottom Sheets */}
-      {activeSheet && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[99999] flex flex-col justify-end" dir="rtl">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setActiveSheet(null)}></div>
+      {activeSheet && (
+        <div className="absolute inset-0 z-[99999] flex flex-col justify-end pointer-events-auto" dir="rtl">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity cursor-pointer" onClick={() => setActiveSheet(null)}></div>
           
           <div className="relative w-full bg-zinc-950/90 backdrop-blur-3xl rounded-t-3xl p-6 pb-[calc(env(safe-area-inset-bottom,16px)+24px)] flex flex-col gap-4 animate-[slideUp_0.3s_cubic-bezier(0.175,0.885,0.32,1.275)] border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
             <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-2"></div>
@@ -462,16 +591,39 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
             {activeSheet === 'subtitles' && (
               <>
                 <h3 className="text-white font-black text-lg mb-2">إعدادات الترجمة</h3>
-                {/* Simplified Subtitle UI for 2026 */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <button onClick={() => { setSelectedLanguage('off'); setActiveSheet(null); }} className={`p-4 rounded-2xl text-sm font-bold ${selectedLanguage === 'off' ? 'bg-white text-black' : 'bg-white/10 text-white'}`}>إيقاف</button>
-                  <button onClick={() => { setSelectedLanguage('ar'); setActiveSheet(null); }} className={`p-4 rounded-2xl text-sm font-bold ${selectedLanguage === 'ar' ? 'bg-white text-black' : 'bg-white/10 text-white'}`}>العربية</button>
+                <div className="flex-1 overflow-y-auto max-h-[50vh] pr-1 scrollbar-hide">
+                  <div className="text-sm text-gray-400 font-bold mb-2">لغة الترجمة</div>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <button onClick={() => { setSelectedLanguage('off'); setActiveSheet(null); }} className={`p-3 rounded-2xl text-sm font-bold ${selectedLanguage === 'off' ? 'bg-white text-black' : 'bg-white/10 text-white'}`}>إيقاف</button>
+                    {vttTranslations.map((track) => (
+                      <button key={track.id} onClick={() => { setSelectedLanguage(track.type); setActiveSheet(null); }} className={`p-3 rounded-2xl text-sm font-bold ${selectedLanguage === track.type ? 'bg-white text-black' : 'bg-white/10 text-white'}`}>
+                        {track.name === 'arabic' ? 'العربية' : 'English'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="text-sm text-gray-400 font-bold mb-2 mt-4">نوع الخط</div>
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {['Tajawal', 'Cairo', 'Almarai'].map(font => (
+                      <button key={font} onClick={() => setSelectedFont(font)} className={`p-3 rounded-xl text-xs font-bold transition-all ${selectedFont === font ? 'bg-white text-black' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>{font}</button>
+                    ))}
+                  </div>
+
+                  <div className="text-sm text-gray-400 font-bold mb-2 mt-4">حجم الخط: {subtitleSize}%</div>
+                  <div className="flex items-center gap-4 mb-4">
+                    <input type="range" min="50" max="200" step="10" value={subtitleSize} onChange={(e) => setSubtitleSize(Number(e.target.value))} className="w-full accent-white" />
+                  </div>
+
+                  <div className="text-sm text-gray-400 font-bold mb-2 mt-4">خلفية الترجمة</div>
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <button onClick={() => setShowSubtitleBg(true)} className={`p-3 rounded-xl text-xs font-bold transition-all ${showSubtitleBg ? 'bg-white text-black' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>تفعيل</button>
+                    <button onClick={() => setShowSubtitleBg(false)} className={`p-3 rounded-xl text-xs font-bold transition-all ${!showSubtitleBg ? 'bg-white text-black' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>تعطيل</button>
+                  </div>
                 </div>
               </>
             )}
           </div>
-        </div>,
-        document.body
+        </div>
       )}
 
       {/* Global CSS for the Bottom Sheet Animation */}
