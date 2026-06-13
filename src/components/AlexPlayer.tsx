@@ -951,6 +951,19 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
         {/* The Native HTML5 Video Element */}
         <div className={`absolute inset-0 w-full h-full ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
+          <style>{`
+            video.alex-video-cue::cue {
+              font-size: ${subtitleSize}% !important;
+              background: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
+              background-color: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
+              text-shadow: ${showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)'} !important;
+              font-family: '${selectedFont}', 'Outfit', sans-serif !important;
+            }
+            video.alex-video-cue::-webkit-media-text-track-container {
+              transform: translateY(${isZoomed || isFullscreen ? (showControls ? '-10vh' : '-24px') : (showControls ? '-60px' : '-24px')}) !important;
+              transition: transform 0.3s ease-out;
+            }
+          `}</style>
           <video
             ref={videoRef}
             className={`w-full h-full alex-video-cue cursor-pointer transition-all duration-300 ${isZoomed ? 'object-cover' : 'object-contain'}`}
@@ -971,7 +984,11 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                 src={getSubtitlesProxyUrl(track.file)}
                 srcLang={track.type}
                 label={track.name === 'arabic' ? 'العربية' : 'English'}
-                default={track.type === 'ar'}
+                default={selectedLanguage === track.type}
+                onLoad={(e) => {
+                   const t = (e.target as HTMLTrackElement).track;
+                   t.mode = selectedLanguage === track.type ? 'showing' : 'hidden';
+                }}
               />
             ))}
           </video>
