@@ -1,5 +1,5 @@
 'use client';
-import { getImageUrl } from '@/utils/imageHelper';
+import { getVideoImageUrl } from '@/utils/imageHelper';
 import { decryptData } from '@/utils/cryptoHelper';
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
@@ -363,7 +363,7 @@ function SearchPageContent() {
                     {/* Poster Wrapper */}
                     <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
                       <img 
-                        src={getImageUrl(video.img || video.imgMediumThumb || video.imgThumb || '', 'poster')}
+                        src={getVideoImageUrl(video as any, 'poster')}
                         alt={video.ar_title} 
                         className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
                         loading="lazy"
@@ -427,7 +427,7 @@ function SearchPageContent() {
                     {/* Poster Wrapper */}
                     <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
                       <img 
-                        src={getImageUrl(video.img || video.imgMediumThumb || video.imgThumb || '', 'poster')}
+                        src={getVideoImageUrl(video as any, 'poster')}
                         alt={video.ar_title} 
                         className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
                         loading="lazy"
