@@ -567,7 +567,6 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         {/* Center Big Play Button */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-40">
           <button 
-            onTouchEnd={(e) => { e.stopPropagation(); togglePlay(e as any); }}
             onClick={(e) => { e.stopPropagation(); togglePlay(e); }}
             style={{ WebkitTapHighlightColor: 'transparent' }}
             className="w-32 h-32 flex items-center justify-center pointer-events-auto"
