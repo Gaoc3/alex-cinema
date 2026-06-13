@@ -981,94 +981,89 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                     <span className="hidden md:inline">الترجمة</span>
                   </button>
 
-                  {activeDropdown === 'subtitles' && (
-                    <>
-                      {/* Mobile Backdrop Overlay */}
-                      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99998] md:hidden" onClick={() => setActiveDropdown(null)}></div>
-                      
-                      {/* Smart Modal/Dropdown */}
+                  {activeDropdown === 'subtitles' && typeof document !== 'undefined' && createPortal(
+                    <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4" dir="rtl">
+                      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setActiveDropdown(null)}></div>
                       <div 
-                        className="fixed inset-x-4 top-1/2 -translate-y-1/2 md:translate-y-0 md:absolute md:inset-auto md:bottom-full md:right-0 md:mb-3 w-auto md:w-[250px] max-h-[80vh] md:max-h-[60vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-[99999] flex flex-col p-4 md:p-3"
+                        className="relative w-full max-w-[340px] max-h-[85vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col p-4 animate-fade-in-up"
                         onPointerUp={(e) => e.stopPropagation()}
                       >
-                        <div className="flex items-center justify-between mb-3 md:mb-2 px-1">
-                           <button onClick={() => setActiveDropdown(null)} className="md:hidden w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white"><i className="fa-solid fa-xmark"></i></button>
-                           <div className="text-sm md:text-xs text-gray-300 font-bold">لغة الترجمة</div>
+                        <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
+                           <div className="text-base text-white font-black">إعدادات الترجمة</div>
+                           <button onClick={() => setActiveDropdown(null)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"><i className="fa-solid fa-xmark"></i></button>
                         </div>
                         
-                        <button 
-                          onClick={() => { setSelectedLanguage('off'); setActiveDropdown(null); }}
-                          className={`w-full text-right px-4 py-3 md:py-2.5 rounded-xl text-sm md:text-xs font-bold transition-all mb-1.5 md:mb-1 ${selectedLanguage === 'off' ? 'bg-alex-primary text-white font-black' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
-                        >
-                          إيقاف
-                        </button>
-                        {vttTranslations.map((track) => (
+                        <div className="text-sm text-gray-400 font-bold mb-2">لغة الترجمة</div>
+                        <div className="grid grid-cols-2 gap-2 mb-4">
                           <button 
-                            key={track.id}
-                            onClick={() => { setSelectedLanguage(track.type); setActiveDropdown(null); }}
-                            className={`w-full text-right px-4 py-3 md:py-2.5 rounded-xl text-sm md:text-xs font-bold transition-all mb-1.5 md:mb-1 ${selectedLanguage === track.type ? 'bg-alex-primary text-white font-black' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                            onClick={() => { setSelectedLanguage('off'); setActiveDropdown(null); }}
+                            className={`px-3 py-3 rounded-xl text-xs font-bold transition-all ${selectedLanguage === 'off' ? 'bg-alex-primary text-white font-black shadow-lg' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
                           >
-                            {track.name === 'arabic' ? 'العربية' : 'English'}
+                            إيقاف
                           </button>
-                        ))}
+                          {vttTranslations.map((track) => (
+                            <button 
+                              key={track.id}
+                              onClick={() => { setSelectedLanguage(track.type); setActiveDropdown(null); }}
+                              className={`px-3 py-3 rounded-xl text-xs font-bold transition-all ${selectedLanguage === track.type ? 'bg-alex-primary text-white font-black shadow-lg' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                            >
+                              {track.name === 'arabic' ? 'العربية' : 'English'}
+                            </button>
+                          ))}
+                        </div>
                         
                         {/* Font Selection Section */}
-                        <div className="border-t border-white/10 mt-3 pt-3 px-1 pb-1">
-                          <div className="text-xs text-gray-400 font-bold mb-2 text-right px-1">نوع الخط</div>
-                          <div className="flex flex-col gap-1.5 md:gap-1 bg-white/5 rounded-xl p-1.5">
-                            {[
-                              { name: 'Tajawal', label: 'خط تجول' },
-                              { name: 'Cairo', label: 'خط القاهرة' },
-                              { name: 'Amiri', label: 'خط أميري' }
-                            ].map((f) => (
-                              <button
-                                key={f.name}
-                                onClick={(e) => { e.stopPropagation(); setSelectedFont(f.name); }}
-                                className={`w-full text-right px-3 py-2.5 md:py-2 rounded-lg text-sm md:text-xs font-bold transition-all ${selectedFont === f.name ? 'bg-alex-primary text-white' : 'text-gray-300 hover:bg-white/10'}`}
-                                style={{ fontFamily: f.name }}
-                              >
-                                {f.label}
-                              </button>
-                            ))}
-                          </div>
+                        <div className="text-sm text-gray-400 font-bold mb-2">نوع الخط</div>
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                          {[
+                            { name: 'Tajawal', label: 'تجول' },
+                            { name: 'Cairo', label: 'القاهرة' },
+                            { name: 'Amiri', label: 'أميري' }
+                          ].map((f) => (
+                            <button
+                              key={f.name}
+                              onClick={(e) => { e.stopPropagation(); setSelectedFont(f.name); }}
+                              className={`px-2 py-3 rounded-xl text-xs font-bold transition-all ${selectedFont === f.name ? 'bg-white text-black' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                              style={{ fontFamily: f.name }}
+                            >
+                              {f.label}
+                            </button>
+                          ))}
                         </div>
 
                         {/* Subtitle Font Size Widget */}
-                        <div className="border-t border-white/10 mt-3 pt-3 px-1 pb-1">
-                          <div className="text-xs text-gray-400 font-bold mb-2 text-right px-1">حجم الترجمة</div>
-                          <div className="flex items-center justify-between gap-2 bg-white/5 rounded-xl p-1.5">
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
-                              className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-white font-black text-sm cursor-pointer select-none"
-                              title="تصغير"
-                            >
-                              A-
-                            </button>
-                            <span className="text-sm md:text-xs font-en font-bold text-gray-300 select-none min-w-[40px] text-center">{subtitleSize}%</span>
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
-                              className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-white font-black text-sm cursor-pointer select-none"
-                              title="تكبير"
-                            >
-                              A+
-                            </button>
-                          </div>
+                        <div className="text-sm text-gray-400 font-bold mb-2">حجم الخط</div>
+                        <div className="flex items-center justify-between gap-4 bg-white/5 rounded-2xl p-2 mb-4">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
+                            className="w-12 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white font-black text-sm transition-colors"
+                          >
+                            A+
+                          </button>
+                          <span className="text-sm font-en font-bold text-white min-w-[40px] text-center">{subtitleSize}%</span>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
+                            className="w-12 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white font-black text-sm transition-colors"
+                          >
+                            A-
+                          </button>
                         </div>
 
                         {/* Subtitle Background Toggle Switch */}
-                        <div className="border-t border-white/10 mt-3 pt-3 px-1 pb-1 flex items-center justify-between gap-2">
-                          <span className="text-sm md:text-xs text-gray-300 font-bold text-right select-none">خلفية المربع</span>
+                        <div className="flex items-center justify-between mt-2 pt-4 border-t border-white/10">
+                          <span className="text-sm text-gray-300 font-bold">خلفية سوداء للترجمة</span>
                           <button
                             onClick={(e) => { e.stopPropagation(); setShowSubtitleBg(prev => !prev); }}
-                            className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 focus:outline-none flex items-center cursor-pointer ${
+                            className={`w-14 h-7 rounded-full p-1 transition-colors duration-300 focus:outline-none flex items-center cursor-pointer ${
                               showSubtitleBg ? 'bg-alex-primary justify-end' : 'bg-white/20 justify-start'
                             }`}
                           >
-                            <span className="w-4 h-4 rounded-full bg-white shadow-md transform will-change-transform"></span>
+                            <span className="w-5 h-5 rounded-full bg-white shadow-md transform will-change-transform"></span>
                           </button>
                         </div>
                       </div>
-                    </>
+                    </div>,
+                    document.body
                   )}
                 </div>
               )}
@@ -1084,28 +1079,29 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                     <span className="hidden md:inline">{selectedResolution || 'الجودة'}</span>
                   </button>
 
-                  {activeDropdown === 'quality' && (
-                    <>
-                      {/* Mobile Backdrop Overlay */}
-                      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99998] md:hidden" onClick={() => setActiveDropdown(null)}></div>
-
-                      {/* Smart Modal/Dropdown */}
+                  {activeDropdown === 'quality' && typeof document !== 'undefined' && createPortal(
+                    <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4" dir="rtl">
+                      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setActiveDropdown(null)}></div>
                       <div 
-                        className="fixed inset-x-10 top-1/2 -translate-y-1/2 md:translate-y-0 md:absolute md:inset-auto md:bottom-full md:right-0 md:mb-3 w-auto md:w-36 max-h-[80vh] md:max-h-[50vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-[99999] flex flex-col p-3 md:p-2"
+                        className="relative w-full max-w-[280px] max-h-[80vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col p-4 animate-fade-in-up"
                         onPointerUp={(e) => e.stopPropagation()}
                       >
-                        <div className="md:hidden text-center text-sm text-gray-400 font-bold mb-3 border-b border-white/10 pb-2">اختيار الجودة</div>
+                        <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
+                           <div className="text-base text-white font-black">جودة العرض</div>
+                           <button onClick={() => setActiveDropdown(null)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"><i className="fa-solid fa-xmark"></i></button>
+                        </div>
                         {sortedStreams.map((stream) => (
                           <button 
                             key={stream.name}
-                            onClick={() => handleQualityChange(stream)}
-                            className={`w-full text-center md:text-right px-4 py-3 md:py-2.5 mb-1.5 md:mb-1 rounded-xl text-sm md:text-xs font-bold transition-all ${selectedResolution === stream.resolution ? 'bg-alex-primary text-white' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                            onClick={() => { handleQualityChange(stream); setActiveDropdown(null); }}
+                            className={`w-full text-center px-4 py-3.5 mb-2 rounded-xl text-sm font-bold transition-all ${selectedResolution === stream.resolution ? 'bg-alex-primary text-white shadow-lg' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
                           >
                             {stream.resolution}
                           </button>
                         ))}
                       </div>
-                    </>
+                    </div>,
+                    document.body
                   )}
                 </div>
               )}
@@ -1120,28 +1116,31 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                   <span className="hidden md:inline">{playbackRate}x</span>
                 </button>
 
-                {activeDropdown === 'speed' && (
-                  <>
-                    {/* Mobile Backdrop Overlay */}
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99998] md:hidden" onClick={() => setActiveDropdown(null)}></div>
-
-                    {/* Smart Modal/Dropdown */}
+                {activeDropdown === 'speed' && typeof document !== 'undefined' && createPortal(
+                  <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4" dir="rtl">
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setActiveDropdown(null)}></div>
                     <div 
-                      className="fixed inset-x-12 top-1/2 -translate-y-1/2 md:translate-y-0 md:absolute md:inset-auto md:bottom-full md:right-0 md:mb-3 w-auto md:w-32 max-h-[80vh] md:max-h-[50vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-2xl shadow-2xl z-[99999] flex flex-col p-3 md:p-2 font-en"
+                      className="relative w-full max-w-[280px] max-h-[80vh] overflow-y-auto liquid-glass-heavy border border-white/10 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col p-4 animate-fade-in-up font-en"
                       onPointerUp={(e) => e.stopPropagation()}
                     >
-                      <div className="md:hidden text-center text-sm text-gray-400 font-bold mb-3 border-b border-white/10 pb-2 font-ar">سرعة التشغيل</div>
-                      {[0.5, 1, 1.25, 1.5, 2].map((rate) => (
-                        <button 
-                          key={rate}
-                          onClick={() => { setPlaybackRate(rate); setActiveDropdown(null); }}
-                          className={`w-full text-center md:text-left px-4 py-3 md:py-2.5 mb-1.5 md:mb-1 rounded-xl text-sm md:text-xs font-bold transition-all ${playbackRate === rate ? 'bg-alex-primary text-white' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
-                        >
-                          {rate}x
-                        </button>
-                      ))}
+                      <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3 font-ar">
+                         <div className="text-base text-white font-black">سرعة التشغيل</div>
+                         <button onClick={() => setActiveDropdown(null)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"><i className="fa-solid fa-xmark"></i></button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[0.5, 1, 1.25, 1.5, 2].map((rate) => (
+                          <button 
+                            key={rate}
+                            onClick={() => { setPlaybackRate(rate); setActiveDropdown(null); }}
+                            className={`w-full text-center px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${playbackRate === rate ? 'bg-alex-primary text-white shadow-lg' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                          >
+                            {rate}x
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </>
+                  </div>,
+                  document.body
                 )}
               </div>
 
