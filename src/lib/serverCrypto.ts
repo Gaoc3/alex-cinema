@@ -45,7 +45,8 @@ export function sanitizeUrl(url: string): string {
     if (url.includes('.mp4') || url.includes('video') || url.includes('.m3u8') || url.includes('.ts')) {
       return `/api/stream?ref=${encPath}`;
     }
-    return `/api/img?ref=${encPath}`;
+    const parsed = new URL(url);
+    return `/tunnel${parsed.pathname}${parsed.search}`;
   } catch {
     return url;
   }

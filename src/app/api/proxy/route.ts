@@ -234,7 +234,7 @@ export async function GET(req: NextRequest) {
               if (match.includes('mp4') || match.includes('video') || match.includes('m3u8') || match.includes('.ts')) {
                 return `/api/stream?ref=${enc}`;
               }
-              return `/api/img?ref=${enc}`;
+              return `/tunnel${pathWithSearch}`;
             } catch {
               return match;
             }
