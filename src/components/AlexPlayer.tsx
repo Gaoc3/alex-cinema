@@ -842,19 +842,19 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10 mb-2">
         <span className="text-sm md:text-xs text-gray-300 font-bold">حجم الخط</span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <button 
             onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
-            className="w-9 h-9 md:w-8 md:h-8 flex items-center justify-center rounded-full border border-white/20 hover:bg-white/10 active:scale-95 text-white font-medium text-sm md:text-xs transition-all shadow-sm backdrop-blur-sm"
+            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/10 hover:bg-alex-primary active:scale-90 text-white transition-all shadow-lg"
           >
-            A-
+            <i className="fa-solid fa-minus text-sm"></i>
           </button>
-          <span className="text-sm font-en font-bold text-white min-w-[40px] text-center drop-shadow-md">{subtitleSize}%</span>
+          <span className="text-base font-en font-bold text-white min-w-[48px] text-center drop-shadow-md">{subtitleSize}%</span>
           <button 
             onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
-            className="w-9 h-9 md:w-8 md:h-8 flex items-center justify-center rounded-full border border-white/20 hover:bg-white/10 active:scale-95 text-white font-medium text-sm md:text-xs transition-all shadow-sm backdrop-blur-sm"
+            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/10 hover:bg-alex-primary active:scale-90 text-white transition-all shadow-lg"
           >
-            A+
+            <i className="fa-solid fa-plus text-sm"></i>
           </button>
         </div>
       </div>
