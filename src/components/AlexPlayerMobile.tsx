@@ -497,7 +497,10 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
               src={track.file}
               srcLang={track.type}
               label={track.name === 'arabic' ? 'العربية' : 'English'}
-              default={selectedLanguage === track.type}
+              onLoad={(e) => {
+                 const t = (e.target as HTMLTrackElement).track;
+                 t.mode = selectedLanguage === track.type ? 'hidden' : 'disabled';
+              }}
             />
           ))}
         </video>
