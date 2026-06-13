@@ -607,41 +607,44 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
           )}
 
           {activeSheet === 'subtitles' && (
-            <div className="w-[280px] bg-zinc-950/95 backdrop-blur-3xl border border-white/10 rounded-2xl p-4 shadow-2xl animate-fade-in-up">
+            <div className="w-[240px] bg-zinc-950/95 backdrop-blur-3xl border border-white/10 rounded-2xl p-3 shadow-2xl animate-fade-in-up">
               <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
-                 <div className="text-sm text-white font-black">إعدادات الترجمة</div>
-                 <button onClick={() => setActiveSheet(null)} className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"><i className="fa-solid fa-xmark text-xs"></i></button>
+                 <div className="text-xs text-white font-black">إعدادات الترجمة</div>
               </div>
               
-              <div className="max-h-[50vh] overflow-y-auto pr-1">
-                <div className="text-xs text-gray-400 font-bold mb-2">لغة الترجمة</div>
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                  <button onClick={() => { setSelectedLanguage('off'); setActiveSheet(null); }} className={`py-2 rounded-lg text-xs font-bold transition-colors ${selectedLanguage === 'off' ? 'bg-alex-primary text-white shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>إيقاف</button>
+              <div className="max-h-[45vh] overflow-y-auto pr-1">
+                <div className="text-[10px] text-gray-400 font-bold mb-2">لغة الترجمة</div>
+                <div className="grid grid-cols-2 gap-1.5 mb-4">
+                  <button onClick={() => { setSelectedLanguage('off'); setActiveSheet(null); }} className={`py-1.5 rounded-lg text-xs font-bold transition-colors ${selectedLanguage === 'off' ? 'bg-white/10 text-alex-primary border border-alex-primary/30 shadow-sm' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>إيقاف</button>
                   {vttTranslations.map((track) => (
-                    <button key={track.id} onClick={() => { setSelectedLanguage(track.type); setActiveSheet(null); }} className={`py-2 rounded-lg text-xs font-bold transition-colors ${selectedLanguage === track.type ? 'bg-alex-primary text-white shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>
-                      {track.name === 'arabic' ? 'العربية' : 'English'}
+                    <button key={track.id} onClick={() => { setSelectedLanguage(track.type); setActiveSheet(null); }} className={`py-1.5 rounded-lg text-xs font-bold transition-colors ${selectedLanguage === track.type ? 'bg-white/10 text-alex-primary border border-alex-primary/30 shadow-sm' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>
+                      {track.label || track.name}
                     </button>
                   ))}
                 </div>
 
-                <div className="text-xs text-gray-400 font-bold mb-2">نوع الخط</div>
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  {[ { name: 'Tajawal', label: 'تجول' }, { name: 'Cairo', label: 'القاهرة' }, { name: 'Amiri', label: 'أميري' } ].map((f) => (
-                    <button key={f.name} onClick={() => setSelectedFont(f.name)} style={{ fontFamily: f.name }} className={`py-2 rounded-lg text-xs font-bold transition-colors ${selectedFont === f.name ? 'bg-white text-black' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>{f.label}</button>
+                <div className="text-[10px] text-gray-400 font-bold mb-2">نوع الخط</div>
+                <div className="grid grid-cols-3 gap-1.5 mb-4">
+                  {['Tajawal', 'Cairo', 'Amiri'].map(f => (
+                    <button key={f} onClick={() => setSelectedFont(f)} className={`py-1.5 rounded-lg text-xs font-bold transition-colors ${selectedFont === f ? 'bg-white/10 text-alex-primary border border-alex-primary/30 shadow-sm' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>
+                      {f === 'Tajawal' ? 'تجول' : f === 'Cairo' ? 'القاهرة' : 'أميري'}
+                    </button>
                   ))}
                 </div>
 
-                <div className="text-xs text-gray-400 font-bold mb-2">حجم الخط</div>
-                <div className="flex items-center justify-between gap-3 bg-white/5 rounded-xl p-1.5 mb-4">
-                  <button onClick={() => setSubtitleSize(prev => Math.min(220, prev + 10))} className="w-10 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white font-black text-sm transition-colors">A+</button>
-                  <span className="text-xs font-en font-bold text-white min-w-[40px] text-center">{subtitleSize}%</span>
-                  <button onClick={() => setSubtitleSize(prev => Math.max(60, prev - 10))} className="w-10 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white font-black text-sm transition-colors">A-</button>
+                <div className="flex items-center justify-between mb-4 bg-white/5 p-2 rounded-xl">
+                  <div className="text-[10px] text-gray-400 font-bold">حجم الخط</div>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setSubtitleSize(s => Math.max(50, s - 10))} className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/10 text-white font-bold hover:bg-white/20 active:scale-90">-A</button>
+                    <span className="text-xs text-white font-bold min-w-[30px] text-center">{subtitleSize}%</span>
+                    <button onClick={() => setSubtitleSize(s => Math.min(200, s + 10))} className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/10 text-white font-bold hover:bg-white/20 active:scale-90">+A</button>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-white/10">
-                  <span className="text-xs text-gray-300 font-bold">خلفية سوداء للترجمة</span>
-                  <button onClick={() => setShowSubtitleBg(prev => !prev)} className={`w-10 h-5 rounded-full p-0.5 transition-colors duration-300 flex items-center ${showSubtitleBg ? 'bg-alex-primary justify-end' : 'bg-white/20 justify-start'}`}>
-                    <span className="w-4 h-4 rounded-full bg-white shadow-md"></span>
+                <div className="flex items-center justify-between bg-white/5 p-2 rounded-xl">
+                  <div className="text-[10px] text-gray-400 font-bold">خلفية سوداء للترجمة</div>
+                  <button onClick={() => setShowSubtitleBg(!showSubtitleBg)} className={`w-10 h-5 rounded-full relative transition-colors ${showSubtitleBg ? 'bg-alex-primary' : 'bg-white/20'}`}>
+                    <div className={`w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all ${showSubtitleBg ? 'left-0.5' : 'left-[22px]'}`}></div>
                   </button>
                 </div>
               </div>
