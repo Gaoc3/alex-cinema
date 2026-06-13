@@ -706,12 +706,16 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
                   ))}
                 </div>
 
-                <div className="flex items-center justify-between mb-3 bg-white/5 p-1.5 rounded-xl">
-                  <div className="text-[9px] text-gray-400 font-bold">حجم الخط</div>
-                  <div className="flex items-center gap-1.5">
-                    <button onClick={() => setSubtitleSize(s => Math.max(50, s - 10))} className="w-5 h-5 flex items-center justify-center rounded-md bg-white/10 text-white font-bold hover:bg-white/20 active:scale-90">-A</button>
-                    <span className="text-[10px] text-white font-bold min-w-[24px] text-center">{subtitleSize}%</span>
-                    <button onClick={() => setSubtitleSize(s => Math.min(200, s + 10))} className="w-5 h-5 flex items-center justify-center rounded-md bg-white/10 text-white font-bold hover:bg-white/20 active:scale-90">+A</button>
+                <div className="flex items-center justify-between mb-3 bg-white/5 p-2 rounded-xl border border-white/10">
+                  <div className="text-[10px] text-gray-300 font-bold">حجم الخط</div>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setSubtitleSize(s => Math.min(200, s + 10))} className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/10 text-white hover:bg-alex-primary active:scale-90 transition-all shadow-md">
+                      <i className="fa-solid fa-plus text-[11px]"></i>
+                    </button>
+                    <span className="text-[11px] font-en text-white font-bold min-w-[28px] text-center drop-shadow-md">{subtitleSize}%</span>
+                    <button onClick={() => setSubtitleSize(s => Math.max(50, s - 10))} className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/10 text-white hover:bg-alex-primary active:scale-90 transition-all shadow-md">
+                      <i className="fa-solid fa-minus text-[11px]"></i>
+                    </button>
                   </div>
                 </div>
 
