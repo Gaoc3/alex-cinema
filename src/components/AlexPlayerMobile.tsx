@@ -391,21 +391,18 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
     };
   }, []);
 
-  const togglePlay = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    triggerHaptic('medium');
-    const video = videoRef.current;
-    if (!video) return;
-    if (video.paused) {
-      video.play();
-      setIsPaused(false);
-    } else {
-      video.pause();
-      setIsPaused(true);
+  const togglePlay = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play().catch(console.error);
+      } else {
+        videoRef.current.pause();
+      }
+      resetControlsTimeout();
+      triggerHaptic('light');
     }
-    resetControlsTimeout();
   };
-
   const formatTime = (time: number) => {
     if (isNaN(time)) return "00:00";
     const m = Math.floor(time / 60);
