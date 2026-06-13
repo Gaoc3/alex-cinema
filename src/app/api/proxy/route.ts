@@ -231,7 +231,7 @@ export async function GET(req: NextRequest) {
               const parsed = new URL(unescapedMatch);
               const pathWithSearch = parsed.pathname + parsed.search;
               const enc = encryptPath(pathWithSearch);
-              if (match.includes('mp4') || match.includes('video') || match.includes('m3u8') || match.includes('.ts')) {
+              if (match.includes('mp4') || match.includes('video') || match.includes('m3u8') || match.includes('.ts') || match.includes('.srt') || match.includes('.vtt')) {
                 return `/api/stream?ref=${enc}`;
               }
               return `/tunnel${pathWithSearch}`;
@@ -272,7 +272,7 @@ export async function GET(req: NextRequest) {
               const parsed = new URL(unescapedMatch);
               const pathWithSearch = parsed.pathname + parsed.search;
               const enc = encryptPath(pathWithSearch);
-              if (match.includes('mp4') || match.includes('video') || match.includes('m3u8') || match.includes('.ts')) {
+              if (match.includes('mp4') || match.includes('video') || match.includes('m3u8') || match.includes('.ts') || match.includes('.srt') || match.includes('.vtt')) {
                 return `/api/stream?ref=${enc}`;
               }
               return `/tunnel${pathWithSearch}`;
