@@ -688,9 +688,9 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
               <div className="max-h-[45vh] overflow-y-auto pr-1">
                 <div className="text-[9px] text-gray-400 font-bold mb-1.5">لغة الترجمة</div>
                 <div className="grid grid-cols-2 gap-1 mb-3">
-                  <button onClick={() => { setSelectedLanguage('off'); setActiveSheet(null); }} className={`py-1 rounded-lg text-[11px] font-bold transition-colors ${selectedLanguage === 'off' ? 'bg-white/10 text-alex-primary border border-alex-primary/30 shadow-sm' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>إيقاف</button>
+                  <button onClick={(e) => { e.stopPropagation(); setSelectedLanguage('off'); }} className={`py-1 rounded-lg text-[11px] font-bold transition-colors ${selectedLanguage === 'off' ? 'bg-white/10 text-alex-primary border border-alex-primary/30 shadow-sm' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>إيقاف</button>
                   {vttTranslations.map((track) => (
-                    <button key={track.id} onClick={() => { setSelectedLanguage(track.type); setActiveSheet(null); }} className={`py-1 rounded-lg text-[11px] font-bold transition-colors ${selectedLanguage === track.type ? 'bg-white/10 text-alex-primary border border-alex-primary/30 shadow-sm' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>
+                    <button key={track.id} onClick={(e) => { e.stopPropagation(); setSelectedLanguage(track.type); }} className={`py-1 rounded-lg text-[11px] font-bold transition-colors ${selectedLanguage === track.type ? 'bg-white/10 text-alex-primary border border-alex-primary/30 shadow-sm' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>
                       {track.name === 'arabic' ? 'العربية' : 'English'}
                     </button>
                   ))}

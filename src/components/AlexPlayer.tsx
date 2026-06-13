@@ -265,60 +265,68 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     }
   }, [playbackRate, currentStreamUrl]);
 
-  // Sync Text Tracks (Subtitles)
+  // Sync Text Tracks (Subtitles) — Single source of truth
   useEffect(() => {
     const video = videoRef.current;
-    if (video) {
-      const syncTracks = () => {
-        let newActiveText = '';
-        for (let i = 0; i < video.textTracks.length; i++) {
-          const track = video.textTracks[i];
-          if (selectedLanguage === 'off') {
-            track.mode = 'disabled';
-          } else if (track.language === selectedLanguage) {
-            track.mode = 'hidden'; // 'hidden' guarantees native cues aren't rendered, but activeCues is populated
-            
-            // Manually extract current subtitle if paused or activeCues hasn't fired yet
-            if (track.activeCues && track.activeCues.length > 0) {
-              const texts = [];
-              for (let j = 0; j < track.activeCues.length; j++) {
-                texts.push((track.activeCues[j] as VTTCue).text);
-              }
-              newActiveText = texts.join('\n');
-            } else if (track.cues && track.cues.length > 0) {
-              const currentTime = video.currentTime;
-              const active = Array.from(track.cues).filter((cue: any) => currentTime >= cue.startTime && currentTime <= cue.endTime);
-              if (active.length > 0) {
-                newActiveText = active.map((cue: any) => cue.text).join('\n');
-              }
-            }
-          } else {
-            track.mode = 'disabled';
+    if (!video) return;
+
+    const syncTracks = () => {
+      let newActiveText = '';
+      for (let i = 0; i < video.textTracks.length; i++) {
+        const track = video.textTracks[i];
+        if (selectedLanguage === 'off') {
+          track.mode = 'disabled';
+        } else if (track.language === selectedLanguage) {
+          track.mode = 'hidden'; // 'hidden' guarantees native cues aren't rendered, but activeCues is populated
+          // Extract cue text
+          if (track.activeCues && track.activeCues.length > 0) {
+            newActiveText = Array.from(track.activeCues)
+              .map((c: any) => c.text).join('\n');
+          } else if (track.cues && track.cues.length > 0) {
+            const ct = video.currentTime;
+            newActiveText = Array.from(track.cues)
+              .filter((c: any) => ct >= c.startTime && ct <= c.endTime)
+              .map((c: any) => c.text).join('\n');
           }
+        } else {
+          track.mode = 'disabled';
         }
-        setCurrentSubtitle(newActiveText);
-      };
-
-      // Run once immediately
-      syncTracks();
-
-      // Listen to events to re-apply the tracks
-      video.addEventListener('play', syncTracks);
-      video.addEventListener('loadedmetadata', syncTracks);
-      video.addEventListener('loadeddata', syncTracks);
-      if (video.textTracks) {
-        video.textTracks.addEventListener('change', syncTracks);
       }
+      setCurrentSubtitle(newActiveText);
+    };
 
-      return () => {
-        video.removeEventListener('play', syncTracks);
-        video.removeEventListener('loadedmetadata', syncTracks);
-        video.removeEventListener('loadeddata', syncTracks);
-        if (video.textTracks) {
-          video.textTracks.removeEventListener('change', syncTracks);
-        }
-      };
+    // Run once immediately
+    syncTracks();
+
+    // Listen for individual track cue changes (real-time subtitle updates)
+    const onCueChange = () => syncTracks();
+    for (let i = 0; i < video.textTracks.length; i++) {
+      video.textTracks[i].addEventListener('cuechange', onCueChange);
     }
+    
+    // Listen to events to re-apply the tracks
+    video.addEventListener('play', syncTracks);
+    video.addEventListener('loadedmetadata', syncTracks);
+    video.addEventListener('loadeddata', syncTracks);
+    video.textTracks.addEventListener('change', syncTracks);
+    video.textTracks.addEventListener('addtrack', () => {
+      // New track added — re-attach cuechange and sync
+      for (let i = 0; i < video.textTracks.length; i++) {
+        video.textTracks[i].removeEventListener('cuechange', onCueChange);
+        video.textTracks[i].addEventListener('cuechange', onCueChange);
+      }
+      syncTracks();
+    });
+
+    return () => {
+      for (let i = 0; i < video.textTracks.length; i++) {
+        video.textTracks[i].removeEventListener('cuechange', onCueChange);
+      }
+      video.removeEventListener('play', syncTracks);
+      video.removeEventListener('loadedmetadata', syncTracks);
+      video.removeEventListener('loadeddata', syncTracks);
+      video.textTracks.removeEventListener('change', syncTracks);
+    };
   }, [selectedLanguage, currentStreamUrl]);
 
   // Subtitle styles are now applied via CSS Variables on the video element in globals.css
@@ -544,37 +552,8 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   // Track time updates
   const handleTimeUpdate = () => {
     if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
-      
-      // Real-time subtitle extraction
       const video = videoRef.current;
-      if (selectedLanguage !== 'off') {
-        let activeText = '';
-        for (let i = 0; i < video.textTracks.length; i++) {
-          const track = video.textTracks[i];
-          if (track.language === selectedLanguage) {
-            if (track.activeCues && track.activeCues.length > 0) {
-              const texts = [];
-              for (let j = 0; j < track.activeCues.length; j++) {
-                texts.push((track.activeCues[j] as VTTCue).text);
-              }
-              activeText = texts.join('\n');
-            } else if (track.cues && track.cues.length > 0) {
-              const currentTime = video.currentTime;
-              const active = Array.from(track.cues).filter((cue: any) => currentTime >= cue.startTime && currentTime <= cue.endTime);
-              if (active.length > 0) {
-                activeText = active.map((cue: any) => cue.text).join('\n');
-              }
-            }
-            break;
-          }
-        }
-        if (currentSubtitle !== activeText) {
-           setCurrentSubtitle(activeText);
-        }
-      } else if (currentSubtitle !== '') {
-        setCurrentSubtitle('');
-      }
+      setCurrentTime(video.currentTime);
 
       // 1. Check Skip Intro Ranges
       const intro = videoData.introSkipping?.find(
