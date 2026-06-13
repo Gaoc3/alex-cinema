@@ -302,11 +302,11 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         </div>
 
         {/* Center Big Play Button */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           {isPaused && (
             <button 
               onClick={togglePlay}
-              className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white text-3xl shadow-[0_0_40px_rgba(255,255,255,0.1)] active:scale-75 transition-transform duration-300"
+              className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white text-3xl shadow-[0_0_40px_rgba(255,255,255,0.1)] active:scale-75 transition-transform duration-300 pointer-events-auto"
             >
               <i className="fa-solid fa-play ml-1"></i>
             </button>
