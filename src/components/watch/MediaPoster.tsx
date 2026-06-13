@@ -17,6 +17,7 @@ export default function MediaPoster({ img, imdbUrlRef }: MediaPosterProps) {
           alt="Poster"
           fill
           sizes="(max-width: 768px) 100vw, 33vw"
+          priority={true}
           className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0e17] via-transparent to-transparent opacity-80"></div>

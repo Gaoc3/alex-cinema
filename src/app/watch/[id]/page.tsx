@@ -1,4 +1,4 @@
-import { getImageUrl } from '@/utils/imageHelper';
+import { getVideoImageUrl } from '@/utils/imageHelper';
 import { getVideoDetails, getSeriesSeasons, getSeriesEpisodes } from '@/lib/api';
 import WatchContainer from '@/components/WatchContainer';
 import Link from 'next/link';
@@ -42,7 +42,7 @@ export default async function WatchPage({ params }: { params: Promise<{ id: stri
     <div className="min-h-screen flex flex-col relative pt-24 animate-fade-in-up overflow-x-hidden">
       <div 
         className="fixed inset-0 z-[-1] opacity-20 blur-[60px] bg-cover bg-center saturate-150 transform scale-110"
-        style={{ backgroundImage: `url(${getImageUrl(video.img, 'poster')})` }}
+        style={{ backgroundImage: `url(${getVideoImageUrl(video as any, 'poster')})` }}
       ></div>
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full z-10 flex-grow">
