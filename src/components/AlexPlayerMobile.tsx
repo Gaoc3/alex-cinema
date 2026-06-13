@@ -484,11 +484,11 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         className={`absolute inset-0 z-30 pointer-events-none transition-opacity duration-300 ${showControls || isPaused ? 'opacity-100' : 'opacity-0'}`}
       >
         {/* Top Gradient & Title */}
-        <div className="absolute top-0 left-0 w-full pt-4 sm:pt-6 px-4 sm:px-6 pb-12 bg-gradient-to-b from-black/90 via-black/40 to-transparent pointer-events-auto flex items-center justify-start gap-4">
+        <div className={`absolute top-0 left-0 w-full pt-4 sm:pt-6 px-4 sm:px-6 pb-12 bg-gradient-to-b from-black/90 via-black/40 to-transparent transition-all duration-300 flex items-center justify-start gap-3 ${showControls || isPaused ? 'pointer-events-auto translate-y-0' : 'pointer-events-none -translate-y-4'}`}>
           <button className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/90 hover:bg-white/20 transition-all active:scale-90" onClick={() => window.history.back()}>
             <i className="fa-solid fa-arrow-right text-sm"></i>
           </button>
-          <h2 className="text-white font-black text-sm sm:text-base truncate drop-shadow-md tracking-wide">
+          <h2 className="text-white font-bold text-xs sm:text-sm max-w-[70%] truncate drop-shadow-md tracking-wide">
             {videoData.ar_title}
           </h2>
         </div>
@@ -505,10 +505,10 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         </div>
 
         {/* Bottom Liquid Glass Controls */}
-        <div className="absolute bottom-0 left-0 w-full pb-2 sm:pb-4 px-4 sm:px-6 pt-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-auto">
+        <div className={`absolute bottom-0 left-0 w-full pb-2 px-4 sm:px-6 pt-12 bg-gradient-to-t from-black/95 via-black/50 to-transparent transition-all duration-300 ${showControls || isPaused ? 'pointer-events-auto translate-y-0' : 'pointer-events-none translate-y-4'}`}>
           
           {/* Smart Timeline Scrubber */}
-          <div className="relative w-full h-8 flex items-center group mb-1">
+          <div className="relative w-full h-6 flex items-center group mb-0">
             <input
               type="range"
               min={0}
@@ -567,33 +567,40 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         </div>
       </div>
 
+      {/* Popover Backdrop */}
+      {activeSheet && (
+        <div 
+          className="absolute inset-0 z-[99998] bg-black/10" 
+          onClick={() => setActiveSheet(null)}
+          onTouchStart={() => setActiveSheet(null)}
+        />
+      )}
+
       {/* Floating Menus (Like Desktop) */}
       {activeSheet && (
-        <div className="absolute bottom-[80px] sm:bottom-[90px] right-4 sm:right-6 z-[99999] pointer-events-auto" dir="rtl">
+        <div className="absolute bottom-[65px] sm:bottom-[70px] right-4 sm:right-6 z-[99999] pointer-events-auto" dir="rtl">
           {activeSheet === 'speed' && (
-            <div className="w-[200px] bg-zinc-950/95 backdrop-blur-3xl border border-white/10 rounded-2xl p-3 shadow-2xl animate-fade-in-up">
+            <div className="w-[180px] bg-zinc-950/95 backdrop-blur-3xl border border-white/10 rounded-2xl p-3 shadow-2xl animate-fade-in-up">
               <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
-                 <div className="text-sm text-white font-black">سرعة التشغيل</div>
-                 <button onClick={() => setActiveSheet(null)} className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"><i className="fa-solid fa-xmark text-xs"></i></button>
+                 <div className="text-xs text-white font-black">سرعة التشغيل</div>
               </div>
               <div className="grid grid-cols-2 gap-2 font-en">
                 {[0.5, 1, 1.25, 1.5, 2].map((r) => (
-                  <button key={r} onClick={() => { setPlaybackRate(r); if(videoRef.current) videoRef.current.playbackRate = r; setActiveSheet(null); }} className={`py-2 rounded-lg text-xs font-bold transition-colors ${playbackRate === r ? 'bg-alex-primary text-white shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>{r}x</button>
+                  <button key={r} onClick={() => { setPlaybackRate(r); if(videoRef.current) videoRef.current.playbackRate = r; setActiveSheet(null); }} className={`py-1.5 rounded-lg text-xs font-bold transition-colors ${playbackRate === r ? 'bg-white/10 text-alex-primary border border-alex-primary/30 shadow-sm' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>{r}x</button>
                 ))}
               </div>
             </div>
           )}
 
           {activeSheet === 'quality' && (
-            <div className="w-[200px] bg-zinc-950/95 backdrop-blur-3xl border border-white/10 rounded-2xl p-3 shadow-2xl animate-fade-in-up">
+            <div className="w-[180px] bg-zinc-950/95 backdrop-blur-3xl border border-white/10 rounded-2xl p-3 shadow-2xl animate-fade-in-up">
               <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
-                 <div className="text-sm text-white font-black">جودة العرض</div>
-                 <button onClick={() => setActiveSheet(null)} className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"><i className="fa-solid fa-xmark text-xs"></i></button>
+                 <div className="text-xs text-white font-black">جودة العرض</div>
               </div>
-              <div className="flex flex-col gap-1.5 font-en max-h-[40vh] overflow-y-auto pr-1">
-                <button onClick={() => { setSelectedResolution('Auto'); setActiveSheet(null); }} className={`py-2 px-3 rounded-lg text-xs font-bold text-center transition-colors ${selectedResolution === 'Auto' ? 'bg-alex-primary text-white shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>Auto</button>
-                {streams.map((s) => (
-                  <button key={s.name} onClick={() => { setSelectedResolution(s.resolution); setCurrentStreamUrl(s.videoUrl || ''); setActiveSheet(null); }} className={`py-2 px-3 rounded-lg text-xs font-bold text-center transition-colors ${selectedResolution === s.resolution ? 'bg-alex-primary text-white shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>{s.resolution}</button>
+              <div className="flex flex-col gap-1.5 font-en max-h-[35vh] overflow-y-auto pr-1">
+                <button onClick={() => { setSelectedResolution('Auto'); setActiveSheet(null); }} className={`py-1.5 px-3 rounded-lg text-xs font-bold text-center transition-colors ${selectedResolution === 'Auto' ? 'bg-white/10 text-alex-primary border border-alex-primary/30 shadow-sm' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>Auto</button>
+                {[...streams].sort((a, b) => parseInt(a.resolution) - parseInt(b.resolution)).map((s) => (
+                  <button key={s.name} onClick={() => { setSelectedResolution(s.resolution); setCurrentStreamUrl(s.videoUrl || ''); setActiveSheet(null); }} className={`py-1.5 px-3 rounded-lg text-xs font-bold text-center transition-colors ${selectedResolution === s.resolution ? 'bg-white/10 text-alex-primary border border-alex-primary/30 shadow-sm' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>{s.resolution}</button>
                 ))}
               </div>
             </div>
