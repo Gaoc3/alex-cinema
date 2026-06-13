@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Hls from 'hls.js';
 
 interface Stream {
@@ -856,16 +857,16 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         {isPaused && (
           <button 
             onClick={togglePlay}
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 md:w-24 md:h-24 rounded-full bg-alex-primary/95 text-white flex items-center justify-center shadow-[0_0_45px_rgba(229,9,20,0.6)] hover:scale-110 transition-all duration-300 z-20 cursor-pointer animate-fade-in-up"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 md:w-24 md:h-24 rounded-full bg-alex-primary/95 text-white flex items-center justify-center shadow-[0_0_30px_rgba(229,9,20,0.6)] md:shadow-[0_0_45px_rgba(229,9,20,0.6)] hover:scale-110 transition-all duration-300 z-20 cursor-pointer animate-fade-in-up"
           >
-            <i className="fa-solid fa-play mr-1.5 text-3xl md:text-4xl"></i>
+            <i className="fa-solid fa-play ml-1 md:mr-1.5 text-2xl md:text-4xl"></i>
           </button>
         )}
 
         {/* TOP TITLE BAR */}
-        <div className={`absolute top-0 inset-x-0 p-5 pt-6 pb-20 bg-gradient-to-b from-black/90 via-black/40 to-transparent flex flex-row-reverse items-center justify-between transition-all duration-300 transform z-20 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-          <h3 className="text-white text-base md:text-lg font-black drop-shadow-md flex items-center gap-3" dir="rtl">
-            <span className="w-2.5 h-2.5 rounded-full bg-alex-primary animate-pulse"></span>
+        <div className={`absolute top-0 inset-x-0 p-3 pb-8 md:p-5 md:pt-6 md:pb-20 bg-gradient-to-b from-black/90 md:via-black/40 to-transparent flex flex-row-reverse items-center justify-between transition-all duration-300 transform z-20 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+          <h3 className="text-white text-xs md:text-lg font-black drop-shadow-md flex items-center gap-2 md:gap-3" dir="rtl">
+            <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-alex-primary animate-pulse"></span>
             {videoData.ar_title}
           </h3>
         </div>
@@ -892,7 +893,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         )}
 
         {/* BOTTOM CUSTOM CONTROL BAR */}
-        <div className={`absolute bottom-0 inset-x-0 px-2 sm:px-6 pb-[calc(env(safe-area-inset-bottom)+8px)] md:pb-8 pt-12 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-1.5 md:gap-3 transition-all duration-300 transform z-30 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`absolute bottom-0 inset-x-0 p-2 pt-6 pb-[calc(env(safe-area-inset-bottom)+4px)] sm:px-6 md:pb-8 md:pt-12 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-1.5 md:gap-3 transition-all duration-300 transform z-30 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           
           {/* Custom Timeline Progress Slider */}
           <div className="flex items-center gap-2 md:gap-4 w-full">
