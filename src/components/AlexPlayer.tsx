@@ -783,18 +783,21 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     return (
       <div 
         ref={containerRef}
-        className={`relative bg-black overflow-hidden select-none group/player touch-manipulation transition-all duration-300 ${
+        className={`relative select-none group/player touch-manipulation transition-all duration-300 ${
           isFullscreen 
-            ? 'fixed inset-0 w-screen h-screen z-[9999] rounded-none border-none' 
-            : 'w-full aspect-video rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10'
+            ? 'fixed inset-0 w-screen h-screen z-[9999] rounded-none border-none bg-black' 
+            : 'w-full aspect-video rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10 bg-black/90'
         }`}
         dir="ltr"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Dynamic Glow Overlay */}
-        <div className="absolute inset-0 z-[-1] opacity-25 blur-[100px] scale-105 pointer-events-none transition-all duration-1000 bg-[#e50914]/20"></div>
+        {/* Inner wrapper for rounded corners and overflow clipping to not affect dropdowns */}
+        <div className={`absolute inset-0 w-full h-full pointer-events-none ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
+          {/* Dynamic Glow Overlay */}
+          <div className="absolute inset-0 z-[-1] opacity-25 blur-[100px] scale-105 transition-all duration-1000 bg-[#e50914]/20"></div>
+        </div>
 
         {/* Double Tap Seek Animations */}
         {showSeekAnimation === 'forward' && (
@@ -815,37 +818,39 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         )}
 
         {/* The Native HTML5 Video Element */}
-        <video
-          ref={videoRef}
-          className={`w-full h-full alex-video-cue cursor-pointer transition-all duration-300 ${isZoomed ? 'object-cover' : 'object-contain'}`}
-          style={{
-            '--sub-size': `${subtitleSize}%`,
-            '--sub-bg': showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent',
-            '--sub-shadow': showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)',
-            '--sub-font': `'${selectedFont}', 'Outfit', sans-serif`,
-            '--sub-offset-y': isZoomed || isFullscreen ? (showControls ? '-10vh' : '-24px') : (showControls ? '-60px' : '-24px')
-          } as React.CSSProperties}
-          onPointerUp={handleVideoPointerUp}
-          onTimeUpdate={handleTimeUpdate}
-          onLoadedMetadata={handleLoadedMetadata}
-          onError={handleStreamError}
-          crossOrigin="anonymous"
-          onPlay={() => setIsPaused(false)}
-          onPause={() => setIsPaused(true)}
-          autoPlay
-          playsInline
-        >
-          {vttTranslations.map((track) => (
-            <track
-              key={track.id}
-              kind="subtitles"
-              src={getSubtitlesProxyUrl(track.file)}
-              srcLang={track.type}
-              label={track.name === 'arabic' ? 'العربية' : 'English'}
-              default={track.type === 'ar'}
-            />
-          ))}
-        </video>
+        <div className={`absolute inset-0 w-full h-full ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
+          <video
+            ref={videoRef}
+            className={`w-full h-full alex-video-cue cursor-pointer transition-all duration-300 ${isZoomed ? 'object-cover' : 'object-contain'}`}
+            style={{
+              '--sub-size': `${subtitleSize}%`,
+              '--sub-bg': showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent',
+              '--sub-shadow': showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)',
+              '--sub-font': `'${selectedFont}', 'Outfit', sans-serif`,
+              '--sub-offset-y': isZoomed || isFullscreen ? (showControls ? '-10vh' : '-24px') : (showControls ? '-60px' : '-24px')
+            } as React.CSSProperties}
+            onPointerUp={handleVideoPointerUp}
+            onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={handleLoadedMetadata}
+            onError={handleStreamError}
+            crossOrigin="anonymous"
+            onPlay={() => setIsPaused(false)}
+            onPause={() => setIsPaused(true)}
+            autoPlay
+            playsInline
+          >
+            {vttTranslations.map((track) => (
+              <track
+                key={track.id}
+                kind="subtitles"
+                src={getSubtitlesProxyUrl(track.file)}
+                srcLang={track.type}
+                label={track.name === 'arabic' ? 'العربية' : 'English'}
+                default={track.type === 'ar'}
+              />
+            ))}
+          </video>
+        </div>
 
         {/* Big Pulsing Center Play Button */}
         {isPaused && (
