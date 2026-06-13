@@ -55,6 +55,8 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
   const [showControls, setShowControls] = useState(true);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [isScrubbing, setIsScrubbing] = useState(false);
+
   // Bottom Sheets State
   const [activeSheet, setActiveSheet] = useState<'quality' | 'speed' | 'subtitles' | null>(null);
 
@@ -441,7 +443,9 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
           playsInline
           onPlay={() => setIsPaused(false)}
           onPause={() => setIsPaused(true)}
-          onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime || 0)}
+          onTimeUpdate={() => {
+            if (!isScrubbing) setCurrentTime(videoRef.current?.currentTime || 0);
+          }}
           onLoadedMetadata={() => setDuration(videoRef.current?.duration || 0)}
         >
           {vttTranslations.map((track) => (
@@ -501,24 +505,33 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         </div>
 
         {/* Bottom Liquid Glass Controls */}
-        <div className="absolute bottom-0 left-0 w-full pb-4 px-4 sm:px-6 pt-8 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-auto">
+        <div className="absolute bottom-0 left-0 w-full pb-2 sm:pb-4 px-4 sm:px-6 pt-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-auto">
           
           {/* Smart Timeline Scrubber */}
-          <div className="relative w-full h-10 flex items-center group mb-2">
+          <div className="relative w-full h-8 flex items-center group mb-1">
             <input
               type="range"
               min={0}
               max={duration || 100}
               value={currentTime}
+              onPointerDown={() => setIsScrubbing(true)}
+              onPointerUp={(e) => {
+                setIsScrubbing(false);
+                const val = parseFloat((e.currentTarget as HTMLInputElement).value);
+                if (videoRef.current) videoRef.current.currentTime = val;
+                triggerHaptic('light');
+              }}
               onChange={(e) => {
                 const val = parseFloat(e.target.value);
                 setCurrentTime(val);
-                if (videoRef.current) videoRef.current.currentTime = val;
+                if (isPaused && videoRef.current) {
+                  videoRef.current.currentTime = val;
+                }
               }}
-              className="absolute inset-0 w-full opacity-0 z-20 cursor-pointer"
+              className="absolute inset-0 w-full opacity-0 z-20 cursor-pointer touch-none"
             />
             {/* Visual Track */}
-            <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden relative transition-all duration-300 group-active:h-3">
+            <div className="w-full h-1 bg-white/30 rounded-full overflow-hidden relative transition-all duration-300 group-active:h-2">
               <div 
                 className="absolute left-0 top-0 bottom-0 bg-alex-primary rounded-full"
                 style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
@@ -532,20 +545,20 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
               <span className="tabular-nums font-mono text-[11px] font-bold text-white/90">{formatTime(currentTime)} / {formatTime(duration)}</span>
             </div>
 
-            {/* 48x48 Thumb Zones for Actions */}
+            {/* Compact Thumb Zones for Actions */}
             <div className="flex items-center gap-1">
-              <button onClick={() => setActiveSheet('speed')} className="p-3 w-12 h-12 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors font-en text-xs font-bold">
+              <button onClick={() => setActiveSheet('speed')} className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors font-en text-xs font-bold">
                 {playbackRate}x
               </button>
-              <button onClick={() => setActiveSheet('quality')} className="p-3 w-12 h-12 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors">
+              <button onClick={() => setActiveSheet('quality')} className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors">
                 <i className="fa-solid fa-sliders text-sm"></i>
               </button>
-              <button onClick={() => setActiveSheet('subtitles')} className="p-3 w-12 h-12 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors">
+              <button onClick={() => setActiveSheet('subtitles')} className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors">
                 <i className="fa-solid fa-closed-captioning text-sm"></i>
               </button>
               <button 
                 onClick={toggleFullscreen} 
-                className="p-3 w-12 h-12 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors"
+                className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors"
               >
                 <i className={`fa-solid ${isFullscreen ? 'fa-compress' : 'fa-expand'} text-sm`}></i>
               </button>
