@@ -103,8 +103,8 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
       const preferred = videoData.streams.find((s: any) => s.resolution && s.resolution.toLowerCase().includes('1080')) 
                      || videoData.streams.find((s: any) => s.resolution && s.resolution.toLowerCase().includes('720')) 
                      || videoData.streams[0];
-      setCurrentStreamUrl(preferred.videoUrl);
-      setSelectedResolution(preferred.resolution);
+      setCurrentStreamUrl(preferred?.videoUrl || null);
+      setSelectedResolution(preferred?.resolution || 'Auto');
     } else {
       setCurrentStreamUrl(videoData.stream_url || null);
       setSelectedResolution('Auto');
