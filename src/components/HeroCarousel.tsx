@@ -95,13 +95,12 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#070a13]/60 to-transparent z-[2]"></div>
       </div>
       
-      {/* Content Overlay */}
-      <div className="relative z-10 w-full flex flex-col justify-between h-full pt-20 sm:pt-20 lg:pt-32">
+      {/* Content Overlay - Anchored to bottom to prevent jumping */}
+      <div className="relative z-10 w-full flex flex-col justify-end h-full pt-20 sm:pt-32 pb-0 sm:pb-4">
         
         {/* Top Text Section */}
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow flex flex-col justify-center mb-8 mt-10 lg:mt-0">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto">
         <div 
-
           className={`max-w-3xl relative transition-all duration-500 transform text-right drop-shadow-2xl ${
             fade ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
@@ -128,11 +127,11 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             </span>
           </div>
           
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-white mb-1 leading-tight drop-shadow-lg relative z-10">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white mb-2 leading-tight drop-shadow-lg relative z-10">
             {current.ar_title}
           </h1>
           {current.en_title && current.en_title !== current.ar_title && (
-            <h2 className="text-base sm:text-xl text-gray-300 font-bold font-en mb-5 drop-shadow-md relative z-10 tracking-[0.15em] uppercase">
+            <h2 className="text-sm sm:text-lg text-gray-300 font-bold font-en mb-5 drop-shadow-md relative z-10 tracking-widest uppercase">
               {current.en_title}
             </h2>
           )}
@@ -184,9 +183,9 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
 
       {/* Slide Indicators / Thumbnails Row (Apple TV+ / Netflix Style) */}
       {videos.length > 1 && (
-        <div className="w-full z-20 mt-auto pb-0 sm:pb-4 relative">
-          <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/80 to-transparent pointer-events-none -z-10"></div>
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full px-4 lg:px-8 py-6 scroll-smooth items-end">
+        <div className="w-full z-20 relative mt-0">
+          <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/90 to-transparent pointer-events-none -z-10"></div>
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full px-4 lg:px-8 py-4 sm:py-6 scroll-smooth items-end">
             {videos.map((video, idx) => {
             const thumbUrl = getVideoImageUrl(video, 'cover');
             return (
@@ -196,10 +195,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                   thumbnailsRef.current[idx] = el;
                 }}
                 onClick={() => triggerSlideChange(idx)}
-                className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none ring-1 ring-white/10 ${
+                className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none ${
                   activeIndex === idx 
-                    ? 'w-32 sm:w-44 md:w-56 lg:w-64 border-2 border-white/80 shadow-[0_10px_25px_rgba(0,0,0,0.8)] scale-100 opacity-100 z-10' 
-                    : 'w-24 sm:w-32 md:w-40 lg:w-48 border border-transparent opacity-50 hover:opacity-100 hover:scale-105 z-0'
+                    ? 'w-32 sm:w-44 md:w-56 lg:w-64 ring-2 ring-alex-primary shadow-[0_10px_25px_rgba(229,9,20,0.4)] scale-100 opacity-100 z-10' 
+                    : 'w-24 sm:w-32 md:w-40 lg:w-48 opacity-50 hover:opacity-100 hover:scale-105 z-0'
                 }`}
                 aria-label={`Go to slide ${idx + 1}`}
               >
