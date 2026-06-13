@@ -3,7 +3,7 @@ export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { decryptPath } from '@/lib/serverCrypto';
 
-const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com';
+const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'http://64.225.99.144';
 
 export async function GET(req: NextRequest) {
   const ref = req.nextUrl.searchParams.get('ref');

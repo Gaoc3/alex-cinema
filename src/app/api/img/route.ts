@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { decryptPath } from '@/lib/serverCrypto';
 
-const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com';
+const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'http://64.225.99.144';
 
 // CDN path mapping — these domains are NEVER exposed to the client
 const CDN_TYPE_MAP: Record<string, string> = {
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     path = `https://cnth2.shabakaty.com${path}`;
   }
 
-  const tunnelBase = process.env.TUNNEL_BASE_URL || 'https://cinemanamtsky001.serveousercontent.com';
+  const tunnelBase = process.env.TUNNEL_BASE_URL || 'http://64.225.99.144';
   const base = tunnelBase.replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
   
   let targetUrl = path;
