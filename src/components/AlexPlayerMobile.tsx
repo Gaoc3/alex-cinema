@@ -272,16 +272,33 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
     const video = videoRef.current;
     if (video) {
       const syncTracks = () => {
+        let newActiveText = '';
         for (let i = 0; i < video.textTracks.length; i++) {
           const track = video.textTracks[i];
           if (selectedLanguage === 'off') {
             track.mode = 'disabled';
           } else if (track.language === selectedLanguage) {
-            track.mode = 'showing';
+            track.mode = 'hidden';
+            
+            // Manually extract current subtitle if paused or activeCues hasn't fired yet
+            if (track.activeCues && track.activeCues.length > 0) {
+              const texts = [];
+              for (let j = 0; j < track.activeCues.length; j++) {
+                texts.push((track.activeCues[j] as VTTCue).text);
+              }
+              newActiveText = texts.join('\n');
+            } else if (track.cues && track.cues.length > 0) {
+              const currentTime = video.currentTime;
+              const active = Array.from(track.cues).filter((cue: any) => currentTime >= cue.startTime && currentTime <= cue.endTime);
+              if (active.length > 0) {
+                newActiveText = active.map((cue: any) => cue.text).join('\n');
+              }
+            }
           } else {
             track.mode = 'disabled';
           }
         }
+        setCurrentSubtitle(newActiveText);
       };
 
       syncTracks();
