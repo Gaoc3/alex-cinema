@@ -1211,7 +1211,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                 </button>
 
                 {activeDropdown === 'speed' && (
-                  <div className="absolute bottom-full right-0 mb-4 z-50 w-[140px] bg-zinc-950/95 backdrop-blur-3xl border border-white/10 rounded-2xl p-2 shadow-2xl animate-fade-in-up origin-bottom-right scale-75 md:scale-90">
+                  <div className="absolute bottom-full right-0 mb-4 z-50 origin-bottom-right scale-75 md:scale-90">
                     {renderSpeedMenu()}
                   </div>
                 )}
