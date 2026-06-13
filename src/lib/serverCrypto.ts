@@ -40,13 +40,14 @@ export function sanitizeUrl(url: string): string {
   if (!url.includes('shabakaty.com')) return url;
 
   try {
-    const encPath = encryptPath(url);
+    const parsed = new URL(url);
+    const pathWithSearch = parsed.pathname + parsed.search;
+    const encPath = encryptPath(pathWithSearch);
 
-    if (url.includes('.mp4') || url.includes('video') || url.includes('.m3u8') || url.includes('.ts')) {
+    if (url.includes('.mp4') || url.includes('video') || url.includes('.m3u8') || url.includes('.ts') || url.includes('.srt') || url.includes('.vtt')) {
       const ext = url.includes('.m3u8') ? '&ext=.m3u8' : url.includes('.mp4') ? '&ext=.mp4' : '';
       return `/api/stream?ref=${encPath}${ext}`;
     }
-    const parsed = new URL(url);
     return `/tunnel${parsed.pathname}${parsed.search}`;
   } catch {
     return url;
