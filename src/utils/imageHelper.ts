@@ -39,10 +39,17 @@ export function getVideoImageUrl(
   type: 'poster' | 'cover' = 'poster'
 ): string {
   // imgObjUrl is already sanitized by the server to /api/img?ref=...
-  if (video.imgObjUrl && video.imgObjUrl.startsWith('/api/')) {
+  if (video.imgObjUrl && (video.imgObjUrl.startsWith('/api/') || video.imgObjUrl.startsWith('/tunnel/'))) {
     return video.imgObjUrl;
   }
-  // Use img field with type-based construction
+  
+  // For grid posters, prefer lightweight thumbnails to save bandwidth
+  if (type === 'poster') {
+    const img = video.imgMediumThumb || video.imgThumb || video.img;
+    return getImageUrl(img, type);
+  }
+  
+  // For covers (like HeroCarousel), prefer high-res
   const img = video.img || video.imgMediumThumb || video.imgThumb;
   return getImageUrl(img, type);
 }
