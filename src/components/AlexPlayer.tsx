@@ -563,7 +563,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         const lastIdx = videoData.skippingDurations.start.length - 1;
         const outroStart = parseFloat(videoData.skippingDurations.start[lastIdx]);
         if (!isNaN(outroStart)) {
-          setShowOutroSkip(time >= outroStart);
+          setShowOutroSkip(video.currentTime >= outroStart);
         } else {
           setShowOutroSkip(false);
         }
