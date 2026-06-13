@@ -101,46 +101,49 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         {/* Top Text Section */}
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto">
         <div 
-          className={`max-w-3xl relative transition-all duration-500 transform text-right drop-shadow-2xl ${
+          className={`max-w-3xl relative transition-all duration-500 transform text-right drop-shadow-2xl flex flex-col justify-end min-h-[260px] sm:min-h-[300px] lg:min-h-[340px] ${
             fade ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
           {/* Subtle base shadow for text to pop against any background naturally */}
           
-          {/* Metadata Row: Clean, minimalist, and easy to scan */}
-          <div className="flex flex-wrap items-center justify-start gap-3 sm:gap-4 mb-4 relative z-10 text-sm md:text-base font-semibold text-gray-200">
-            {current.kind === '2' && (
-               <span className="text-white drop-shadow-md">مسلسل</span>
+          <div className="flex-grow flex flex-col justify-end">
+            {/* Metadata Row: Clean, minimalist, and easy to scan */}
+            <div className="flex flex-wrap items-center justify-start gap-3 sm:gap-4 mb-4 relative z-10 text-sm md:text-base font-semibold text-gray-200">
+              {current.kind === '2' && (
+                 <span className="text-white drop-shadow-md">مسلسل</span>
+              )}
+              {current.kind !== '2' && (
+                 <span className="text-white drop-shadow-md">فيلم</span>
+              )}
+              <span className="w-1.5 h-1.5 rounded-full bg-gray-500/80"></span>
+              <span className="font-en tracking-wider drop-shadow-md">{current.year}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-gray-500/80"></span>
+              <span className="flex items-center gap-1.5 text-yellow-400 drop-shadow-md">
+                <i className="fa-solid fa-star text-xs"></i> 
+                <span className="font-en mt-0.5">{current.stars}</span>
+              </span>
+              <span className="px-2 py-0.5 ml-2 bg-red-600 text-white text-xs font-bold rounded shadow-sm">
+                حصرياً
+              </span>
+            </div>
+            
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white mb-2 leading-tight drop-shadow-lg relative z-10">
+              {current.ar_title}
+            </h1>
+            {current.en_title && current.en_title !== current.ar_title && (
+              <h2 className="text-sm sm:text-lg text-gray-300 font-bold font-en mb-4 drop-shadow-md relative z-10 tracking-widest uppercase">
+                {current.en_title}
+              </h2>
             )}
-            {current.kind !== '2' && (
-               <span className="text-white drop-shadow-md">فيلم</span>
-            )}
-            <span className="w-1.5 h-1.5 rounded-full bg-gray-500/80"></span>
-            <span className="font-en tracking-wider drop-shadow-md">{current.year}</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-gray-500/80"></span>
-            <span className="flex items-center gap-1.5 text-yellow-400 drop-shadow-md">
-              <i className="fa-solid fa-star text-xs"></i> 
-              <span className="font-en mt-0.5">{current.stars}</span>
-            </span>
-            <span className="px-2 py-0.5 ml-2 bg-red-600 text-white text-xs font-bold rounded shadow-sm">
-              حصرياً
-            </span>
+            
+            <p className="text-gray-300 text-sm sm:text-base lg:text-lg mb-6 line-clamp-3 leading-relaxed max-w-xl font-medium drop-shadow-md relative z-10">
+              {current.ar_content}
+            </p>
           </div>
           
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white mb-2 leading-tight drop-shadow-lg relative z-10">
-            {current.ar_title}
-          </h1>
-          {current.en_title && current.en_title !== current.ar_title && (
-            <h2 className="text-sm sm:text-lg text-gray-300 font-bold font-en mb-5 drop-shadow-md relative z-10 tracking-widest uppercase">
-              {current.en_title}
-            </h2>
-          )}
-          
-          <p className="text-gray-300 text-sm sm:text-base lg:text-lg mb-8 line-clamp-3 leading-relaxed max-w-xl font-medium drop-shadow-md relative z-10">
-            {current.ar_content}
-          </p>
-          
-          <div className="flex flex-wrap items-center justify-start gap-4 relative z-10">
+          {/* Buttons Row - Anchored to the bottom of the fixed height container */}
+          <div className="flex flex-wrap items-center justify-start gap-4 relative z-10 mt-auto">
             <Link 
               href={`/watch/${current.nb}`} 
               className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3 sm:py-3.5 rounded-md font-bold text-sm sm:text-base bg-white text-black hover:bg-white/90 transition-all duration-300 shadow-lg"
