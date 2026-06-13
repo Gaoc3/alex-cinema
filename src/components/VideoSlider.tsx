@@ -1,5 +1,5 @@
 'use client';
-import { getImageUrl } from '@/utils/imageHelper';
+import { getVideoImageUrl } from '@/utils/imageHelper';
 
 import React, { useRef } from 'react';
 import Link from 'next/link';
@@ -93,7 +93,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
                 {/* Poster Wrapper */}
                 <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
                   <Image 
-                    src={getImageUrl(video.img, 'poster')} 
+                    src={getVideoImageUrl(video as any, 'poster')} 
                     alt={video.ar_title} 
                     fill
                     sizes="(max-width: 640px) 170px, 190px"
