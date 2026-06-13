@@ -244,7 +244,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
   return (
     <div 
       ref={containerRef}
-      className={`relative w-full h-[100dvh] bg-black overflow-hidden select-none font-ar ${isFullscreen ? 'fixed inset-0 z-[9999]' : ''}`}
+      className={`relative w-full aspect-video sm:h-full bg-black overflow-hidden select-none font-ar ${isFullscreen ? 'fixed inset-0 z-[9999] !h-[100dvh]' : ''}`}
       style={{ '--ambient-color': ambientColor } as any}
     >
       {/* Cinematic Ambient Glow */}
