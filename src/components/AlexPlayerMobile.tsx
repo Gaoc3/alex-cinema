@@ -509,12 +509,12 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
             <track
               key={track.id}
               kind="subtitles"
-              src={track.file}
+              src={getSubtitlesProxyUrl(track.file)}
               srcLang={track.type}
               label={track.name === 'arabic' ? 'العربية' : 'English'}
               onLoad={(e) => {
                  const t = (e.target as HTMLTrackElement).track;
-                 t.mode = selectedLanguage === track.type ? 'showing' : 'disabled';
+                 t.mode = selectedLanguage === track.type ? 'hidden' : 'disabled';
               }}
             />
           ))}
