@@ -98,8 +98,8 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       {/* Content Overlay - Anchored to bottom to prevent jumping */}
       <div className="relative z-10 w-full flex flex-col justify-end h-full pt-20 sm:pt-32 pb-0 sm:pb-4">
         
-        {/* Top Text Section */}
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto">
+        {/* Top Text Section (added padding-end to prevent text from touching the right arrow) */}
+        <div className="max-w-screen-2xl mx-auto px-6 sm:px-12 lg:px-16 pe-16 sm:pe-24 lg:pe-32 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto">
         <div 
           className={`max-w-3xl relative transition-all duration-500 transform text-right drop-shadow-2xl flex flex-col justify-end min-h-[260px] sm:min-h-[300px] lg:min-h-[340px] ${
             fade ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
@@ -161,25 +161,25 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         </div>
       </div>
 
-      {/* Manual Controls Left & Right Arrows (Hidden on Mobile, Visible on hover) */}
+      {/* Manual Controls Left & Right Arrows (Premium Glassmorphic Style) */}
       {videos.length > 1 && (
         <>
-          {/* Left Arrow (Goes to Next in RTL because next items are on the left) */}
+          {/* Left Arrow */}
           <button 
             onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
-            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 md:hover:bg-alex-primary/95 text-white border border-white/10 flex items-center justify-center transition-all duration-300 backdrop-blur-sm sm:opacity-0 sm:group-hover:opacity-100 opacity-70 md:hover:scale-110 active:scale-95 cursor-pointer"
+            className="absolute left-2 sm:left-6 lg:left-10 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-black/20 hover:bg-white/20 text-white/80 hover:text-white border border-white/10 hover:border-white/30 flex items-center justify-center transition-all duration-300 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.4)] opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer"
             aria-label="Next Slide"
           >
-            <i className="fa-solid fa-chevron-left text-lg"></i>
+            <i className="fa-solid fa-chevron-left text-xl sm:text-2xl ml-1"></i>
           </button>
           
-          {/* Right Arrow (Goes to Previous in RTL because previous items are on the right) */}
+          {/* Right Arrow */}
           <button 
             onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
-            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 md:hover:bg-alex-primary/95 text-white border border-white/10 flex items-center justify-center transition-all duration-300 backdrop-blur-sm sm:opacity-0 sm:group-hover:opacity-100 opacity-70 md:hover:scale-110 active:scale-95 cursor-pointer"
+            className="absolute right-2 sm:right-6 lg:right-10 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-black/20 hover:bg-white/20 text-white/80 hover:text-white border border-white/10 hover:border-white/30 flex items-center justify-center transition-all duration-300 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.4)] opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer"
             aria-label="Previous Slide"
           >
-            <i className="fa-solid fa-chevron-right text-lg"></i>
+            <i className="fa-solid fa-chevron-right text-xl sm:text-2xl mr-1"></i>
           </button>
         </>
       )}
