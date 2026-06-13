@@ -104,24 +104,6 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
   const [selectedLanguage, setSelectedLanguage] = useState<string>('ar');
   const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
 
-  // Sync Text Tracks (Subtitles)
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      const tracks = video.textTracks;
-      for (let i = 0; i < tracks.length; i++) {
-        if (selectedLanguage === 'off') {
-          tracks[i].mode = 'disabled';
-        } else if (tracks[i].language === selectedLanguage) {
-          tracks[i].mode = 'hidden'; // Hidden allows parsing but not native rendering
-        } else {
-          tracks[i].mode = 'disabled';
-        }
-      }
-      if (selectedLanguage === 'off') setCurrentSubtitle('');
-    }
-  }, [selectedLanguage, currentStreamUrl]);
-
   // Gestures
   const touchStartRef = useRef<{x: number, y: number, time: number} | null>(null);
   const [showSeekAnimation, setShowSeekAnimation] = useState<'forward' | 'backward' | null>(null);
@@ -267,91 +249,69 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
 
   const vttTranslations = getVttTracks();
 
-  // Sync Text Tracks (Subtitles)
+  // Sync Text Tracks (Subtitles) — Single source of truth
   useEffect(() => {
     const video = videoRef.current;
-    if (video) {
-      const syncTracks = () => {
-        let newActiveText = '';
-        for (let i = 0; i < video.textTracks.length; i++) {
-          const track = video.textTracks[i];
-          if (selectedLanguage === 'off') {
-            track.mode = 'disabled';
-          } else if (track.language === selectedLanguage) {
-            track.mode = 'hidden';
-            
-            // Manually extract current subtitle if paused or activeCues hasn't fired yet
-            if (track.activeCues && track.activeCues.length > 0) {
-              const texts = [];
-              for (let j = 0; j < track.activeCues.length; j++) {
-                texts.push((track.activeCues[j] as VTTCue).text);
-              }
-              newActiveText = texts.join('\n');
-            } else if (track.cues && track.cues.length > 0) {
-              const currentTime = video.currentTime;
-              const active = Array.from(track.cues).filter((cue: any) => currentTime >= cue.startTime && currentTime <= cue.endTime);
-              if (active.length > 0) {
-                newActiveText = active.map((cue: any) => cue.text).join('\n');
-              }
-            }
-          } else {
-            track.mode = 'disabled';
+    if (!video) return;
+
+    const syncTracks = () => {
+      let newActiveText = '';
+      for (let i = 0; i < video.textTracks.length; i++) {
+        const track = video.textTracks[i];
+        if (selectedLanguage === 'off') {
+          track.mode = 'disabled';
+        } else if (track.language === selectedLanguage) {
+          track.mode = 'hidden';
+          // Extract cue text
+          if (track.activeCues && track.activeCues.length > 0) {
+            newActiveText = Array.from(track.activeCues)
+              .map((c: any) => c.text).join('\n');
+          } else if (track.cues && track.cues.length > 0) {
+            const ct = video.currentTime;
+            newActiveText = Array.from(track.cues)
+              .filter((c: any) => ct >= c.startTime && ct <= c.endTime)
+              .map((c: any) => c.text).join('\n');
           }
+        } else {
+          track.mode = 'disabled';
         }
-        setCurrentSubtitle(newActiveText);
-      };
-
-      syncTracks();
-      video.addEventListener('play', syncTracks);
-      video.addEventListener('loadedmetadata', syncTracks);
-      video.addEventListener('loadeddata', syncTracks);
-      if (video.textTracks) {
-        video.textTracks.addEventListener('change', syncTracks);
       }
+      setCurrentSubtitle(newActiveText);
+    };
 
-      return () => {
-        video.removeEventListener('play', syncTracks);
-        video.removeEventListener('loadedmetadata', syncTracks);
-        video.removeEventListener('loadeddata', syncTracks);
-        if (video.textTracks) {
-          video.textTracks.removeEventListener('change', syncTracks);
-        }
-      };
+    syncTracks();
+
+    // Listen for individual track cue changes (real-time subtitle updates)
+    const onCueChange = () => syncTracks();
+    for (let i = 0; i < video.textTracks.length; i++) {
+      video.textTracks[i].addEventListener('cuechange', onCueChange);
     }
+    video.addEventListener('play', syncTracks);
+    video.addEventListener('loadeddata', syncTracks);
+    video.textTracks.addEventListener('change', syncTracks);
+    video.textTracks.addEventListener('addtrack', () => {
+      // New track added — re-attach cuechange and sync
+      for (let i = 0; i < video.textTracks.length; i++) {
+        video.textTracks[i].removeEventListener('cuechange', onCueChange);
+        video.textTracks[i].addEventListener('cuechange', onCueChange);
+      }
+      syncTracks();
+    });
+
+    return () => {
+      for (let i = 0; i < video.textTracks.length; i++) {
+        video.textTracks[i].removeEventListener('cuechange', onCueChange);
+      }
+      video.removeEventListener('play', syncTracks);
+      video.removeEventListener('loadeddata', syncTracks);
+      video.textTracks.removeEventListener('change', syncTracks);
+    };
   }, [selectedLanguage, currentStreamUrl]);
 
-  // 5. Time update handler with fallback
+  // 5. Time update handler (subtitle extraction handled by cuechange above)
   const handleTimeUpdate = () => {
     if (!isScrubbing && videoRef.current) {
-      const video = videoRef.current;
-      setCurrentTime(video.currentTime);
-      
-      // Real-time subtitle extraction
-      if (selectedLanguage !== 'off') {
-        let activeText = '';
-        for (let i = 0; i < video.textTracks.length; i++) {
-          const track = video.textTracks[i];
-          if (track.language === selectedLanguage) {
-            if (track.activeCues && track.activeCues.length > 0) {
-              const texts = [];
-              for (let j = 0; j < track.activeCues.length; j++) {
-                texts.push((track.activeCues[j] as VTTCue).text);
-              }
-              activeText = texts.join('\n');
-            } else if (track.cues && track.cues.length > 0) {
-              const currentTime = video.currentTime;
-              const active = Array.from(track.cues).filter((cue: any) => currentTime >= cue.startTime && currentTime <= cue.endTime);
-              if (active.length > 0) {
-                activeText = active.map((cue: any) => cue.text).join('\n');
-              }
-            }
-            break;
-          }
-        }
-        if (currentSubtitle !== activeText) setCurrentSubtitle(activeText);
-      } else if (currentSubtitle !== '') {
-        setCurrentSubtitle('');
-      }
+      setCurrentTime(videoRef.current.currentTime);
     }
   };
 
