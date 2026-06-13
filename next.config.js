@@ -32,14 +32,35 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/((?!tunnel/).*)',
+        // Cache images and tunnels heavily
+        source: '/tunnel/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-cache, no-store, max-age=0, must-revalidate',
+            value: 'public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=86400',
           },
         ],
       },
+      {
+        // Cache API images heavily
+        source: '/api/img',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      {
+        // Default API cache (15 minutes)
+        source: '/api/proxy',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=900, s-maxage=900, stale-while-revalidate=300',
+          },
+        ],
+      }
     ];
   },
 };
