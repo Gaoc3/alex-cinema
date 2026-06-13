@@ -98,8 +98,8 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       {/* Content Overlay - Anchored to bottom to prevent jumping */}
       <div className="relative z-10 w-full flex flex-col justify-end h-full pt-20 sm:pt-32 pb-0 sm:pb-4">
         
-        {/* Top Text Section (added padding-end to prevent text from touching the right arrow) */}
-        <div className="max-w-screen-2xl mx-auto px-6 sm:px-12 lg:px-16 pe-16 sm:pe-24 lg:pe-32 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto">
+        {/* Top Text Section */}
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto">
         <div 
           className={`max-w-3xl relative transition-all duration-500 transform text-right drop-shadow-2xl flex flex-col justify-end min-h-[260px] sm:min-h-[300px] lg:min-h-[340px] ${
             fade ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
@@ -161,25 +161,25 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         </div>
       </div>
 
-      {/* Manual Controls Left & Right Arrows (Sleek Minimalist Pill Style - 2026) */}
+      {/* Manual Controls Left & Right Arrows (Sleek Invisible Hitbox Style - 2026) */}
       {videos.length > 1 && (
         <>
           {/* Left Arrow */}
           <button 
             onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
-            className="absolute left-1 sm:left-3 lg:left-6 top-[40%] -translate-y-1/2 z-40 w-10 h-16 sm:w-12 sm:h-24 lg:w-14 lg:h-32 rounded-2xl bg-black/10 hover:bg-black/40 text-white/50 hover:text-white backdrop-blur-md flex items-center justify-center transition-all duration-500 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer border border-white/5 hover:border-white/20 shadow-2xl"
+            className="absolute left-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-16 sm:w-24 lg:w-32 flex items-center justify-center transition-all duration-500 opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer outline-none"
             aria-label="Next Slide"
           >
-            <i className="fa-solid fa-chevron-left text-2xl sm:text-3xl lg:text-4xl"></i>
+            <i className="fa-solid fa-chevron-left text-3xl sm:text-5xl text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] filter hover:brightness-125 transition-all"></i>
           </button>
           
           {/* Right Arrow */}
           <button 
             onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
-            className="absolute right-1 sm:right-3 lg:right-6 top-[40%] -translate-y-1/2 z-40 w-10 h-16 sm:w-12 sm:h-24 lg:w-14 lg:h-32 rounded-2xl bg-black/10 hover:bg-black/40 text-white/50 hover:text-white backdrop-blur-md flex items-center justify-center transition-all duration-500 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer border border-white/5 hover:border-white/20 shadow-2xl"
+            className="absolute right-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-16 sm:w-24 lg:w-32 flex items-center justify-center transition-all duration-500 opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer outline-none"
             aria-label="Previous Slide"
           >
-            <i className="fa-solid fa-chevron-right text-2xl sm:text-3xl lg:text-4xl"></i>
+            <i className="fa-solid fa-chevron-right text-3xl sm:text-5xl text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] filter hover:brightness-125 transition-all"></i>
           </button>
         </>
       )}
