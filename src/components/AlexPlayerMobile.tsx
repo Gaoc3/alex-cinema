@@ -483,14 +483,13 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         className={`absolute inset-0 z-30 pointer-events-none transition-opacity duration-300 ${showControls || isPaused ? 'opacity-100' : 'opacity-0'}`}
       >
         {/* Top Gradient & Title */}
-        <div className="absolute top-0 left-0 w-full pt-4 px-4 sm:px-6 pb-6 bg-gradient-to-b from-black/80 via-black/30 to-transparent pointer-events-auto flex items-center justify-between">
-          <button className="p-3 text-white/90 hover:text-white transition-colors" onClick={() => window.history.back()}>
-            <i className="fa-solid fa-chevron-right text-lg"></i>
+        <div className="absolute top-0 left-0 w-full pt-4 sm:pt-6 px-4 sm:px-6 pb-12 bg-gradient-to-b from-black/90 via-black/40 to-transparent pointer-events-auto flex items-center justify-start gap-4">
+          <button className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/90 hover:bg-white/20 transition-all active:scale-90" onClick={() => window.history.back()}>
+            <i className="fa-solid fa-arrow-right text-sm"></i>
           </button>
-          <h2 className="text-white font-bold text-sm sm:text-base max-w-[70%] truncate text-center drop-shadow-md tracking-wide">
+          <h2 className="text-white font-black text-sm sm:text-base truncate drop-shadow-md tracking-wide">
             {videoData.ar_title}
           </h2>
-          <div className="w-10"></div> {/* Spacer for center alignment */}
         </div>
 
         {/* Center Big Play Button */}
@@ -498,9 +497,9 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
           <button 
             onClick={togglePlay}
             style={{ WebkitTapHighlightColor: 'transparent' }}
-            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white text-xl shadow-[0_0_30px_rgba(255,255,255,0.1)] active:scale-75 transition-transform duration-300 pointer-events-auto"
+            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white flex items-center justify-center text-black text-xl shadow-[0_10px_40px_rgba(0,0,0,0.6)] active:scale-90 transition-all duration-300 pointer-events-auto"
           >
-            <i className={`fa-solid ${isPaused ? 'fa-play ml-1' : 'fa-pause'} `}></i>
+            <i className={`fa-solid ${isPaused ? 'fa-play ml-1' : 'fa-pause'}`}></i>
           </button>
         </div>
 
