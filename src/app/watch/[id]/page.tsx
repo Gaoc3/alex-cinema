@@ -3,9 +3,7 @@ import { getVideoDetails, getSeriesSeasons, getSeriesEpisodes } from '@/lib/api'
 import WatchContainer from '@/components/WatchContainer';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const fetchCache = 'force-no-store';
+
 export default async function WatchPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const video = await getVideoDetails(resolvedParams.id);
