@@ -182,10 +182,11 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         </>
       )}
 
-      {/* Slide Indicators / Thumbnails Row (Apple TV+ Style) */}
+      {/* Slide Indicators / Thumbnails Row (Apple TV+ / Netflix Style) */}
       {videos.length > 1 && (
-        <div className="w-full z-20 mt-auto pb-2 sm:pb-6">
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full px-4 lg:px-8 py-4 scroll-smooth">
+        <div className="w-full z-20 mt-auto pb-0 sm:pb-4 relative">
+          <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/80 to-transparent pointer-events-none -z-10"></div>
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full px-4 lg:px-8 py-6 scroll-smooth items-end">
             {videos.map((video, idx) => {
             const thumbUrl = getVideoImageUrl(video, 'cover');
             return (
@@ -195,10 +196,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                   thumbnailsRef.current[idx] = el;
                 }}
                 onClick={() => triggerSlideChange(idx)}
-                className={`relative w-28 sm:w-36 md:w-48 lg:w-56 aspect-[16/9] rounded-lg overflow-hidden border-2 transition-all duration-300 md:hover:scale-105 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none ${
+                className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none ring-1 ring-white/10 ${
                   activeIndex === idx 
-                    ? 'border-alex-primary shadow-[0_0_12px_rgba(229,9,20,0.6)] scale-105' 
-                    : 'border-white/10 md:hover:border-white/30'
+                    ? 'w-32 sm:w-44 md:w-56 lg:w-64 border-2 border-white/80 shadow-[0_10px_25px_rgba(0,0,0,0.8)] scale-100 opacity-100 z-10' 
+                    : 'w-24 sm:w-32 md:w-40 lg:w-48 border border-transparent opacity-50 hover:opacity-100 hover:scale-105 z-0'
                 }`}
                 aria-label={`Go to slide ${idx + 1}`}
               >
@@ -206,13 +207,12 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                   src={thumbUrl} 
                   alt={video.ar_title}
                   fill
-                  sizes="(max-width: 640px) 112px, 224px"
+                  sizes="(max-width: 640px) 128px, 256px"
                   className="w-full h-full object-cover transform-gpu"
                   loading="lazy"
-                  style={{ imageRendering: 'high-quality' as any }}
                 />
                 <div className={`absolute inset-0 transition-colors duration-300 ${
-                  activeIndex === idx ? 'bg-transparent' : 'bg-black/50 md:hover:bg-black/35'
+                  activeIndex === idx ? 'bg-transparent' : 'bg-black/40 hover:bg-black/10'
                 }`}></div>
               </button>
             );
