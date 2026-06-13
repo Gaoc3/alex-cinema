@@ -334,7 +334,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
             <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden relative transition-all duration-300 group-active:h-3">
               <div 
                 className="absolute left-0 top-0 bottom-0 bg-alex-primary rounded-full"
-                style={{ width: \`\${(currentTime / (duration || 1)) * 100}%\` }}
+                style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
               ></div>
             </div>
           </div>
@@ -360,7 +360,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
                 onClick={() => setIsZoomed(!isZoomed)} 
                 className="p-3 w-12 h-12 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors"
               >
-                <i className={\`fa-solid \${isZoomed ? 'fa-compress' : 'fa-expand'} text-sm\`}></i>
+                <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-expand'} text-sm`}></i>
               </button>
             </div>
           </div>
@@ -380,7 +380,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
                 <h3 className="text-white font-black text-lg mb-2">سرعة التشغيل</h3>
                 <div className="grid grid-cols-5 gap-2 font-en">
                   {[0.5, 1, 1.25, 1.5, 2].map((r) => (
-                    <button key={r} onClick={() => { setPlaybackRate(r); if(videoRef.current) videoRef.current.playbackRate = r; setActiveSheet(null); }} className={\`p-4 rounded-2xl text-sm font-bold \${playbackRate === r ? 'bg-white text-black' : 'bg-white/10 text-white'}\`}>{r}x</button>
+                    <button key={r} onClick={() => { setPlaybackRate(r); if(videoRef.current) videoRef.current.playbackRate = r; setActiveSheet(null); }} className={`p-4 rounded-2xl text-sm font-bold ${playbackRate === r ? 'bg-white text-black' : 'bg-white/10 text-white'}`}>{r}x</button>
                   ))}
                 </div>
               </>
@@ -390,9 +390,9 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
               <>
                 <h3 className="text-white font-black text-lg mb-2">جودة العرض</h3>
                 <div className="grid grid-cols-2 gap-3 font-en">
-                  <button onClick={() => { setSelectedResolution('Auto'); setActiveSheet(null); }} className={\`p-4 rounded-2xl text-sm font-bold \${selectedResolution === 'Auto' ? 'bg-white text-black' : 'bg-white/10 text-white'}\`}>Auto</button>
+                  <button onClick={() => { setSelectedResolution('Auto'); setActiveSheet(null); }} className={`p-4 rounded-2xl text-sm font-bold ${selectedResolution === 'Auto' ? 'bg-white text-black' : 'bg-white/10 text-white'}`}>Auto</button>
                   {streams.map((s) => (
-                    <button key={s.name} onClick={() => { setSelectedResolution(s.resolution); setCurrentStreamUrl(s.videoUrl || ''); setActiveSheet(null); }} className={\`p-4 rounded-2xl text-sm font-bold \${selectedResolution === s.resolution ? 'bg-white text-black' : 'bg-white/10 text-white'}\`}>{s.resolution}</button>
+                    <button key={s.name} onClick={() => { setSelectedResolution(s.resolution); setCurrentStreamUrl(s.videoUrl || ''); setActiveSheet(null); }} className={`p-4 rounded-2xl text-sm font-bold ${selectedResolution === s.resolution ? 'bg-white text-black' : 'bg-white/10 text-white'}`}>{s.resolution}</button>
                   ))}
                 </div>
               </>
@@ -403,8 +403,8 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
                 <h3 className="text-white font-black text-lg mb-2">إعدادات الترجمة</h3>
                 {/* Simplified Subtitle UI for 2026 */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <button onClick={() => { setSelectedLanguage('off'); setActiveSheet(null); }} className={\`p-4 rounded-2xl text-sm font-bold \${selectedLanguage === 'off' ? 'bg-white text-black' : 'bg-white/10 text-white'}\`}>إيقاف</button>
-                  <button onClick={() => { setSelectedLanguage('ar'); setActiveSheet(null); }} className={\`p-4 rounded-2xl text-sm font-bold \${selectedLanguage === 'ar' ? 'bg-white text-black' : 'bg-white/10 text-white'}\`}>العربية</button>
+                  <button onClick={() => { setSelectedLanguage('off'); setActiveSheet(null); }} className={`p-4 rounded-2xl text-sm font-bold ${selectedLanguage === 'off' ? 'bg-white text-black' : 'bg-white/10 text-white'}`}>إيقاف</button>
+                  <button onClick={() => { setSelectedLanguage('ar'); setActiveSheet(null); }} className={`p-4 rounded-2xl text-sm font-bold ${selectedLanguage === 'ar' ? 'bg-white text-black' : 'bg-white/10 text-white'}`}>العربية</button>
                 </div>
               </>
             )}
@@ -414,12 +414,12 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
       )}
 
       {/* Global CSS for the Bottom Sheet Animation */}
-      <style dangerouslySetInnerHTML={{__html: \`
+      <style dangerouslySetInnerHTML={{__html: `
         @keyframes slideUp {
           from { transform: translateY(100%); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
-      \`}} />
+      `}} />
     </div>
   );
 }
