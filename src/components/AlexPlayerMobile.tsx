@@ -97,21 +97,42 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
     return () => { if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current); };
   }, [isPaused, activeSheet, resetControlsTimeout]);
 
+  // Sync stream url when videoData changes
+  useEffect(() => {
+    if (videoData.streams && videoData.streams.length > 0) {
+      const preferred = videoData.streams.find((s: any) => s.resolution && s.resolution.toLowerCase().includes('1080')) 
+                     || videoData.streams.find((s: any) => s.resolution && s.resolution.toLowerCase().includes('720')) 
+                     || videoData.streams[0];
+      setCurrentStreamUrl(preferred.videoUrl);
+      setSelectedResolution(preferred.resolution);
+    } else {
+      setCurrentStreamUrl(videoData.stream_url || null);
+      setSelectedResolution('Auto');
+    }
+    setIsPaused(true);
+    setCurrentTime(0);
+    setDuration(videoData.duration ? parseFloat(String(videoData.duration)) || 0 : 0);
+  }, [videoData]);
+
   // 3. HLS Setup
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !currentStreamUrl) return;
 
-    if (Hls.isSupported()) {
-      if (hlsRef.current) hlsRef.current.destroy();
-      const hls = new Hls({ maxBufferLength: 30, maxMaxBufferLength: 60 });
-      hlsRef.current = hls;
-      hls.loadSource(currentStreamUrl);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (!isPaused) video.play().catch(console.error);
-      });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    if (currentStreamUrl.includes('.m3u8')) {
+      if (Hls.isSupported()) {
+        if (hlsRef.current) hlsRef.current.destroy();
+        const hls = new Hls({ maxBufferLength: 30, maxMaxBufferLength: 60 });
+        hlsRef.current = hls;
+        hls.loadSource(currentStreamUrl);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          if (!isPaused) video.play().catch(console.error);
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = currentStreamUrl;
+      }
+    } else {
       video.src = currentStreamUrl;
     }
 
