@@ -105,6 +105,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   const touchStartRef = useRef<{x: number, y: number, time: number} | null>(null);
   const initialPinchDistance = useRef<number | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [videoAspect, setVideoAspect] = useState<number>(16/9);
 
   // Subtitle custom sizing state with localstorage persistence
   const [subtitleSize, setSubtitleSize] = useState<number>(() => {
@@ -549,10 +550,14 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     }
   };
 
-  // Load Metadata
+  // Load Metadata & Adaptive Aspect Ratio
   const handleLoadedMetadata = () => {
     const video = videoRef.current;
     if (video) {
+      if (video.videoWidth && video.videoHeight) {
+        setVideoAspect(video.videoWidth / video.videoHeight);
+      }
+      
       if (videoData.duration) {
         const parsed = parseFloat(String(videoData.duration));
         if (!isNaN(parsed) && parsed > 0) {
@@ -784,11 +789,12 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     return (
       <div 
         ref={containerRef}
-        className={`relative select-none group/player touch-manipulation transition-all duration-300 ${
+        className={`relative select-none group/player touch-manipulation transition-all duration-300 min-h-[200px] ${
           isFullscreen 
             ? 'fixed inset-0 w-screen h-screen z-[9999] rounded-none border-none bg-black' 
-            : 'w-full aspect-video rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10 bg-black/90'
+            : 'w-full rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10 bg-black/90'
         }`}
+        style={{ aspectRatio: isFullscreen ? 'auto' : videoAspect }}
         dir="ltr"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
