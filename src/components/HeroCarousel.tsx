@@ -161,25 +161,25 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         </div>
       </div>
 
-      {/* Manual Controls Left & Right Arrows (Premium Glassmorphic Style) */}
+      {/* Manual Controls Left & Right Arrows (Sleek Minimalist Pill Style - 2026) */}
       {videos.length > 1 && (
         <>
           {/* Left Arrow */}
           <button 
             onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
-            className="absolute left-2 sm:left-6 lg:left-10 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-black/20 hover:bg-white/20 text-white/80 hover:text-white border border-white/10 hover:border-white/30 flex items-center justify-center transition-all duration-300 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.4)] opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer"
+            className="absolute left-1 sm:left-3 lg:left-6 top-[40%] -translate-y-1/2 z-40 w-10 h-16 sm:w-12 sm:h-24 lg:w-14 lg:h-32 rounded-2xl bg-black/10 hover:bg-black/40 text-white/50 hover:text-white backdrop-blur-md flex items-center justify-center transition-all duration-500 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer border border-white/5 hover:border-white/20 shadow-2xl"
             aria-label="Next Slide"
           >
-            <i className="fa-solid fa-chevron-left text-xl sm:text-2xl ml-1"></i>
+            <i className="fa-solid fa-chevron-left text-2xl sm:text-3xl lg:text-4xl"></i>
           </button>
           
           {/* Right Arrow */}
           <button 
             onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
-            className="absolute right-2 sm:right-6 lg:right-10 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-black/20 hover:bg-white/20 text-white/80 hover:text-white border border-white/10 hover:border-white/30 flex items-center justify-center transition-all duration-300 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.4)] opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer"
+            className="absolute right-1 sm:right-3 lg:right-6 top-[40%] -translate-y-1/2 z-40 w-10 h-16 sm:w-12 sm:h-24 lg:w-14 lg:h-32 rounded-2xl bg-black/10 hover:bg-black/40 text-white/50 hover:text-white backdrop-blur-md flex items-center justify-center transition-all duration-500 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer border border-white/5 hover:border-white/20 shadow-2xl"
             aria-label="Previous Slide"
           >
-            <i className="fa-solid fa-chevron-right text-xl sm:text-2xl mr-1"></i>
+            <i className="fa-solid fa-chevron-right text-2xl sm:text-3xl lg:text-4xl"></i>
           </button>
         </>
       )}
