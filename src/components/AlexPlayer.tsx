@@ -840,21 +840,23 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         ))}
       </div>
 
-      <div className="text-sm md:text-xs text-gray-400 font-bold mb-2">حجم الخط</div>
-      <div className="flex items-center justify-between gap-4 bg-white/5 rounded-2xl md:rounded-xl p-2 mb-4">
-        <button 
-          onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
-          className="w-12 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white font-black text-sm transition-colors"
-        >
-          A-
-        </button>
-        <span className="text-sm font-en font-bold text-white min-w-[40px] text-center">{subtitleSize}%</span>
-        <button 
-          onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
-          className="w-12 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white font-black text-sm transition-colors"
-        >
-          A+
-        </button>
+      <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10 mb-2">
+        <span className="text-sm md:text-xs text-gray-300 font-bold">حجم الخط</span>
+        <div className="flex items-center gap-1 bg-white/5 rounded-full p-1 border border-white/10">
+          <button 
+            onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
+            className="w-8 h-8 md:w-7 md:h-7 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 text-white font-bold text-sm md:text-xs transition-colors"
+          >
+            A-
+          </button>
+          <span className="text-xs font-en font-bold text-white min-w-[36px] text-center">{subtitleSize}%</span>
+          <button 
+            onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
+            className="w-8 h-8 md:w-7 md:h-7 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 text-white font-bold text-sm md:text-xs transition-colors"
+          >
+            A+
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center justify-between mt-2 pt-4 border-t border-white/10">
