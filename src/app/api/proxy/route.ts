@@ -263,6 +263,32 @@ export async function GET(req: NextRequest) {
     const response = await fetch(targetUrl, { headers, signal: directController.signal });
     clearTimeout(directTimeout);
     if (response.ok || response.status === 206) {
+      if (isApi) {
+        try {
+          let text = await response.text();
+          text = text.replace(/https?:(?:\\?\/){2}(cdn|cnth[0-9]+|cndw[0-9]+|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match) => {
+            try {
+              const unescapedMatch = match.replace(/\\/g, '');
+              const parsed = new URL(unescapedMatch);
+              const pathWithSearch = parsed.pathname + parsed.search;
+              const enc = encryptPath(pathWithSearch);
+              if (match.includes('mp4') || match.includes('video') || match.includes('m3u8') || match.includes('.ts')) {
+                return `/api/stream?ref=${enc}`;
+              }
+              return `/tunnel${pathWithSearch}`;
+            } catch {
+              return match;
+            }
+          });
+          
+          const data = JSON.parse(text);
+          setCache(cacheKey, data, cacheTtl);
+
+          return buildEncryptedJsonResponse(data, response.status, debugHeaders);
+        } catch (err) {
+          return buildResponse(response, debugHeaders);
+        }
+      }
       if (isSrt) return await handleSrtResponse(response, debugHeaders);
       return buildResponse(response, debugHeaders);
     }
