@@ -472,6 +472,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
           ref={videoRef}
           className={`w-full h-full transition-transform duration-300 ${isZoomed ? 'scale-[1.1] sm:scale-125 object-cover' : 'object-contain'}`}
           playsInline
+          crossOrigin="anonymous"
           onPlay={() => setIsPaused(false)}
           onPause={() => setIsPaused(true)}
           onTimeUpdate={handleTimeUpdate}
