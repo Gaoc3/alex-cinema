@@ -576,7 +576,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         <div className={`absolute bottom-0 left-0 w-full pb-2 px-4 sm:px-6 pt-12 bg-gradient-to-t from-black/95 via-black/50 to-transparent transition-all duration-300 ${showControls || isPaused ? 'pointer-events-auto translate-y-0' : 'pointer-events-none translate-y-4'}`}>
           
           {/* Smart Timeline Scrubber */}
-          <div className="relative w-full h-6 flex items-center group mb-0" dir="ltr">
+          <div className="relative w-full h-8 flex items-center group mb-4" dir="ltr">
             <input
               type="range"
               min={0}
@@ -615,17 +615,30 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
 
             {/* Compact Thumb Zones for Actions */}
             <div className="flex items-center gap-1">
-              <button onPointerUp={(e) => { e.stopPropagation(); setActiveSheet('speed'); }} className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors font-en text-xs font-bold">
+              <button 
+                onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setActiveSheet('speed'); }}
+                onClick={(e) => { e.stopPropagation(); setActiveSheet('speed'); }}
+                className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors font-en text-xs font-bold"
+              >
                 {playbackRate}x
               </button>
-              <button onPointerUp={(e) => { e.stopPropagation(); setActiveSheet('quality'); }} className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors">
+              <button 
+                onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setActiveSheet('quality'); }}
+                onClick={(e) => { e.stopPropagation(); setActiveSheet('quality'); }}
+                className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors"
+              >
                 <i className="fa-solid fa-sliders text-sm"></i>
               </button>
-              <button onPointerUp={(e) => { e.stopPropagation(); setActiveSheet('subtitles'); }} className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors">
+              <button 
+                onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setActiveSheet('subtitles'); }}
+                onClick={(e) => { e.stopPropagation(); setActiveSheet('subtitles'); }}
+                className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors"
+              >
                 <i className="fa-solid fa-closed-captioning text-sm"></i>
               </button>
               <button 
-                onPointerUp={(e) => { e.stopPropagation(); toggleFullscreen(e as any); }}
+                onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreen(e as any); }}
+                onClick={(e) => { e.stopPropagation(); toggleFullscreen(e as any); }}
                 className="w-10 h-10 flex items-center justify-center text-white/90 hover:bg-white/10 rounded-full transition-colors"
               >
                 <i className={`fa-solid ${isFullscreen ? 'fa-compress' : 'fa-expand'} text-sm`}></i>
