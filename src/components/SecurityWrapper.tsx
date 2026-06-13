@@ -33,8 +33,8 @@ export default function SecurityWrapper({ children }: { children: React.ReactNod
       }
     };
 
-    document.addEventListener('contextmenu', handleContextMenu);
-    document.addEventListener('keydown', handleKeyDown);
+    // document.addEventListener('contextmenu', handleContextMenu);
+    // document.addEventListener('keydown', handleKeyDown);
 
     // 3. Disable Console Logging
     const noop = () => {};
