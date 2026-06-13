@@ -320,7 +320,42 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
     }
   }, [selectedLanguage, currentStreamUrl]);
 
-  // 5. Gestures (Double Tap)
+  // 5. Time update handler with fallback
+  const handleTimeUpdate = () => {
+    if (!isScrubbing && videoRef.current) {
+      const video = videoRef.current;
+      setCurrentTime(video.currentTime);
+      
+      // Real-time subtitle extraction
+      if (selectedLanguage !== 'off') {
+        let activeText = '';
+        for (let i = 0; i < video.textTracks.length; i++) {
+          const track = video.textTracks[i];
+          if (track.language === selectedLanguage) {
+            if (track.activeCues && track.activeCues.length > 0) {
+              const texts = [];
+              for (let j = 0; j < track.activeCues.length; j++) {
+                texts.push((track.activeCues[j] as VTTCue).text);
+              }
+              activeText = texts.join('\n');
+            } else if (track.cues && track.cues.length > 0) {
+              const currentTime = video.currentTime;
+              const active = Array.from(track.cues).filter((cue: any) => currentTime >= cue.startTime && currentTime <= cue.endTime);
+              if (active.length > 0) {
+                activeText = active.map((cue: any) => cue.text).join('\n');
+              }
+            }
+            break;
+          }
+        }
+        if (currentSubtitle !== activeText) setCurrentSubtitle(activeText);
+      } else if (currentSubtitle !== '') {
+        setCurrentSubtitle('');
+      }
+    }
+  };
+
+  // 6. Gestures (Double Tap)
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
     touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
@@ -479,30 +514,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
           playsInline
           onPlay={() => setIsPaused(false)}
           onPause={() => setIsPaused(true)}
-          onTimeUpdate={() => {
-            if (!isScrubbing && videoRef.current) {
-               setCurrentTime(videoRef.current.currentTime);
-               
-               // Real-time subtitle extraction
-               if (selectedLanguage !== 'off') {
-                 let activeText = '';
-                 for (let i = 0; i < videoRef.current.textTracks.length; i++) {
-                   const track = videoRef.current.textTracks[i];
-                   if (track.language === selectedLanguage && track.activeCues && track.activeCues.length > 0) {
-                     const texts = [];
-                     for (let j = 0; j < track.activeCues.length; j++) {
-                       texts.push((track.activeCues[j] as VTTCue).text);
-                     }
-                     activeText = texts.join('\n');
-                     break;
-                   }
-                 }
-                 if (currentSubtitle !== activeText) setCurrentSubtitle(activeText);
-               } else if (currentSubtitle !== '') {
-                 setCurrentSubtitle('');
-               }
-            }
-          }}
+          onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={() => setDuration(videoRef.current?.duration || 0)}
         >
           {vttTranslations.map((track) => (
@@ -512,6 +524,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
               src={track.file}
               srcLang={track.type}
               label={track.name === 'arabic' ? 'العربية' : 'English'}
+              onLoad={handleTimeUpdate}
             />
           ))}
         </video>
