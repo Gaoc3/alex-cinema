@@ -229,8 +229,8 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         } else if ((containerRef.current as any)?.webkitRequestFullscreen) {
           await (containerRef.current as any).webkitRequestFullscreen();
         }
-        if (screen.orientation && screen.orientation.lock) {
-          await screen.orientation.lock('landscape').catch(() => {});
+        if (screen.orientation && (screen.orientation as any).lock) {
+          await (screen.orientation as any).lock('landscape').catch(() => {});
         }
       } catch (err) {}
     } else {
@@ -240,8 +240,8 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         } else if ((document as any).webkitExitFullscreen) {
           await (document as any).webkitExitFullscreen();
         }
-        if (screen.orientation && screen.orientation.unlock) {
-          screen.orientation.unlock();
+        if (screen.orientation && (screen.orientation as any).unlock) {
+          (screen.orientation as any).unlock();
         }
       } catch (err) {}
     }
