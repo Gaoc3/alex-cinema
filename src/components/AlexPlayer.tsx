@@ -552,12 +552,20 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         let activeText = '';
         for (let i = 0; i < video.textTracks.length; i++) {
           const track = video.textTracks[i];
-          if (track.language === selectedLanguage && track.activeCues && track.activeCues.length > 0) {
-            const texts = [];
-            for (let j = 0; j < track.activeCues.length; j++) {
-              texts.push((track.activeCues[j] as VTTCue).text);
+          if (track.language === selectedLanguage) {
+            if (track.activeCues && track.activeCues.length > 0) {
+              const texts = [];
+              for (let j = 0; j < track.activeCues.length; j++) {
+                texts.push((track.activeCues[j] as VTTCue).text);
+              }
+              activeText = texts.join('\n');
+            } else if (track.cues && track.cues.length > 0) {
+              const currentTime = video.currentTime;
+              const active = Array.from(track.cues).filter((cue: any) => currentTime >= cue.startTime && currentTime <= cue.endTime);
+              if (active.length > 0) {
+                activeText = active.map((cue: any) => cue.text).join('\n');
+              }
             }
-            activeText = texts.join('\n');
             break;
           }
         }
