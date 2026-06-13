@@ -1113,18 +1113,9 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                   </button>
 
                   {activeDropdown === 'subtitles' && (
-                    <>
-                      {typeof document !== 'undefined' && createPortal(
-                        <div className="md:hidden fixed inset-0 z-[999999] flex items-center justify-center p-4">
-                          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setActiveDropdown(null)}></div>
-                          {renderSubtitlesMenu()}
-                        </div>,
-                        document.body
-                      )}
-                      <div className="hidden md:flex absolute bottom-full right-0 mb-4 z-50">
-                        {renderSubtitlesMenu()}
-                      </div>
-                    </>
+                    <div className="absolute bottom-full right-0 mb-4 z-50">
+                      {renderSubtitlesMenu()}
+                    </div>
                   )}
                 </div>
               )}
@@ -1141,18 +1132,9 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                   </button>
 
                   {activeDropdown === 'quality' && (
-                    <>
-                      {typeof document !== 'undefined' && createPortal(
-                        <div className="md:hidden fixed inset-0 z-[999999] flex items-center justify-center p-4">
-                          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setActiveDropdown(null)}></div>
-                          {renderQualityMenu()}
-                        </div>,
-                        document.body
-                      )}
-                      <div className="hidden md:flex absolute bottom-full right-0 mb-4 z-50">
-                        {renderQualityMenu()}
-                      </div>
-                    </>
+                    <div className="absolute bottom-full right-0 mb-4 z-50">
+                      {renderQualityMenu()}
+                    </div>
                   )}
                 </div>
               )}
@@ -1168,18 +1150,9 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                 </button>
 
                 {activeDropdown === 'speed' && (
-                  <>
-                    {typeof document !== 'undefined' && createPortal(
-                      <div className="md:hidden fixed inset-0 z-[999999] flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setActiveDropdown(null)}></div>
-                        {renderSpeedMenu()}
-                      </div>,
-                      document.body
-                    )}
-                    <div className="hidden md:flex absolute bottom-full right-0 mb-4 z-50">
-                      {renderSpeedMenu()}
-                    </div>
-                  </>
+                  <div className="absolute bottom-full right-0 mb-4 z-50">
+                    {renderSpeedMenu()}
+                  </div>
                 )}
               </div>
 
