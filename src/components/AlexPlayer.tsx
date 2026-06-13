@@ -954,13 +954,6 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
           <video
             ref={videoRef}
             className={`w-full h-full alex-video-cue cursor-pointer transition-all duration-300 ${isZoomed ? 'object-cover' : 'object-contain'}`}
-            style={{
-              '--sub-size': `${subtitleSize}%`,
-              '--sub-bg': showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent',
-              '--sub-shadow': showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)',
-              '--sub-font': `'${selectedFont}', 'Outfit', sans-serif`,
-              '--sub-offset-y': isZoomed || isFullscreen ? (showControls ? '-10vh' : '-24px') : (showControls ? '-60px' : '-24px')
-            } as React.CSSProperties}
             onPointerUp={handleVideoPointerUp}
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
