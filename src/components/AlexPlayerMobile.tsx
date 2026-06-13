@@ -354,7 +354,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         className={`absolute inset-0 z-30 flex flex-col justify-between pointer-events-none transition-opacity duration-300 ${showControls || isPaused ? 'opacity-100' : 'opacity-0'}`}
       >
         {/* Top Gradient & Title */}
-        <div className="w-full pt-4 pl-[env(safe-area-inset-left,16px)] pr-[env(safe-area-inset-right,16px)] pb-10 bg-gradient-to-b from-black/80 via-black/30 to-transparent pointer-events-auto flex items-center justify-between">
+        <div className="w-full pt-4 px-4 sm:px-6 pb-10 bg-gradient-to-b from-black/80 via-black/30 to-transparent pointer-events-auto flex items-center justify-between">
           <button className="p-3 text-white/90 hover:text-white transition-colors" onClick={() => window.history.back()}>
             <i className="fa-solid fa-chevron-right text-xl"></i>
           </button>
@@ -375,7 +375,7 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         </div>
 
         {/* Bottom Liquid Glass Controls */}
-        <div className="w-full pb-6 pl-[env(safe-area-inset-left,16px)] pr-[env(safe-area-inset-right,16px)] pt-12 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-auto">
+        <div className="w-full pb-6 px-4 sm:px-6 pt-12 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-auto">
           
           {/* Smart Timeline Scrubber */}
           <div className="relative w-full h-10 flex items-center group mb-2">
