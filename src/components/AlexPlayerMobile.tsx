@@ -446,16 +446,24 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
+        <style>{`
+          video.alex-video-cue::cue {
+            font-size: ${subtitleSize}% !important;
+            background: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
+            background-color: ${showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'} !important;
+            text-shadow: ${showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)'} !important;
+            font-family: '${selectedFont}', 'Outfit', sans-serif !important;
+          }
+          video.alex-video-cue::-webkit-media-text-track-container {
+            transform: translateY(${isFullscreen ? (showControls ? '-10vh' : '-24px') : (showControls ? '-60px' : '-24px')}) !important;
+            transition: transform 0.3s ease-out;
+          }
+        `}</style>
         <video
           ref={videoRef}
           className={`w-full h-full alex-video-cue transition-transform duration-300 ${isZoomed ? 'scale-[1.1] sm:scale-125 object-cover' : 'object-contain'}`}
           style={{ 
-            filter: `brightness(${brightness})`,
-            '--sub-size': `${subtitleSize}%`,
-            '--sub-bg': showSubtitleBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent',
-            '--sub-shadow': showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)',
-            '--sub-font': `'${selectedFont}', 'Outfit', sans-serif`,
-            '--sub-offset-y': isFullscreen ? (showControls ? '-10vh' : '-24px') : (showControls ? '-60px' : '-24px')
+            filter: `brightness(${brightness})`
           } as React.CSSProperties}
           playsInline
           onPlay={() => setIsPaused(false)}
@@ -472,7 +480,11 @@ export default function AlexPlayerMobile({ videoData, onNextEpisode }: AlexPlaye
               src={track.file}
               srcLang={track.type}
               label={track.name === 'arabic' ? 'العربية' : 'English'}
-              default={track.type === 'ar'}
+              default={selectedLanguage === track.type}
+              onLoad={(e) => {
+                 const t = (e.target as HTMLTrackElement).track;
+                 t.mode = selectedLanguage === track.type ? 'showing' : 'hidden';
+              }}
             />
           ))}
         </video>
