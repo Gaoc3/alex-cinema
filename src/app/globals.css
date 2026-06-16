@@ -447,6 +447,10 @@ main, nav, footer {
   }
 }
 
+body.sidebar-open {
+  overflow: hidden;
+}
+
 body.sidebar-open .sidebar {
   transform: translateX(0); /* Opened on mobile drawer toggle */
 }

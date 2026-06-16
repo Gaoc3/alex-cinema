@@ -115,8 +115,8 @@ export default function Sidebar() {
             className={`shrink-0 rounded-xl glass-panel border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-alex-primary transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${isCollapsed ? 'opacity-0 w-0 h-0 overflow-hidden scale-50 pointer-events-none border-0' : 'opacity-100 w-10 h-10 scale-100 delay-100 hover-scale'}`}
             aria-label="Toggle Sidebar"
           >
-            <i className="fa-solid fa-xmark xl:hidden text-gray-300 text-lg"></i>
-            <i className="fa-solid fa-bars hidden xl:inline-block text-gray-300 text-base"></i>
+            <span className="xl:hidden"><i className="fa-solid fa-xmark text-gray-300 text-lg"></i></span>
+            <span className="hidden xl:inline-block"><i className="fa-solid fa-bars text-gray-300 text-base"></i></span>
           </button>
 
           {/* Centered logo button (Shown ONLY on Collapsed) */}
@@ -133,7 +133,7 @@ export default function Sidebar() {
 
         {/* Sidebar Scrollable Body */}
         <div className="flex-grow overflow-y-auto overscroll-contain hide-scrollbar px-4 py-8 flex flex-col">
-          <div className="flex-grow min-h-[20px]" /> {/* Top spacer */}
+          <div className="min-h-[20px]" /> {/* Top spacer */}
           {/* Navigation Section */}
           <div className="space-y-4">
             {/* الصفحة الرئيسية */}
