@@ -203,7 +203,7 @@ export default function SearchBar() {
 
       {/* Live Search Results Dropdown */}
       {showDropdown && query.trim().length >= 2 && (results.length > 0 || !isLoading) && (
-        <div className="fixed inset-x-2 top-[72px] sm:absolute sm:top-full sm:left-0 sm:right-auto sm:w-[450px] lg:w-[500px] mt-3 ios-glass-heavy rounded-[22px] overflow-hidden z-50 animate-fade-in-up py-3 group/scrollbar">
+        <div className="fixed inset-x-2 top-[72px] sm:absolute sm:top-full sm:left-0 sm:right-auto sm:w-[450px] lg:w-[500px] mt-3 bg-[#070a13]/80 backdrop-blur-3xl border border-white/10 shadow-[0_15px_40px_rgba(0,0,0,0.6)] rounded-[22px] overflow-hidden z-50 animate-fade-in-up py-3 group/scrollbar">
           
           <div 
             ref={containerRef}
