@@ -222,11 +222,11 @@ export default function SearchBar() {
 
                   <div className="flex items-center gap-4 flex-grow min-w-0">
                     {/* Poster Image */}
-                    <div className="w-14 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-md relative group-hover/item:border-alex-primary/30 transition-colors duration-300">
+                    <div className="w-16 h-24 rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-md relative movie-card-img-wrapper group-hover/item:border-alex-primary/30 transition-colors duration-300">
                       <img
                         src={item.img ? getVideoImageUrl(item as any, 'poster') : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.ar_title)}`}
                         alt={item.ar_title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110"
+                        className="w-full h-full object-cover movie-card-img transition-transform duration-500 group-hover/item:scale-110"
                         loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity duration-300"></div>
