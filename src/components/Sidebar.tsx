@@ -132,7 +132,7 @@ export default function Sidebar() {
         </div>
 
         {/* Sidebar Scrollable Body */}
-        <div className="flex-grow overflow-y-auto overscroll-contain hide-scrollbar px-4 py-8 flex flex-col">
+        <div className="flex-grow h-0 min-h-0 overflow-y-auto overscroll-contain hide-scrollbar px-4 py-8 flex flex-col">
           <div className="min-h-[20px]" /> {/* Top spacer */}
           {/* Navigation Section */}
           <div className="space-y-4">
