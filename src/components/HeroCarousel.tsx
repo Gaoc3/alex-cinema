@@ -71,7 +71,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
   return (
     <div className="w-full relative mt-0 bg-transparent select-none group flex flex-col lg:block">
       {/* Background Image Carousel Slider (Acts as the Banner on Mobile, Full BG on Desktop) */}
-      <div className="relative lg:absolute inset-0 w-full aspect-[16/9] sm:aspect-[21/9] lg:aspect-auto lg:h-full lg:min-h-[600px] overflow-hidden">
+      <div className="relative lg:absolute inset-0 w-full aspect-[16/9] sm:aspect-[21/9] lg:aspect-auto lg:h-full lg:min-h-[550px] xl:min-h-[650px] overflow-hidden">
         <div 
           className={`absolute inset-0 w-full h-full transition-opacity duration-500 ease-in-out ${
             fade ? 'opacity-100' : 'opacity-0'
@@ -130,7 +130,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       </div>
       
       {/* Content Overlay - Hidden on Mobile, Shown on Desktop */}
-      <div className="hidden lg:flex relative z-10 w-full flex-col justify-end lg:h-[85vh] lg:min-h-[550px] lg:max-h-[550px] pt-32 pb-4 pointer-events-none">
+      <div className="hidden lg:flex relative z-10 w-full flex-col justify-end lg:h-[550px] xl:h-[85vh] xl:min-h-[650px] xl:max-h-[850px] pt-32 pb-4 pointer-events-none">
         
         {/* Top Text Section */}
         <div className="max-w-screen-2xl mx-auto px-14 sm:px-16 lg:px-24 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto">
