@@ -40,10 +40,10 @@ export default function RootLayout({
             <Sidebar />
           </Suspense>        {/* Navbar */}
         <nav className="absolute w-full max-w-[100vw] z-40 transition-all duration-300 pointer-events-none pt-2 sm:pt-4" id="navbar">
-          <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 lg:px-8">
-              <div className="flex items-center justify-between gap-3 h-14 sm:h-16 lg:h-20 pointer-events-auto px-4 sm:px-6">
+          <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 xl:px-8">
+              <div className="flex items-center justify-between gap-3 h-14 sm:h-16 xl:h-20 pointer-events-auto px-4 sm:px-6">
                   {/* Logo - shown on mobile only */}
-                  <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 lg:hidden">
+                  <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 xl:hidden">
                       {/* Mobile Hamburger Menu (Right side in RTL) */}
                       <div className="flex shrink-0">
                         <SidebarToggle />
@@ -61,7 +61,7 @@ export default function RootLayout({
                   </div>
 
                   {/* Desktop spacer to push search bar to left since logo is hidden on desktop */}
-                  <div className="hidden lg:block flex-1 pointer-events-none"></div>
+                  <div className="hidden xl:block flex-1 pointer-events-none"></div>
  
                   <div className="flex items-center shrink-0">
                       <Suspense fallback={<div className="w-8 h-8 rounded-full bg-white/5 animate-pulse"></div>}>
@@ -73,13 +73,13 @@ export default function RootLayout({
         </nav>
 
         {/* Main Content */}
-        <main className="flex-grow lg:pr-72 pt-16 sm:pt-20 lg:pt-0">
+        <main className="flex-grow xl:pr-72 pt-16 sm:pt-20 xl:pt-0">
           {children}
         </main>
 
         {/* Footer */}
-        <footer className="pt-16 pb-10 mt-auto relative z-10 lg:pr-72">
-            <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <footer className="pt-16 pb-10 mt-auto relative z-10 xl:pr-72">
+            <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
 
                     <div className="flex items-center gap-4">
