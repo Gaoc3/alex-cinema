@@ -90,7 +90,7 @@ export default function Sidebar() {
         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] transition-opacity duration-300 lg:hidden pointer-events-none opacity-0 sidebar-overlay"
       />
       
-      <aside className="fixed top-0 right-0 h-screen w-72 z-[60] ios-glass flex flex-col sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 rounded-none">
+      <aside className="fixed top-0 right-0 h-[100dvh] w-72 z-[60] bg-[#070a13]/95 backdrop-blur-2xl xl:bg-transparent xl:ios-glass flex flex-col sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/10 xl:border-l-0 rounded-none shadow-2xl xl:shadow-none">
 
         {/* Sidebar Header (Cinemana Style) */}
         <div className="h-24 border-b border-white/5 flex items-center justify-between pr-5 pl-3 w-full shrink-0 relative z-20">
@@ -112,9 +112,10 @@ export default function Sidebar() {
           <button 
             onClick={toggleSidebar}
             className={`shrink-0 rounded-xl glass-panel border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-alex-primary transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${isCollapsed ? 'opacity-0 w-0 h-0 overflow-hidden scale-50 pointer-events-none border-0' : 'opacity-100 w-10 h-10 scale-100 delay-100 hover-scale'}`}
-            aria-label="Collapse Sidebar"
+            aria-label="Toggle Sidebar"
           >
-            <i className="fa-solid fa-bars text-gray-300 text-base"></i>
+            <i className="fa-solid fa-xmark xl:hidden text-gray-300 text-lg"></i>
+            <i className="fa-solid fa-bars hidden xl:inline-block text-gray-300 text-base"></i>
           </button>
 
           {/* Centered logo button (Shown ONLY on Collapsed) */}
@@ -130,7 +131,7 @@ export default function Sidebar() {
         </div>
 
         {/* Sidebar Scrollable Body */}
-        <div className="flex-grow overflow-y-auto hide-scrollbar px-4 py-8 flex flex-col">
+        <div className="flex-grow overflow-y-auto overscroll-contain hide-scrollbar px-4 py-8 flex flex-col">
           <div className="flex-grow min-h-[20px]" /> {/* Top spacer */}
           {/* Navigation Section */}
           <div className="space-y-4">
