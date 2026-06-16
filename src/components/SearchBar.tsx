@@ -181,7 +181,6 @@ export default function SearchBar() {
     <div className="relative group" ref={dropdownRef}>
       <form onSubmit={handleSubmit} className="relative">
         <input
-          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
