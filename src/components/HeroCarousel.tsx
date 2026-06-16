@@ -130,7 +130,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       </div>
       
       {/* Content Overlay - Hidden on Mobile, Shown on Desktop */}
-      <div className="hidden lg:flex relative z-10 w-full flex-col justify-end lg:h-[85vh] lg:min-h-[600px] pt-32 pb-4 pointer-events-none">
+      <div className="hidden lg:flex relative z-10 w-full flex-col justify-end lg:h-[85vh] lg:min-h-[600px] lg:max-h-[800px] pt-32 pb-4 pointer-events-none">
         
         {/* Top Text Section */}
         <div className="max-w-screen-2xl mx-auto px-14 sm:px-16 lg:px-24 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto">
