@@ -28,6 +28,48 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
   const [fade, setFade] = useState(true);
   const thumbnailsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
+  // AI Layout Engine Refs & State
+  const thumbnailsContainerRef = useRef<HTMLDivElement>(null);
+  const rightArrowRef = useRef<HTMLButtonElement>(null);
+  const [layout, setLayout] = useState({ paddingBottom: 250, paddingRight: 128, isShortScreen: false });
+
+  // AI Layout Engine Algorithm
+  useEffect(() => {
+    const calculateLayout = () => {
+      if (typeof window === 'undefined') return;
+      if (window.innerWidth < 1024) return; // Only process on Desktop (lg and above)
+
+      let newPaddingBottom = 250;
+      let newPaddingRight = 128;
+      
+      // Calculate dynamic bottom padding based on actual thumbnail container height
+      if (thumbnailsContainerRef.current) {
+        const thumbHeight = thumbnailsContainerRef.current.offsetHeight;
+        newPaddingBottom = thumbHeight + 30; // 30px safe margin above thumbnails
+      }
+
+      // Calculate dynamic right padding based on actual right arrow width
+      if (rightArrowRef.current) {
+        const arrowWidth = rightArrowRef.current.offsetWidth;
+        newPaddingRight = arrowWidth + 40; // 40px safe margin away from arrow
+      }
+
+      const isShortScreen = window.innerHeight < 750;
+
+      setLayout({
+        paddingBottom: newPaddingBottom,
+        paddingRight: newPaddingRight,
+        isShortScreen
+      });
+    };
+
+    calculateLayout();
+    
+    // Add event listener for live resizing
+    window.addEventListener('resize', calculateLayout);
+    return () => window.removeEventListener('resize', calculateLayout);
+  }, []);
+
   // Auto-scroll active thumbnail into view
   useEffect(() => {
     if (thumbnailsRef.current[activeIndex]) {
@@ -118,6 +160,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             
             {/* Right Arrow */}
             <button 
+              ref={rightArrowRef}
               onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
               className="group/arrow absolute right-0 top-0 bottom-0 z-40 w-12 sm:w-16 lg:w-24 flex items-center justify-center transition-all duration-300 opacity-80 sm:opacity-60 hover:opacity-100 bg-gradient-to-l from-black/50 to-transparent cursor-pointer outline-none select-none touch-manipulation"
               aria-label="Previous Slide"
@@ -130,10 +173,16 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       </div>
       
       {/* Content Overlay - Hidden on Mobile, Shown on Desktop */}
-      <div className="hidden lg:flex relative z-10 w-full flex-col justify-end lg:h-[85vh] lg:min-h-[600px] lg:max-h-[700px] pt-32 lg:pb-[250px] pointer-events-none">
+      <div 
+        className="hidden lg:flex relative z-10 w-full flex-col justify-end lg:h-[85vh] lg:min-h-[600px] lg:max-h-[700px] pt-32 pointer-events-none transition-all duration-300"
+        style={{ paddingBottom: `${layout.paddingBottom}px` }}
+      >
         
         {/* Top Text Section */}
-        <div className="max-w-screen-2xl mx-auto px-16 lg:px-32 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto">
+        <div 
+           className="max-w-screen-2xl mx-auto pl-16 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto transition-all duration-300"
+           style={{ paddingRight: `${layout.paddingRight}px` }}
+        >
         <div 
           className={`max-w-3xl relative transition-all duration-500 transform text-right drop-shadow-2xl flex flex-col justify-end min-h-[260px] sm:min-h-[300px] lg:min-h-[340px] ${
             fade ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
@@ -171,7 +220,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
               </h2>
             )}
             
-            <p className="text-gray-300 text-sm sm:text-base lg:text-lg mb-6 line-clamp-3 leading-relaxed max-w-xl font-medium drop-shadow-md relative z-10">
+            <p className={`text-gray-300 text-sm sm:text-base lg:text-lg mb-6 leading-relaxed max-w-xl font-medium drop-shadow-md relative z-10 ${layout.isShortScreen ? 'line-clamp-2' : 'line-clamp-3'}`}>
               {current.ar_content}
             </p>
           </div>
@@ -200,7 +249,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
 
       {/* Slide Indicators / Thumbnails Row (Desktop: Thumbnails, Mobile: Dots) */}
       {videos.length > 1 && (
-        <div className="w-full z-20 relative mt-4 lg:mt-0 lg:absolute lg:bottom-0">
+        <div ref={thumbnailsContainerRef} className="w-full z-20 relative mt-4 lg:mt-0 lg:absolute lg:bottom-0">
           <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/90 to-transparent pointer-events-none -z-10"></div>
           
           {/* Mobile Dots */}
