@@ -228,8 +228,8 @@ export default function SearchBar() {
                         src={item.img ? getVideoImageUrl(item as any, 'poster') : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.ar_title)}`}
                         alt={item.ar_title}
                         fill
-                        sizes="56px"
-                        className="w-full h-full object-cover transform group-hover/item:scale-105 transition-transform duration-500"
+                        sizes="120px"
+                        className="w-full h-full object-cover transform-gpu group-hover/item:scale-110 transition-transform duration-500"
                         loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity duration-300"></div>
