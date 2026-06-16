@@ -89,6 +89,7 @@ export default function Sidebar() {
       <div 
         onClick={closeSidebar}
         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] transition-opacity duration-300 xl:hidden pointer-events-none opacity-0 sidebar-overlay"
+        style={{ touchAction: 'none' }}
       />
       
       <aside className="fixed top-0 bottom-0 right-0 w-72 z-[60] bg-[#070a13]/95 backdrop-blur-2xl xl:bg-transparent xl:ios-glass sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/10 xl:border-l-0 rounded-none shadow-2xl xl:shadow-none">
@@ -132,7 +133,7 @@ export default function Sidebar() {
         </div>
 
         {/* Sidebar Scrollable Body */}
-        <div className="absolute top-24 bottom-0 left-0 right-0 overflow-y-auto hide-scrollbar px-4 pt-8 pb-32" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
+        <div className="absolute top-24 bottom-0 left-0 right-0 overflow-y-auto overscroll-contain px-4 pt-8 pb-32 custom-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
           <div className="min-h-[20px]" /> {/* Top spacer */}
           {/* Navigation Section */}
           <div className="space-y-4">
