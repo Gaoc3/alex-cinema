@@ -169,6 +169,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           </div>
         </div>
       </div>
+      </div>
 
       {/* Manual Controls Left & Right Arrows (Hidden on Mobile) */}
       <div className="hidden lg:block">
