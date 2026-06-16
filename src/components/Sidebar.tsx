@@ -189,7 +189,14 @@ export default function Sidebar() {
             {/* الأفلام */}
             <div className="sidebar-submenu-container">
               <button 
-                onClick={() => !isCollapsed && setMoviesOpen(!moviesOpen)}
+                onClick={() => {
+                  if (isCollapsed) {
+                    toggleSidebar();
+                    setMoviesOpen(true);
+                  } else {
+                    setMoviesOpen(!moviesOpen);
+                  }
+                }}
                 className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all text-gray-400 hover:text-white hover:bg-white/5 sidebar-link-btn cursor-pointer"
               >
                 <div className="flex items-center gap-3.5 sidebar-item-content">
@@ -210,7 +217,14 @@ export default function Sidebar() {
             {/* المسلسلات */}
             <div className="sidebar-submenu-container">
               <button 
-                onClick={() => !isCollapsed && setSeriesOpen(!seriesOpen)}
+                onClick={() => {
+                  if (isCollapsed) {
+                    toggleSidebar();
+                    setSeriesOpen(true);
+                  } else {
+                    setSeriesOpen(!seriesOpen);
+                  }
+                }}
                 className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all text-gray-400 hover:text-white hover:bg-white/5 sidebar-link-btn cursor-pointer"
               >
                 <div className="flex items-center gap-3.5 sidebar-item-content">
