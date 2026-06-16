@@ -3,8 +3,9 @@ import { getVideoImageUrl } from '@/utils/imageHelper';
 import { decryptData } from '@/utils/cryptoHelper';
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Pagination from '@/components/Pagination';
 
 interface VideoItem {
   nb: string;
@@ -44,7 +45,9 @@ const YEARS = [
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const query = searchParams.get('q') || '';
+  const pageParam = parseInt(searchParams.get('page') || '1', 10);
 
   // Filter States
   const [typeFilter, setTypeFilter] = useState<'all' | 'movies' | 'series'>('all');
@@ -98,7 +101,7 @@ function SearchPageContent() {
 
         if (fetchMovies) {
           moviesPromise = fetch(
-            `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=${yearRange}&type=movies${categoryParam}${starParam}`,
+            `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=movies${categoryParam}${starParam}`,
             { signal }
           )
             .then((res) => (res.ok ? res.json() : null))
@@ -111,7 +114,7 @@ function SearchPageContent() {
 
         if (fetchSeries) {
           seriesPromise = fetch(
-            `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=${yearRange}&type=series${categoryParam}${starParam}`,
+            `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=series${categoryParam}${starParam}`,
             { signal }
           )
             .then((res) => (res.ok ? res.json() : null))
@@ -153,12 +156,23 @@ function SearchPageContent() {
     return () => {
       controller.abort();
     };
-  }, [query, typeFilter, categoryId, yearRange, starRating]);
+  }, [query, typeFilter, categoryId, yearRange, starRating, pageParam]);
 
   const activeGenreTitle = GENRES.find((g) => g.nb === categoryId)?.title || 'الكل';
   const activeYearLabel = YEARS.find((y) => y.value === yearRange)?.label || 'الكل';
   const totalResults = (typeFilter === 'all' || typeFilter === 'movies' ? movies.length : 0) + 
                        (typeFilter === 'all' || typeFilter === 'series' ? series.length : 0);
+
+  const hasNextPage = movies.length >= 12 || series.length >= 12;
+
+  const setPage = (pageNum: number) => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      params.set('page', pageNum.toString());
+      router.push(`${window.location.pathname}?${params.toString()}`);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   // Stars Click handler
   const handleStarClick = (rating: string) => {
@@ -457,6 +471,13 @@ function SearchPageContent() {
             </div>
           )}
 
+          {/* Pagination Controls */}
+          <Pagination 
+            currentPage={pageParam} 
+            onPageChange={setPage} 
+            hasNextPage={hasNextPage} 
+            accentColor="primary" 
+          />
         </div>
       )}
     </div>

@@ -5,6 +5,7 @@ import { getVideoImageUrl } from '@/utils/imageHelper';
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Pagination from '@/components/Pagination';
 
 interface VideoItem {
   nb: string;
@@ -146,41 +147,12 @@ function NewReleasesContent() {
           </div>
 
           {/* Pagination Controls */}
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-12 sm:mt-16">
-            {page > 1 ? (
-              <button 
-                onClick={() => setPage(page - 1)}
-                className="flex items-center gap-1.5 sm:gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/5 px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm transition-all hover-scale cursor-pointer"
-              >
-                <i className="fa-solid fa-arrow-right"></i>
-                <span>السابقة</span>
-              </button>
-            ) : (
-              <div className="opacity-30 flex items-center gap-1.5 sm:gap-2 bg-white/5 text-gray-400 border border-white/5 px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm cursor-not-allowed">
-                <i className="fa-solid fa-arrow-right"></i>
-                <span>السابقة</span>
-              </div>
-            )}
-            
-            <div className="glass-panel px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl text-xs sm:text-sm font-black text-gray-200 border border-white/10 shadow-lg">
-              <span className="font-en text-orange-500 font-black mx-1">{page}</span>
-            </div>
-
-            {items.length >= 35 ? (
-              <button 
-                onClick={() => setPage(page + 1)}
-                className="flex items-center gap-1.5 sm:gap-2 bg-orange-500 text-white border border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)] px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm transition-all hover-scale cursor-pointer"
-              >
-                <span>التالية</span>
-                <i className="fa-solid fa-arrow-left"></i>
-              </button>
-            ) : (
-              <div className="opacity-30 flex items-center gap-1.5 sm:gap-2 bg-white/5 text-gray-400 border border-white/5 px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm cursor-not-allowed">
-                <span>التالية</span>
-                <i className="fa-solid fa-arrow-left"></i>
-              </div>
-            )}
-          </div>
+          <Pagination 
+            currentPage={page} 
+            onPageChange={setPage} 
+            hasNextPage={items.length >= 35} 
+            accentColor="orange" 
+          />
         </>
       ) : (
         <div className="flex flex-col items-center justify-center py-32 opacity-60">

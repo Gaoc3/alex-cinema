@@ -5,6 +5,7 @@ import { decryptData } from '@/utils/cryptoHelper';
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Pagination from '@/components/Pagination';
 
 interface VideoItem {
   nb: string;
@@ -337,41 +338,12 @@ function SeriesContent() {
               </div>
 
               {/* Pagination Controls */}
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-12 sm:mt-16">
-                {page > 1 ? (
-                  <button 
-                    onClick={() => updateParams({ page: (page - 1).toString() })}
-                    className="flex items-center gap-1.5 sm:gap-2 ios-button px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm cursor-pointer"
-                  >
-                    <i className="fa-solid fa-arrow-right"></i>
-                    <span>الصفحة السابقة</span>
-                  </button>
-                ) : (
-                  <div className="opacity-30 flex items-center gap-2 bg-white/5 text-gray-400 border border-white/5 px-6 py-3.5 rounded-xl font-bold text-sm cursor-not-allowed">
-                    <i className="fa-solid fa-arrow-right"></i>
-                    <span>الصفحة السابقة</span>
-                  </div>
-                )}
-                
-                <div className="ios-glass px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl text-xs sm:text-sm font-black text-gray-200">
-                  صفحة <span className="font-en text-blue-500 font-black mx-1">{page}</span>
-                </div>
-
-                {series.length >= 20 ? (
-                  <button 
-                    onClick={() => updateParams({ page: (page + 1).toString() })}
-                    className="flex items-center gap-1.5 sm:gap-2 ios-active px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm cursor-pointer"
-                  >
-                    <span>الصفحة التالية</span>
-                    <i className="fa-solid fa-arrow-left"></i>
-                  </button>
-                ) : (
-                  <div className="opacity-30 flex items-center gap-2 bg-white/5 text-gray-400 border border-white/5 px-6 py-3.5 rounded-xl font-bold text-sm cursor-not-allowed">
-                    <span>الصفحة التالية</span>
-                    <i className="fa-solid fa-arrow-left"></i>
-                  </div>
-                )}
-              </div>
+              <Pagination 
+                currentPage={page} 
+                onPageChange={(p) => updateParams({ page: p.toString() })} 
+                hasNextPage={series.length >= 20} 
+                accentColor="blue" 
+              />
             </>
           ) : (
             <div className="flex flex-col items-center justify-center py-32 opacity-60">
