@@ -82,7 +82,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             alt={current.ar_title} 
             fill
             priority
-            className="max-lg:object-contain max-lg:object-top lg:object-cover object-center transform scale-100 transition-transform duration-[7s] hover:scale-105"
+            className="object-cover object-top transform scale-100 transition-transform duration-[7s] hover:scale-105"
           />
         </div>
         
