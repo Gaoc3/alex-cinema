@@ -99,7 +99,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       <div className="relative z-10 w-full flex flex-col justify-end h-full pt-20 sm:pt-32 pb-0 sm:pb-4">
         
         {/* Top Text Section */}
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto">
+        <div className="max-w-screen-2xl mx-auto px-14 sm:px-16 lg:px-24 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto">
         <div 
           className={`max-w-3xl relative transition-all duration-500 transform text-right drop-shadow-2xl flex flex-col justify-end min-h-[260px] sm:min-h-[300px] lg:min-h-[340px] ${
             fade ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
@@ -167,7 +167,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           {/* Left Arrow */}
           <button 
             onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
-            className="group/arrow absolute left-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-12 sm:w-24 lg:w-32 flex items-start pt-[20vh] sm:items-center sm:pt-0 justify-center transition-all duration-300 opacity-60 sm:opacity-0 group-hover:opacity-100 cursor-pointer outline-none select-none touch-manipulation"
+            className="group/arrow absolute left-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-12 sm:w-24 lg:w-32 flex items-center justify-center transition-all duration-300 opacity-60 sm:opacity-0 group-hover:opacity-100 cursor-pointer outline-none select-none touch-manipulation"
             aria-label="Next Slide"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
@@ -177,7 +177,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           {/* Right Arrow */}
           <button 
             onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
-            className="group/arrow absolute right-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-12 sm:w-24 lg:w-32 flex items-start pt-[20vh] sm:items-center sm:pt-0 justify-center transition-all duration-300 opacity-60 sm:opacity-0 group-hover:opacity-100 cursor-pointer outline-none select-none touch-manipulation"
+            className="group/arrow absolute right-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-12 sm:w-24 lg:w-32 flex items-center justify-center transition-all duration-300 opacity-60 sm:opacity-0 group-hover:opacity-100 cursor-pointer outline-none select-none touch-manipulation"
             aria-label="Previous Slide"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
