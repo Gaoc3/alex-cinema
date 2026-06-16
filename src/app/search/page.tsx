@@ -352,7 +352,7 @@ function SearchPageContent() {
                 <div className="w-1.5 h-7 bg-alex-primary rounded-full shadow-[0_0_10px_rgba(229,9,20,0.5)]"></div>
                 الأفلام المطابقة ({movies.length})
               </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-12">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-8">
                 {movies.map((video, index) => (
                   <Link 
                     key={video.nb} 
@@ -361,7 +361,7 @@ function SearchPageContent() {
                     style={{ animationDelay: `${index * 25}ms` }}
                   >
                     {/* Poster Wrapper */}
-                    <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
+                    <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper shadow-lg group-hover/card:shadow-[0_10px_30px_rgba(229,9,20,0.2)] transition-shadow duration-500">
                       <img 
                         src={getVideoImageUrl(video as any, 'poster')}
                         alt={video.ar_title} 
@@ -369,6 +369,12 @@ function SearchPageContent() {
                         loading="lazy"
                       />
                       <div className="movie-card-overlay"></div>
+
+                      {/* IMDb Badge on Poster */}
+                      <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md border border-white/10 px-2 py-1 rounded-lg flex items-center gap-1 z-10 shadow-md">
+                        <span className="text-yellow-500 text-[9px] font-black font-en tracking-wider">IMDb</span>
+                        <span className="text-white text-[11px] font-bold font-en">{video.stars}</span>
+                      </div>
 
                       {/* Play Hover Indicator */}
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 transform scale-50 group-hover/card:opacity-100 group-hover/card:scale-100 transition-all duration-300 z-20">
@@ -379,28 +385,14 @@ function SearchPageContent() {
                     </div>
 
                     {/* Info Details directly below the poster */}
-                    <div className="mt-3 px-1 space-y-1.5">
-                      {/* Rating & Title Row */}
-                      <div className="flex items-center justify-between gap-2.5">
-                        <h3 className="text-sm font-bold text-gray-100 group-hover/card:text-white transition-colors truncate flex-grow text-right leading-tight" title={video.ar_title}>
-                          {video.ar_title}
-                        </h3>
+                    <div className="mt-3 px-1">
+                      <h3 className="text-sm font-bold text-gray-200 group-hover/card:text-white transition-colors truncate leading-tight text-start" dir="auto" title={video.ar_title}>
+                        {video.ar_title}
+                      </h3>
 
-                        <div className="flex-shrink-0 flex items-center gap-1.5 bg-yellow-500/10 border border-yellow-500/20 px-1.5 py-0.5 rounded text-[10px] font-black text-yellow-400">
-                          <span className="font-en mt-0.5">{video.stars}</span>
-                          <span className="text-[8px] opacity-70">IMDb</span>
-                        </div>
-                      </div>
-
-                      {/* Category & Year Row */}
-                      <div className="flex items-center text-[11px] font-semibold text-gray-400 justify-end gap-1.5 leading-none">
-                        <span>{video.year}</span>
-                        {video.categories && video.categories.length > 0 && (
-                          <>
-                            <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-                            <span>{video.categories[0].ar_title}</span>
-                          </>
-                        )}
+                      <div className="flex items-center justify-between mt-1.5 opacity-70 group-hover/card:opacity-100 transition-opacity">
+                        <span className="font-cairo bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] text-gray-300">{video.type_name || 'فيلم'}</span>
+                        <span className="font-en text-[11px] font-bold text-gray-400">{video.year}</span>
                       </div>
                     </div>
                   </Link>
@@ -416,7 +408,7 @@ function SearchPageContent() {
                 <div className="w-1.5 h-7 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
                 المسلسلات المطابقة ({series.length})
               </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-12">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-8">
                 {series.map((video, index) => (
                   <Link 
                     key={video.nb} 
@@ -425,7 +417,7 @@ function SearchPageContent() {
                     style={{ animationDelay: `${index * 25}ms` }}
                   >
                     {/* Poster Wrapper */}
-                    <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
+                    <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper shadow-lg group-hover/card:shadow-[0_10px_30px_rgba(59,130,246,0.2)] transition-shadow duration-500">
                       <img 
                         src={getVideoImageUrl(video as any, 'poster')}
                         alt={video.ar_title} 
@@ -434,37 +426,29 @@ function SearchPageContent() {
                       />
                       <div className="movie-card-overlay"></div>
 
+                      {/* IMDb Badge on Poster */}
+                      <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md border border-white/10 px-2 py-1 rounded-lg flex items-center gap-1 z-10 shadow-md">
+                        <span className="text-yellow-500 text-[9px] font-black font-en tracking-wider">IMDb</span>
+                        <span className="text-white text-[11px] font-bold font-en">{video.stars}</span>
+                      </div>
+
                       {/* Play Hover Indicator */}
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 transform scale-50 group-hover/card:opacity-100 group-hover/card:scale-100 transition-all duration-300 z-20">
-                        <div className="w-14 h-14 rounded-full bg-alex-primary/90 flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.5)] backdrop-blur-md">
+                        <div className="w-14 h-14 rounded-full bg-blue-500/90 flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.5)] backdrop-blur-md">
                           <i className="fa-solid fa-play ml-1 text-xl"></i>
                         </div>
                       </div>
                     </div>
 
                     {/* Info Details directly below the poster */}
-                    <div className="mt-3 px-1 space-y-1.5">
-                      {/* Rating & Title Row */}
-                      <div className="flex items-center justify-between gap-2.5">
-                        <h3 className="text-sm font-bold text-gray-100 group-hover/card:text-white transition-colors truncate flex-grow text-right leading-tight" title={video.ar_title}>
-                          {video.ar_title}
-                        </h3>
+                    <div className="mt-3 px-1">
+                      <h3 className="text-sm font-bold text-gray-200 group-hover/card:text-white transition-colors truncate leading-tight text-start" dir="auto" title={video.ar_title}>
+                        {video.ar_title}
+                      </h3>
 
-                        <div className="flex-shrink-0 flex items-center gap-1.5 bg-yellow-500/10 border border-yellow-500/20 px-1.5 py-0.5 rounded text-[10px] font-black text-yellow-400">
-                          <span className="font-en mt-0.5">{video.stars}</span>
-                          <span className="text-[8px] opacity-70">IMDb</span>
-                        </div>
-                      </div>
-
-                      {/* Category & Year Row */}
-                      <div className="flex items-center text-[11px] font-semibold text-gray-400 justify-end gap-1.5 leading-none">
-                        <span>{video.year}</span>
-                        {video.categories && video.categories.length > 0 && (
-                          <>
-                            <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-                            <span>{video.categories[0].ar_title}</span>
-                          </>
-                        )}
+                      <div className="flex items-center justify-between mt-1.5 opacity-70 group-hover/card:opacity-100 transition-opacity">
+                        <span className="font-cairo bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] text-gray-300">{video.type_name || 'مسلسل'}</span>
+                        <span className="font-en text-[11px] font-bold text-gray-400">{video.year}</span>
                       </div>
                     </div>
                   </Link>
