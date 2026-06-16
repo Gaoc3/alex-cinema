@@ -109,21 +109,21 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             {/* Left Arrow */}
             <button 
               onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
-              className="group/arrow absolute left-0 top-0 bottom-0 z-40 w-12 sm:w-16 lg:w-24 flex items-center justify-center transition-all duration-300 opacity-60 sm:opacity-40 group-hover:opacity-100 cursor-pointer outline-none select-none touch-manipulation"
+              className="group/arrow absolute left-0 top-0 bottom-0 z-40 w-12 sm:w-16 lg:w-24 flex items-center justify-center transition-all duration-300 opacity-80 sm:opacity-60 hover:opacity-100 bg-gradient-to-r from-black/50 to-transparent cursor-pointer outline-none select-none touch-manipulation"
               aria-label="Next Slide"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <i className="fa-solid fa-chevron-left text-xl sm:text-3xl lg:text-4xl text-white/80 group-hover/arrow:text-white group-active/arrow:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] filter group-hover/arrow:brightness-125 transition-all duration-300 transform group-hover/arrow:scale-110 group-active/arrow:scale-90"></i>
+              <i className="fa-solid fa-chevron-left text-xl sm:text-3xl lg:text-4xl text-white group-hover/arrow:text-white group-active/arrow:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] filter group-hover/arrow:brightness-125 transition-all duration-300 transform group-hover/arrow:scale-110 group-active/arrow:scale-90"></i>
             </button>
             
             {/* Right Arrow */}
             <button 
               onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
-              className="group/arrow absolute right-0 top-0 bottom-0 z-40 w-12 sm:w-16 lg:w-24 flex items-center justify-center transition-all duration-300 opacity-60 sm:opacity-40 group-hover:opacity-100 cursor-pointer outline-none select-none touch-manipulation"
+              className="group/arrow absolute right-0 top-0 bottom-0 z-40 w-12 sm:w-16 lg:w-24 flex items-center justify-center transition-all duration-300 opacity-80 sm:opacity-60 hover:opacity-100 bg-gradient-to-l from-black/50 to-transparent cursor-pointer outline-none select-none touch-manipulation"
               aria-label="Previous Slide"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <i className="fa-solid fa-chevron-right text-xl sm:text-3xl lg:text-4xl text-white/80 group-hover/arrow:text-white group-active/arrow:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] filter group-hover/arrow:brightness-125 transition-all duration-300 transform group-hover/arrow:scale-110 group-active/arrow:scale-90"></i>
+              <i className="fa-solid fa-chevron-right text-xl sm:text-3xl lg:text-4xl text-white group-hover/arrow:text-white group-active/arrow:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] filter group-hover/arrow:brightness-125 transition-all duration-300 transform group-hover/arrow:scale-110 group-active/arrow:scale-90"></i>
             </button>
           </>
         )}
