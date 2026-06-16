@@ -1,5 +1,5 @@
 'use client';
-import { getVideoImageUrl } from '@/utils/imageHelper';
+import { encodeProxyUrl } from '@/utils/proxyHelper';
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -65,13 +65,15 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
 
   const current = videos[bgIndex];
 
-  // Build the correct landscape cover image URL
-  const coverImgUrl = getVideoImageUrl(current, 'cover');
+  // Build the correct landscape cover image URL (proxy all external URLs)
+  const coverImgUrl = current.imgObjUrl 
+    ? `/api/proxy?endpoint=${encodeProxyUrl(current.imgObjUrl)}`
+    : `/api/proxy?endpoint=${encodeProxyUrl(current.img.startsWith('http') ? current.img : 'https://cnth2.shabakaty.com/vascin-cover-images/' + current.img)}`;
 
   return (
-    <div className="w-full relative mt-0 bg-transparent select-none group flex flex-col lg:block">
-      {/* Background Image Carousel Slider (Acts as the Banner on Mobile, Full BG on Desktop) */}
-      <div className="relative lg:absolute inset-0 w-full aspect-[16/9] sm:aspect-[21/9] lg:aspect-auto lg:h-full lg:min-h-[600px] overflow-hidden">
+    <div className="relative w-full h-[85svh] min-h-[600px] sm:min-h-[auto] sm:h-[580px] lg:h-[85vh] flex flex-col justify-end mt-0 overflow-hidden bg-[#070a13] select-none group">
+      {/* Background Image Carousel Slider */}
+      <div className="absolute inset-0 w-full h-full">
         <div 
           className={`absolute inset-0 w-full h-full transition-opacity duration-500 ease-in-out ${
             fade ? 'opacity-100' : 'opacity-0'
@@ -82,143 +84,111 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             alt={current.ar_title} 
             fill
             priority
-            className="object-cover object-top lg:object-center transform scale-100 transition-transform duration-[7s] hover:scale-105"
+            className="object-cover object-center transform scale-100 transition-transform duration-[7s] hover:scale-105"
           />
         </div>
         
-        {/* Gradients - only needed on desktop for text readability, but keep a subtle one on mobile for the button */}
-        <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/70 to-transparent z-[2]"></div>
-        <div className="hidden lg:block absolute inset-y-0 right-0 w-[50%] bg-gradient-to-l from-[#070a13]/90 via-[#070a13]/40 to-transparent z-[2]"></div>
-        <div className="hidden lg:block absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#070a13]/60 to-transparent z-[2]"></div>
-        <div className="lg:hidden absolute inset-0 bg-gradient-to-t from-[#070a13]/80 via-transparent to-transparent z-[2]"></div>
-        
-        {/* Mobile "Watch Now" Button (Cinemana Style) */}
-        <div className="absolute bottom-3 right-4 z-10 lg:hidden">
-            <Link 
-              href={`/watch/${current.nb}`} 
-              className="flex items-center justify-center gap-2 px-5 py-1.5 rounded-full font-bold text-sm bg-alex-primary text-white hover:bg-red-700 transition-all shadow-lg"
-            >
-              <span>شاهد الآن</span>
-              <i className="fa-solid fa-play text-xs mt-0.5"></i>
-            </Link>
-        </div>
-
-        {/* Manual Controls Left & Right Arrows */}
-        {videos.length > 1 && (
-          <>
-            {/* Left Arrow */}
-            <button 
-              onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
-              className="group/arrow absolute left-0 top-0 bottom-0 z-40 w-12 sm:w-16 lg:w-24 flex items-center justify-center transition-all duration-300 opacity-80 sm:opacity-60 hover:opacity-100 bg-gradient-to-r from-black/50 to-transparent cursor-pointer outline-none select-none touch-manipulation"
-              aria-label="Next Slide"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
-            >
-              <i className="fa-solid fa-chevron-left text-xl sm:text-3xl lg:text-4xl text-white group-hover/arrow:text-white group-active/arrow:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] filter group-hover/arrow:brightness-125 transition-all duration-300 transform group-hover/arrow:scale-110 group-active/arrow:scale-90"></i>
-            </button>
-            
-            {/* Right Arrow */}
-            <button 
-              onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
-              className="group/arrow absolute right-0 top-0 bottom-0 z-40 w-12 sm:w-16 lg:w-24 flex items-center justify-center transition-all duration-300 opacity-80 sm:opacity-60 hover:opacity-100 bg-gradient-to-l from-black/50 to-transparent cursor-pointer outline-none select-none touch-manipulation"
-              aria-label="Previous Slide"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
-            >
-              <i className="fa-solid fa-chevron-right text-xl sm:text-3xl lg:text-4xl text-white group-hover/arrow:text-white group-active/arrow:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] filter group-hover/arrow:brightness-125 transition-all duration-300 transform group-hover/arrow:scale-110 group-active/arrow:scale-90"></i>
-            </button>
-          </>
-        )}
+        {/* Gradients blending cover image into the website background */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/40 sm:via-[#070a13]/20 to-transparent z-[2]"></div>
+        {/* Right gradient for text readability (RTL) - Full height, but semi-transparent on mobile for glassy navbar */}
+        <div className="absolute inset-y-0 right-0 w-[95%] md:w-[60%] lg:w-[50%] bg-gradient-to-l from-[#070a13]/80 via-[#070a13]/60 sm:from-[#070a13] sm:via-[#070a13]/80 to-transparent z-[2]"></div>
+        {/* Top gradient for navbar readability if needed */}
+        <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#070a13]/50 to-transparent z-[2]"></div>
       </div>
       
-      {/* Content Overlay - Hidden on Mobile, Shown on Desktop */}
-      <div className="hidden lg:flex relative z-10 w-full flex-col justify-end lg:h-[85vh] lg:min-h-[600px] lg:max-h-[700px] pt-32 pb-4 pointer-events-none">
+      {/* Content Overlay */}
+      <div className="relative z-10 w-full flex flex-col justify-between h-full pt-20 sm:pt-20 lg:pt-32">
         
         {/* Top Text Section */}
-        <div className="max-w-screen-2xl mx-auto px-14 sm:px-16 lg:px-24 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow flex flex-col justify-center mb-8">
         <div 
-          className={`max-w-3xl relative transition-all duration-500 transform text-right drop-shadow-2xl flex flex-col justify-end min-h-[260px] sm:min-h-[300px] lg:min-h-[340px] ${
+          className={`max-w-3xl relative transition-all duration-500 transform text-right ${
             fade ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
-          {/* Subtle base shadow for text to pop against any background naturally */}
+          {/* Decorative Glow */}
+          <div className="absolute -top-20 -right-20 w-64 h-64 bg-alex-primary/20 rounded-full blur-[100px] pointer-events-none animate-glow"></div>
           
-          <div className="flex-grow flex flex-col justify-end">
-            {/* Metadata Row: Clean, minimalist, and easy to scan */}
-            <div className="flex flex-wrap items-center justify-start gap-3 sm:gap-4 mb-4 relative z-10 text-sm md:text-base font-semibold text-gray-200">
-              {current.kind === '2' && (
-                 <span className="text-white drop-shadow-md">مسلسل</span>
-              )}
-              {current.kind !== '2' && (
-                 <span className="text-white drop-shadow-md">فيلم</span>
-              )}
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-500/80"></span>
-              <span className="font-en tracking-wider drop-shadow-md">{current.year}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-500/80"></span>
-              <span className="flex items-center gap-1.5 text-yellow-400 drop-shadow-md">
-                <i className="fa-solid fa-star text-xs"></i> 
-                <span className="font-en mt-0.5">{current.stars}</span>
-              </span>
-              <span className="px-2 py-0.5 ml-2 bg-red-600 text-white text-xs font-bold rounded shadow-sm">
-                حصرياً
-              </span>
-            </div>
-            
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white mb-2 leading-tight drop-shadow-lg relative z-10">
-              {current.ar_title}
-            </h1>
-            {current.en_title && current.en_title !== current.ar_title && (
-              <h2 className="text-sm sm:text-lg text-gray-300 font-bold font-en mb-4 drop-shadow-md relative z-10 tracking-widest uppercase">
-                {current.en_title}
-              </h2>
-            )}
-            
-            <p className="text-gray-300 text-sm sm:text-base lg:text-lg mb-6 line-clamp-3 leading-relaxed max-w-xl font-medium drop-shadow-md relative z-10">
-              {current.ar_content}
-            </p>
+          <div className="flex flex-wrap items-center justify-start gap-3 mb-5 relative z-10">
+            <span className="px-4 py-1.5 bg-alex-primary text-white text-xs font-bold rounded-md shadow-[0_0_15px_rgba(229,9,20,0.5)]">
+              حصرياً
+            </span>
+            <span className="flex items-center gap-1.5 text-yellow-400 text-sm font-bold glass-panel px-4 py-1.5 rounded-md">
+              <i className="fa-solid fa-star text-xs"></i> <span className="font-en mt-0.5">{current.stars}</span>
+            </span>
+            <span className="text-gray-200 text-sm font-bold glass-panel px-4 py-1.5 rounded-md">
+              <span className="font-en">{current.year}</span>
+            </span>
           </div>
           
-          {/* Buttons Row - Anchored to the bottom of the fixed height container */}
-          <div className="flex flex-wrap items-center justify-start gap-4 relative z-10 mt-auto">
+          <h1 className="text-2xl sm:text-4xl lg:text-6xl font-black text-white mb-3 sm:mb-4 leading-tight drop-shadow-2xl relative z-10 tracking-tight">
+            {current.ar_title}
+          </h1>
+          {current.en_title && current.en_title !== current.ar_title && (
+            <h2 className="text-lg sm:text-xl text-gray-400 font-bold font-en mb-6 drop-shadow-lg relative z-10">
+              {current.en_title}
+            </h2>
+          )}
+          
+          <p className="text-gray-300 text-sm sm:text-base mb-8 line-clamp-3 leading-relaxed max-w-2xl font-medium drop-shadow-md relative z-10">
+            {current.ar_content}
+          </p>
+          
+          <div className="flex flex-wrap items-center justify-start gap-4 relative z-10">
             <Link 
               href={`/watch/${current.nb}`} 
-              className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3 sm:py-3.5 rounded-md font-bold text-sm sm:text-base bg-white text-black hover:bg-white/90 transition-all duration-300 shadow-lg"
+              className={`flex items-center gap-3 text-white px-8 py-3.5 rounded-xl font-bold text-base hover-scale transition-colors duration-300 ${
+                current.kind === '2' 
+                  ? 'bg-blue-600 hover:bg-blue-700 shadow-[0_0_15px_rgba(37,99,235,0.4)]' 
+                  : 'btn-primary'
+              }`}
             >
-              <i className="fa-solid fa-play text-lg"></i>
+              <i className="fa-solid fa-play ml-1"></i>
               <span>شاهد الآن</span>
             </Link>
             {current.trailer && (
-              <a href={current.trailer} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3 sm:py-3.5 rounded-md font-bold text-sm sm:text-base bg-white/20 text-white backdrop-blur-md hover:bg-white/30 transition-all duration-300 shadow-lg">
-                <i className="fa-regular fa-circle-play text-xl"></i>
+              <a href={current.trailer} target="_blank" rel="noreferrer" className="flex items-center gap-3 glass-panel text-white hover:bg-white/10 px-8 py-3.5 rounded-xl font-bold text-base transition-all hover-scale">
+                <i className="fa-solid fa-film ml-1"></i>
                 <span>الإعلان الترويجي</span>
               </a>
             )}
           </div>
         </div>
       </div>
-      </div>
 
-
-
-      {/* Slide Indicators / Thumbnails Row (Desktop: Thumbnails, Mobile: Dots) */}
+      {/* Manual Controls Left & Right Arrows (Hidden on Mobile, Visible on hover) */}
       {videos.length > 1 && (
-        <div className="w-full z-20 relative mt-4 lg:mt-0 lg:absolute lg:bottom-0">
-          <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/90 to-transparent pointer-events-none -z-10"></div>
+        <>
+          {/* Left Arrow (Goes to Next in RTL because next items are on the left) */}
+          <button 
+            onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
+            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 md:hover:bg-alex-primary/95 text-white border border-white/10 flex items-center justify-center transition-all duration-300 backdrop-blur-sm sm:opacity-0 sm:group-hover:opacity-100 opacity-70 md:hover:scale-110 active:scale-95 cursor-pointer"
+            aria-label="Next Slide"
+          >
+            <i className="fa-solid fa-chevron-left text-lg"></i>
+          </button>
           
-          {/* Mobile Dots */}
-          <div className="flex lg:hidden justify-center items-center gap-2 pb-4">
-             {videos.map((_, idx) => (
-               <button 
-                 key={idx}
-                 onClick={() => triggerSlideChange(idx)}
-                 className={`rounded-full transition-all duration-300 ${activeIndex === idx ? 'bg-alex-primary w-2.5 h-2.5' : 'bg-gray-600 w-2 h-2 hover:bg-gray-400'}`}
-                 aria-label={`Go to slide ${idx + 1}`}
-               />
-             ))}
-          </div>
+          {/* Right Arrow (Goes to Previous in RTL because previous items are on the right) */}
+          <button 
+            onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
+            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 md:hover:bg-alex-primary/95 text-white border border-white/10 flex items-center justify-center transition-all duration-300 backdrop-blur-sm sm:opacity-0 sm:group-hover:opacity-100 opacity-70 md:hover:scale-110 active:scale-95 cursor-pointer"
+            aria-label="Previous Slide"
+          >
+            <i className="fa-solid fa-chevron-right text-lg"></i>
+          </button>
+        </>
+      )}
 
-          {/* Desktop Thumbnails */}
-          <div className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-8 py-6 scroll-smooth items-end">
+      {/* Slide Indicators / Thumbnails Row (Cinemana Style) */}
+      {videos.length > 1 && (
+        <div className="w-full z-20 mt-auto">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full pt-4 pb-4 sm:pt-6 sm:pb-6 scroll-smooth">
+            {/* Start spacer to replace padding and avoid RTL bugs */}
+            <div className="w-1 sm:w-4 shrink-0 pointer-events-none opacity-0"></div>
             {videos.map((video, idx) => {
-            const thumbUrl = getVideoImageUrl(video, 'cover');
+            const thumbUrl = video.imgObjUrl 
+              ? `/api/proxy?endpoint=${encodeProxyUrl(video.imgObjUrl)}`
+              : `/api/proxy?endpoint=${encodeProxyUrl(video.img.startsWith('http') ? video.img : 'https://cnth2.shabakaty.com/vascin-cover-images/' + video.img)}`;
             return (
               <button
                 key={video.nb}
@@ -226,10 +196,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                   thumbnailsRef.current[idx] = el;
                 }}
                 onClick={() => triggerSlideChange(idx)}
-                className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none ${
+                className={`relative w-28 sm:w-36 md:w-48 lg:w-56 aspect-[16/9] rounded-lg overflow-hidden border-2 transition-all duration-300 md:hover:scale-105 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none ${
                   activeIndex === idx 
-                    ? 'w-32 sm:w-44 md:w-56 lg:w-64 ring-2 ring-alex-primary shadow-[0_10px_25px_rgba(229,9,20,0.4)] scale-100 opacity-100 z-10' 
-                    : 'w-24 sm:w-32 md:w-40 lg:w-48 opacity-50 hover:opacity-100 hover:scale-105 z-0'
+                    ? 'border-alex-primary shadow-[0_0_12px_rgba(229,9,20,0.6)] scale-105' 
+                    : 'border-white/10 md:hover:border-white/30'
                 }`}
                 aria-label={`Go to slide ${idx + 1}`}
               >
@@ -237,19 +207,23 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                   src={thumbUrl} 
                   alt={video.ar_title}
                   fill
-                  sizes="(max-width: 640px) 128px, 256px"
+                  sizes="(max-width: 640px) 112px, 224px"
                   className="w-full h-full object-cover transform-gpu"
                   loading="lazy"
+                  style={{ imageRendering: 'high-quality' as any }}
                 />
                 <div className={`absolute inset-0 transition-colors duration-300 ${
-                  activeIndex === idx ? 'bg-transparent' : 'bg-black/40 hover:bg-black/10'
+                  activeIndex === idx ? 'bg-transparent' : 'bg-black/50 md:hover:bg-black/35'
                 }`}></div>
               </button>
             );
           })}
+            {/* End spacer to replace padding and avoid RTL bugs */}
+            <div className="w-1 sm:w-4 shrink-0 pointer-events-none opacity-0"></div>
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
