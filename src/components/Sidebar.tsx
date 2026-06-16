@@ -91,10 +91,10 @@ export default function Sidebar() {
         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] transition-opacity duration-300 xl:hidden pointer-events-none opacity-0 sidebar-overlay"
       />
       
-      <aside className="fixed top-0 right-0 h-[100dvh] w-72 z-[60] bg-[#070a13]/95 backdrop-blur-2xl xl:bg-transparent xl:ios-glass flex flex-col sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/10 xl:border-l-0 rounded-none shadow-2xl xl:shadow-none">
+      <aside className="fixed top-0 right-0 h-[100dvh] w-72 z-[60] bg-[#070a13]/95 backdrop-blur-2xl xl:bg-transparent xl:ios-glass sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/10 xl:border-l-0 rounded-none shadow-2xl xl:shadow-none">
 
         {/* Sidebar Header (Cinemana Style) */}
-        <div className="h-24 border-b border-white/5 flex items-center justify-between pr-5 pl-3 w-full shrink-0 relative z-20">
+        <div className="absolute top-0 left-0 right-0 h-24 border-b border-white/5 flex items-center justify-between pr-5 pl-3 w-full shrink-0 z-20">
           
           {/* Logo and Brand Name (Hidden on Collapsed) */}
           <div className={`flex items-center gap-2.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-right ${isCollapsed ? 'opacity-0 max-w-0 overflow-hidden scale-90 pointer-events-none' : 'opacity-100 max-w-[300px] scale-100 delay-100'}`}>
@@ -132,7 +132,7 @@ export default function Sidebar() {
         </div>
 
         {/* Sidebar Scrollable Body */}
-        <div className="flex-grow h-0 min-h-0 overflow-y-auto overscroll-contain hide-scrollbar px-4 py-8 flex flex-col">
+        <div className="absolute top-24 bottom-0 left-0 right-0 overflow-y-auto overscroll-contain hide-scrollbar px-4 py-8" style={{ WebkitOverflowScrolling: 'touch' }}>
           <div className="min-h-[20px]" /> {/* Top spacer */}
           {/* Navigation Section */}
           <div className="space-y-4">
