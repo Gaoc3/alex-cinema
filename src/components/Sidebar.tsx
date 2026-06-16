@@ -14,7 +14,8 @@ export default function Sidebar() {
   useEffect(() => {
     const checkState = () => {
       if (typeof document !== 'undefined') {
-        setIsCollapsed(document.body.classList.contains('sidebar-collapsed'));
+        const isMobile = window.innerWidth < 1280;
+        setIsCollapsed(isMobile ? false : document.body.classList.contains('sidebar-collapsed'));
       }
     };
 
@@ -63,7 +64,7 @@ export default function Sidebar() {
 
   const toggleSidebar = () => {
     if (typeof document !== 'undefined') {
-      const isMobile = window.innerWidth < 1024;
+      const isMobile = window.innerWidth < 1280;
       if (isMobile) {
         document.body.classList.toggle('sidebar-open');
       } else {

@@ -18,7 +18,8 @@ export default function SidebarToggle() {
 
     const checkState = () => {
       if (typeof document !== 'undefined') {
-        setIsCollapsed(document.body.classList.contains('sidebar-collapsed'));
+        const isMobile = window.innerWidth < 1280;
+        setIsCollapsed(isMobile ? false : document.body.classList.contains('sidebar-collapsed'));
       }
     };
 
