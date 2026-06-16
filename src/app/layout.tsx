@@ -41,30 +41,30 @@ export default function RootLayout({
           </Suspense>        {/* Navbar */}
         <nav className="absolute w-full max-w-[100vw] z-40 transition-all duration-300 pointer-events-none pt-2 sm:pt-4" id="navbar">
           <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 xl:px-8">
-              <div className="flex items-center justify-between gap-3 h-14 sm:h-16 xl:h-20 pointer-events-auto px-4 sm:px-6">
-                  {/* Logo - shown on mobile only */}
-                  <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 xl:hidden">
-                      {/* Mobile Hamburger Menu (Right side in RTL) */}
-                      <div className="flex shrink-0">
+                <div className="flex items-center justify-between h-14 sm:h-16 xl:h-20 pointer-events-auto px-4 sm:px-6 relative">
+                    {/* Right side (Hamburger in RTL) */}
+                    <div className="flex items-center shrink-0 xl:hidden z-10">
                         <SidebarToggle />
-                      </div>
-                      
-                      <Link href="/" className="flex items-center gap-1.5 sm:gap-3 group hover-scale">
-                          <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-full overflow-hidden flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300 border border-white/10">
-                              <img src="/logo.svg" alt="AleX Cinema Logo" className="w-full h-full object-cover scale-[1.05]" />
-                          </div>
-                          <div className="flex flex-col leading-none mt-0.5">
-                              <span className="text-sm sm:text-2xl font-black font-en tracking-wider text-white drop-shadow-md">ALEX<span className="text-alex-primary">CINEMA</span></span>
-                              <span className="hidden sm:block text-[10px] text-gray-400 font-bold tracking-[0.15em] mt-1 uppercase opacity-80">Premium Platform</span>
-                          </div>
-                      </Link>
-                  </div>
+                    </div>
 
-                  {/* Desktop spacer to push search bar to left since logo is hidden on desktop */}
-                  <div className="hidden xl:block flex-1 pointer-events-none"></div>
- 
-                  <div className="flex items-center shrink-0">
-                      <Suspense fallback={<div className="w-8 h-8 rounded-full bg-white/5 animate-pulse"></div>}>
+                    {/* Center (Logo) - Centered absolutely */}
+                    <div className="absolute left-1/2 -translate-x-1/2 flex items-center xl:hidden z-10">
+                        <Link href="/" className="flex items-center gap-1.5 sm:gap-2 md:gap-3 group hover-scale">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full overflow-hidden flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300 border border-white/10 bg-[#070a13]">
+                                <img src="/logo.svg" alt="AleX Cinema Logo" className="w-full h-full object-cover scale-[1.05]" />
+                            </div>
+                            <div className="hidden md:flex flex-col leading-none mt-0.5">
+                                <span className="text-xl font-black font-en tracking-wider text-white drop-shadow-md">ALEX<span className="text-alex-primary">CINEMA</span></span>
+                            </div>
+                        </Link>
+                    </div>
+
+                    {/* Desktop spacer to push search bar to left since logo is hidden on desktop */}
+                    <div className="hidden xl:block flex-1 pointer-events-none"></div>
+   
+                    {/* Left side (Search Bar) */}
+                    <div className="flex items-center shrink-0 z-10">
+                        <Suspense fallback={<div className="w-8 h-8 rounded-full bg-white/5 animate-pulse"></div>}>
                           <SearchBar />
                       </Suspense>
                   </div>
