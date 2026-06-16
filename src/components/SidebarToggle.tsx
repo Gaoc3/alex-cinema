@@ -32,7 +32,7 @@ export default function SidebarToggle() {
 
   const toggleSidebar = () => {
     if (typeof document !== 'undefined') {
-      const isMobile = window.innerWidth < 1024;
+      const isMobile = window.innerWidth < 1280;
       if (isMobile) {
         document.body.classList.toggle('sidebar-open');
       } else {
