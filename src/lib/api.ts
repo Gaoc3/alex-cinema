@@ -1,4 +1,5 @@
 import { decryptData } from '@/utils/cryptoHelper';
+import { getCached, setCache } from '@/lib/cacheStore';
 
 export async function fetchCinemana(endpoint: string, params: Record<string, string> = {}, revalidate: number = 3600) {
   const queryString = new URLSearchParams(params).toString();
@@ -11,6 +12,13 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
     const tunnelBase = (process.env.TUNNEL_BASE_URL || 'http://64.225.99.144').replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
     if (tunnelBase) {
       targetUrl = `${tunnelBase}/api/android/${fullEndpoint}`;
+    }
+
+    // Intercept with our Shared In-Memory LRU Cache first!
+    const cachedData = getCached(targetUrl, 120000);
+    if (cachedData) {
+      const { sanitizeVideoData } = await import('./serverCrypto');
+      return sanitizeVideoData(cachedData);
     }
 
     const controller = new AbortController();
@@ -31,6 +39,10 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
       const text = await res.text();
       try {
         const raw = JSON.parse(text);
+        
+        // Save to our Shared Cache!
+        setCache(targetUrl, raw, 120000);
+        
         // Sanitize all shabakaty URLs before data reaches client components
         const { sanitizeVideoData } = await import('./serverCrypto');
         return sanitizeVideoData(raw);

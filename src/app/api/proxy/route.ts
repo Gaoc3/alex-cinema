@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { encryptData } from '@/utils/cryptoHelper';
 import { encryptPath } from '@/lib/serverCrypto';
+import { getCached, setCache } from '@/lib/cacheStore';
 
 const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'http://64.225.99.144';
 
@@ -58,23 +59,6 @@ function buildEncryptedJsonResponse(data: any, status = 200, extraHeaders?: Reco
     status,
     headers
   });
-}
-
-const cacheStore = new Map<string, { data: any; expires: number }>();
-
-function getCached(key: string, ttl: number) {
-  const cached = cacheStore.get(key);
-  if (cached && cached.expires > Date.now()) return cached.data;
-  cacheStore.delete(key);
-  return null;
-}
-
-function setCache(key: string, data: any, ttl: number) {
-  cacheStore.set(key, { data, expires: Date.now() + ttl });
-  if (cacheStore.size > 500) {
-    const oldest = cacheStore.entries().next().value;
-    if (oldest) cacheStore.delete(oldest[0]);
-  }
 }
 
 async function fetchWithRetry(url: string, options: RequestInit, retries = 2): Promise<Response> {
