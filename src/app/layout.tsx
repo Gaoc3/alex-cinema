@@ -47,9 +47,9 @@ export default function RootLayout({
                         <SidebarToggle />
                     </div>
 
-                    {/* Center (Logo) - Centered absolutely */}
-                    <div className="absolute left-1/2 -translate-x-1/2 flex items-center xl:hidden z-10">
-                        <Link href="/" className="flex items-center gap-1.5 sm:gap-2 md:gap-3 group hover-scale">
+                    {/* Center (Logo) - Centered using inset flex */}
+                    <div className="absolute inset-0 flex justify-center items-center xl:hidden pointer-events-none z-0">
+                        <Link href="/" className="flex items-center gap-1.5 sm:gap-2 md:gap-3 group hover-scale pointer-events-auto">
                             <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full overflow-hidden flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300 border border-white/10 bg-[#070a13]">
                                 <img src="/logo.svg" alt="AleX Cinema Logo" className="w-full h-full object-cover scale-[1.05]" />
                             </div>
