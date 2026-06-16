@@ -43,13 +43,14 @@ export function getVideoImageUrl(
     return video.imgObjUrl;
   }
   
-  // For grid posters, prefer lightweight thumbnails to save bandwidth
-  if (type === 'poster') {
-    const img = video.imgMediumThumb || video.imgThumb || video.img;
-    return getImageUrl(img, type);
+  // Extract the best available image URL
+  const img = video.img || video.imgMediumThumb || video.imgThumb;
+  
+  // Strip thumbnail suffixes to force full resolution
+  let finalImg = img || '';
+  if (type === 'poster' && typeof finalImg === 'string') {
+    finalImg = finalImg.replace(/_thumb|_medium|thumb/gi, '');
   }
   
-  // For covers (like HeroCarousel), prefer high-res
-  const img = video.img || video.imgMediumThumb || video.imgThumb;
-  return getImageUrl(img, type);
+  return getImageUrl(finalImg, type);
 }
