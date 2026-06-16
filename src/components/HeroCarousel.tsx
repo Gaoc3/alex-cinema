@@ -167,19 +167,19 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           {/* Left Arrow */}
           <button 
             onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
-            className="absolute left-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-12 sm:w-24 lg:w-32 flex items-center justify-center transition-all duration-500 opacity-40 sm:opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer outline-none bg-gradient-to-r from-black/20 to-transparent sm:bg-none"
+            className="absolute left-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-12 sm:w-24 lg:w-32 flex items-center justify-center transition-all duration-300 opacity-40 sm:opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-90 active:opacity-100 cursor-pointer outline-none bg-gradient-to-r from-black/20 to-transparent sm:bg-none select-none touch-manipulation"
             aria-label="Next Slide"
           >
-            <i className="fa-solid fa-chevron-left text-xl sm:text-4xl text-white/60 hover:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] sm:drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] filter hover:brightness-125 transition-all"></i>
+            <i className="fa-solid fa-chevron-left text-xl sm:text-4xl text-white/60 hover:text-white active:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] sm:drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] filter hover:brightness-125 active:brightness-150 transition-all"></i>
           </button>
           
           {/* Right Arrow */}
           <button 
             onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
-            className="absolute right-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-12 sm:w-24 lg:w-32 flex items-center justify-center transition-all duration-500 opacity-40 sm:opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer outline-none bg-gradient-to-l from-black/20 to-transparent sm:bg-none"
+            className="absolute right-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-12 sm:w-24 lg:w-32 flex items-center justify-center transition-all duration-300 opacity-40 sm:opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-90 active:opacity-100 cursor-pointer outline-none bg-gradient-to-l from-black/20 to-transparent sm:bg-none select-none touch-manipulation"
             aria-label="Previous Slide"
           >
-            <i className="fa-solid fa-chevron-right text-xl sm:text-4xl text-white/60 hover:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] sm:drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] filter hover:brightness-125 transition-all"></i>
+            <i className="fa-solid fa-chevron-right text-xl sm:text-4xl text-white/60 hover:text-white active:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] sm:drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] filter hover:brightness-125 active:brightness-150 transition-all"></i>
           </button>
         </>
       )}
