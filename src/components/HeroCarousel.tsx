@@ -167,7 +167,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           {/* Left Arrow */}
           <button 
             onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
-            className="group/arrow absolute left-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-12 sm:w-24 lg:w-32 flex items-center justify-center transition-all duration-300 opacity-60 sm:opacity-0 group-hover:opacity-100 cursor-pointer outline-none select-none touch-manipulation"
+            className="group/arrow absolute left-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-12 sm:w-24 lg:w-32 flex items-start pt-[35vh] sm:items-center sm:pt-0 justify-center transition-all duration-300 opacity-60 sm:opacity-0 group-hover:opacity-100 cursor-pointer outline-none select-none touch-manipulation"
             aria-label="Next Slide"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
@@ -177,7 +177,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           {/* Right Arrow */}
           <button 
             onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
-            className="group/arrow absolute right-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-12 sm:w-24 lg:w-32 flex items-center justify-center transition-all duration-300 opacity-60 sm:opacity-0 group-hover:opacity-100 cursor-pointer outline-none select-none touch-manipulation"
+            className="group/arrow absolute right-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-12 sm:w-24 lg:w-32 flex items-start pt-[35vh] sm:items-center sm:pt-0 justify-center transition-all duration-300 opacity-60 sm:opacity-0 group-hover:opacity-100 cursor-pointer outline-none select-none touch-manipulation"
             aria-label="Previous Slide"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
