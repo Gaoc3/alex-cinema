@@ -69,9 +69,9 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
   const coverImgUrl = getVideoImageUrl(current, 'cover');
 
   return (
-    <div className="relative w-full h-[85svh] min-h-[600px] sm:min-h-[auto] sm:h-[580px] lg:h-[85vh] flex flex-col justify-end mt-0 overflow-hidden bg-transparent select-none group">
-      {/* Background Image Carousel Slider */}
-      <div className="absolute inset-0 w-full h-full">
+    <div className="w-full relative mt-0 bg-transparent select-none group flex flex-col lg:block">
+      {/* Background Image Carousel Slider (Acts as the Banner on Mobile, Full BG on Desktop) */}
+      <div className="relative lg:absolute inset-0 w-full aspect-[16/9] sm:aspect-[21/9] lg:aspect-auto lg:h-full lg:min-h-[600px] overflow-hidden">
         <div 
           className={`absolute inset-0 w-full h-full transition-opacity duration-500 ease-in-out ${
             fade ? 'opacity-100' : 'opacity-0'
@@ -82,21 +82,30 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             alt={current.ar_title} 
             fill
             priority
-            className="object-cover object-top transform scale-100 transition-transform duration-[7s] hover:scale-105"
+            className="object-cover object-top lg:object-center transform scale-100 transition-transform duration-[7s] hover:scale-105"
           />
         </div>
         
-        {/* 2026 Cinematic Gradients: Ultra-smooth blending without harsh boxes */}
-        {/* Deep bottom gradient to seamlessly blend into the page and provide a dark base for text */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/70 sm:via-[#070a13]/50 to-transparent z-[2]"></div>
-        {/* Soft, expansive side gradient tailored for RTL readability without cutting the image */}
-        <div className="absolute inset-y-0 right-0 w-full sm:w-[70%] lg:w-[50%] bg-gradient-to-l from-[#070a13]/90 via-[#070a13]/40 to-transparent z-[2]"></div>
-        {/* Top subtle vignette */}
-        <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#070a13]/60 to-transparent z-[2]"></div>
+        {/* Gradients - only needed on desktop for text readability, but keep a subtle one on mobile for the button */}
+        <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/70 to-transparent z-[2]"></div>
+        <div className="hidden lg:block absolute inset-y-0 right-0 w-[50%] bg-gradient-to-l from-[#070a13]/90 via-[#070a13]/40 to-transparent z-[2]"></div>
+        <div className="hidden lg:block absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#070a13]/60 to-transparent z-[2]"></div>
+        <div className="lg:hidden absolute inset-0 bg-gradient-to-t from-[#070a13]/80 via-transparent to-transparent z-[2]"></div>
+        
+        {/* Mobile "Watch Now" Button (Cinemana Style) */}
+        <div className="absolute bottom-3 right-4 z-10 lg:hidden">
+            <Link 
+              href={`/watch/${current.nb}`} 
+              className="flex items-center justify-center gap-2 px-5 py-1.5 rounded-full font-bold text-sm bg-alex-primary text-white hover:bg-red-700 transition-all shadow-lg"
+            >
+              <span>شاهد الآن</span>
+              <i className="fa-solid fa-play text-xs mt-0.5"></i>
+            </Link>
+        </div>
       </div>
       
-      {/* Content Overlay - Anchored to bottom to prevent jumping */}
-      <div className="relative z-10 w-full flex flex-col justify-end h-full pt-20 sm:pt-32 pb-0 sm:pb-4">
+      {/* Content Overlay - Hidden on Mobile, Shown on Desktop */}
+      <div className="hidden lg:flex relative z-10 w-full flex-col justify-end lg:h-[85vh] lg:min-h-[600px] pt-32 pb-4 pointer-events-none">
         
         {/* Top Text Section */}
         <div className="max-w-screen-2xl mx-auto px-14 sm:px-16 lg:px-24 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto">
@@ -161,7 +170,8 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         </div>
       </div>
 
-      {/* Manual Controls Left & Right Arrows (Sleek Invisible Hitbox Style - 2026) */}
+      {/* Manual Controls Left & Right Arrows (Hidden on Mobile) */}
+      <div className="hidden lg:block">
       {videos.length > 1 && (
         <>
           {/* Left Arrow */}
@@ -185,12 +195,27 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           </button>
         </>
       )}
+      </div>
 
-      {/* Slide Indicators / Thumbnails Row (Apple TV+ / Netflix Style) */}
+      {/* Slide Indicators / Thumbnails Row (Desktop: Thumbnails, Mobile: Dots) */}
       {videos.length > 1 && (
-        <div className="w-full z-20 relative mt-0">
-          <div className="absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/90 to-transparent pointer-events-none -z-10"></div>
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar w-full px-4 lg:px-8 py-4 sm:py-6 scroll-smooth items-end">
+        <div className="w-full z-20 relative mt-4 lg:mt-0 lg:absolute lg:bottom-0">
+          <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/90 to-transparent pointer-events-none -z-10"></div>
+          
+          {/* Mobile Dots */}
+          <div className="flex lg:hidden justify-center items-center gap-2 pb-4">
+             {videos.map((_, idx) => (
+               <button 
+                 key={idx}
+                 onClick={() => triggerSlideChange(idx)}
+                 className={`rounded-full transition-all duration-300 ${activeIndex === idx ? 'bg-alex-primary w-2.5 h-2.5' : 'bg-gray-600 w-2 h-2 hover:bg-gray-400'}`}
+                 aria-label={`Go to slide ${idx + 1}`}
+               />
+             ))}
+          </div>
+
+          {/* Desktop Thumbnails */}
+          <div className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-8 py-6 scroll-smooth items-end">
             {videos.map((video, idx) => {
             const thumbUrl = getVideoImageUrl(video, 'cover');
             return (
@@ -224,7 +249,6 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }
