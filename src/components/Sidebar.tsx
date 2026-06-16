@@ -87,7 +87,7 @@ export default function Sidebar() {
       {/* Mobile Backdrop Overlay */}
       <div 
         onClick={closeSidebar}
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] transition-opacity duration-300 lg:hidden pointer-events-none opacity-0 sidebar-overlay"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] transition-opacity duration-300 xl:hidden pointer-events-none opacity-0 sidebar-overlay"
       />
       
       <aside className="fixed top-0 right-0 h-[100dvh] w-72 z-[60] bg-[#070a13]/95 backdrop-blur-2xl xl:bg-transparent xl:ios-glass flex flex-col sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/10 xl:border-l-0 rounded-none shadow-2xl xl:shadow-none">
