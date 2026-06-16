@@ -102,6 +102,31 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
               <i className="fa-solid fa-play text-xs mt-0.5"></i>
             </Link>
         </div>
+
+        {/* Manual Controls Left & Right Arrows */}
+        {videos.length > 1 && (
+          <>
+            {/* Left Arrow */}
+            <button 
+              onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
+              className="group/arrow absolute left-0 top-0 bottom-0 z-40 w-12 sm:w-16 lg:w-24 flex items-center justify-center transition-all duration-300 opacity-60 sm:opacity-40 group-hover:opacity-100 cursor-pointer outline-none select-none touch-manipulation"
+              aria-label="Next Slide"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              <i className="fa-solid fa-chevron-left text-xl sm:text-3xl lg:text-4xl text-white/80 group-hover/arrow:text-white group-active/arrow:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] filter group-hover/arrow:brightness-125 transition-all duration-300 transform group-hover/arrow:scale-110 group-active/arrow:scale-90"></i>
+            </button>
+            
+            {/* Right Arrow */}
+            <button 
+              onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
+              className="group/arrow absolute right-0 top-0 bottom-0 z-40 w-12 sm:w-16 lg:w-24 flex items-center justify-center transition-all duration-300 opacity-60 sm:opacity-40 group-hover:opacity-100 cursor-pointer outline-none select-none touch-manipulation"
+              aria-label="Previous Slide"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              <i className="fa-solid fa-chevron-right text-xl sm:text-3xl lg:text-4xl text-white/80 group-hover/arrow:text-white group-active/arrow:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] filter group-hover/arrow:brightness-125 transition-all duration-300 transform group-hover/arrow:scale-110 group-active/arrow:scale-90"></i>
+            </button>
+          </>
+        )}
       </div>
       
       {/* Content Overlay - Hidden on Mobile, Shown on Desktop */}
@@ -171,32 +196,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       </div>
       </div>
 
-      {/* Manual Controls Left & Right Arrows (Hidden on Mobile) */}
-      <div className="hidden lg:block">
-      {videos.length > 1 && (
-        <>
-          {/* Left Arrow */}
-          <button 
-            onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
-            className="group/arrow absolute left-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-12 sm:w-24 lg:w-32 flex items-center justify-center transition-all duration-300 opacity-60 sm:opacity-40 group-hover:opacity-100 cursor-pointer outline-none select-none touch-manipulation"
-            aria-label="Next Slide"
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            <i className="fa-solid fa-chevron-left text-xl sm:text-4xl text-white/80 group-hover/arrow:text-white group-active/arrow:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] sm:drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] filter group-hover/arrow:brightness-125 group-active/arrow:brightness-150 transition-all duration-300 transform group-hover/arrow:scale-110 group-active/arrow:scale-90"></i>
-          </button>
-          
-          {/* Right Arrow */}
-          <button 
-            onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
-            className="group/arrow absolute right-0 top-0 bottom-[120px] sm:bottom-[150px] z-40 w-12 sm:w-24 lg:w-32 flex items-center justify-center transition-all duration-300 opacity-60 sm:opacity-40 group-hover:opacity-100 cursor-pointer outline-none select-none touch-manipulation"
-            aria-label="Previous Slide"
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            <i className="fa-solid fa-chevron-right text-xl sm:text-4xl text-white/80 group-hover/arrow:text-white group-active/arrow:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] sm:drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] filter group-hover/arrow:brightness-125 group-active/arrow:brightness-150 transition-all duration-300 transform group-hover/arrow:scale-110 group-active/arrow:scale-90"></i>
-          </button>
-        </>
-      )}
-      </div>
+
 
       {/* Slide Indicators / Thumbnails Row (Desktop: Thumbnails, Mobile: Dots) */}
       {videos.length > 1 && (
