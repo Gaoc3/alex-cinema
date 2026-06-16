@@ -133,8 +133,8 @@ export default function Sidebar() {
         </div>
 
         {/* Sidebar Scrollable Body */}
-        <div className="flex-1 overflow-y-auto overscroll-y-contain custom-scrollbar relative" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <div className="px-4 pt-8 pb-8 flex flex-col">
+        <div className="flex-1 overflow-y-auto overscroll-y-contain custom-scrollbar relative" style={{ WebkitOverflowScrolling: 'touch' }} dir="ltr">
+          <div className="px-4 pt-8 pb-8 flex flex-col" dir="rtl">
             <div className="min-h-[20px]" /> {/* Top spacer */}
             {/* Navigation Section */}
             <div className="space-y-4">
