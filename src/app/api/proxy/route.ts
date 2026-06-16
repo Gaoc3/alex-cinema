@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { encryptData } from '@/utils/cryptoHelper';
 import { encryptPath } from '@/lib/serverCrypto';
-import { getCached, setCache } from '@/lib/cacheStore';
 
 const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'http://64.225.99.144';
 
@@ -150,13 +149,7 @@ export async function GET(req: NextRequest) {
   // No debug headers — never leak internal URLs
   const debugHeaders = {};
 
-  const cacheKey = isApi ? targetUrl : '';
-  const cacheTtl = isApi ? 120000 : 0;
-
-  if (cacheKey) {
-    const cached = getCached(cacheKey, cacheTtl);
-    if (cached) return buildEncryptedJsonResponse(cached, 200, debugHeaders);
-  }
+  // No cache logic here - VPS NGINX handles it automatically
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 90000);
@@ -225,7 +218,7 @@ export async function GET(req: NextRequest) {
           });
           
           const data = JSON.parse(text);
-          setCache(cacheKey, data, cacheTtl);
+          
 
           return buildEncryptedJsonResponse(data, response.status, debugHeaders);
         } catch (err) {
@@ -266,7 +259,7 @@ export async function GET(req: NextRequest) {
           });
           
           const data = JSON.parse(text);
-          setCache(cacheKey, data, cacheTtl);
+          
 
           return buildEncryptedJsonResponse(data, response.status, debugHeaders);
         } catch (err) {
