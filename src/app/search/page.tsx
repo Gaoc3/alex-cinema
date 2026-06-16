@@ -391,7 +391,7 @@ function SearchPageContent() {
                       </h3>
 
                       <div className="flex items-center justify-between mt-1.5 opacity-70 group-hover/card:opacity-100 transition-opacity">
-                        <span className="font-cairo bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] text-gray-300">{video.type_name || 'فيلم'}</span>
+                        <span className="font-cairo bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] text-gray-300">{(video as any).type_name || video.categories?.[0]?.ar_title || 'فيلم'}</span>
                         <span className="font-en text-[11px] font-bold text-gray-400">{video.year}</span>
                       </div>
                     </div>
@@ -447,7 +447,7 @@ function SearchPageContent() {
                       </h3>
 
                       <div className="flex items-center justify-between mt-1.5 opacity-70 group-hover/card:opacity-100 transition-opacity">
-                        <span className="font-cairo bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] text-gray-300">{video.type_name || 'مسلسل'}</span>
+                        <span className="font-cairo bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] text-gray-300">{(video as any).type_name || video.categories?.[0]?.ar_title || 'مسلسل'}</span>
                         <span className="font-en text-[11px] font-bold text-gray-400">{video.year}</span>
                       </div>
                     </div>
