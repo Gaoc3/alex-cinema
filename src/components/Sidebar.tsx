@@ -309,6 +309,7 @@ export default function Sidebar() {
             </Link>
           </div>
           <div className="flex-grow min-h-[20px]" /> {/* Bottom spacer */}
+          </div>
         </div>
       </aside>
     </>
