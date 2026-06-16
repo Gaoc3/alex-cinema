@@ -92,10 +92,10 @@ export default function Sidebar() {
         style={{ touchAction: 'none' }}
       />
       
-      <aside className="fixed top-0 bottom-0 right-0 w-72 z-[60] bg-[#070a13]/95 backdrop-blur-2xl xl:bg-transparent xl:ios-glass sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/10 xl:border-l-0 rounded-none shadow-2xl xl:shadow-none">
+      <aside className="fixed inset-y-0 right-0 w-72 z-[60] flex flex-col bg-[#070a13]/95 backdrop-blur-2xl xl:bg-transparent xl:ios-glass sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/10 xl:border-l-0 rounded-none shadow-2xl xl:shadow-none">
 
         {/* Sidebar Header (Cinemana Style) */}
-        <div className="absolute top-0 left-0 right-0 h-24 border-b border-white/5 flex items-center justify-between pr-5 pl-3 w-full shrink-0 z-20">
+        <div className="h-24 shrink-0 border-b border-white/5 flex items-center justify-between pr-5 pl-3 w-full relative z-20">
           
           {/* Logo and Brand Name (Hidden on Collapsed) */}
           <div className={`flex items-center gap-2.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-right ${isCollapsed ? 'opacity-0 max-w-0 overflow-hidden scale-90 pointer-events-none' : 'opacity-100 max-w-[300px] scale-100 delay-100'}`}>
@@ -133,10 +133,11 @@ export default function Sidebar() {
         </div>
 
         {/* Sidebar Scrollable Body */}
-        <div className="absolute top-24 bottom-0 left-0 right-0 overflow-y-auto overscroll-contain px-4 pt-8 pb-32 custom-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <div className="min-h-[20px]" /> {/* Top spacer */}
-          {/* Navigation Section */}
-          <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto overscroll-y-contain custom-scrollbar relative" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="px-4 pt-8 pb-32 flex flex-col">
+            <div className="min-h-[20px]" /> {/* Top spacer */}
+            {/* Navigation Section */}
+            <div className="space-y-4">
             {/* الصفحة الرئيسية */}
             <Link 
               href="/home" 
