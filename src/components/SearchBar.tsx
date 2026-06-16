@@ -181,16 +181,17 @@ export default function SearchBar() {
     <div className="relative group" ref={dropdownRef}>
       <form onSubmit={handleSubmit} className="relative">
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim().length >= 2 && setShowDropdown(true)}
           autoComplete="off"
-          className="w-40 sm:w-64 md:w-72 lg:w-80 ios-glass rounded-full py-2 sm:py-2.5 lg:py-3 pr-9 pl-9 sm:pr-10 sm:pl-10 text-xs sm:text-sm text-white placeholder-gray-400 focus:outline-none focus:border-alex-primary focus:bg-white/10 focus:ring-1 focus:ring-alex-primary shadow-inner"
+          className="w-40 sm:w-64 md:w-72 lg:w-80 bg-black/30 backdrop-blur-2xl rounded-full py-2 sm:py-2.5 lg:py-3 pr-9 pl-9 sm:pr-10 sm:pl-10 text-xs sm:text-sm text-white placeholder-gray-300 border border-white/20 focus:outline-none focus:border-alex-primary focus:bg-black/50 focus:ring-1 focus:ring-alex-primary shadow-[0_0_15px_rgba(0,0,0,0.5)] transition-all duration-300"
           placeholder="ابحث..."
         />
-        <div className="absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-alex-primary transition-colors">
-          <i className="fa-solid fa-search text-sm sm:text-base"></i>
+        <div className="absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center pointer-events-none text-gray-300 group-focus-within:text-alex-primary transition-colors">
+          <i className="fa-solid fa-search text-sm sm:text-base drop-shadow-md"></i>
         </div>
         
         {/* Loading Spinner */}
