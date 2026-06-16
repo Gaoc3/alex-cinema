@@ -6,6 +6,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Pagination from '@/components/Pagination';
+import GridSkeleton from '@/components/skeleton/GridSkeleton';
 
 interface VideoItem {
   nb: string;
@@ -90,9 +91,8 @@ function NewReleasesContent() {
 
       {/* Grid Content / Loading */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-40">
-          <div className="w-12 h-12 rounded-full border-4 border-orange-500/20 border-t-orange-500 animate-spin mb-4"></div>
-          <p className="text-gray-400 font-semibold text-sm">جاري تحميل أحدث الإصدارات...</p>
+        <div className="py-10 w-full">
+          <GridSkeleton count={24} />
         </div>
       ) : items.length > 0 ? (
         <>

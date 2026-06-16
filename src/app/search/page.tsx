@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Pagination from '@/components/Pagination';
+import GridSkeleton from '@/components/skeleton/GridSkeleton';
 
 interface VideoItem {
   nb: string;
@@ -328,14 +329,7 @@ function SearchPageContent() {
       {isLoading ? (
         /* Skeleton Loader Grid */
         <div className="space-y-16">
-          <div>
-            <div className="h-6 w-48 bg-white/5 rounded-md animate-pulse mb-8"></div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="aspect-[2/3] w-full bg-white/5 rounded-2xl border border-white/5 animate-pulse"></div>
-              ))}
-            </div>
-          </div>
+          <GridSkeleton count={12} />
         </div>
       ) : totalResults === 0 ? (
         /* Empty State */
