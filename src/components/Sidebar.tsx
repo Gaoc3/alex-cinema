@@ -92,7 +92,7 @@ export default function Sidebar() {
         style={{ touchAction: 'none' }}
       />
       
-      <aside className="fixed inset-y-0 right-0 w-72 z-[60] flex flex-col bg-[#070a13]/95 backdrop-blur-2xl xl:bg-transparent xl:ios-glass sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/10 xl:border-l-0 rounded-none shadow-2xl xl:shadow-none">
+      <aside className="fixed top-0 right-0 w-72 z-[60] flex flex-col bg-[#070a13]/95 backdrop-blur-2xl xl:bg-transparent xl:ios-glass sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/10 xl:border-l-0 rounded-none shadow-2xl xl:shadow-none" style={{ height: '100vh' }}>
 
         {/* Sidebar Header (Cinemana Style) */}
         <div className="h-24 shrink-0 border-b border-white/5 flex items-center justify-between pr-5 pl-3 w-full relative z-20">
@@ -134,7 +134,7 @@ export default function Sidebar() {
 
         {/* Sidebar Scrollable Body */}
         <div className="flex-1 overflow-y-auto overscroll-y-contain custom-scrollbar relative" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <div className="px-4 pt-8 pb-32 flex flex-col">
+          <div className="px-4 pt-8 pb-8 flex flex-col">
             <div className="min-h-[20px]" /> {/* Top spacer */}
             {/* Navigation Section */}
             <div className="space-y-4">
@@ -308,7 +308,7 @@ export default function Sidebar() {
               </div>
             </Link>
           </div>
-          <div className="h-40 shrink-0 w-full" /> {/* Bottom spacer */}
+          <div className="h-8 shrink-0 w-full" /> {/* Bottom spacer */}
           </div>
         </div>
       </aside>
