@@ -220,6 +220,16 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         hls = new Hls({
           startLevel: -1,
           capLevelToPlayerSize: true,
+          // Make HLS much more tolerant of slow VPS speeds
+          fragLoadingTimeOut: 30000,
+          manifestLoadingTimeOut: 30000,
+          levelLoadingTimeOut: 30000,
+          fragLoadingMaxRetry: 6,
+          manifestLoadingMaxRetry: 6,
+          levelLoadingMaxRetry: 6,
+          fragLoadingRetryDelay: 2000,
+          manifestLoadingRetryDelay: 2000,
+          levelLoadingRetryDelay: 2000,
         });
         hls.loadSource(currentStreamUrl);
         hls.attachMedia(video);
@@ -231,7 +241,19 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         hls.on(Hls.Events.ERROR, (event, data) => {
           if (data.fatal) {
             console.error("HLS error:", data);
-            hls?.destroy();
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                console.warn("Network error encountered, trying to recover...");
+                hls?.startLoad();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                console.warn("Media error encountered, trying to recover...");
+                hls?.recoverMediaError();
+                break;
+              default:
+                hls?.destroy();
+                break;
+            }
           }
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -931,7 +953,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         ></iframe>
         <div className="absolute top-4 right-4 ios-glass px-4 py-2 rounded-xl text-xs font-bold text-yellow-400 flex items-center gap-2 border border-yellow-500/20 shadow-lg z-10 animate-pulse">
           <i className="fa-solid fa-triangle-exclamation"></i>
-          يتم تشغيل التريلر الترويجي (فشل جلب البث المباشر)
+          يتم تشغيل الإعلان الترويجي (جاري محاولة الاتصال بالخادم الرئيسي...)
         </div>
       </div>
     );
