@@ -199,24 +199,31 @@ export default function Sidebar() {
             </Link>
 
             {/* الأفلام */}
-            <div className="sidebar-submenu-container">
-              <button 
-                onClick={() => {
-                  if (isCollapsed) {
-                    toggleSidebar();
-                    setMoviesOpen(true);
-                  } else {
-                    setMoviesOpen(!moviesOpen);
-                  }
-                }}
-                className={`w-full flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] font-bold transition-all text-gray-400 hover:text-white hover:bg-white/5 sidebar-link-btn cursor-pointer`}
-              >
-                <div className="flex items-center gap-3.5 sidebar-item-content">
+            <div className="sidebar-submenu-container flex flex-col">
+              <div className={`w-full flex items-center justify-between px-2 ${paddingClass} rounded-xl transition-all text-gray-400 hover:text-white hover:bg-white/5`}>
+                <Link 
+                  href="/movies"
+                  onClick={closeSidebar}
+                  className="flex items-center gap-3.5 sidebar-item-content flex-grow py-2 px-2"
+                >
                   <i className="fa-solid fa-film text-lg w-5 text-center"></i>
-                  <span className="sidebar-label">الأفلام</span>
-                </div>
-                <i className={`fa-solid fa-chevron-left text-xs transition-transform duration-300 sidebar-label ${moviesOpen ? '-rotate-90' : ''}`}></i>
-              </button>
+                  <span className="sidebar-label text-[15px] font-bold">الأفلام</span>
+                </Link>
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (isCollapsed) {
+                      toggleSidebar();
+                      setMoviesOpen(true);
+                    } else {
+                      setMoviesOpen(!moviesOpen);
+                    }
+                  }}
+                  className="px-3 py-2 cursor-pointer flex items-center justify-center hover:text-alex-primary transition-colors"
+                >
+                  <i className={`fa-solid fa-chevron-left text-xs transition-transform duration-300 sidebar-label ${moviesOpen ? '-rotate-90' : ''}`}></i>
+                </button>
+              </div>
               
               {/* Movies Submenu */}
               <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] mr-8 space-y-1 mt-1 sidebar-submenu origin-top ${moviesOpen && !isCollapsed ? 'max-h-40 opacity-100 translate-y-0 scale-y-100' : 'max-h-0 opacity-0 -translate-y-2 scale-y-95 pointer-events-none'}`}>
@@ -227,24 +234,31 @@ export default function Sidebar() {
             </div>
 
             {/* المسلسلات */}
-            <div className="sidebar-submenu-container">
-              <button 
-                onClick={() => {
-                  if (isCollapsed) {
-                    toggleSidebar();
-                    setSeriesOpen(true);
-                  } else {
-                    setSeriesOpen(!seriesOpen);
-                  }
-                }}
-                className={`w-full flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] font-bold transition-all text-gray-400 hover:text-white hover:bg-white/5 sidebar-link-btn cursor-pointer`}
-              >
-                <div className="flex items-center gap-3.5 sidebar-item-content">
+            <div className="sidebar-submenu-container flex flex-col">
+              <div className={`w-full flex items-center justify-between px-2 ${paddingClass} rounded-xl transition-all text-gray-400 hover:text-white hover:bg-white/5`}>
+                <Link 
+                  href="/series"
+                  onClick={closeSidebar}
+                  className="flex items-center gap-3.5 sidebar-item-content flex-grow py-2 px-2"
+                >
                   <i className="fa-solid fa-tv text-lg w-5 text-center"></i>
-                  <span className="sidebar-label">المسلسلات</span>
-                </div>
-                <i className={`fa-solid fa-chevron-left text-xs transition-transform duration-300 sidebar-label ${seriesOpen ? '-rotate-90' : ''}`}></i>
-              </button>
+                  <span className="sidebar-label text-[15px] font-bold">المسلسلات</span>
+                </Link>
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (isCollapsed) {
+                      toggleSidebar();
+                      setSeriesOpen(true);
+                    } else {
+                      setSeriesOpen(!seriesOpen);
+                    }
+                  }}
+                  className="px-3 py-2 cursor-pointer flex items-center justify-center hover:text-alex-primary transition-colors"
+                >
+                  <i className={`fa-solid fa-chevron-left text-xs transition-transform duration-300 sidebar-label ${seriesOpen ? '-rotate-90' : ''}`}></i>
+                </button>
+              </div>
               
               {/* Series Submenu */}
               <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] mr-8 space-y-1 mt-1 sidebar-submenu origin-top ${seriesOpen && !isCollapsed ? 'max-h-40 opacity-100 translate-y-0 scale-y-100' : 'max-h-0 opacity-0 -translate-y-2 scale-y-95 pointer-events-none'}`}>

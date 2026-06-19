@@ -111,7 +111,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
   const coverImgUrl = getVideoImageUrl(current, 'cover');
 
   return (
-    <div className="w-full relative mt-0 bg-transparent select-none group flex flex-col lg:block">
+    <div className="w-full relative mt-0 bg-transparent group flex flex-col lg:block">
       {/* Background Image Carousel Slider (Acts as the Banner on Mobile, Full BG on Desktop) */}
       <div className="relative lg:absolute inset-0 w-full aspect-[16/9] sm:aspect-[21/9] lg:aspect-auto lg:h-full lg:min-h-[600px] overflow-hidden">
         <div 
@@ -174,7 +174,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       
       {/* Content Overlay - Hidden on Mobile, Shown on Desktop */}
       <div 
-        className="hidden lg:flex relative z-10 w-full flex-col justify-end lg:h-[85vh] lg:min-h-[600px] lg:max-h-[700px] pt-32 pointer-events-none transition-all duration-300"
+        className="hidden lg:flex relative z-30 w-full flex-col justify-end lg:h-[85vh] lg:min-h-[600px] lg:max-h-[700px] pt-32 pointer-events-none transition-all duration-300"
         style={{ paddingBottom: `${layout.paddingBottom}px` }}
       >
         
@@ -226,16 +226,16 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           </div>
           
           {/* Buttons Row - Anchored to the bottom of the fixed height container */}
-          <div className="flex flex-wrap items-center justify-start gap-4 relative z-10 mt-auto">
+          <div className="flex flex-wrap items-center justify-start gap-4 relative z-50 mt-auto pointer-events-auto">
             <Link 
               href={`/watch/${current.nb}`} 
-              className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3 sm:py-3.5 rounded-md font-bold text-sm sm:text-base bg-white text-black hover:bg-white/90 transition-all duration-300 shadow-lg"
+              className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3 sm:py-3.5 rounded-md font-bold text-sm sm:text-base bg-white text-black hover:bg-white/90 transition-all duration-300 shadow-lg relative z-50 pointer-events-auto"
             >
               <i className="fa-solid fa-play text-lg"></i>
               <span>شاهد الآن</span>
             </Link>
             {current.trailer && (
-              <a href={current.trailer} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3 sm:py-3.5 rounded-md font-bold text-sm sm:text-base bg-white/20 text-white backdrop-blur-md hover:bg-white/30 transition-all duration-300 shadow-lg">
+              <a href={current.trailer} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3 sm:py-3.5 rounded-md font-bold text-sm sm:text-base bg-white/20 text-white backdrop-blur-md hover:bg-white/30 transition-all duration-300 shadow-lg relative z-50 pointer-events-auto">
                 <i className="fa-regular fa-circle-play text-xl"></i>
                 <span>الإعلان الترويجي</span>
               </a>
@@ -249,11 +249,11 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
 
       {/* Slide Indicators / Thumbnails Row (Desktop: Thumbnails, Mobile: Dots) */}
       {videos.length > 1 && (
-        <div ref={thumbnailsContainerRef} className="w-full z-20 relative mt-4 lg:mt-0 lg:absolute lg:bottom-0">
+        <div ref={thumbnailsContainerRef} className="w-full z-20 relative mt-4 lg:mt-0 lg:absolute lg:bottom-0 pointer-events-none">
           <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/90 to-transparent pointer-events-none -z-10"></div>
           
           {/* Mobile Dots */}
-          <div className="flex lg:hidden justify-center items-center gap-2 pb-4">
+          <div className="flex lg:hidden justify-center items-center gap-2 pb-4 pointer-events-auto">
              {videos.map((_, idx) => (
                <button 
                  key={idx}
@@ -265,7 +265,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           </div>
 
           {/* Desktop Thumbnails */}
-          <div className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-8 py-6 scroll-smooth items-end">
+          <div className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-8 py-6 scroll-smooth items-end pointer-events-auto">
             {videos.map((video, idx) => {
             const thumbUrl = getVideoImageUrl(video, 'cover');
             return (
