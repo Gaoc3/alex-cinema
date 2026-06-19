@@ -11,11 +11,21 @@ export default function Sidebar() {
   const [seriesOpen, setSeriesOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  // AI Layout Engine State
+  const [layout, setLayout] = useState({ exactHeight: 0, isShortScreen: false });
+
   useEffect(() => {
     const checkState = () => {
-      if (typeof document !== 'undefined') {
+      if (typeof window !== 'undefined') {
         const isMobile = window.innerWidth < 1280;
         setIsCollapsed(isMobile ? false : document.body.classList.contains('sidebar-collapsed'));
+        
+        // AI Engine: Calculate exact visible height to fix iOS/iPadOS 100vh scrolling bugs
+        const currentHeight = window.innerHeight;
+        setLayout({
+          exactHeight: currentHeight,
+          isShortScreen: currentHeight < 750
+        });
       }
     };
 
@@ -23,6 +33,7 @@ export default function Sidebar() {
 
     window.addEventListener('sidebar-state-change', checkState);
     window.addEventListener('resize', checkState);
+    window.addEventListener('orientationchange', checkState);
 
     // Periodic check to ensure state is synchronized even if class changes without events
     const interval = setInterval(checkState, 250);
@@ -30,9 +41,12 @@ export default function Sidebar() {
     return () => {
       window.removeEventListener('sidebar-state-change', checkState);
       window.removeEventListener('resize', checkState);
+      window.removeEventListener('orientationchange', checkState);
       clearInterval(interval);
     };
   }, []);
+
+  const paddingClass = layout.isShortScreen ? 'py-2.5' : 'py-3.5';
 
   const isActive = (path: string) => {
     // If the path contains a query string
@@ -92,7 +106,10 @@ export default function Sidebar() {
         style={{ touchAction: 'none' }}
       />
       
-      <aside className="fixed top-0 right-0 w-72 z-[60] flex flex-col bg-[#070a13]/95 backdrop-blur-2xl xl:bg-transparent xl:ios-glass sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/10 xl:border-l-0 rounded-none shadow-2xl xl:shadow-none" style={{ height: '100vh' }}>
+      <aside 
+        className="fixed top-0 right-0 w-72 z-[60] flex flex-col bg-[#070a13]/95 backdrop-blur-2xl xl:bg-transparent xl:ios-glass sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/10 xl:border-l-0 rounded-none shadow-2xl xl:shadow-none" 
+        style={{ height: layout.exactHeight > 0 ? `${layout.exactHeight}px` : '100dvh' }}
+      >
 
         {/* Sidebar Header (Cinemana Style) */}
         <div className="h-24 shrink-0 border-b border-white/5 flex items-center justify-between pr-5 pl-3 w-full relative z-20">
@@ -134,15 +151,15 @@ export default function Sidebar() {
 
         {/* Sidebar Scrollable Body */}
         <div className="flex-1 overflow-y-auto overscroll-y-contain custom-scrollbar relative" style={{ WebkitOverflowScrolling: 'touch' }} dir="ltr">
-          <div className="px-4 pt-8 pb-8 flex flex-col" dir="rtl">
-            <div className="min-h-[20px]" /> {/* Top spacer */}
+          <div className={`px-4 ${layout.isShortScreen ? 'pt-4 pb-4' : 'pt-8 pb-8'} flex flex-col`} dir="rtl">
+            <div className={`min-h-[${layout.isShortScreen ? '10px' : '20px'}]`} /> {/* Top spacer */}
             {/* Navigation Section */}
             <div className="space-y-4">
             {/* الصفحة الرئيسية */}
             <Link 
               href="/home" 
               onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
+              className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] font-bold sidebar-link-btn ${
                 isActive('/home') 
                   ? 'ios-active' 
                   : 'ios-button text-gray-400 hover:text-white'
@@ -158,7 +175,7 @@ export default function Sidebar() {
             <Link 
               href="/new-releases" 
               onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
+              className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] font-bold sidebar-link-btn ${
                 isActive('/new-releases')
                   ? 'ios-active' 
                   : 'ios-button text-gray-400 hover:text-white'
@@ -174,7 +191,7 @@ export default function Sidebar() {
             <Link 
               href="/movies?sort=stars" 
               onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
+              className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] font-bold transition-all hover-scale sidebar-link-btn ${
                 pathname === '/movies' && isActive('/movies?sort=stars')
                   ? 'ios-active' 
                   : 'ios-button text-gray-400 hover:text-white'
@@ -197,7 +214,7 @@ export default function Sidebar() {
                     setMoviesOpen(!moviesOpen);
                   }
                 }}
-                className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all text-gray-400 hover:text-white hover:bg-white/5 sidebar-link-btn cursor-pointer"
+                className={`w-full flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] font-bold transition-all text-gray-400 hover:text-white hover:bg-white/5 sidebar-link-btn cursor-pointer`}
               >
                 <div className="flex items-center gap-3.5 sidebar-item-content">
                   <i className="fa-solid fa-film text-lg w-5 text-center"></i>
@@ -225,7 +242,7 @@ export default function Sidebar() {
                     setSeriesOpen(!seriesOpen);
                   }
                 }}
-                className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all text-gray-400 hover:text-white hover:bg-white/5 sidebar-link-btn cursor-pointer"
+                className={`w-full flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] font-bold transition-all text-gray-400 hover:text-white hover:bg-white/5 sidebar-link-btn cursor-pointer`}
               >
                 <div className="flex items-center gap-3.5 sidebar-item-content">
                   <i className="fa-solid fa-tv text-lg w-5 text-center"></i>
@@ -246,7 +263,7 @@ export default function Sidebar() {
             <Link 
               href="/series?category=57" 
               onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
+              className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] font-bold sidebar-link-btn ${
                 isActive('/series?category=57') 
                   ? 'ios-active' 
                   : 'ios-button text-gray-400 hover:text-white'
@@ -262,7 +279,7 @@ export default function Sidebar() {
             <Link 
               href="/series?view=episodes" 
               onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
+              className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] font-bold sidebar-link-btn ${
                 isActive('/series?view=episodes') 
                   ? 'ios-active' 
                   : 'ios-button text-gray-400 hover:text-white'
@@ -278,7 +295,7 @@ export default function Sidebar() {
             <Link 
               href="/movies?category=23" 
               onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
+              className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] font-bold sidebar-link-btn ${
                 isActive('/movies?category=23') 
                   ? 'ios-active' 
                   : 'ios-button text-gray-400 hover:text-white'
@@ -294,7 +311,7 @@ export default function Sidebar() {
             <Link 
               href="/movies?category=63" 
               onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
+              className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] font-bold sidebar-link-btn ${
                 isActive('/movies?category=63') 
                   ? 'ios-active' 
                   : 'ios-button text-gray-400 hover:text-white'
@@ -310,7 +327,7 @@ export default function Sidebar() {
             <Link 
               href="/movies?category=57" 
               onClick={closeSidebar}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold sidebar-link-btn ${
+              className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] font-bold sidebar-link-btn ${
                 isActive('/movies?category=57') 
                   ? 'ios-active' 
                   : 'ios-button text-gray-400 hover:text-white'
