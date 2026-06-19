@@ -226,18 +226,18 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           </div>
           
           {/* Buttons Row - Anchored to the bottom of the fixed height container */}
-          <div className="flex flex-wrap items-center justify-start gap-4 relative z-50 mt-auto pointer-events-auto">
+          <div className="flex flex-wrap items-center justify-start gap-4 relative z-[100] mt-auto pointer-events-auto">
             <Link 
               href={`/watch/${current.nb}`} 
-              className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3 sm:py-3.5 rounded-md font-bold text-sm sm:text-base bg-white text-black hover:bg-white/90 transition-all duration-300 shadow-lg relative z-50 pointer-events-auto"
+              className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3 sm:py-3.5 rounded-md font-bold text-sm sm:text-base bg-white text-black hover:bg-white/90 transition-all duration-300 shadow-lg relative z-[100] pointer-events-auto cursor-pointer"
             >
-              <i className="fa-solid fa-play text-lg"></i>
-              <span>شاهد الآن</span>
+              <i className="fa-solid fa-play text-lg pointer-events-none"></i>
+              <span className="pointer-events-none">شاهد الآن</span>
             </Link>
             {current.trailer && (
-              <a href={current.trailer} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3 sm:py-3.5 rounded-md font-bold text-sm sm:text-base bg-white/20 text-white backdrop-blur-md hover:bg-white/30 transition-all duration-300 shadow-lg relative z-50 pointer-events-auto">
-                <i className="fa-regular fa-circle-play text-xl"></i>
-                <span>الإعلان الترويجي</span>
+              <a href={current.trailer} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3 sm:py-3.5 rounded-md font-bold text-sm sm:text-base bg-white/20 text-white backdrop-blur-md hover:bg-white/30 transition-all duration-300 shadow-lg relative z-[100] pointer-events-auto cursor-pointer">
+                <i className="fa-regular fa-circle-play text-xl pointer-events-none"></i>
+                <span className="pointer-events-none">الإعلان الترويجي</span>
               </a>
             )}
           </div>

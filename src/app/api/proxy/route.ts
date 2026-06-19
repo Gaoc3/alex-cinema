@@ -230,6 +230,7 @@ export async function GET(req: NextRequest) {
     }
     // tunnel failed – try direct fetch for non-media
   } catch (e: any) {
+    console.error("fetchWithRetry tunnel error:", e.message || e);
     clearTimeout(timeout);
     // tunnel error – try direct fetch for non-media
   }

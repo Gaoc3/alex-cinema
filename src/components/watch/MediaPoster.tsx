@@ -45,12 +45,12 @@ export default function MediaPoster({ img, imdbUrlRef }: MediaPosterProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0e17] via-transparent to-transparent opacity-80"></div>
         
         {imdbUrlRef && (
-          <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/95 via-black/80 to-transparent backdrop-blur-sm border-t border-white/10 flex items-center justify-center rounded-b-2xl">
+          <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/95 via-black/80 to-transparent backdrop-blur-sm border-t border-white/10 flex items-center justify-center rounded-b-2xl z-50 pointer-events-auto">
             <a 
               href={imdbUrlRef} 
               target="_blank" 
               rel="noreferrer" 
-              className="flex items-center justify-center gap-2.5 w-full bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm hover:bg-yellow-400 transition-all hover-scale shadow-lg"
+              className="flex items-center justify-center gap-2.5 w-full bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm hover:bg-yellow-400 transition-all hover-scale shadow-lg relative z-50 pointer-events-auto cursor-pointer"
             >
               <i className="fa-brands fa-imdb text-xl"></i>
               <span>صفحة IMDB</span>

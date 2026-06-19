@@ -16,6 +16,9 @@ const nextConfig = {
       {
         pathname: '/api/proxy',
       },
+      {
+        pathname: '/tunnel/**',
+      },
     ],
   },
   async rewrites() {
