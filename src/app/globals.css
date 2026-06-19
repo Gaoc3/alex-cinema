@@ -540,3 +540,12 @@ video.alex-video-cue::-webkit-media-text-track-container {
   transform: translateY(var(--sub-offset-y, -24px)) !important;
   transition: transform 0.3s ease-out;
 }
+
+/* --- Global AI Layout Engine Overrides --- */
+.h-screen { height: calc(var(--ai-vh, 1vh) * 100) !important; }
+.min-h-screen { min-height: calc(var(--ai-vh, 1vh) * 100) !important; }
+.max-h-screen { max-height: calc(var(--ai-vh, 1vh) * 100) !important; }
+.w-screen { width: calc(var(--ai-vw, 1vw) * 100) !important; }
+.min-w-screen { min-width: calc(var(--ai-vw, 1vw) * 100) !important; }
+.max-w-screen { max-width: calc(var(--ai-vw, 1vw) * 100) !important; }
+

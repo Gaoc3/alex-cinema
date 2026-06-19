@@ -10,21 +10,17 @@ export default function Sidebar() {
   const [moviesOpen, setMoviesOpen] = useState(false);
   const [seriesOpen, setSeriesOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-
-  // AI Layout Engine State
-  const [layout, setLayout] = useState({ exactHeight: 0, isShortScreen: false });
+  
+  // Local short screen check (Can optionally use global var, but keeping it here for reactivity on padding)
+  const [layout, setLayout] = useState({ isShortScreen: false });
 
   useEffect(() => {
     const checkState = () => {
       if (typeof window !== 'undefined') {
         const isMobile = window.innerWidth < 1280;
         setIsCollapsed(isMobile ? false : document.body.classList.contains('sidebar-collapsed'));
-        
-        // AI Engine: Calculate exact visible height to fix iOS/iPadOS 100vh scrolling bugs
-        const currentHeight = window.innerHeight;
         setLayout({
-          exactHeight: currentHeight,
-          isShortScreen: currentHeight < 750
+          isShortScreen: window.innerHeight < 750
         });
       }
     };
@@ -107,8 +103,7 @@ export default function Sidebar() {
       />
       
       <aside 
-        className="fixed top-0 right-0 w-72 z-[60] flex flex-col bg-[#070a13]/95 backdrop-blur-2xl xl:bg-transparent xl:ios-glass sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/10 xl:border-l-0 rounded-none shadow-2xl xl:shadow-none" 
-        style={{ height: layout.exactHeight > 0 ? `${layout.exactHeight}px` : '100dvh' }}
+        className="fixed top-0 right-0 w-72 z-[60] flex flex-col bg-[#070a13]/95 backdrop-blur-2xl xl:bg-transparent xl:ios-glass sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/10 xl:border-l-0 rounded-none shadow-2xl xl:shadow-none h-screen" 
       >
 
         {/* Sidebar Header (Cinemana Style) */}
