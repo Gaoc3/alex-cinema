@@ -41,14 +41,18 @@ export function sanitizeUrl(url: string): string {
 
   try {
     const parsed = new URL(url);
-    const pathWithSearch = parsed.pathname + parsed.search;
+    let subdomain = parsed.hostname.split('.')[0];
+    if (!['cdn', 'cndw2', 'cnth2', 'cinemana'].includes(subdomain)) {
+       subdomain = 'cinemana'; // fallback
+    }
+    const pathWithSearch = `/${subdomain}${parsed.pathname}${parsed.search}`;
     const encPath = encryptPath(pathWithSearch);
 
     if (url.includes('.mp4') || url.includes('video') || url.includes('.m3u8') || url.includes('.ts') || url.includes('.srt') || url.includes('.vtt')) {
       const ext = url.includes('.m3u8') ? '&ext=.m3u8' : url.includes('.mp4') ? '&ext=.mp4' : '';
       return `/api/stream?ref=${encPath}${ext}`;
     }
-    return `/tunnel${parsed.pathname}${parsed.search}`;
+    return `/tunnel${pathWithSearch}`;
   } catch {
     return url;
   }

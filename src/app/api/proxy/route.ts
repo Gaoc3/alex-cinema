@@ -201,12 +201,11 @@ export async function GET(req: NextRequest) {
       if (isApi) {
         try {
           let text = await response.text();
-          // Hide Shabakaty domains — encrypt ONLY the path with server-only key
-          text = text.replace(/https?:(?:\\?\/){2}(cdn|cnth[0-9]+|cndw[0-9]+|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match) => {
+          text = text.replace(/https?:(?:\\?\/){2}(cdn|cnth[0-9]+|cndw[0-9]+|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match, subdomain) => {
             try {
               const unescapedMatch = match.replace(/\\/g, '');
               const parsed = new URL(unescapedMatch);
-              const pathWithSearch = parsed.pathname + parsed.search;
+              const pathWithSearch = `/${subdomain}${parsed.pathname}${parsed.search}`;
               const enc = encryptPath(pathWithSearch);
               if (match.includes('mp4') || match.includes('video') || match.includes('m3u8') || match.includes('.ts') || match.includes('.srt') || match.includes('.vtt')) {
                 return `/api/stream?ref=${enc}`;
@@ -244,11 +243,11 @@ export async function GET(req: NextRequest) {
       if (isApi) {
         try {
           let text = await response.text();
-          text = text.replace(/https?:(?:\\?\/){2}(cdn|cnth[0-9]+|cndw[0-9]+|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match) => {
+          text = text.replace(/https?:(?:\\?\/){2}(cdn|cnth[0-9]+|cndw[0-9]+|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match, subdomain) => {
             try {
               const unescapedMatch = match.replace(/\\/g, '');
               const parsed = new URL(unescapedMatch);
-              const pathWithSearch = parsed.pathname + parsed.search;
+              const pathWithSearch = `/${subdomain}${parsed.pathname}${parsed.search}`;
               const enc = encryptPath(pathWithSearch);
               if (match.includes('mp4') || match.includes('video') || match.includes('m3u8') || match.includes('.ts') || match.includes('.srt') || match.includes('.vtt')) {
                 return `/api/stream?ref=${enc}`;
