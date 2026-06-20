@@ -19,15 +19,16 @@ export function getImageUrl(
   if (imgField.startsWith('http')) {
       try {
           const parsed = new URL(imgField);
-          return `/tunnel${parsed.pathname}${parsed.search}`;
+          const separator = parsed.search ? '&' : '?';
+          return `/tunnel${parsed.pathname}${parsed.search}${separator}v=1`;
       } catch {
           const basePath = type === 'poster' ? '/vascin-poster-images/' : '/vascin-cover-images/';
-          return `/tunnel${basePath}${encodeURIComponent(imgField.split('/').pop() || imgField)}`;
+          return `/tunnel${basePath}${encodeURIComponent(imgField.split('/').pop() || imgField)}?v=1`;
       }
   }
   // Plain filename — construct the simple proxy URL
   const basePath = type === 'poster' ? '/vascin-poster-images/' : '/vascin-cover-images/';
-  return `/tunnel${basePath}${encodeURIComponent(imgField)}`;
+  return `/tunnel${basePath}${encodeURIComponent(imgField)}?v=1`;
 }
 
 /**
