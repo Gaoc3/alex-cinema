@@ -48,9 +48,11 @@ export function sanitizeUrl(url: string): string {
     const pathWithSearch = `/${subdomain}${parsed.pathname}${parsed.search}`;
     const encPath = encryptPath(pathWithSearch);
 
-    if (url.includes('.mp4') || url.includes('video') || url.includes('.m3u8') || url.includes('.ts') || url.includes('.srt') || url.includes('.vtt')) {
-      const ext = url.includes('.m3u8') ? '&ext=.m3u8' : url.includes('.mp4') ? '&ext=.mp4' : '';
-      return `/api/stream?ref=${encPath}${ext}`;
+    if (url.includes('.mp4') || url.includes('.m3u8') || url.includes('.ts')) {
+      return `https://64-225-99-144.nip.io/${subdomain}${parsed.pathname}${parsed.search}`;
+    }
+    if (url.includes('.srt') || url.includes('.vtt')) {
+      return `/api/stream?ref=${encPath}`;
     }
     return `/tunnel${pathWithSearch}`;
   } catch {
