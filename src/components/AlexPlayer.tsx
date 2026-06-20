@@ -817,7 +817,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   // Render Helpers for Dropdown Menus (Mobile Portal vs Desktop Absolute)
   const renderSubtitlesMenu = () => (
     <div 
-      className="relative w-full max-w-[340px] md:w-72 max-h-[85vh] md:max-h-[60vh] overflow-y-auto liquid-glass-heavy md:bg-[#141414]/95 border border-white/10 rounded-3xl md:rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] md:shadow-2xl flex flex-col p-4 animate-fade-in-up"
+      className="relative w-full max-w-[340px] md:w-72 max-h-[85vh] md:max-h-[60vh] overflow-y-auto liquid-glass-heavy md:bg-[#141414]/95 border border-[#e50914]/40 rounded-3xl md:rounded-2xl shadow-[0_0_30px_rgba(229,9,20,0.25)] md:shadow-[0_0_40px_rgba(229,9,20,0.3)] flex flex-col p-4 animate-fade-in-up"
       onPointerUp={(e) => e.stopPropagation()}
       dir="rtl"
     >
@@ -898,7 +898,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
   const renderQualityMenu = () => (
     <div 
-      className="relative w-full max-w-[280px] md:w-56 max-h-[80vh] md:max-h-[60vh] overflow-y-auto liquid-glass-heavy md:bg-[#141414]/95 border border-white/10 rounded-3xl md:rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] md:shadow-2xl flex flex-col p-4 md:p-3 animate-fade-in-up"
+      className="relative w-full max-w-[280px] md:w-56 max-h-[80vh] md:max-h-[60vh] overflow-y-auto liquid-glass-heavy md:bg-[#141414]/95 border border-[#e50914]/40 rounded-3xl md:rounded-2xl shadow-[0_0_30px_rgba(229,9,20,0.25)] md:shadow-[0_0_40px_rgba(229,9,20,0.3)] flex flex-col p-4 md:p-3 animate-fade-in-up"
       onPointerUp={(e) => e.stopPropagation()}
       dir="rtl"
     >
@@ -920,7 +920,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
   const renderSpeedMenu = () => (
     <div 
-      className="relative w-full max-w-[280px] md:w-56 max-h-[80vh] md:max-h-[60vh] overflow-y-auto liquid-glass-heavy md:bg-[#141414]/95 border border-white/10 rounded-3xl md:rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] md:shadow-2xl flex flex-col p-4 md:p-3 animate-fade-in-up font-en"
+      className="relative w-full max-w-[280px] md:w-56 max-h-[80vh] md:max-h-[60vh] overflow-y-auto liquid-glass-heavy md:bg-[#141414]/95 border border-[#e50914]/40 rounded-3xl md:rounded-2xl shadow-[0_0_30px_rgba(229,9,20,0.25)] md:shadow-[0_0_40px_rgba(229,9,20,0.3)] flex flex-col p-4 md:p-3 animate-fade-in-up font-en"
       onPointerUp={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3 font-ar" dir="rtl">
