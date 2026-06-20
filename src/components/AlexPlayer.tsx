@@ -810,7 +810,8 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
   const progressStyle = {
-    background: `linear-gradient(to right, #e50914 ${progressPercent}%, rgba(255, 255, 255, 0.2) ${progressPercent}%)`
+    background: `linear-gradient(to right, #e50914 ${progressPercent}%, rgba(255, 255, 255, 0.2) ${progressPercent}%)`,
+    boxShadow: '0 0 10px rgba(229,9,20,0.5), 0 0 20px rgba(229,9,20,0.3)'
   };
 
   // Render Helpers for Dropdown Menus (Mobile Portal vs Desktop Absolute)
@@ -967,7 +968,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         className={`relative select-none group/player touch-manipulation transition-all duration-300 min-h-[200px] ${
           isFullscreen 
             ? 'fixed inset-0 w-screen h-screen z-[9999] rounded-none border-none bg-black' 
-            : 'w-full rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10 bg-black/90'
+            : 'w-full rounded-3xl shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 bg-black/90'
         }`}
         style={{ aspectRatio: isFullscreen ? 'auto' : videoAspect }}
         dir="ltr"
@@ -1080,7 +1081,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         )}
 
         {/* TOP TITLE BAR */}
-        <div className={`absolute top-0 inset-x-0 p-3 pb-8 md:p-5 md:pt-6 md:pb-20 bg-gradient-to-b from-black/90 md:via-black/40 to-transparent flex flex-row-reverse items-center justify-between transition-all duration-300 transform z-20 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+        <div className={`absolute top-0 inset-x-0 ${isFullscreen ? '' : 'rounded-t-3xl'} p-3 pb-8 md:p-5 md:pt-6 md:pb-20 bg-gradient-to-b from-black/90 md:via-black/40 to-transparent flex flex-row-reverse items-center justify-between transition-all duration-300 transform z-20 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
           <h3 className="text-white text-xs md:text-lg font-black drop-shadow-md flex items-center gap-2 md:gap-3" dir="rtl">
             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-alex-primary animate-pulse"></span>
             {videoData.ar_title}
@@ -1109,7 +1110,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         )}
 
         {/* BOTTOM CUSTOM CONTROL BAR */}
-        <div className={`absolute bottom-0 inset-x-0 p-2 pt-6 pb-[calc(env(safe-area-inset-bottom)+4px)] sm:px-6 md:pb-8 md:pt-12 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-1.5 md:gap-3 transition-all duration-300 transform z-30 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`absolute bottom-0 inset-x-0 ${isFullscreen ? '' : 'rounded-b-3xl'} p-2 pt-6 pb-[calc(env(safe-area-inset-bottom)+4px)] sm:px-6 md:pb-8 md:pt-12 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-1.5 md:gap-3 transition-all duration-300 transform z-30 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           
           {/* Custom Timeline Progress Slider */}
           <div className="flex items-center gap-2 md:gap-4 w-full">
@@ -1123,7 +1124,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               value={currentTime}
               onChange={handleProgressChange}
               style={progressStyle}
-              className="flex-grow h-1 md:h-1.5 rounded-lg appearance-none cursor-pointer accent-alex-primary hover:h-1.5 md:hover:h-2 transition-all outline-none"
+              className="flex-grow h-1 md:h-1.5 rounded-lg appearance-none cursor-pointer accent-alex-primary hover:h-1.5 md:hover:h-2 transition-all outline-none border border-[#e50914]/30"
             />
             <span className="text-[10px] md:text-xs font-en font-bold text-gray-300 min-w-[32px] md:min-w-[45px] text-right">
               {formatTime(duration)}
