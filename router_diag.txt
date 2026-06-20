@@ -1,0 +1,77 @@
+STDOUT:
+=== UPTIME ===
+ 03:37:03 up  3:09,  load average: 1.25, 1.28, 1.13
+=== MEMORY ===
+              total        used        free      shared  buff/cache   available
+Mem:          57364       28460       17836          96       11068       11028
+Swap:             0           0           0
+=== CPU LOAD ===
+Mem: 39420K used, 17944K free, 96K shrd, 0K buff, 9576K cached
+CPU:   7% usr  61% sys   0% nic   0% idle   0% io   0% irq  30% sirq
+Load average: 1.26 1.29 1.14 2/56 7211
+  PID  PPID USER     STAT   VSZ %VSZ %CPU COMMAND
+ 5200     1 root     R     1404   2%  46% lua /etc/config/proxy.lua
+    8     2 root     RW       0   0%  31% [ksoftirqd/0]
+ 7210  7207 root     R     1320   2%   8% top -n 1 -b
+ 7087     2 root     IW       0   0%   8% [kworker/0:1-eve]
+ 4237  4234 network  S     4688   8%   0% /usr/sbin/hostapd -s -g /var/run/hostapd/global
+ 1489  1463 network  S     4476   8%   0% /usr/sbin/wpa_supplicant -n -s -g /var/run/wpa_supplicant/global
+ 4234     1 root     S     2656   5%   0% {hostapd} /sbin/ujail -t 5 -n hostapd -U network -G network -C /etc/capabilities/wpad.json -c -- /usr/sbin/hostapd -s -g /var/run/hostapd/global
+ 2811     1 root     S     2656   5%   0% {ntpd} /sbin/ujail -t 5 -n ntpd -U ntp -G ntp -C /etc/capabilities/ntpd.json -c -u -r /bin/ubus -r /usr/bin/env -r /usr/bin/jshn -r /usr/sbin/ntpd-hotplug -r /usr/share/libubox/jshn.sh -- /usr/sbin/ntpd -n -N -S /usr/sbin/ntpd-hotplug -p 0.openwrt.pool.ntp.org -p 1.openwrt.pool.ntp.org -p 2.openwrt.pool.ntp.org -p 3.openwrt.pool.ntp.org
+ 1463     1 root     S     2656   5%   0% {wpa_supplicant} /sbin/ujail -t 5 -n wpa_supplicant -U network -G network -C /etc/capabilities/wpad.json -c -- /usr/sbin/wpa_supplicant -n -s -g /var/run/wpa_supplicant/global
+ 5606     1 root     S     2656   5%   0% {dnsmasq} /sbin/ujail -t 5 -n dnsmasq -u -l -r /bin/ubus -r /etc/TZ -r /etc/dnsmasq.conf -r /etc/ethers -r /etc/group -r /etc/hosts -r /etc/passwd -w /tmp/dhcp.leases -r /tmp/dnsmasq.d -r /tmp/hosts -r /tmp/resolv.conf.d -r /usr/bin/jshn -r /usr/lib/dnsmasq/dhcp-script.sh -r /usr/share/dnsmasq/dhcpbogushostname.conf -r /usr/share/dnsmasq/rfc6761.conf -r /usr/share/dnsmasq/trust-anchors.conf -r /usr/sh
+ 1153     1 root     S     2124   4%   0% /sbin/rpcd -s /var/run/ubus/ubus.sock -t 30
+=== DMESG ===
+[ 5531.648957] IPv6: ADDRCONF(NETDEV_CHANGE): br-lan: link becomes ready
+[ 5532.930460] eth1: link up (100Mbps/Full duplex)
+[ 5539.804925] ath10k_pci 0000:00:00.0: 10.4 wmi init: vdevs: 16  peers: 48  tid: 96
+[ 5539.812710] ath10k_pci 0000:00:00.0: msdu-desc: 2500  skid: 32
+[ 5539.843010] ath10k_pci 0000:00:00.0: wmi print 'P 48/48 V 16 K 144 PH 176 T 186  msdu-desc: 2500  sw-crypt: 0 ct-sta: 0'
+[ 5539.854390] ath10k_pci 0000:00:00.0: wmi print 'free: 114572 iram: 12644 sram: 29508'
+[ 5540.167874] ath10k_pci 0000:00:00.0: rts threshold -1
+[ 5540.179858] ath10k_pci 0000:00:00.0: Firmware lacks feature flag indicating a retry limit of > 2 is OK, requested limit: 4
+[ 5540.270879] br-lan: port 2(wlan0) entered blocking state
+[ 5540.276382] br-lan: port 2(wlan0) entered disabled state
+[ 5540.282307] device wlan0 entered promiscuous mode
+[ 5541.239664] IPv6: ADDRCONF(NETDEV_CHANGE): wlan0: link becomes ready
+[ 5541.246484] br-lan: port 2(wlan0) entered blocking state
+[ 5541.252049] br-lan: port 2(wlan0) entered forwarding state
+[ 5547.740328] ath10k_pci 0000:00:00.0: mac flush vdev 0 drop 0 queues 0x1 ar->paused: 0x0  arvif->paused: 0x0
+[ 5552.930107] ath10k_pci 0000:00:00.0: mac flush vdev 0 drop 0 queues 0x1 ar->paused: 0x0  arvif->paused: 0x0
+[ 5670.526047] ath10k_pci 0000:00:00.0: mac flush vdev 0 drop 0 queues 0x1 ar->paused: 0x0  arvif->paused: 0x0
+[ 6444.894632] ath10k_pci 0000:00:00.0: mac flush vdev 0 drop 0 queues 0x1 ar->paused: 0x0  arvif->paused: 0x0
+[11104.462129] ath10k_pci 0000:00:00.0: mac flush vdev 0 drop 0 queues 0x1 ar->paused: 0x0  arvif->paused: 0x0
+[11195.711273] ath10k_pci 0000:00:00.0: mac flush vdev 0 drop 0 queues 0x1 ar->paused: 0x0  arvif->paused: 0x0
+=== LOGREAD ===
+Sat Jun 20 03:25:28 2026 daemon.notice hostapd: wlan0: EAPOL-4WAY-HS-COMPLETED 8e:97:4a:11:3e:61
+Sat Jun 20 03:25:28 2026 daemon.info dnsmasq-dhcp[1]: DHCPREQUEST(br-lan) 192.168.1.147 8e:97:4a:11:3e:61
+Sat Jun 20 03:25:28 2026 daemon.info dnsmasq-dhcp[1]: DHCPACK(br-lan) 192.168.1.147 8e:97:4a:11:3e:61
+Sat Jun 20 03:26:05 2026 daemon.err odhcp6c[5454]: Failed to send SOLICIT message to ff02::1:2 (Network unreachable)
+Sat Jun 20 03:28:13 2026 daemon.err odhcp6c[5454]: Failed to send SOLICIT message to ff02::1:2 (Network unreachable)
+Sat Jun 20 03:30:11 2026 daemon.err odhcp6c[5454]: Failed to send SOLICIT message to ff02::1:2 (Network unreachable)
+Sat Jun 20 03:32:24 2026 daemon.err odhcp6c[5454]: Failed to send SOLICIT message to ff02::1:2 (Network unreachable)
+Sat Jun 20 03:32:56 2026 daemon.notice hostapd: wlan0: AP-STA-DISCONNECTED 8e:97:4a:11:3e:61
+Sat Jun 20 03:32:56 2026 daemon.info hostapd: wlan0: STA 8e:97:4a:11:3e:61 IEEE 802.11: disassociated
+Sat Jun 20 03:32:56 2026 kern.info kernel: [11104.462129] ath10k_pci 0000:00:00.0: mac flush vdev 0 drop 0 queues 0x1 ar->paused: 0x0  arvif->paused: 0x0
+Sat Jun 20 03:32:57 2026 daemon.info hostapd: wlan0: STA 8e:97:4a:11:3e:61 IEEE 802.11: deauthenticated due to inactivity (timer DEAUTH/REMOVE)
+Sat Jun 20 03:34:06 2026 daemon.info hostapd: wlan0: STA 8e:97:4a:11:3e:61 IEEE 802.11: authenticated
+Sat Jun 20 03:34:06 2026 daemon.info hostapd: wlan0: STA 8e:97:4a:11:3e:61 IEEE 802.11: associated (aid 4)
+Sat Jun 20 03:34:06 2026 daemon.notice hostapd: wlan0: AP-STA-CONNECTED 8e:97:4a:11:3e:61
+Sat Jun 20 03:34:06 2026 daemon.info hostapd: wlan0: STA 8e:97:4a:11:3e:61 WPA: pairwise key handshake completed (RSN)
+Sat Jun 20 03:34:06 2026 daemon.notice hostapd: wlan0: EAPOL-4WAY-HS-COMPLETED 8e:97:4a:11:3e:61
+Sat Jun 20 03:34:06 2026 daemon.info dnsmasq-dhcp[1]: DHCPREQUEST(br-lan) 192.168.1.147 8e:97:4a:11:3e:61
+Sat Jun 20 03:34:06 2026 daemon.info dnsmasq-dhcp[1]: DHCPACK(br-lan) 192.168.1.147 8e:97:4a:11:3e:61
+Sat Jun 20 03:34:28 2026 daemon.info hostapd: wlan0: STA 90:91:64:30:75:73 IEEE 802.11: authenticated
+Sat Jun 20 03:34:28 2026 kern.info kernel: [11195.711273] ath10k_pci 0000:00:00.0: mac flush vdev 0 drop 0 queues 0x1 ar->paused: 0x0  arvif->paused: 0x0
+Sat Jun 20 03:34:28 2026 daemon.notice hostapd: wlan0: STA-OPMODE-N_SS-CHANGED 90:91:64:30:75:73 1
+Sat Jun 20 03:34:28 2026 daemon.info hostapd: wlan0: STA 90:91:64:30:75:73 IEEE 802.11: associated (aid 3)
+Sat Jun 20 03:34:28 2026 daemon.info hostapd: wlan0: STA 90:91:64:30:75:73 WPA: pairwise key handshake completed (RSN)
+Sat Jun 20 03:34:28 2026 daemon.notice hostapd: wlan0: EAPOL-4WAY-HS-COMPLETED 90:91:64:30:75:73
+Sat Jun 20 03:34:28 2026 daemon.info dnsmasq-dhcp[1]: DHCPREQUEST(br-lan) 192.168.1.233 90:91:64:30:75:73
+Sat Jun 20 03:34:28 2026 daemon.info dnsmasq-dhcp[1]: DHCPACK(br-lan) 192.168.1.233 90:91:64:30:75:73 MTSKY-SENSEI
+Sat Jun 20 03:34:32 2026 daemon.err odhcp6c[5454]: Failed to send SOLICIT message to ff02::1:2 (Network unreachable)
+Sat Jun 20 03:36:40 2026 daemon.err odhcp6c[5454]: Failed to send SOLICIT message to ff02::1:2 (Network unreachable)
+Sat Jun 20 03:37:02 2026 authpriv.info dropbear[7205]: Child connection from 192.168.1.233:19311
+Sat Jun 20 03:37:03 2026 authpriv.notice dropbear[7205]: Password auth succeeded for 'root' from 192.168.1.233:19311
+
+STDERR:

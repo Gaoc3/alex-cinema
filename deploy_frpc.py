@@ -45,7 +45,7 @@ try:
     time.sleep(1)
     
     print("Starting frpc in the background...")
-    client.exec_command("nohup /tmp/frpc -c /tmp/frpc.ini > /tmp/frpc.log 2>&1 &")
+    client.exec_command("/tmp/frpc -c /tmp/frpc.ini > /tmp/frpc.log 2>&1 &")
     
     # Check if it's running
     time.sleep(2)

@@ -1,0 +1,11 @@
+
+> alex-cinema@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.7 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.233:3000
+- Environments: .env.local
+✓ Ready in 358ms
+
+ GET /api/proxy?endpoint=AdvancedSearch%26level=1%26videoTitle=Suffocating%26staffTitle=%26page=0%26year=1900,2026%26type=movies 502 in 696ms (next.js: 110ms, application-code: 586ms)

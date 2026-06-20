@@ -1,0 +1,18 @@
+○ frps.service - FRP Server
+     Loaded: loaded (/etc/systemd/system/frps.service; disabled; preset: enabled)
+     Active: inactive (dead)
+
+Jun 19 06:50:26 Zhan frps[253378]: 2026-06-19 06:50:26.332 [W] [httputil/reverseproxy.go:472] do http proxy request [host: 64.225.99.144:8080] error: no route found: 64.225.99.144 /shopify
+Jun 19 06:50:26 Zhan frps[253378]: 2026-06-19 06:50:26.332 [W] [httputil/reverseproxy.go:472] do http proxy request [host: 64.225.99.144:8080] error: no route found: 64.225.99.144 /shopify
+Jun 19 06:50:26 Zhan frps[253378]: 2026-06-19 06:50:26.332 [W] [httputil/reverseproxy.go:472] do http proxy request [host: 64.225.99.144:8080] error: no route found: 64.225.99.144 /shopify
+Jun 19 06:50:26 Zhan frps[253378]: 2026-06-19 06:50:26.332 [W] [httputil/reverseproxy.go:472] do http proxy request [host: 64.225.99.144:8080] error: no route found: 64.225.99.144 /shopify
+Jun 19 06:50:26 Zhan frps[253378]: 2026-06-19 06:50:26.333 [W] [httputil/reverseproxy.go:472] do http proxy request [host: 64.225.99.144:8080] error: no route found: 64.225.99.144 /shopify
+Jun 19 06:50:27 Zhan systemd[1]: Stopping frps.service - FRP Server...
+Jun 19 06:50:27 Zhan frps[253378]: 
+Jun 19 06:50:27 Zhan systemd[1]: frps.service: Deactivated successfully.
+Jun 19 06:50:27 Zhan systemd[1]: Stopped frps.service - FRP Server.
+Jun 19 06:50:27 Zhan systemd[1]: frps.service: Consumed 1.129s CPU time, 9.9M memory peak, 0B memory swap peak.
+
+
+dbclient: Caution, skipping hostkey check for 64.225.99.144
+

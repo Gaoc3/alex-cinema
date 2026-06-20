@@ -1,21 +1,14 @@
 import paramiko
 
-client = paramiko.SSHClient()
-client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 try:
-    client.connect('64.225.99.144', username='root', password='Mtsky1STgg', timeout=10)
-    
-    commands = [
-        "ls -la /var/www/html/"
-    ]
-    
-    for cmd in commands:
-        print(f"\n--- {cmd} ---")
-        stdin, stdout, stderr = client.exec_command(cmd)
-        print("STDOUT:\n", stdout.read().decode())
-        print("STDERR:\n", stderr.read().decode())
-        
+    c = paramiko.SSHClient()
+    c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    c.connect('192.168.1.1', username='root', password='punisher001', timeout=10)
+
+    cmd = "dbclient -y -y -i /etc/dropbear/id_rsa root@64.225.99.144 'netstat -tulnp | grep 808'"
+    stdin, stdout, stderr = c.exec_command(cmd)
+
+    out = stdout.read().decode('utf-8', errors='ignore')
+    print("STDOUT:\n" + out)
 except Exception as e:
-    print(f"Error: {e}")
-finally:
-    client.close()
+    print(f"Failed to connect or execute: {e}")

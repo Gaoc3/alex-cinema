@@ -1085,7 +1085,6 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
             onError={handleStreamError}
-            crossOrigin="anonymous"
             onPlay={() => setIsPaused(false)}
             onPause={() => setIsPaused(true)}
             autoPlay

@@ -1,0 +1,38 @@
+STDOUT:
+total 20
+drwxr-xr-x  5 www-data www-data 4096 Jun 13 01:07 .
+drwxr-xr-x 17 root     root     4096 Jun 13 00:55 ..
+drwxr-xr-x 18 nobody   www-data 4096 Jun 13 11:54 api
+drwxr-xr-x 18 nobody   www-data 4096 Jun 13 01:19 images
+drwxr-xr-x  2 nobody   www-data 4096 Jun 13 01:07 video
+228M	/var/cache/nginx
+684
+proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=cinemanacache:50m max_size=5g inactive=12h use_temp_path=off;
+
+server {
+    listen 80 default_server;
+    server_name _;
+    
+    # We will accept any requests and route them to the FRP tunnel
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host "cinemana-tunnel.local"; # This MUST match frpc.ini custom_domains
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        # Caching logic
+        proxy_cache cinemanacache;
+        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        proxy_cache_lock on;
+        proxy_cache_valid 200 302 10m;
+        proxy_cache_valid 404 1m;
+        
+        # For large video files
+        proxy_buffering on;
+    }
+}
+
+STDERR:
+dbclient: Caution, skipping hostkey check for 64.225.99.144
+

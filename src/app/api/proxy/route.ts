@@ -134,6 +134,7 @@ export async function GET(req: NextRequest) {
     'Accept': isVideo ? 'video/mp4,video/*;q=0.9,*/*;q=0.8' : 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
     'Referer': 'https://cinemana.shabakaty.com/',
   };
+  
   const range = req.headers.get('range');
   if (range) headers['Range'] = range;
 
@@ -207,7 +208,11 @@ export async function GET(req: NextRequest) {
               const parsed = new URL(unescapedMatch);
               const pathWithSearch = `/${subdomain}${parsed.pathname}${parsed.search}`;
               const enc = encryptPath(pathWithSearch);
-              if (match.includes('mp4') || match.includes('video') || match.includes('m3u8') || match.includes('.ts') || match.includes('.srt') || match.includes('.vtt')) {
+              // Serve video directly through the VPS via HTTPS to avoid Vercel 4.5MB limits
+              if (match.includes('mp4') || match.includes('video') || match.includes('m3u8') || match.includes('.ts')) {
+                return `https://64-225-99-144.nip.io/${subdomain}${parsed.pathname}${parsed.search}`;
+              }
+              if (match.includes('.srt') || match.includes('.vtt')) {
                 return `/api/stream?ref=${enc}`;
               }
               return `/tunnel${pathWithSearch}`;
@@ -249,7 +254,11 @@ export async function GET(req: NextRequest) {
               const parsed = new URL(unescapedMatch);
               const pathWithSearch = `/${subdomain}${parsed.pathname}${parsed.search}`;
               const enc = encryptPath(pathWithSearch);
-              if (match.includes('mp4') || match.includes('video') || match.includes('m3u8') || match.includes('.ts') || match.includes('.srt') || match.includes('.vtt')) {
+              // Serve video directly through the VPS via HTTPS to avoid Vercel 4.5MB limits
+              if (match.includes('mp4') || match.includes('video') || match.includes('m3u8') || match.includes('.ts')) {
+                return `https://64-225-99-144.nip.io/${subdomain}${parsed.pathname}${parsed.search}`;
+              }
+              if (match.includes('.srt') || match.includes('.vtt')) {
                 return `/api/stream?ref=${enc}`;
               }
               return `/tunnel${pathWithSearch}`;
