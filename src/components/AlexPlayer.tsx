@@ -168,7 +168,62 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Pixel-level adaptation (Ambient Light Glow)
+  useEffect(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || youtubeFallback) return;
+
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let isDrawing = false;
+
+    const updateAmbient = () => {
+      if (video.paused || video.ended) {
+        isDrawing = false;
+        return;
+      }
+      if (video.readyState >= 2) {
+        try {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        } catch (e) {
+          // Ignore cross-origin canvas errors if they happen
+        }
+      }
+      animationFrameId = requestAnimationFrame(updateAmbient);
+    };
+
+    const startDrawing = () => {
+      if (!isDrawing) {
+        isDrawing = true;
+        updateAmbient();
+      }
+    };
+
+    const drawOnce = () => {
+      if (video.readyState >= 2) {
+        try {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        } catch (e) {}
+      }
+    };
+
+    video.addEventListener('play', startDrawing);
+    video.addEventListener('seeked', drawOnce);
+    video.addEventListener('loadeddata', drawOnce);
+
+    return () => {
+      video.removeEventListener('play', startDrawing);
+      video.removeEventListener('seeked', drawOnce);
+      video.removeEventListener('loadeddata', drawOnce);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    };
+  }, [currentStreamUrl, youtubeFallback]);
 
   // Helper to proxy stream URLs — simplified since URLs are now pre-sanitized by the server
   const toProxyUrl = (url: string | undefined | null) => {
@@ -978,8 +1033,16 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
       >
         {/* Inner wrapper for rounded corners and overflow clipping to not affect dropdowns */}
         <div className={`absolute inset-0 w-full h-full pointer-events-none ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
-          {/* Dynamic Glow Overlay */}
-          <div className="absolute inset-0 z-[-1] opacity-25 blur-[100px] scale-105 transition-all duration-1000 bg-[#e50914]/20"></div>
+          {/* Adaptive Ambient Light Canvas */}
+          <canvas
+            ref={canvasRef}
+            width="64"
+            height="36"
+            className="absolute inset-0 w-full h-full scale-110 blur-[80px] opacity-60 mix-blend-screen transition-opacity duration-1000 z-[-1]"
+            style={{ transform: 'scale(1.15)' }}
+          />
+          {/* Fallback Glow */}
+          <div className="absolute inset-0 z-[-2] opacity-10 blur-[100px] scale-105 bg-[#e50914]/20"></div>
         </div>
 
         {/* Double Tap Seek Animations */}
