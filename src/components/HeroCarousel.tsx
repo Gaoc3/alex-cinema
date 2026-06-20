@@ -124,6 +124,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             alt={current.ar_title} 
             fill
             priority
+            unoptimized
             className="object-cover object-top lg:object-center transform scale-100 transition-transform duration-[7s] hover:scale-105"
           />
         </div>
