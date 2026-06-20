@@ -255,10 +255,10 @@ export async function GET(req: NextRequest) {
               const pathWithSearch = `/${subdomain}${parsed.pathname}${parsed.search}`;
               const enc = encryptPath(pathWithSearch);
               // Serve video directly through the VPS via HTTPS to avoid Vercel 4.5MB limits
-              if (match.includes('mp4') || match.includes('video') || match.includes('m3u8') || match.includes('.ts')) {
+              if (parsed.pathname.endsWith('.mp4') || parsed.pathname.endsWith('.m3u8') || parsed.pathname.endsWith('.ts')) {
                 return `https://64-225-99-144.nip.io/${subdomain}${parsed.pathname}${parsed.search}`;
               }
-              if (match.includes('.srt') || match.includes('.vtt')) {
+              if (parsed.pathname.endsWith('.srt') || parsed.pathname.endsWith('.vtt')) {
                 return `/api/stream?ref=${enc}`;
               }
               return `/tunnel${pathWithSearch}`;
