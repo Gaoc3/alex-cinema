@@ -22,12 +22,12 @@ export function getImageUrl(
           const separator = parsed.search ? '&' : '?';
           return `/tunnel${parsed.pathname}${parsed.search}${separator}v=2`;
       } catch {
-          const basePath = type === 'poster' ? '/vascin-poster-images/' : '/vascin-cover-images/';
+          const basePath = type === 'poster' ? '/cnth2/vascin-poster-images/' : '/cnth2/vascin-cover-images/';
           return `/tunnel${basePath}${encodeURIComponent(imgField.split('/').pop() || imgField)}?v=2`;
       }
   }
   // Plain filename — construct the simple proxy URL
-  const basePath = type === 'poster' ? '/vascin-poster-images/' : '/vascin-cover-images/';
+  const basePath = type === 'poster' ? '/cnth2/vascin-poster-images/' : '/cnth2/vascin-cover-images/';
   return `/tunnel${basePath}${encodeURIComponent(imgField)}?v=2`;
 }
 
