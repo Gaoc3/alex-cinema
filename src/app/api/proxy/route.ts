@@ -143,7 +143,8 @@ export async function GET(req: NextRequest) {
     const tUrl = new URL(targetUrl);
     const tunnelBase = TUNNEL_BASE_URL.replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
     if (tunnelBase && tUrl.hostname.includes('shabakaty.com')) {
-      tunnelUrl = `${tunnelBase}${tUrl.pathname}${tUrl.search}`;
+      const subdomain = tUrl.hostname.split('.')[0];
+      tunnelUrl = `${tunnelBase}/${subdomain}${tUrl.pathname}${tUrl.search}`;
     }
   } catch (e) { }
 
