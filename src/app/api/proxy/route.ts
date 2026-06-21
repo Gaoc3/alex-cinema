@@ -207,11 +207,20 @@ export async function GET(req: NextRequest) {
             try {
               const unescapedMatch = match.replace(/\\/g, '');
               const parsed = new URL(unescapedMatch);
-              const pathWithSearch = `/${subdomain}${parsed.pathname}${parsed.search}`;
+              let finalSubdomain = subdomain;
+              if (parsed.pathname.startsWith('/vascin24-mp4') || parsed.pathname.startsWith('/vascin24-video') || parsed.pathname.startsWith('/vascin-video')) {
+                finalSubdomain = 'cndw2';
+              } else if (parsed.pathname.startsWith('/vascin-poster-images') || parsed.pathname.startsWith('/vascin-cover-images') || parsed.pathname.startsWith('/uploads/')) {
+                finalSubdomain = 'cnth2';
+              } else if (!['cdn', 'cndw2', 'cnth2', 'cinemana'].includes(finalSubdomain)) {
+                finalSubdomain = 'cinemana';
+              }
+
+              const pathWithSearch = `/${finalSubdomain}${parsed.pathname}${parsed.search}`;
               const enc = encryptPath(pathWithSearch);
               // Serve video directly through the VPS via HTTPS to avoid Vercel 4.5MB limits
               if (parsed.pathname.endsWith('.mp4') || parsed.pathname.endsWith('.m3u8') || parsed.pathname.endsWith('.ts')) {
-                return `https://64-225-99-144.nip.io/${subdomain}${parsed.pathname}${parsed.search}`;
+                return `https://64-225-99-144.nip.io/${finalSubdomain}${parsed.pathname}${parsed.search}`;
               }
               if (parsed.pathname.endsWith('.srt') || parsed.pathname.endsWith('.vtt')) {
                 return `/api/stream?ref=${enc}`;
@@ -252,12 +261,20 @@ export async function GET(req: NextRequest) {
           text = text.replace(/https?:(?:\\?\/){2}(cdn|cnth[0-9]+|cndw[0-9]+|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match, subdomain) => {
             try {
               const unescapedMatch = match.replace(/\\/g, '');
-              const parsed = new URL(unescapedMatch);
-              const pathWithSearch = `/${subdomain}${parsed.pathname}${parsed.search}`;
+              let finalSubdomain = subdomain;
+              if (parsed.pathname.startsWith('/vascin24-mp4') || parsed.pathname.startsWith('/vascin24-video') || parsed.pathname.startsWith('/vascin-video')) {
+                finalSubdomain = 'cndw2';
+              } else if (parsed.pathname.startsWith('/vascin-poster-images') || parsed.pathname.startsWith('/vascin-cover-images') || parsed.pathname.startsWith('/uploads/')) {
+                finalSubdomain = 'cnth2';
+              } else if (!['cdn', 'cndw2', 'cnth2', 'cinemana'].includes(finalSubdomain)) {
+                finalSubdomain = 'cinemana';
+              }
+
+              const pathWithSearch = `/${finalSubdomain}${parsed.pathname}${parsed.search}`;
               const enc = encryptPath(pathWithSearch);
               // Serve video directly through the VPS via HTTPS to avoid Vercel 4.5MB limits
               if (parsed.pathname.endsWith('.mp4') || parsed.pathname.endsWith('.m3u8') || parsed.pathname.endsWith('.ts')) {
-                return `https://64-225-99-144.nip.io/${subdomain}${parsed.pathname}${parsed.search}`;
+                return `https://64-225-99-144.nip.io/${finalSubdomain}${parsed.pathname}${parsed.search}`;
               }
               if (parsed.pathname.endsWith('.srt') || parsed.pathname.endsWith('.vtt')) {
                 return `/api/stream?ref=${enc}`;
