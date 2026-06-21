@@ -41,16 +41,7 @@ export function sanitizeUrl(url: string): string {
 
   try {
     const parsed = new URL(url);
-    let subdomain = parsed.hostname.split('.')[0];
-    
-    // Force specific subdomains because we only have tunnels for cndw2 and cnth2
-    if (parsed.pathname.startsWith('/vascin24-mp4') || parsed.pathname.startsWith('/vascin24-video') || parsed.pathname.startsWith('/vascin-video')) {
-      subdomain = 'cndw2';
-    } else if (parsed.pathname.startsWith('/vascin-poster-images') || parsed.pathname.startsWith('/vascin-cover-images') || parsed.pathname.startsWith('/uploads/')) {
-      subdomain = 'cnth2';
-    } else if (!['cdn', 'cndw2', 'cnth2', 'cinemana'].includes(subdomain)) {
-       subdomain = 'cinemana'; // fallback
-    }
+    const subdomain = parsed.hostname.split('.')[0];
 
     const pathWithSearch = `/${subdomain}${parsed.pathname}${parsed.search}`;
     const encPath = encryptPath(pathWithSearch);

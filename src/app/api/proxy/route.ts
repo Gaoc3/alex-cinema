@@ -207,14 +207,7 @@ export async function GET(req: NextRequest) {
             try {
               const unescapedMatch = match.replace(/\\/g, '');
               const parsed = new URL(unescapedMatch);
-              let finalSubdomain = subdomain;
-              if (parsed.pathname.startsWith('/vascin24-mp4') || parsed.pathname.startsWith('/vascin24-video') || parsed.pathname.startsWith('/vascin-video')) {
-                finalSubdomain = 'cndw2';
-              } else if (parsed.pathname.startsWith('/vascin-poster-images') || parsed.pathname.startsWith('/vascin-cover-images') || parsed.pathname.startsWith('/uploads/')) {
-                finalSubdomain = 'cnth2';
-              } else if (!['cdn', 'cndw2', 'cnth2', 'cinemana'].includes(finalSubdomain)) {
-                finalSubdomain = 'cinemana';
-              }
+              const finalSubdomain = subdomain;
 
               const pathWithSearch = `/${finalSubdomain}${parsed.pathname}${parsed.search}`;
               const enc = encryptPath(pathWithSearch);
@@ -261,14 +254,8 @@ export async function GET(req: NextRequest) {
           text = text.replace(/https?:(?:\\?\/){2}(cdn|cnth[0-9]+|cndw[0-9]+|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match, subdomain) => {
             try {
               const unescapedMatch = match.replace(/\\/g, '');
-              let finalSubdomain = subdomain;
-              if (parsed.pathname.startsWith('/vascin24-mp4') || parsed.pathname.startsWith('/vascin24-video') || parsed.pathname.startsWith('/vascin-video')) {
-                finalSubdomain = 'cndw2';
-              } else if (parsed.pathname.startsWith('/vascin-poster-images') || parsed.pathname.startsWith('/vascin-cover-images') || parsed.pathname.startsWith('/uploads/')) {
-                finalSubdomain = 'cnth2';
-              } else if (!['cdn', 'cndw2', 'cnth2', 'cinemana'].includes(finalSubdomain)) {
-                finalSubdomain = 'cinemana';
-              }
+              const parsed = new URL(unescapedMatch);
+              const finalSubdomain = subdomain;
 
               const pathWithSearch = `/${finalSubdomain}${parsed.pathname}${parsed.search}`;
               const enc = encryptPath(pathWithSearch);
