@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import Hls from 'hls.js';
 
-export default function AlexPlayerMobile({ videoData }: any) {
+export default function AlexCinemaPlayer({ videoData }: any) {
   // --- States ---
   const [selectedLanguage, setSelectedLanguage] = useState<string>('ar');
   const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
@@ -11,6 +11,7 @@ export default function AlexPlayerMobile({ videoData }: any) {
   const [isPaused, setIsPaused] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [showControls, setShowControls] = useState<boolean>(true);
+  const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [isWaiting, setIsWaiting] = useState<boolean>(false);
   const [isScrubbing, setIsScrubbing] = useState<boolean>(false);
@@ -21,55 +22,40 @@ export default function AlexPlayerMobile({ videoData }: any) {
   
   const [isFamilyMode, setIsFamilyMode] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  const [isZoomed, setIsZoomed] = useState<boolean>(false);
 
   // --- Refs ---
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const progressBarRef = useRef<HTMLDivElement>(null);
-  const thumbRef = useRef<HTMLDivElement>(null); 
-  const timeDisplayRef = useRef<HTMLSpanElement>(null);
   const hlsRef = useRef<any>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const waitingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedTimeRef = useRef<number>(0);
-  const initialTimeRef = useRef<number>(0);
-  const wasPlayingRef = useRef<boolean>(false); 
-  const qualitySwitchTimeRef = useRef<number | null>(null);
+  const wasPlayingRef = useRef<boolean>(false);
 
-  // --- Gestures Engine ---
-  const touchStartRef = useRef<{x: number, y: number, time: number} | null>(null);
-  const [showSeekAnimation, setShowSeekAnimation] = useState<'forward' | 'backward' | null>(null);
-  const lastTapRef = useRef<{time: number}>({time: 0});
-  const [seekAmount, setSeekAmount] = useState(0);
-  const seekTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // --- 1. Safe Time Formatter ---
+  const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds) || !isFinite(seconds) || seconds < 0) return "00:00";
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    if (h > 0) return `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+  };
 
-  // --- Smart Layout Engine ---
-  const [smartLayout, setSmartLayout] = useState({ playBtnOuter: 80, playBtnInner: 56, pillMargin: 16 });
-  const [ambientColor, setAmbientColor] = useState('rgba(0,0,0,0)');
+  // --- 2. Auto-Hide Controls ---
+  const resetControlsTimeout = useCallback(() => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    if (!isPaused && !activeSheet) {
+      controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
+    }
+  }, [isPaused, activeSheet]);
 
-  // 1. Layout Calculation
   useEffect(() => {
-    const calculateSmartLayout = () => {
-      if (typeof window === 'undefined') return;
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const isLandscape = w > h;
-      const diag = Math.sqrt(w*w + h*h);
-      const scale = Math.max(0.7, Math.min(1.5, diag / 800));
-      setSmartLayout({
-        playBtnOuter: isLandscape ? 70 * scale : 90 * scale,
-        playBtnInner: isLandscape ? 50 * scale : 65 * scale,
-        pillMargin: isLandscape ? Math.max(12, w * 0.05) : Math.max(16, w * 0.03),
-      });
-    };
-    calculateSmartLayout();
-    window.addEventListener('resize', calculateSmartLayout);
-    return () => window.removeEventListener('resize', calculateSmartLayout);
-  }, []);
+    resetControlsTimeout();
+    return () => { if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current); };
+  }, [isPaused, activeSheet, resetControlsTimeout]);
 
-  // 2. Fullscreen Sync
+  // --- 3. Fullscreen Logic ---
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement || !!(document as any).webkitFullscreenElement);
@@ -82,152 +68,42 @@ export default function AlexPlayerMobile({ videoData }: any) {
     };
   }, []);
 
-  // 3. Screen Wake Lock API (منع إطفاء الشاشة)
-  useEffect(() => {
-    let wakeLock: any = null;
-    const requestWakeLock = async () => {
-      try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await (navigator as any).wakeLock.request('screen');
-        }
-      } catch (err) {}
-    };
-
-    const handleVisibilityChange = () => {
-      if (wakeLock !== null && document.visibilityState === 'visible' && !isPaused) {
-        requestWakeLock();
-      }
-    };
-
-    if (!isPaused) { requestWakeLock(); }
-    else if (wakeLock !== null) { wakeLock.release(); wakeLock = null; }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      if (wakeLock !== null) wakeLock.release();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [isPaused]);
-
-  // 4. Keyboard Support
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!videoRef.current) return;
-      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')) return;
-
-      switch(e.key.toLowerCase()) {
-        case ' ':
-          e.preventDefault();
-          if (videoRef.current.paused) videoRef.current.play().catch(()=>{});
-          else videoRef.current.pause();
-          resetControlsTimeout();
-          break;
-        case 'arrowright':
-          videoRef.current.currentTime += 10;
-          resetControlsTimeout();
-          break;
-        case 'arrowleft':
-          videoRef.current.currentTime -= 10;
-          resetControlsTimeout();
-          break;
-        case 'f':
-          toggleFullscreen();
-          break;
-        case 'm':
-          videoRef.current.muted = !videoRef.current.muted;
-          resetControlsTimeout();
-          break;
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // 5. Haptics
-  const triggerHaptic = useCallback((type: 'light' | 'medium' | 'seek') => {
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      if (type === 'light') navigator.vibrate(10);
-      else if (type === 'medium') navigator.vibrate(20);
-      else if (type === 'seek') navigator.vibrate([20, 30, 20]);
+  const toggleFullscreen = async () => {
+    const container = playerContainerRef.current;
+    if (!container) return;
+    if (!isFullscreen) {
+      if (container.requestFullscreen) await container.requestFullscreen();
+      else if ((container as any).webkitRequestFullscreen) (container as any).webkitRequestFullscreen();
+    } else {
+      if (document.exitFullscreen) await document.exitFullscreen();
+      else if ((document as any).webkitExitFullscreen) (document as any).webkitExitFullscreen();
     }
-  }, []);
+  };
 
-  // 6. Zero-UI Auto-hide
-  const resetControlsTimeout = useCallback(() => {
-    setShowControls(true);
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    if (!isPaused && !activeSheet) {
-      controlsTimeoutRef.current = setTimeout(() => { setShowControls(false); }, 3000);
-    }
-  }, [isPaused, activeSheet]);
-
-  useEffect(() => {
-    resetControlsTimeout();
-    return () => { if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current); };
-  }, [isPaused, activeSheet, resetControlsTimeout]);
-
-  // 7. Initialize Video Data
+  // --- 4. Video Initialization & HLS ---
   useEffect(() => {
     if (!videoData) return;
-    if (videoData?.streams?.length > 0) {
-      const preferred = videoData.streams.find((s: any) => s.resolution && s.resolution.toLowerCase().includes('1080')) 
-                     || videoData.streams.find((s: any) => s.resolution && s.resolution.toLowerCase().includes('720')) 
-                     || videoData.streams[0];
-      setCurrentStreamUrl(preferred?.videoUrl || null);
-      setSelectedResolution(preferred?.resolution || 'Auto');
-    } else {
-      setCurrentStreamUrl(videoData.stream_url || null);
-      setSelectedResolution('Auto');
-    }
-    setIsPaused(true);
-    setDuration(videoData.duration ? parseFloat(String(videoData.duration)) || 0 : 0);
+    const preferred = videoData?.streams?.find((s: any) => s.resolution?.includes('1080')) 
+                   || videoData?.streams?.find((s: any) => s.resolution?.includes('720')) 
+                   || videoData?.streams?.[0];
+                   
+    setCurrentStreamUrl(preferred?.videoUrl || videoData.stream_url || null);
+    setSelectedResolution(preferred?.resolution || 'Auto');
   }, [videoData]);
 
-  // 8. HLS Setup & Auto-Recovery
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !currentStreamUrl) return;
-    
-    let savedProgress = 0;
-    try {
-      if (typeof window !== 'undefined' && videoData?.nb) {
-        const saved = localStorage.getItem(`alex_progress_${videoData.nb}`);
-        if (saved) savedProgress = parseFloat(saved);
-      }
-    } catch (e) {}
-
-    const exactTargetTime = qualitySwitchTimeRef.current !== null ? qualitySwitchTimeRef.current : (savedProgress > 5 ? savedProgress : -1);
-    initialTimeRef.current = exactTargetTime;
 
     if (currentStreamUrl.includes('.m3u8')) {
       if (Hls.isSupported()) {
         if (hlsRef.current) hlsRef.current.destroy();
-        const hls = new Hls({ startPosition: exactTargetTime });
+        const hls = new Hls();
         hlsRef.current = hls;
-        
-        hls.on(Hls.Events.ERROR, function (event, data) {
-          if (data.fatal) {
-            switch (data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR:
-                hls.startLoad();
-                break;
-              case Hls.ErrorTypes.MEDIA_ERROR:
-                hls.recoverMediaError();
-                break;
-              default:
-                hls.destroy();
-                break;
-            }
-          }
-        });
-
         hls.loadSource(currentStreamUrl);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          if (video.autoplay || !isPaused || qualitySwitchTimeRef.current !== null) {
-            video.play().catch(() => setIsPaused(true));
-          }
-          qualitySwitchTimeRef.current = null; 
+          if (!isPaused) video.play().catch(()=> setIsPaused(true));
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = currentStreamUrl;
@@ -236,85 +112,9 @@ export default function AlexPlayerMobile({ videoData }: any) {
       video.src = currentStreamUrl;
     }
     return () => { if (hlsRef.current) hlsRef.current.destroy(); };
-  }, [currentStreamUrl, videoData?.nb]);
+  }, [currentStreamUrl]);
 
-  // 9. Subtitles Engine
-  const vttTracks = useMemo(() => {
-    const tracksMap = new Map<string, any>();
-    if (videoData?.translations) {
-      videoData.translations.forEach((t: any) => {
-        if (t.file && (t.extention === 'vtt' || t.file.includes('.vtt'))) {
-          tracksMap.set(t.type, t);
-        }
-      });
-    }
-    return Array.from(tracksMap.values());
-  }, [videoData?.translations]);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const syncTracks = () => {
-      let newActiveText = '';
-      for (let i = 0; i < video.textTracks.length; i++) {
-        const track = video.textTracks[i];
-        if (selectedLanguage === 'off') {
-          track.mode = 'disabled';
-        } else if (track.language === selectedLanguage) {
-          track.mode = 'hidden';
-          if (track.activeCues && track.activeCues.length > 0) {
-            newActiveText = Array.from(track.activeCues)
-              .map((c: any) => c.text.replace(/<[^>]+>/g, '')) 
-              .join('\n');
-          }
-        } else {
-          track.mode = 'disabled';
-        }
-      }
-      setCurrentSubtitle(newActiveText);
-    };
-
-    syncTracks();
-    const onCueChange = () => syncTracks();
-    
-    for (let i = 0; i < video.textTracks.length; i++) {
-      video.textTracks[i].addEventListener('cuechange', onCueChange);
-    }
-    video.addEventListener('timeupdate', syncTracks);
-
-    return () => {
-      for (let i = 0; i < video.textTracks.length; i++) {
-        video.textTracks[i].removeEventListener('cuechange', onCueChange);
-      }
-      video.removeEventListener('timeupdate', syncTracks);
-    };
-  }, [selectedLanguage, currentStreamUrl, vttTracks]);
-
-  // 10. Ambient Glow Extract
-  useEffect(() => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d', { willReadFrequently: true });
-    if (!video || !canvas || !ctx) return;
-
-    const interval = setInterval(() => {
-      if (!document.hidden && !video.paused && !video.ended) {
-        try {
-          ctx.drawImage(video, 0, 0, 64, 36);
-          const imageData = ctx.getImageData(0, 0, 64, 10).data;
-          let r = 0, g = 0, b = 0, count = 0;
-          for (let i = 0; i < imageData.length; i += 16) {
-            r += imageData[i]; g += imageData[i + 1]; b += imageData[i + 2]; count++;
-          }
-          if (count > 0) setAmbientColor(`rgba(${~~(r / count)}, ${~~(g / count)}, ${~~(b / count)}, 0.6)`);
-        } catch(e) {}
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // 11. Core Video Controls
+  // --- 5. Event Handlers ---
   const togglePlay = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (!videoRef.current) return;
@@ -329,513 +129,287 @@ export default function AlexPlayerMobile({ videoData }: any) {
     e.stopPropagation();
     if (!videoRef.current) return;
     videoRef.current.muted = !videoRef.current.muted;
+    setIsMuted(videoRef.current.muted);
     resetControlsTimeout();
   };
 
-  const handleWaiting = () => {
-    if (waitingTimeoutRef.current) clearTimeout(waitingTimeoutRef.current);
-    waitingTimeoutRef.current = setTimeout(() => setIsWaiting(true), 300);
-  };
-
-  const handlePlaying = () => {
-    if (waitingTimeoutRef.current) clearTimeout(waitingTimeoutRef.current);
-    setIsWaiting(false);
-  };
-
-  // حماية وتأمين دالة حساب الوقت من قيم NaN أو Infinity
-  const formatTime = (time: number) => {
-    if (isNaN(time) || !isFinite(time) || time < 0) return "00:00";
-    const m = Math.floor(time / 60);
-    const s = Math.floor(time % 60);
-    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-
-  const handleLoadedMetadata = () => {
-    if (videoRef.current) {
-      const actDuration = videoRef.current.duration;
-      if (isFinite(actDuration) && actDuration > 0) {
-         setDuration(actDuration);
-         if (timeDisplayRef.current) {
-            timeDisplayRef.current.innerHTML = `${formatTime(videoRef.current.currentTime)} <span class="text-white/40">/</span> ${formatTime(actDuration)}`;
-         }
-      }
-      if (initialTimeRef.current !== -1 && !hlsRef.current) {
-         videoRef.current.currentTime = initialTimeRef.current;
-         qualitySwitchTimeRef.current = null;
-      }
-      setIsMuted(videoRef.current.muted);
-    }
-  };
-
-  // 12. Time Update (Zero-Render Optimization & Clamp Logic)
   const handleTimeUpdate = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    
-    if (!isScrubbing && isFinite(duration) && duration > 0) {
-      const percentage = Math.max(0, Math.min(100, (video.currentTime / duration) * 100));
-      if (progressBarRef.current) progressBarRef.current.style.width = `${percentage}%`;
-      if (thumbRef.current) {
-        const safeLeft = Math.min(Math.max(percentage, 1), 99);
-        thumbRef.current.style.left = `${safeLeft}%`;
-      }
-      
-      if (timeDisplayRef.current) {
-        timeDisplayRef.current.innerHTML = `${formatTime(video.currentTime)} <span class="text-white/40">/</span> ${formatTime(duration)}`;
-      }
-    }
+    if (!videoRef.current || isScrubbing) return;
+    const v = videoRef.current;
+    setCurrentTime(v.currentTime);
+    if (isFinite(v.duration) && v.duration > 0) setDuration(v.duration);
 
-    const now = Date.now();
-    if (now - lastSavedTimeRef.current > 3000) {
-      lastSavedTimeRef.current = now;
-      try {
-        if (videoData?.nb && video.currentTime > 5) {
-          if (duration > 0 && video.currentTime / duration > 0.97) {
-            localStorage.removeItem(`alex_progress_${videoData.nb}`);
-          } else {
-            localStorage.setItem(`alex_progress_${videoData.nb}`, String(video.currentTime));
-          }
-        }
-      } catch (e) {}
-    }
-
+    // Family Mode Skip Logic
     if (isFamilyMode && videoData?.skippingDurations) {
       const { start, end } = videoData.skippingDurations;
       for (let i = 0; i < start.length; i++) {
-        if (video.currentTime >= parseFloat(start[i]) && video.currentTime < parseFloat(end[i])) {
-          video.currentTime = parseFloat(end[i]) + 0.1;
+        if (v.currentTime >= parseFloat(start[i]) && v.currentTime < parseFloat(end[i])) {
+          v.currentTime = parseFloat(end[i]) + 0.1;
           return;
         }
       }
     }
   };
 
-  // 13. Gestures Engine (Double Tap)
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
-    resetControlsTimeout();
+  const handleScrub = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!videoRef.current || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    videoRef.current.currentTime = percent * duration;
+    setCurrentTime(percent * duration);
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStartRef.current) return;
-    if ((e.target as HTMLElement).closest('button, .pointer-events-auto, .bottom-sheet, .scrubber-area')) {
-       touchStartRef.current = null;
-       return;
-    }
+  // --- 6. Subtitles Engine ---
+  const vttTracks = useMemo(() => {
+    if (!videoData?.translations) return [];
+    return videoData.translations.filter((t: any) => t.file && t.file.includes('.vtt'));
+  }, [videoData]);
 
-    const dt = Date.now() - touchStartRef.current.time;
-    if (dt < 250) {
-      const touchX = e.changedTouches[0].clientX;
-      const dx = Math.abs(touchX - touchStartRef.current.x);
-      
-      if (dx < 15) {
-        const tapDelay = Date.now() - lastTapRef.current.time;
-        if (tapDelay < 400) { 
-          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          const relativeX = touchX - rect.left;
-          const third = rect.width / 3;
-
-          if (relativeX < third || relativeX > third * 2) {
-            const isForward = relativeX > third * 2;
-            triggerHaptic('seek');
-            
-            if (videoRef.current) {
-              videoRef.current.currentTime += isForward ? 10 : -10;
-              if (timeDisplayRef.current && duration > 0) {
-                 timeDisplayRef.current.innerHTML = `${formatTime(videoRef.current.currentTime)} <span class="text-white/40">/</span> ${formatTime(duration)}`;
-              }
-            }
-            
-            setSeekAmount(prev => {
-              const sign = isForward ? 1 : -1;
-              return (Math.sign(prev) !== sign && prev !== 0) ? sign * 10 : prev + (sign * 10);
-            });
-
-            setShowSeekAnimation(isForward ? 'forward' : 'backward');
-            if (seekTimeoutRef.current) clearTimeout(seekTimeoutRef.current);
-            seekTimeoutRef.current = setTimeout(() => {
-              setSeekAmount(0);
-              setShowSeekAnimation(null);
-            }, 700);
-          } else {
-            setIsZoomed(!isZoomed);
-            triggerHaptic('medium');
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const syncTracks = () => {
+      let activeText = '';
+      for (let i = 0; i < video.textTracks.length; i++) {
+        const track = video.textTracks[i];
+        if (selectedLanguage === 'off') { track.mode = 'disabled'; continue; }
+        if (track.language === selectedLanguage) {
+          track.mode = 'hidden';
+          if (track.activeCues?.length) {
+            activeText = Array.from(track.activeCues).map((c: any) => c.text.replace(/<[^>]+>/g, '')).join('\n');
           }
-          lastTapRef.current.time = 0; 
         } else {
-          lastTapRef.current.time = Date.now();
-          setShowControls(prev => !prev);
+          track.mode = 'disabled';
         }
       }
-    }
-  };
-
-  // 14. Fullscreen API
-  const toggleFullscreen = async () => {
-    const container = playerContainerRef.current;
-    const video = videoRef.current;
-    if (!container || !video) return;
-
-    const isCurrentlyFullscreen = document.fullscreenElement || (document as any).webkitFullscreenElement;
-
-    if (!isCurrentlyFullscreen) {
-      if (container.requestFullscreen) {
-        await container.requestFullscreen();
-      } else if ((container as any).webkitRequestFullscreen) {
-        (container as any).webkitRequestFullscreen();
-      } else if ((video as any).webkitEnterFullscreen) {
-        (video as any).webkitEnterFullscreen();
-      }
-    } else {
-      if (document.exitFullscreen) {
-        await document.exitFullscreen();
-      } else if ((document as any).webkitExitFullscreen) {
-        (document as any).webkitExitFullscreen();
-      }
-    }
-  };
-
-  // 15. Streams Quality Helper
-  const handleQualityChange = (stream: any) => {
-    if (videoRef.current) {
-      qualitySwitchTimeRef.current = videoRef.current.currentTime; 
-    }
-    setCurrentStreamUrl(stream.videoUrl);
-    setSelectedResolution(stream.resolution);
-    setTimeout(() => setSheetView('main'), 200);
-  };
-
-  // 16. Bottom Sheet Render (Strict RTL enforced)
-  const renderBottomSheet = () => {
-    if (!activeSheet) return null;
-
-    return (
-      <div 
-        className="absolute inset-0 z-50 flex items-end justify-center sm:items-center bg-black/40 backdrop-blur-sm transition-opacity" 
-        onClick={() => {
-          setActiveSheet(null);
-          setTimeout(() => setSheetView('main'), 300);
-        }}
-      >
-        <div 
-          className="w-full sm:w-[380px] bg-[#161821] rounded-t-3xl sm:rounded-2xl border border-white/5 shadow-2xl animate-[slideUpMobile_0.3s_cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative bottom-sheet"
-          onClick={e => e.stopPropagation()}
-          dir="rtl"
-        >
-          {/* --- القائمة الرئيسية --- */}
-          <div className={`w-full p-5 transition-transform duration-300 ease-in-out ${sheetView === 'main' ? 'translate-x-0 relative' : '-translate-x-full absolute inset-0'}`}>
-            <div className="flex justify-between items-center mb-6">
-               <h3 className="text-white font-bold text-lg">الإعدادات</h3>
-               <button aria-label="إغلاق الإعدادات" onClick={() => setActiveSheet(null)} className="text-white/50 hover:text-white transition-colors bg-white/5 w-8 h-8 rounded-full flex items-center justify-center outline-none focus:outline-none">
-                  <i className="fa-solid fa-xmark"></i>
-               </button>
-            </div>
-
-            <div className="flex justify-between items-center bg-[#1c1e2b] rounded-2xl p-4 mb-3 border border-white/5">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-[#E50914]/10 flex items-center justify-center text-[#E50914]">
-                   <i className="fa-solid fa-shield-heart text-lg"></i>
-                </div>
-                <div>
-                  <h4 className="text-white font-bold text-sm">وضع العائلة</h4>
-                  <p className="text-white/40 text-[11px] mt-0.5">تخطي تلقائي للمقاطع المخلة</p>
-                </div>
-              </div>
-              <button 
-                aria-label="تفعيل وضع العائلة"
-                className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer outline-none focus:outline-none ${isFamilyMode ? 'bg-[#E50914]' : 'bg-white/10'}`}
-                onClick={() => setIsFamilyMode(!isFamilyMode)}
-              >
-                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${isFamilyMode ? 'left-1' : 'right-1'}`}></div>
-              </button>
-            </div>
-
-            <div className="bg-[#1c1e2b] rounded-2xl border border-white/5 overflow-hidden">
-              <button aria-label="قائمة الترجمة" onClick={() => setSheetView('subtitles')} className="w-full flex justify-between items-center p-4 hover:bg-white/5 transition text-white border-b border-white/5 outline-none focus:outline-none">
-                <div className="flex items-center gap-3">
-                  <i className="fa-solid fa-closed-captioning text-white/50 w-5"></i>
-                  <span className="font-bold text-sm">الترجمة</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-white/50">{selectedLanguage === 'ar' ? 'العربية' : selectedLanguage === 'en' ? 'English' : 'إيقاف'}</span>
-                  <i className="fa-solid fa-chevron-left text-xs text-white/30"></i>
-                </div>
-              </button>
-              
-              <button aria-label="قائمة الجودة" onClick={() => setSheetView('quality')} className="w-full flex justify-between items-center p-4 hover:bg-white/5 transition text-white outline-none focus:outline-none">
-                <div className="flex items-center gap-3">
-                  <i className="fa-solid fa-sliders text-white/50 w-5"></i>
-                  <span className="font-bold text-sm">الجودة</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-white/50">{selectedResolution}</span>
-                  <i className="fa-solid fa-chevron-left text-xs text-white/30"></i>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* --- قائمة الترجمة --- */}
-          <div className={`w-full p-5 transition-transform duration-300 ease-in-out ${sheetView === 'subtitles' ? 'translate-x-0 relative' : 'translate-x-full absolute inset-0'}`}>
-            <div className="flex justify-between items-center mb-6">
-               <button aria-label="إغلاق" onClick={() => setActiveSheet(null)} className="text-white/50 hover:text-white transition-colors bg-white/5 w-8 h-8 rounded-full flex items-center justify-center outline-none focus:outline-none">
-                  <i className="fa-solid fa-xmark"></i>
-               </button>
-               <h3 className="text-white font-bold text-lg">الترجمة</h3>
-               <button aria-label="رجوع للإعدادات" onClick={() => setSheetView('main')} className="text-white/50 hover:text-white transition-colors bg-white/5 w-8 h-8 rounded-full flex items-center justify-center outline-none focus:outline-none">
-                  <i className="fa-solid fa-chevron-right"></i>
-               </button>
-            </div>
-
-            <div className="mb-3">
-              <span className="text-white/40 text-xs font-bold px-2">لغة الترجمة</span>
-            </div>
-
-            <div className="bg-[#1c1e2b] rounded-2xl border border-white/5 p-1.5 flex flex-col gap-1">
-              <button aria-label="إيقاف الترجمة" onClick={() => { setSelectedLanguage('off'); setTimeout(() => setSheetView('main'), 200); }} className={`w-full flex items-center p-3 rounded-xl transition-colors outline-none focus:outline-none ${selectedLanguage === 'off' ? 'bg-white/10' : 'hover:bg-white/5'}`}>
-                <div className="w-6 flex justify-center">{selectedLanguage === 'off' && <i className="fa-solid fa-check text-[#E50914] text-sm"></i>}</div>
-                <span className={`text-sm font-bold ml-auto ${selectedLanguage === 'off' ? 'text-white' : 'text-white/70'}`}>إيقاف</span>
-              </button>
-              <button aria-label="العربية" onClick={() => { setSelectedLanguage('ar'); setTimeout(() => setSheetView('main'), 200); }} className={`w-full flex items-center p-3 rounded-xl transition-colors outline-none focus:outline-none ${selectedLanguage === 'ar' ? 'bg-[#2a2c39]' : 'hover:bg-white/5'}`}>
-                <div className="w-6 flex justify-center">{selectedLanguage === 'ar' && <i className="fa-solid fa-check text-[#E50914] text-sm"></i>}</div>
-                <span className={`text-sm font-bold ml-auto ${selectedLanguage === 'ar' ? 'text-white' : 'text-white/70'}`}>العربية</span>
-              </button>
-              <button aria-label="English" onClick={() => { setSelectedLanguage('en'); setTimeout(() => setSheetView('main'), 200); }} className={`w-full flex items-center p-3 rounded-xl transition-colors outline-none focus:outline-none ${selectedLanguage === 'en' ? 'bg-[#2a2c39]' : 'hover:bg-white/5'}`}>
-                <div className="w-6 flex justify-center">{selectedLanguage === 'en' && <i className="fa-solid fa-check text-[#E50914] text-sm"></i>}</div>
-                <span className={`text-sm font-bold ml-auto ${selectedLanguage === 'en' ? 'text-white' : 'text-white/70'}`}>English</span>
-              </button>
-            </div>
-          </div>
-
-          {/* --- قائمة الجودة --- */}
-          <div className={`w-full p-5 transition-transform duration-300 ease-in-out ${sheetView === 'quality' ? 'translate-x-0 relative' : 'translate-x-full absolute inset-0'}`}>
-            <div className="flex justify-between items-center mb-6">
-               <button aria-label="إغلاق" onClick={() => setActiveSheet(null)} className="text-white/50 hover:text-white transition-colors bg-white/5 w-8 h-8 rounded-full flex items-center justify-center outline-none focus:outline-none">
-                  <i className="fa-solid fa-xmark"></i>
-               </button>
-               <h3 className="text-white font-bold text-lg">الجودة</h3>
-               <button aria-label="رجوع للإعدادات" onClick={() => setSheetView('main')} className="text-white/50 hover:text-white transition-colors bg-white/5 w-8 h-8 rounded-full flex items-center justify-center outline-none focus:outline-none">
-                  <i className="fa-solid fa-chevron-right"></i>
-               </button>
-            </div>
-            
-            <div className="bg-[#1c1e2b] rounded-2xl border border-white/5 p-1.5 flex flex-col gap-1 max-h-[40vh] overflow-y-auto">
-              {videoData?.streams?.map((stream: any, index: number) => (
-                <button 
-                  key={index}
-                  aria-label={`جودة ${stream.resolution}`}
-                  onClick={() => handleQualityChange(stream)} 
-                  className={`w-full flex items-center p-3 rounded-xl transition-colors outline-none focus:outline-none ${selectedResolution === stream.resolution ? 'bg-[#2a2c39]' : 'hover:bg-white/5'}`}
-                >
-                  <div className="w-6 flex justify-center">{selectedResolution === stream.resolution && <i className="fa-solid fa-check text-[#E50914] text-sm"></i>}</div>
-                  <span className={`text-sm font-bold ml-auto ${selectedResolution === stream.resolution ? 'text-white' : 'text-white/70'}`}>{stream.resolution}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-        </div>
-      </div>
-    );
-  };
+      setCurrentSubtitle(activeText);
+    };
+    video.addEventListener('timeupdate', syncTracks);
+    return () => video.removeEventListener('timeupdate', syncTracks);
+  }, [selectedLanguage, vttTracks]);
 
   // --- Render ---
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
     <div 
       ref={playerContainerRef}
-      className="relative w-full h-full bg-black overflow-hidden select-none transition-shadow duration-700 font-sans group outline-none"
-      style={{ boxShadow: `0 0 40px 10px ${ambientColor}`, paddingBottom: 'env(safe-area-inset-bottom)' }}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onContextMenu={(e) => e.preventDefault()}
+      className="relative w-full aspect-video bg-black overflow-hidden font-sans text-white group"
       onMouseMove={resetControlsTimeout}
+      onMouseLeave={() => { if (!isPaused) setShowControls(false); }}
+      onClick={togglePlay}
     >
       <video
         ref={videoRef}
-        crossOrigin="anonymous"
-        controlsList="nodownload noplaybackrate"
-        disablePictureInPicture
-        className={`w-full h-full ${isZoomed ? 'object-cover' : 'object-contain'} outline-none`}
-        onTimeUpdate={handleTimeUpdate}
-        onWaiting={handleWaiting}
-        onPlaying={handlePlaying}
-        onSeeking={handleWaiting}
-        onSeeked={handlePlaying}
-        onLoadedMetadata={handleLoadedMetadata}
-        onPlay={() => setIsPaused(false)}
-        onPause={() => setIsPaused(true)}
-        onVolumeChange={(e) => setIsMuted((e.target as HTMLVideoElement).muted)}
+        className="w-full h-full object-contain"
         playsInline
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleTimeUpdate}
+        onWaiting={() => { clearTimeout(waitingTimeoutRef.current!); waitingTimeoutRef.current = setTimeout(() => setIsWaiting(true), 300); }}
+        onPlaying={() => { clearTimeout(waitingTimeoutRef.current!); setIsWaiting(false); setIsPaused(false); }}
+        onPause={() => setIsPaused(true)}
       >
-        {vttTracks.map((track: any) => (
-          <track key={track.id} kind="subtitles" srcLang={track.type} src={track.file} label={track.name} />
-        ))}
+        {vttTracks.map((t: any) => <track key={t.id} kind="subtitles" srcLang={t.type} src={t.file} />)}
       </video>
-      <canvas ref={canvasRef} width="64" height="36" className="hidden" />
 
       {/* Subtitles Overlay */}
       {currentSubtitle && (
-        <div className="absolute bottom-24 left-0 right-0 flex justify-center pointer-events-none z-30 px-4">
-          <p className="text-white text-center text-lg md:text-2xl font-bold bg-black/60 px-3 py-1.5 rounded drop-shadow-md whitespace-pre-wrap" dir="auto">
+        <div className="absolute bottom-28 left-0 right-0 flex justify-center pointer-events-none px-4 z-20">
+          <p className="text-white text-center text-lg md:text-2xl font-bold bg-black/70 px-4 py-2 rounded-lg" dir="auto">
             {currentSubtitle}
           </p>
         </div>
       )}
 
-      {/* Seek Animations */}
-      {showSeekAnimation === 'forward' && (
-        <div className="absolute right-0 inset-y-0 w-1/3 flex flex-col items-center justify-center z-20 pointer-events-none">
-          <div className="absolute right-0 w-[200%] h-[200%] bg-white/10 rounded-full animate-[ping_0.5s_ease-out_forwards] opacity-0 translate-x-1/2"></div>
-          <div className="relative z-10 flex flex-col items-center">
-            <i className="fa-solid fa-forward text-white/90 text-2xl drop-shadow-lg"></i>
-            <span className="text-white font-bold mt-1 text-xs drop-shadow-lg">+{seekAmount} ثوانٍ</span>
-          </div>
-        </div>
-      )}
-
-      {showSeekAnimation === 'backward' && (
-        <div className="absolute left-0 inset-y-0 w-1/3 flex flex-col items-center justify-center z-20 pointer-events-none">
-          <div className="absolute left-0 w-[200%] h-[200%] bg-white/10 rounded-full animate-[ping_0.5s_ease-out_forwards] opacity-0 -translate-x-1/2"></div>
-          <div className="relative z-10 flex flex-col items-center">
-            <i className="fa-solid fa-backward text-white/90 text-2xl drop-shadow-lg"></i>
-            <span className="text-white font-bold mt-1 text-xs drop-shadow-lg">{seekAmount} ثوانٍ</span>
-          </div>
-        </div>
-      )}
-
-      {/* Center Play Button (Fixed Outline Bug) */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-40">
+      {/* Center Play Button */}
+      <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-30 transition-opacity duration-300 ${showControls || isPaused ? 'opacity-100' : 'opacity-0'}`}>
         <button 
-          aria-label={isPaused ? "تشغيل" : "إيقافชั่วคราว"}
           onClick={togglePlay}
-          style={{ width: `${smartLayout.playBtnOuter}px`, height: `${smartLayout.playBtnOuter}px`, WebkitTapHighlightColor: 'transparent' }}
-          className={`flex items-center justify-center pointer-events-auto transition-transform duration-300 outline-none focus:outline-none ring-0 ${showControls || isPaused ? 'scale-100 opacity-100' : 'scale-90 opacity-0'}`}
+          className="w-20 h-20 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/20 pointer-events-auto transition-transform active:scale-90 outline-none"
         >
-          <div 
-            style={{ width: `${smartLayout.playBtnInner}px`, height: `${smartLayout.playBtnInner}px` }}
-            className="rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white text-xl border border-white/10 shadow-lg active:scale-90 transition-all outline-none focus:outline-none ring-0"
-          >
-            <i className={`fa-solid ${isPaused ? 'fa-play ml-1' : 'fa-pause'}`}></i>
-          </div>
+          {isPaused ? (
+            <svg className="w-8 h-8 ml-1 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          ) : (
+            <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          )}
         </button>
       </div>
 
-      {/* Bottom Controls Pill (Restored Mute & Play Button, Fixed Layout) */}
+      {/* Bottom Controls (Strict LTR Direction to fix UI bug) */}
       <div 
-        style={{ bottom: `${smartLayout.pillMargin}px`, left: `${smartLayout.pillMargin}px`, right: `${smartLayout.pillMargin}px` }}
-        className={`absolute rounded-[20px] bg-[#0f111a]/85 backdrop-blur-xl border border-white/10 px-4 py-3 shadow-2xl transition-all duration-500 flex flex-col gap-2 z-40 ${showControls || isPaused ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-12 opacity-0'}`}
+        dir="ltr"
+        onClick={(e) => e.stopPropagation()}
+        className={`absolute bottom-4 left-4 right-4 bg-[#0f111a]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex flex-col gap-3 z-40 transition-all duration-500 ${showControls || isPaused ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}
       >
-        {/* Timeline (Scrubber) */}
+        {/* Timeline */}
         <div 
-          className="relative w-full h-8 flex items-center group/timeline cursor-pointer touch-none scrubber-area" dir="ltr"
+          className="relative w-full h-6 flex items-center cursor-pointer group/timeline touch-none"
           onPointerDown={(e) => {
-            e.stopPropagation();
             e.currentTarget.setPointerCapture(e.pointerId);
             setIsScrubbing(true);
-            
-            if (videoRef.current) {
-              wasPlayingRef.current = !videoRef.current.paused;
-              videoRef.current.pause();
-            }
-
-            if (videoRef.current && isFinite(duration) && duration > 0) {
-              const rect = e.currentTarget.getBoundingClientRect();
-              const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-              videoRef.current.currentTime = percent * duration;
-              if (progressBarRef.current) progressBarRef.current.style.width = `${percent * 100}%`;
-              if (thumbRef.current) thumbRef.current.style.left = `${Math.min(Math.max(percent * 100, 1), 99)}%`;
-              if (timeDisplayRef.current) timeDisplayRef.current.innerHTML = `${formatTime(percent * duration)} <span class="text-white/40">/</span> ${formatTime(duration)}`;
-            }
+            wasPlayingRef.current = !videoRef.current?.paused;
+            videoRef.current?.pause();
+            handleScrub(e);
           }}
-          onPointerMove={(e) => {
-            if (isScrubbing && videoRef.current && duration > 0) {
-              const rect = e.currentTarget.getBoundingClientRect();
-              const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-              videoRef.current.currentTime = percent * duration;
-              if (progressBarRef.current) progressBarRef.current.style.width = `${percent * 100}%`;
-              if (thumbRef.current) thumbRef.current.style.left = `${Math.min(Math.max(percent * 100, 1), 99)}%`;
-              if (timeDisplayRef.current) timeDisplayRef.current.innerHTML = `${formatTime(percent * duration)} <span class="text-white/40">/</span> ${formatTime(duration)}`;
-            }
-          }}
+          onPointerMove={(e) => { if (isScrubbing) handleScrub(e); }}
           onPointerUp={(e) => {
-            e.stopPropagation();
             e.currentTarget.releasePointerCapture(e.pointerId);
             setIsScrubbing(false);
-            triggerHaptic('light');
-            if (wasPlayingRef.current && videoRef.current) videoRef.current.play().catch(()=>{});
-          }}
-          onPointerCancel={(e) => {
-            e.stopPropagation();
-            e.currentTarget.releasePointerCapture(e.pointerId);
-            setIsScrubbing(false);
-            if (wasPlayingRef.current && videoRef.current) videoRef.current.play().catch(()=>{});
+            if (wasPlayingRef.current) videoRef.current?.play();
           }}
         >
-          <div className="w-full h-2 bg-white/20 rounded-full relative transition-all duration-300 group-active:h-2.5">
-            <div ref={progressBarRef} className="absolute left-0 top-0 bottom-0 bg-[#E50914] rounded-full" style={{ width: '0%' }}></div>
-            {/* الدائرة الزرقاء تم إرجاعها بقوة (Thumb Restored) */}
+          <div className="w-full h-1.5 bg-white/20 rounded-full relative overflow-visible">
+            {/* Red Fill */}
+            <div className="absolute left-0 top-0 bottom-0 bg-red-600 rounded-full pointer-events-none" style={{ width: `${progressPercent}%` }}></div>
+            {/* Blue/Red Thumb */}
             <div 
-              ref={thumbRef}
-              className={`absolute w-4 h-4 rounded-full bg-[#E50914] top-1/2 -translate-y-1/2 -translate-x-1/2 transition-transform shadow-[0_0_10px_rgba(229,9,20,0.6)] ${isScrubbing ? 'scale-125' : 'scale-0 group-active:scale-100'}`}
-              style={{ left: `${isFinite(duration) && duration > 0 && videoRef.current ? Math.min(Math.max((videoRef.current.currentTime / duration) * 100, 1), 99) : 0}%` }}
+              className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-red-600 rounded-full shadow-lg pointer-events-none transition-transform duration-200 ${isScrubbing ? 'scale-125' : 'scale-0 group-hover/timeline:scale-100'}`}
+              style={{ left: `calc(${progressPercent}% - 8px)` }}
             ></div>
           </div>
         </div>
 
-        {/* Action Buttons Row (Fixed Left/Right Organization) */}
-        <div className="flex items-center justify-between mt-1">
-          
-          {/* Left Actions (Play, Mute, Time) */}
-          <div className="flex items-center gap-4">
-            <button aria-label="تشغيل / إيقاف" onClick={togglePlay} className="text-white hover:text-white/80 transition-colors pointer-events-auto outline-none focus:outline-none">
-              <i className={`fa-solid ${isPaused ? 'fa-play' : 'fa-pause'} text-lg`}></i>
+        {/* Buttons Row */}
+        <div className="flex items-center justify-between w-full">
+          {/* Left: Play, Mute, Time */}
+          <div className="flex items-center gap-5">
+            <button onClick={togglePlay} className="text-white hover:text-red-500 transition outline-none">
+              {isPaused ? <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> : <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>}
             </button>
-            <button aria-label="الصوت" onClick={toggleMute} className="text-white hover:text-white/80 transition-colors pointer-events-auto w-5 text-center outline-none focus:outline-none">
-              <i className={`fa-solid ${isMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-lg`}></i>
+            <button onClick={toggleMute} className="text-white hover:text-red-500 transition outline-none">
+              {isMuted ? <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg> : <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>}
             </button>
-            {/* الوقت تم إرجاعه وتصليح منطق الحساب الخاص به */}
-            <span ref={timeDisplayRef} aria-label="المدة" className="tabular-nums font-mono text-[12px] font-medium text-white/80 ml-1 select-none">
-              00:00 <span className="text-white/40">/</span> 00:00
+            <span className="text-white/80 font-mono text-xs tracking-wider select-none">
+              {formatTime(currentTime)} <span className="text-white/40 mx-1">/</span> {formatTime(duration)}
             </span>
           </div>
 
-          {/* Right Actions (Settings, Fullscreen) */}
-          <div className="flex items-center gap-1.5">
-            <button 
-              aria-label="الإعدادات"
-              onClick={(e) => { e.stopPropagation(); setActiveSheet('settings'); }}
-              className={`w-9 h-9 flex items-center justify-center rounded-full transition-all pointer-events-auto outline-none focus:outline-none ${activeSheet || isFamilyMode ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10 hover:text-white'}`}
-            >
-              <div className="relative">
-                <i className={`fa-solid fa-gear text-[14px] transition-transform ${activeSheet ? 'rotate-90' : ''}`}></i>
-                {isFamilyMode && <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-[#E50914] rounded-full animate-pulse"></div>}
-              </div>
+          {/* Right: Settings, Fullscreen */}
+          <div className="flex items-center gap-4">
+            <button onClick={() => setActiveSheet('settings')} className="text-white hover:text-white transition outline-none">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
             </button>
-            <button 
-              aria-label="ملء الشاشة"
-              onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-              className="w-9 h-9 flex items-center justify-center text-white/80 hover:bg-white/10 hover:text-white rounded-full transition-all pointer-events-auto outline-none focus:outline-none"
-            >
-              <i className={`fa-solid ${isFullscreen ? 'fa-compress' : 'fa-expand'} text-sm`}></i>
+            <button onClick={toggleFullscreen} className="text-white hover:text-white transition outline-none">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
             </button>
           </div>
-
         </div>
       </div>
 
       {/* Loading Spinner */}
       {isWaiting && (
-        <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
-          <div className="w-[80px] h-[80px] bg-black/70 backdrop-blur-md flex items-center justify-center shadow-2xl border border-white/10 rounded-2xl animate-pulse">
-            <i className="fa-solid fa-circle-notch fa-spin text-white text-3xl"></i>
-          </div>
+        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+          <div className="w-16 h-16 border-4 border-white/20 border-t-red-600 rounded-full animate-spin"></div>
         </div>
       )}
 
-      {/* Settings Modal */}
-      {renderBottomSheet()}
+      {/* Settings Modal (Strict RTL Structure) */}
+      {activeSheet && (
+        <div 
+          className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => { setActiveSheet(null); setSheetView('main'); }}
+        >
+          <div 
+            dir="rtl"
+            onClick={e => e.stopPropagation()}
+            className="bg-[#161821] w-[90%] max-w-sm rounded-2xl p-5 border border-white/10 shadow-2xl relative overflow-hidden text-white"
+          >
+            {/* Main Menu */}
+            <div className={`transition-transform duration-300 w-full ${sheetView === 'main' ? 'translate-x-0' : 'translate-x-full absolute inset-0 invisible'}`}>
+              <div className="flex flex-row justify-between items-center mb-6">
+                 <h3 className="font-bold text-lg">الإعدادات</h3>
+                 <button onClick={() => { setActiveSheet(null); setSheetView('main'); }} className="p-2 bg-white/5 rounded-full hover:bg-white/10 outline-none">
+                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                 </button>
+              </div>
 
-      <style dangerouslySetInnerHTML={{__html: `@keyframes slideUpMobile { from { transform: translateY(100%); } to { transform: translateY(0); } }`}} />
+              <div className="flex flex-row justify-between items-center bg-white/5 rounded-xl p-4 mb-4">
+                <div className="flex flex-row items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-red-600/20 flex items-center justify-center text-red-600">
+                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                  </div>
+                  <div className="flex flex-col text-right">
+                    <span className="font-bold text-sm">وضع العائلة</span>
+                    <span className="text-xs text-white/50 mt-1">تخطي تلقائي للمقاطع المخلة</span>
+                  </div>
+                </div>
+                <button onClick={() => setIsFamilyMode(!isFamilyMode)} className={`w-12 h-6 rounded-full relative transition-colors outline-none ${isFamilyMode ? 'bg-red-600' : 'bg-white/20'}`}>
+                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${isFamilyMode ? 'left-1' : 'right-1'}`}></div>
+                </button>
+              </div>
+
+              <div className="bg-white/5 rounded-xl flex flex-col">
+                <button onClick={() => setSheetView('subtitles')} className="flex flex-row justify-between items-center p-4 border-b border-white/5 hover:bg-white/5 transition outline-none">
+                  <div className="flex flex-row items-center gap-3">
+                    <svg className="w-5 h-5 text-white/50" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 7H9.5v-.5h-2v3h2V13H11v1c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1zm7 0h-1.5v-.5h-2v3h2V13H18v1c0 .55-.45 1-1 1h-3c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1z"/></svg>
+                    <span className="font-bold text-sm">الترجمة</span>
+                  </div>
+                  <div className="flex flex-row items-center gap-2 text-sm text-white/50">
+                    <span>{selectedLanguage === 'ar' ? 'العربية' : selectedLanguage === 'en' ? 'English' : 'إيقاف'}</span>
+                    <span>&lt;</span>
+                  </div>
+                </button>
+                <button onClick={() => setSheetView('quality')} className="flex flex-row justify-between items-center p-4 hover:bg-white/5 transition outline-none">
+                  <div className="flex flex-row items-center gap-3">
+                    <svg className="w-5 h-5 text-white/50" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
+                    <span className="font-bold text-sm">الجودة</span>
+                  </div>
+                  <div className="flex flex-row items-center gap-2 text-sm text-white/50">
+                    <span>{selectedResolution}</span>
+                    <span>&lt;</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Subtitles Menu */}
+            <div className={`transition-transform duration-300 w-full ${sheetView === 'subtitles' ? 'translate-x-0' : '-translate-x-full absolute inset-0 invisible'}`}>
+               <div className="flex flex-row justify-between items-center mb-6">
+                 <button onClick={() => setSheetView('main')} className="p-2 bg-white/5 rounded-full hover:bg-white/10 outline-none">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                 </button>
+                 <h3 className="font-bold text-lg">الترجمة</h3>
+                 <div className="w-9 h-9"></div> {/* Spacer */}
+              </div>
+              <div className="flex flex-col gap-2">
+                {['off', 'ar', 'en'].map(lang => (
+                  <button 
+                    key={lang}
+                    onClick={() => { setSelectedLanguage(lang); setSheetView('main'); }} 
+                    className={`flex flex-row items-center justify-between p-4 rounded-xl transition outline-none ${selectedLanguage === lang ? 'bg-white/10' : 'hover:bg-white/5'}`}
+                  >
+                    <span className="font-bold text-sm text-right flex-1">{lang === 'off' ? 'إيقاف' : lang === 'ar' ? 'العربية' : 'English'}</span>
+                    {selectedLanguage === lang && <svg className="w-5 h-5 text-red-600" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Quality Menu */}
+            <div className={`transition-transform duration-300 w-full ${sheetView === 'quality' ? 'translate-x-0' : '-translate-x-full absolute inset-0 invisible'}`}>
+               <div className="flex flex-row justify-between items-center mb-6">
+                 <button onClick={() => setSheetView('main')} className="p-2 bg-white/5 rounded-full hover:bg-white/10 outline-none">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                 </button>
+                 <h3 className="font-bold text-lg">الجودة</h3>
+                 <div className="w-9 h-9"></div> {/* Spacer */}
+              </div>
+              <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto">
+                {videoData?.streams?.map((stream: any, index: number) => (
+                  <button 
+                    key={index}
+                    onClick={() => { setCurrentStreamUrl(stream.videoUrl); setSelectedResolution(stream.resolution); setSheetView('main'); }} 
+                    className={`flex flex-row items-center justify-between p-4 rounded-xl transition outline-none ${selectedResolution === stream.resolution ? 'bg-white/10' : 'hover:bg-white/5'}`}
+                  >
+                    <span className="font-bold text-sm text-right flex-1">{stream.resolution}</span>
+                    {selectedResolution === stream.resolution && <svg className="w-5 h-5 text-red-600" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
