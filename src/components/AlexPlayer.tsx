@@ -910,7 +910,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
           <button
             key={f.name}
             onClick={(e) => { e.stopPropagation(); setSelectedFont(f.name); }}
-            className={`px-2 py-3 md:py-2 rounded-xl md:rounded-lg text-xs font-bold transition-all ${selectedFont === f.name ? 'bg-white text-black' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+            className={`px-2 py-3 md:py-2 rounded-xl md:rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedFont === f.name ? 'bg-white text-black' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
             style={{ fontFamily: f.name }}
           >
             {f.label}
@@ -923,14 +923,14 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         <div className="flex items-center gap-4">
           <button 
             onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
-            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/10 hover:bg-alex-primary active:scale-90 text-white transition-all shadow-lg"
+            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/10 hover:bg-alex-primary active:scale-90 text-white transition-all shadow-lg cursor-pointer outline-none focus:outline-none ring-0"
           >
             <i className="fa-solid fa-minus text-sm"></i>
           </button>
           <span className="text-base font-en font-bold text-white min-w-[48px] text-center drop-shadow-md">{subtitleSize}%</span>
           <button 
             onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
-            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/10 hover:bg-alex-primary active:scale-90 text-white transition-all shadow-lg"
+            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/10 hover:bg-alex-primary active:scale-90 text-white transition-all shadow-lg cursor-pointer outline-none focus:outline-none ring-0"
           >
             <i className="fa-solid fa-plus text-sm"></i>
           </button>
@@ -941,7 +941,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         <span className="text-sm md:text-xs text-gray-300 font-bold">خلفية سوداء للترجمة</span>
         <button
           onClick={(e) => { e.stopPropagation(); setShowSubtitleBg(prev => !prev); }}
-          className={`w-14 h-7 md:w-12 md:h-6 rounded-full p-1 transition-colors duration-300 focus:outline-none flex items-center cursor-pointer ${
+          className={`w-14 h-7 md:w-12 md:h-6 rounded-full p-1 transition-colors duration-300 outline-none focus:outline-none ring-0 flex items-center cursor-pointer ${
             showSubtitleBg ? 'bg-alex-primary justify-end' : 'bg-white/20 justify-start'
           }`}
         >
@@ -1136,7 +1136,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         {isPaused && (
           <button 
             onClick={togglePlay}
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 md:w-24 md:h-24 rounded-full bg-alex-primary/95 text-white flex items-center justify-center shadow-[0_0_30px_rgba(229,9,20,0.6)] md:shadow-[0_0_45px_rgba(229,9,20,0.6)] hover:scale-110 transition-all duration-300 z-20 cursor-pointer animate-fade-in-up"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 md:w-24 md:h-24 rounded-full bg-alex-primary/95 text-white flex items-center justify-center shadow-[0_0_30px_rgba(229,9,20,0.6)] md:shadow-[0_0_45px_rgba(229,9,20,0.6)] hover:scale-110 transition-all duration-300 z-20 cursor-pointer outline-none focus:outline-none ring-0 animate-fade-in-up"
           >
             <i className="fa-solid fa-play ml-1 md:mr-1.5 text-2xl md:text-4xl"></i>
           </button>
@@ -1154,7 +1154,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         {showIntroSkip && (
           <button
             onClick={handleSkipIntro}
-            className="absolute bottom-24 right-6 flex items-center justify-center gap-2.5 bg-black/60 backdrop-blur-md hover:bg-black/80 text-white font-black text-sm md:text-base px-5 py-2.5 rounded-xl border border-white/20 hover:border-white/40 hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.5)] z-40 transition-all duration-300 cursor-pointer leading-none"
+            className="absolute bottom-24 right-6 flex items-center justify-center gap-2.5 bg-black/60 backdrop-blur-md hover:bg-black/80 text-white font-black text-sm md:text-base px-5 py-2.5 rounded-xl border border-white/20 hover:border-white/40 hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.5)] z-40 transition-all duration-300 cursor-pointer outline-none focus:outline-none ring-0 leading-none"
           >
             <i className="fa-solid fa-forward-step text-xs text-gray-300 leading-none"></i>
             <span className="leading-none">تخطي المقدمة</span>
@@ -1164,7 +1164,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         {showOutroSkip && (
           <button
             onClick={handleSkipOutro}
-            className="absolute bottom-24 right-6 flex items-center justify-center gap-2.5 bg-black/60 backdrop-blur-md hover:bg-black/80 text-white font-black text-sm md:text-base px-5 py-2.5 rounded-xl border border-white/20 hover:border-white/40 hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.5)] z-40 transition-all duration-300 cursor-pointer leading-none"
+            className="absolute bottom-24 right-6 flex items-center justify-center gap-2.5 bg-black/60 backdrop-blur-md hover:bg-black/80 text-white font-black text-sm md:text-base px-5 py-2.5 rounded-xl border border-white/20 hover:border-white/40 hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.5)] z-40 transition-all duration-300 cursor-pointer outline-none focus:outline-none ring-0 leading-none"
           >
             <i className="fa-solid fa-forward text-xs text-gray-300 leading-none"></i>
             <span className="leading-none">{onNextEpisode ? 'الحلقة التالية' : 'تخطي النهاية'}</span>
@@ -1202,7 +1202,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               {/* Play / Pause */}
               <button 
                 onClick={togglePlay} 
-                className="text-white hover:text-alex-primary text-lg md:text-2xl transition-colors cursor-pointer w-8 h-8 md:w-6 md:h-6 flex items-center justify-center"
+                className="text-white hover:text-alex-primary text-lg md:text-2xl transition-colors cursor-pointer outline-none focus:outline-none ring-0 w-8 h-8 md:w-6 md:h-6 flex items-center justify-center"
               >
                 <i className={`fa-solid ${isPaused ? 'fa-play' : 'fa-pause'}`}></i>
               </button>
@@ -1211,7 +1211,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               {onNextEpisode && (
                 <button 
                   onClick={onNextEpisode} 
-                  className="text-white hover:text-alex-primary text-lg md:text-2xl transition-colors cursor-pointer w-8 h-8 md:w-6 md:h-6 flex items-center justify-center"
+                  className="text-white hover:text-alex-primary text-lg md:text-2xl transition-colors cursor-pointer outline-none focus:outline-none ring-0 w-8 h-8 md:w-6 md:h-6 flex items-center justify-center"
                   title="الحلقة التالية"
                 >
                   <i className="fa-solid fa-forward-step"></i>
@@ -1222,7 +1222,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               <div className="hidden md:flex items-center gap-2 group/volume relative">
                 <button 
                   onClick={() => setIsMuted(!isMuted)} 
-                  className="text-white hover:text-alex-primary text-base md:text-xl transition-colors cursor-pointer w-6 h-6 flex items-center justify-center"
+                  className="text-white hover:text-alex-primary text-base md:text-xl transition-colors cursor-pointer outline-none focus:outline-none ring-0 w-6 h-6 flex items-center justify-center"
                 >
                   <i className={`fa-solid ${isMuted || volume === 0 ? 'fa-volume-xmark' : volume < 0.5 ? 'fa-volume-low' : 'fa-volume-high'}`}></i>
                 </button>
@@ -1307,7 +1307,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               {/* Fullscreen Toggle */}
               <button 
                 onClick={toggleFullscreen} 
-                className="text-white hover:text-alex-primary text-lg md:text-2xl transition-colors cursor-pointer w-8 h-8 md:w-10 md:h-10 flex items-center justify-center"
+                className="text-white hover:text-alex-primary text-lg md:text-2xl transition-colors cursor-pointer outline-none focus:outline-none ring-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center"
               >
                 <i className={`fa-solid ${isFullscreen ? 'fa-minimize' : 'fa-maximize'}`}></i>
               </button>
