@@ -49,7 +49,7 @@ export function useWatchRoom(roomId: string, initIsHost: boolean, username: stri
   useEffect(() => {
     if (!roomId) return;
     
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:4000` : '');
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : '');
     
     const newSocket = io(socketUrl);
     socketRef.current = newSocket;
