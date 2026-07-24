@@ -124,28 +124,36 @@ export default function RoomSidebar({
 
           {/* Tab Content: Live Chat Panel */}
           {activeTab === 'chat' && (
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0e1a]/90">
               {/* Chat Log Stream */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                 {messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 py-10 opacity-70">
-                    <i className="fa-solid fa-comments text-4xl mb-2 text-red-500/40"></i>
-                    <p className="text-xs font-bold text-gray-400">لا توجد رسائل بعد</p>
-                    <p className="text-[10px] text-gray-500 mt-1">ابدأ الدردشة والمحادثة مع الأصدقاء الآن!</p>
+                  <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 py-10 opacity-80">
+                    <div className="w-12 h-12 rounded-full bg-red-600/10 border border-red-500/30 flex items-center justify-center mb-3">
+                      <i className="fa-solid fa-comments text-xl text-[#E50914]"></i>
+                    </div>
+                    <p className="text-xs font-bold text-white">لا توجد رسائل بعد</p>
+                    <p className="text-[11px] text-gray-400 mt-1">ابدأ الدردشة والمحادثة مع الأصدقاء الآن!</p>
                   </div>
                 ) : (
                   messages.map((msg) => (
                     <div key={msg.id} className="flex flex-col space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-white flex items-center gap-1">
-                          {msg.sender}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-red-600/30 border border-red-500/40 text-[9px] font-black text-red-400 flex items-center justify-center">
+                            {msg.sender?.[0]?.toUpperCase() || 'U'}
+                          </span>
+                          <span className="text-gray-100 font-bold text-xs">{msg.sender}</span>
                           {msg.isHost && (
-                            <i className="fa-solid fa-crown text-[9px] text-yellow-400" title="المضيف"></i>
+                            <span className="bg-yellow-500/20 border border-yellow-500/40 px-1.5 py-0.2 rounded text-[9px] text-yellow-300 font-bold flex items-center gap-1">
+                              <i className="fa-solid fa-crown text-[8px]"></i>
+                              مضيف
+                            </span>
                           )}
                         </span>
-                        <span className="text-[9px] text-gray-500">{msg.time}</span>
+                        <span className="text-[10px] text-gray-400 font-en tracking-tight">{msg.time}</span>
                       </div>
-                      <div className="bg-white/5 border border-white/10 rounded-2xl px-3.5 py-2 text-xs text-gray-200 leading-relaxed break-words max-w-[90%]">
+                      <div className="bg-[#141b2d] border border-white/15 rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-xs text-white leading-relaxed break-words max-w-[95%] shadow-md">
                         {msg.text}
                       </div>
                     </div>
@@ -155,18 +163,18 @@ export default function RoomSidebar({
               </div>
 
               {/* Chat Input Form */}
-              <form onSubmit={handleSendMessage} className="p-3 border-t border-white/10 bg-black/60 flex items-center gap-2">
+              <form onSubmit={handleSendMessage} className="p-3 border-t border-white/10 bg-[#0d1222] flex items-center gap-2">
                 <input
                   type="text"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="اكتب رسالتك هنا..."
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-[#E50914]/50 transition-colors"
+                  className="flex-1 bg-[#151c2e] border border-white/20 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold placeholder-gray-400 outline-none focus:border-[#E50914] focus:bg-[#1a233a] transition-all shadow-inner"
                 />
                 <button
                   type="submit"
                   disabled={!inputText.trim()}
-                  className="bg-[#E50914] hover:bg-[#b8070f] disabled:opacity-40 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0"
+                  className="bg-[#E50914] hover:bg-[#b8070f] active:scale-95 disabled:opacity-30 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-[0_0_12px_rgba(229,9,20,0.4)]"
                 >
                   <i className="fa-solid fa-paper-plane text-xs"></i>
                 </button>
