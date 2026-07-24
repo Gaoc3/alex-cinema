@@ -104,7 +104,22 @@ export default function RoomClientWrapper({
           </div>
           <div>
             <h2 className="text-white font-bold">{roomData.title || 'غرفة المشاهدة الجماعية'}</h2>
-            <p className="text-gray-400 text-xs font-en tracking-wider">{roomId}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-gray-400 text-xs font-en tracking-wider truncate max-w-[160px] sm:max-w-none">{roomId}</p>
+              <button 
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    navigator.clipboard.writeText(window.location.href);
+                    alert('تم نسخ رابط الغرفة بنجاح!');
+                  }
+                }}
+                className="bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 hover:text-white px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer"
+                title="نسخ رابط الغرفة"
+              >
+                <i className="fa-solid fa-copy text-[9px] text-[#E50914]"></i>
+                <span>نسخ الرابط</span>
+              </button>
+            </div>
           </div>
         </div>
 
