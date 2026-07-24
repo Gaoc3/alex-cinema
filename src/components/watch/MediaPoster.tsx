@@ -33,15 +33,22 @@ export default function MediaPoster({ img, imdbUrlRef }: MediaPosterProps) {
             `}</style>
           </>
         )}
-        <Image 
-          src={getImageUrl(img, 'poster')} 
-          alt="Poster"
-          fill
-          sizes="(max-width: 768px) 100vw, 33vw"
-          priority={true}
-          onLoad={() => setIsLoaded(true)}
-          className={`absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-all duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-        />
+        {getImageUrl(img, 'poster') ? (
+          <Image 
+            src={getImageUrl(img, 'poster')} 
+            alt="Poster"
+            fill
+            unoptimized
+            sizes="(max-width: 768px) 100vw, 33vw"
+            priority={true}
+            onLoad={() => setIsLoaded(true)}
+            className={`absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-all duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+          />
+        ) : (
+          <div className="absolute inset-0 w-full h-full bg-white/5 flex items-center justify-center">
+            <i className="fa-solid fa-film text-gray-500 text-4xl"></i>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0e17] via-transparent to-transparent opacity-80"></div>
         
         {imdbUrlRef && (
@@ -50,10 +57,11 @@ export default function MediaPoster({ img, imdbUrlRef }: MediaPosterProps) {
               href={imdbUrlRef} 
               target="_blank" 
               rel="noreferrer" 
-              className="flex items-center justify-center gap-2.5 w-full bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm hover:bg-yellow-400 transition-all hover-scale shadow-lg relative z-50 pointer-events-auto cursor-pointer"
+              className="flex flex-row items-center justify-center gap-2 w-full bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm hover:bg-yellow-400 transition-all hover-scale shadow-lg relative z-50 pointer-events-auto cursor-pointer"
+              dir="rtl"
             >
               <i className="fa-brands fa-imdb text-xl"></i>
-              <span>صفحة IMDB</span>
+              <span className="font-black">صفحة IMDb</span>
             </a>
           </div>
         )}

@@ -9,6 +9,7 @@ interface PlayerSectionProps {
   displayTitle: string;
   hasNextEpisode: boolean;
   playNextEpisode: () => void;
+  roomHook?: any;
 }
 
 const toProxyUrl = (url: string | undefined | null) => {
@@ -23,12 +24,13 @@ export default function PlayerSection({
   video,
   displayTitle,
   hasNextEpisode,
-  playNextEpisode
+  playNextEpisode,
+  roomHook
 }: PlayerSectionProps) {
   return (
-    <div className="bg-black sm:rounded-3xl sm:shadow-[0_20px_50px_rgba(0,0,0,0.6)] sm:border sm:border-white/10 relative group transition-all duration-300 sm:hover:border-alex-primary/30 w-full sm:h-full flex flex-col justify-center sm:min-h-[300px] lg:min-h-[350px]">
+    <div className="w-full relative flex flex-col justify-center">
       {isLoadingStreams ? (
-        <div className="aspect-video w-full flex flex-col items-center justify-center bg-alex-card">
+        <div className="aspect-video w-full flex flex-col items-center justify-center bg-[#0a0a0f] rounded-3xl border border-white/5 shadow-2xl overflow-hidden">
           <div className="w-16 h-16 border-4 border-alex-primary border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_15px_rgba(229,9,20,0.3)]"></div>
           <p className="text-gray-400 font-bold">جاري تحميل جودات البث المباشر...</p>
         </div>
@@ -37,6 +39,7 @@ export default function PlayerSection({
           videoData={
             isSeries && activeEpisodeDetails
               ? {
+                  nb: activeEpisodeDetails.nb || activeEpisodeDetails.id || `${video.nb || video.id}_${activeEpisodeDetails.episodeNummer}`,
                   trailer: video.trailer,
                   stream_url: activeEpisodeDetails.streams?.length > 0 
                     ? toProxyUrl(activeEpisodeDetails.streams[0].videoUrl)
@@ -52,6 +55,7 @@ export default function PlayerSection({
                   enTranslationFilePath: toProxyUrl(activeEpisodeDetails.enTranslationFilePath || '')
                 }
                 : {
+                  nb: video.nb || video.id,
                   trailer: video.trailer,
                   stream_url: video.streams?.length > 0 
                     ? toProxyUrl(video.streams[0].videoUrl) 
@@ -68,6 +72,7 @@ export default function PlayerSection({
                 }
           }
           onNextEpisode={hasNextEpisode ? playNextEpisode : undefined}
+          roomHook={roomHook}
         />
       )}
     </div>

@@ -7,14 +7,11 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
   const isServer = typeof window === 'undefined';
 
   if (isServer) {
-    let targetUrl = `https://cinemana.shabakaty.com/api/android/${fullEndpoint}`;
-    const tunnelBase = (process.env.TUNNEL_BASE_URL || 'http://64.225.99.144').replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
-    if (tunnelBase) {
-      targetUrl = `${tunnelBase}/cinemana/api/android/${fullEndpoint}`;
-    }
+    // /etc/hosts routes shabakaty.com → 127.0.0.1:443 (router SSH reverse tunnel)
+    const targetUrl = `https://cinemana.shabakaty.com/api/android/${fullEndpoint}`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s fast timeout to prevent NGINX 502 Gateway timeouts
 
     try {
       const res = await fetch(targetUrl, {
@@ -47,7 +44,7 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
 
   // Client-side fetch via our proxy — NO encryption keys needed
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
 
   try {
     const res = await fetch(`/api/proxy?endpoint=${encodeURIComponent(fullEndpoint)}`, {
@@ -93,9 +90,6 @@ export async function getVideoDetails(id: string) {
     if (data.streams.length > 0) {
       data.stream_url = data.streams[0].videoUrl;
     } else if (data.fileFile) {
-      // This URL will be sanitized by sanitizeVideoData (called inside fetchCinemana)
-      // But since we're constructing it here AFTER fetchCinemana returned,
-      // we need to sanitize it manually for server-side rendering
       if (typeof window === 'undefined') {
         const { sanitizeUrl } = await import('./serverCrypto');
         data.stream_url = sanitizeUrl(`https://cndw2.shabakaty.com/m240/${data.fileFile}`);
@@ -111,5 +105,3 @@ export async function getSeriesEpisodes(seriesId: string) { return fetchCinemana
 export async function searchMovies(query: string, type: 'movies' | 'series' = 'movies') {
   return fetchCinemana('AdvancedSearch', { level: '1', videoTitle: query, staffTitle: query, page: '0', year: '1900,2026', type });
 }
-
-

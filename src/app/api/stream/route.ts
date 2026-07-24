@@ -7,95 +7,75 @@ export async function GET(req: NextRequest) {
   const ref = req.nextUrl.searchParams.get('ref');
   const urlParam = req.nextUrl.searchParams.get('url');
 
-  let path: string | null = null;
+  let subtitleUrl = '';
 
   if (ref) {
-    path = decryptPath(ref);
+    const dec = decryptPath(ref);
+    if (dec) {
+      if (dec.startsWith('http')) {
+        subtitleUrl = dec;
+      } else {
+        const parts = dec.split('/').filter(Boolean);
+        if (parts.length >= 2) {
+          subtitleUrl = `https://${parts[0]}.shabakaty.com/${parts.slice(1).join('/')}`;
+        }
+      }
+    }
   } else if (urlParam) {
     if (urlParam.startsWith('http')) {
-      try {
-        const parsed = new URL(urlParam);
-        path = parsed.pathname + parsed.search;
-      } catch { /* ignore */ }
+      subtitleUrl = urlParam;
     } else {
       try {
         const decoded = atob(urlParam);
         if (decoded.startsWith('http')) {
-          const parsed = new URL(decoded);
-          path = parsed.pathname + parsed.search;
+          subtitleUrl = decoded;
         }
       } catch { /* ignore */ }
     }
   }
 
-  if (!path) return new NextResponse('Missing stream parameter', { status: 400 });
+  if (!subtitleUrl) return new NextResponse('Missing stream parameter', { status: 400 });
 
-  let finalPath = path;
-  if (path.startsWith('http')) {
-    try {
-      const parsed = new URL(path);
-      finalPath = parsed.pathname + parsed.search;
-    } catch { /* ignore */ }
-  }
-
-  const safePath = finalPath.startsWith('/') ? finalPath : `/${finalPath}`;
-  const lowerPath = safePath.toLowerCase();
+  const lowerPath = subtitleUrl.toLowerCase();
   const isSrt = lowerPath.includes('.srt');
   const isVtt = lowerPath.includes('.vtt');
 
-  // For subtitle files: fetch, convert SRT→VTT if needed, and serve directly
-  if (isSrt || isVtt) {
-    const tunnelBase = TUNNEL_BASE_URL.replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
-    const subtitleUrl = `${tunnelBase}${safePath}`;
-
-    try {
-      const res = await fetch(subtitleUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Bypass-Tunnel-Reminder': 'true',
-          'Referer': 'https://cinemana.shabakaty.com/',
-        },
-      });
-
-      if (!res.ok) {
-        return new NextResponse('Subtitle fetch failed', { status: 502 });
-      }
-
-      let text = await res.text();
-
-      // Convert SRT to VTT format
-      if (isSrt) {
-        text = 'WEBVTT\n\n' + text.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
-      }
-
-      return new NextResponse(text, {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/vtt; charset=utf-8',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'Range',
-          'Cache-Control': 'public, max-age=86400',
-        },
-      });
-    } catch {
-      return new NextResponse('Subtitle fetch failed', { status: 502 });
-    }
+  if (!isSrt && !isVtt) {
+    return new NextResponse('Only subtitles are handled here', { status: 400 });
   }
 
-  // For video/other files: redirect through tunnel
   try {
-    const proxyUrl = `/tunnel${safePath}`;
-    
-    const response = NextResponse.redirect(new URL(proxyUrl, req.url));
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Range');
-    
-    return response;
-  } catch (error: any) {
-    console.error('Stream redirect error:', error?.message || error);
-    return new NextResponse('Stream redirect failed', { status: 502 });
+    const res = await fetch(subtitleUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Bypass-Tunnel-Reminder': 'true',
+        'Referer': 'https://cinemana.shabakaty.com/',
+      },
+    });
+
+    if (!res.ok) {
+      return new NextResponse('Subtitle fetch failed', { status: 502 });
+    }
+
+    let text = await res.text();
+
+    // Convert SRT to VTT format
+    if (isSrt) {
+      text = 'WEBVTT\n\n' + text.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+    }
+
+    return new NextResponse(text, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/vtt; charset=utf-8',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Range',
+        'Cache-Control': 'public, max-age=86400',
+      },
+    });
+  } catch {
+    return new NextResponse('Subtitle fetch failed', { status: 502 });
   }
 }
 

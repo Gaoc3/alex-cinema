@@ -23,9 +23,7 @@ interface HeroCarouselProps {
 }
 
 export default function HeroCarousel({ videos }: HeroCarouselProps) {
-  const [bgIndex, setBgIndex] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [fade, setFade] = useState(true);
   const thumbnailsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
   // AI Layout Engine Refs & State
@@ -91,21 +89,23 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
 
   const triggerSlideChange = (nextIndex: number) => {
     if (nextIndex === activeIndex) return;
-    
-    // Update thumbnail highlight and scroll instantly
     setActiveIndex(nextIndex);
-    
-    // Cross-fade the background and text
-    setFade(false);
-    setTimeout(() => {
-      setBgIndex(nextIndex);
-      setFade(true);
-    }, 300); // Matches transition time
   };
 
   if (!videos || videos.length === 0) return null;
 
-  const current = videos[bgIndex];
+  const current = videos[activeIndex];
+
+  // Dynamic font sizing based on title length to prevent ugly text wrapping
+  const titleLength = current.ar_title ? current.ar_title.length : 0;
+  let titleFontSizeClass = "text-3xl sm:text-5xl lg:text-6xl";
+  if (titleLength > 35) {
+    titleFontSizeClass = "text-xl sm:text-2xl lg:text-3xl";
+  } else if (titleLength > 24) {
+    titleFontSizeClass = "text-2xl sm:text-3xl lg:text-4xl";
+  } else if (titleLength > 16) {
+    titleFontSizeClass = "text-3xl sm:text-4xl lg:text-5xl";
+  }
 
   // Build the correct landscape cover image URL
   const coverImgUrl = getVideoImageUrl(current, 'cover');
@@ -113,32 +113,37 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
   return (
     <div className="w-full relative mt-0 bg-transparent group flex flex-col lg:block">
       {/* Background Image Carousel Slider (Acts as the Banner on Mobile, Full BG on Desktop) */}
-      <div className="relative lg:absolute inset-0 w-full aspect-[16/9] sm:aspect-[21/9] lg:aspect-auto lg:h-full lg:min-h-[600px] overflow-hidden">
-        <div 
-          className={`absolute inset-0 w-full h-full transition-opacity duration-500 ease-in-out ${
-            fade ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          <Image 
-            src={coverImgUrl} 
-            alt={current.ar_title} 
-            fill
-            priority
-            unoptimized
-            className="object-cover object-top lg:object-center transform scale-100 transition-transform duration-[7s] hover:scale-105"
-          />
-        </div>
+      <div className="relative lg:absolute inset-0 w-full aspect-[16/9] sm:aspect-[21/9] lg:aspect-auto lg:h-full lg:min-h-[600px] overflow-hidden bg-[#06070a]">
+        {videos.map((video, idx) => (
+          <div 
+            key={video.nb}
+            className={`absolute inset-0 w-full h-full transition-opacity duration-500 ease-in-out ${
+              activeIndex === idx ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+            }`}
+          >
+            <Image 
+              src={getVideoImageUrl(video, 'cover')} 
+              alt={video.ar_title} 
+              fill
+              priority={idx === 0}
+              unoptimized
+              className={`object-cover object-top lg:object-center transform transition-transform duration-[10s] ease-out ${
+                activeIndex === idx ? 'scale-105' : 'scale-100'
+              }`}
+            />
+          </div>
+        ))}
         
-        {/* Gradients - only needed on desktop for text readability, but keep a subtle one on mobile for the button */}
-        <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/70 to-transparent z-[2]"></div>
-        <div className="hidden lg:block absolute inset-y-0 right-0 w-[50%] bg-gradient-to-l from-[#070a13]/90 via-[#070a13]/40 to-transparent z-[2]"></div>
-        <div className="hidden lg:block absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#070a13]/60 to-transparent z-[2]"></div>
-        <div className="lg:hidden absolute inset-0 bg-gradient-to-t from-[#070a13]/80 via-transparent to-transparent z-[2]"></div>
+        {/* Soft, natural gradients for text contrast without harsh dark ruler bars */}
+        <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#06070a] via-[#06070a]/20 to-transparent z-[2]"></div>
+        <div className="hidden lg:block absolute inset-y-0 right-0 w-[45%] bg-gradient-to-l from-[#06070a]/50 via-[#06070a]/10 to-transparent z-[2]"></div>
+        <div className="hidden lg:block absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-[#06070a]/20 to-transparent z-[2]"></div>
+        <div className="lg:hidden absolute inset-0 bg-gradient-to-t from-[#06070a]/40 via-transparent to-transparent z-[2]"></div>
         
         {/* Mobile "Watch Now" Button (Cinemana Style) */}
         <div className="absolute bottom-3 right-4 z-10 lg:hidden">
             <Link 
-              href={`/watch/${current.nb}`} 
+              href={`/watch/${current.nb}?title=${encodeURIComponent(current.ar_title || current.en_title || '')}`} 
               className="flex items-center justify-center gap-2 px-5 py-1.5 rounded-full font-bold text-sm bg-alex-primary text-white hover:bg-red-700 transition-all shadow-lg"
             >
               <span>شاهد الآن</span>
@@ -146,28 +151,28 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             </Link>
         </div>
 
-        {/* Manual Controls Left & Right Arrows */}
+        {/* Manual Controls Left & Right Floating Glass Arrows */}
         {videos.length > 1 && (
           <>
             {/* Left Arrow */}
             <button 
               onClick={() => triggerSlideChange((activeIndex + 1) % videos.length)}
-              className="group/arrow absolute left-0 top-0 bottom-0 z-40 w-12 sm:w-16 lg:w-24 flex items-center justify-center transition-all duration-300 opacity-80 sm:opacity-60 hover:opacity-100 bg-gradient-to-r from-black/50 to-transparent cursor-pointer outline-none select-none touch-manipulation"
+              className="group/arrow absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-40 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/20 hover:bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center transition-all duration-300 opacity-75 hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer outline-none select-none shadow-2xl"
               aria-label="Next Slide"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <i className="fa-solid fa-chevron-left text-xl sm:text-3xl lg:text-4xl text-white group-hover/arrow:text-white group-active/arrow:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] filter group-hover/arrow:brightness-125 transition-all duration-300 transform group-hover/arrow:scale-110 group-active/arrow:scale-90"></i>
+              <i className="fa-solid fa-chevron-left text-lg sm:text-2xl text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"></i>
             </button>
             
             {/* Right Arrow */}
             <button 
               ref={rightArrowRef}
               onClick={() => triggerSlideChange((activeIndex - 1 + videos.length) % videos.length)}
-              className="group/arrow absolute right-0 top-0 bottom-0 z-40 w-12 sm:w-16 lg:w-24 flex items-center justify-center transition-all duration-300 opacity-80 sm:opacity-60 hover:opacity-100 bg-gradient-to-l from-black/50 to-transparent cursor-pointer outline-none select-none touch-manipulation"
+              className="group/arrow absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-40 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/20 hover:bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center transition-all duration-300 opacity-75 hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer outline-none select-none shadow-2xl"
               aria-label="Previous Slide"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <i className="fa-solid fa-chevron-right text-xl sm:text-3xl lg:text-4xl text-white group-hover/arrow:text-white group-active/arrow:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] filter group-hover/arrow:brightness-125 transition-all duration-300 transform group-hover/arrow:scale-110 group-active/arrow:scale-90"></i>
+              <i className="fa-solid fa-chevron-right text-lg sm:text-2xl text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"></i>
             </button>
           </>
         )}
@@ -185,25 +190,22 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
            style={{ paddingRight: `${layout.paddingRight}px` }}
         >
         <div 
-          className={`max-w-3xl relative transition-all duration-500 transform text-right drop-shadow-2xl flex flex-col justify-end min-h-[260px] sm:min-h-[300px] lg:min-h-[340px] ${
-            fade ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
+          key={current.nb}
+          className="max-w-3xl relative animate-fade-in-up transform text-right flex flex-col justify-end min-h-[260px] sm:min-h-[300px] lg:min-h-[340px]"
         >
-          {/* Subtle base shadow for text to pop against any background naturally */}
-          
           <div className="flex-grow flex flex-col justify-end">
             {/* Metadata Row: Clean, minimalist, and easy to scan */}
-            <div className="flex flex-wrap items-center justify-start gap-3 sm:gap-4 mb-4 relative z-10 text-sm md:text-base font-semibold text-gray-200">
+            <div className="flex flex-wrap items-center justify-start gap-3 sm:gap-4 mb-4 relative z-10 text-sm md:text-base font-semibold text-gray-100">
               {current.kind === '2' && (
-                 <span className="text-white drop-shadow-md">مسلسل</span>
+                 <span className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">مسلسل</span>
               )}
               {current.kind !== '2' && (
-                 <span className="text-white drop-shadow-md">فيلم</span>
+                 <span className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">فيلم</span>
               )}
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-500/80"></span>
-              <span className="font-en tracking-wider drop-shadow-md">{current.year}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-500/80"></span>
-              <span className="flex items-center gap-1.5 text-yellow-400 drop-shadow-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-gray-400/80"></span>
+              <span className="font-en tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">{current.year}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-gray-400/80"></span>
+              <span className="flex items-center gap-1.5 text-yellow-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
                 <i className="fa-solid fa-star text-xs"></i> 
                 <span className="font-en mt-0.5">{current.stars}</span>
               </span>
@@ -212,16 +214,16 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
               </span>
             </div>
             
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white mb-2 leading-tight drop-shadow-lg relative z-10">
+            <h1 className={`${titleFontSizeClass} font-black text-white mb-2 leading-tight drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] [text-shadow:_0_2px_12px_rgba(0,0,0,0.9)] relative z-10`}>
               {current.ar_title}
             </h1>
             {current.en_title && current.en_title !== current.ar_title && (
-              <h2 className="text-sm sm:text-lg text-gray-300 font-bold font-en mb-4 drop-shadow-md relative z-10 tracking-widest uppercase">
+              <h2 className="text-sm sm:text-lg text-gray-200 font-bold font-en mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] relative z-10 tracking-widest uppercase">
                 {current.en_title}
               </h2>
             )}
             
-            <p className={`text-gray-300 text-sm sm:text-base lg:text-lg mb-6 leading-relaxed max-w-xl font-medium drop-shadow-md relative z-10 ${layout.isShortScreen ? 'line-clamp-2' : 'line-clamp-3'}`}>
+            <p className={`text-gray-200 text-sm sm:text-base lg:text-lg mb-6 leading-relaxed max-w-xl font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] relative z-10 ${layout.isShortScreen ? 'line-clamp-2' : 'line-clamp-3'}`}>
               {current.ar_content}
             </p>
           </div>
@@ -229,7 +231,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           {/* Buttons Row - Anchored to the bottom of the fixed height container */}
           <div className="flex flex-wrap items-center justify-start gap-4 relative z-[100] mt-auto pointer-events-auto">
             <Link 
-              href={`/watch/${current.nb}`} 
+              href={`/watch/${current.nb}?title=${encodeURIComponent(current.ar_title || current.en_title || '')}`} 
               className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3 sm:py-3.5 rounded-md font-bold text-sm sm:text-base bg-white text-black hover:bg-white/90 transition-all duration-300 shadow-lg relative z-[100] pointer-events-auto cursor-pointer"
             >
               <i className="fa-solid fa-play text-lg pointer-events-none"></i>
@@ -251,7 +253,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       {/* Slide Indicators / Thumbnails Row (Desktop: Thumbnails, Mobile: Dots) */}
       {videos.length > 1 && (
         <div ref={thumbnailsContainerRef} className="w-full z-20 relative mt-4 lg:mt-0 lg:absolute lg:bottom-0 pointer-events-none">
-          <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#070a13] via-[#070a13]/90 to-transparent pointer-events-none -z-10"></div>
+          <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#06070a]/90 via-[#06070a]/30 to-transparent pointer-events-none -z-10"></div>
           
           {/* Mobile Dots */}
           <div className="flex lg:hidden justify-center items-center gap-2 pb-4 pointer-events-auto">
@@ -287,7 +289,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                   src={thumbUrl} 
                   alt={video.ar_title}
                   fill
-                  sizes="(max-width: 640px) 128px, 256px"
+                  unoptimized
                   className="w-full h-full object-cover transform-gpu"
                   loading="lazy"
                 />

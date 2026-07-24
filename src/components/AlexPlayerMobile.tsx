@@ -1,413 +1,1500 @@
 'use client';
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Hls from 'hls.js';
 
-export default function AlexCinemaPlayer({ videoData }: any) {
-  // --- States ---
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('ar');
-  const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
-  const [currentStreamUrl, setCurrentStreamUrl] = useState<string | null>(null);
-  const [selectedResolution, setSelectedResolution] = useState<string>('Auto');
-  const [isPaused, setIsPaused] = useState<boolean>(true);
-  const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [showControls, setShowControls] = useState<boolean>(true);
-  const [currentTime, setCurrentTime] = useState<number>(0);
-  const [duration, setDuration] = useState<number>(0);
-  const [isWaiting, setIsWaiting] = useState<boolean>(false);
-  const [isScrubbing, setIsScrubbing] = useState<boolean>(false);
-  
-  // Sheet States
-  const [activeSheet, setActiveSheet] = useState<string | null>(null);
-  const [sheetView, setSheetView] = useState<'main' | 'subtitles' | 'quality'>('main');
-  
-  const [isFamilyMode, setIsFamilyMode] = useState<boolean>(false);
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+interface Stream {
+  name: string;
+  resolution: string;
+  container: string;
+  videoUrl?: string | null;
+}
 
-  // --- Refs ---
-  const playerContainerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const hlsRef = useRef<any>(null);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const waitingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const wasPlayingRef = useRef<boolean>(false);
+interface Translation {
+  id: number;
+  name: string;
+  type: string; // 'ar', 'en'
+  extention: string; // 'srt', 'vtt'
+  file: string;
+}
 
-  // --- 1. Safe Time Formatter ---
-  const formatTime = (seconds: number) => {
-    if (!seconds || isNaN(seconds) || !isFinite(seconds) || seconds < 0) return "00:00";
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    if (h > 0) return `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
-    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+interface IntroSkipping {
+  start: string;
+  end: string;
+  control_level: string;
+}
+
+interface SkippingDurations {
+  start: string[];
+  end: string[];
+}
+
+interface AlexPlayerProps {
+  videoData: {
+    trailer?: string;
+    stream_url?: string | null;
+    img?: string | null;
+    ar_title?: string;
+    streams?: Stream[];
+    translations?: Translation[];
+    introSkipping?: IntroSkipping[];
+    skippingDurations?: SkippingDurations | null;
+    duration?: string | number | null;
+    arTranslationFilePath?: string | null;
+    enTranslationFilePath?: string | null;
   };
+  onNextEpisode?: () => void;
+}
 
-  // --- 2. Auto-Hide Controls ---
-  const resetControlsTimeout = useCallback(() => {
-    setShowControls(true);
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    if (!isPaused && !activeSheet) {
-      controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
+function extractYouTubeId(url: string): string | null {
+  if (!url) return null;
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
+export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps) {
+  const youtubeId = extractYouTubeId(videoData.trailer || '');
+  const streams = videoData.streams || [];
+  const translations = videoData.translations || [];
+
+  // Stream URL & Resolution states
+  const [currentStreamUrl, setCurrentStreamUrl] = useState<string | null>(null);
+  const [selectedResolution, setSelectedResolution] = useState<string>('');
+  const [showStreamError, setShowStreamError] = useState(false);
+  const [youtubeFallback, setYoutubeFallback] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastErrorEvent, setLastErrorEvent] = useState<string | null>(null);
+  const MAX_RETRIES = 3;
+
+  // Player Control states
+  const [isPaused, setIsPaused] = useState(true);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState<number>(() => {
+    if (videoData.duration) {
+      const parsed = parseFloat(String(videoData.duration));
+      if (!isNaN(parsed) && parsed > 0) return parsed;
     }
-  }, [isPaused, activeSheet]);
+    return 0;
+  });
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('ar'); // Default to Arabic subtitles if available
+  const [showIntroSkip, setShowIntroSkip] = useState(false);
+  const [showOutroSkip, setShowOutroSkip] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+
+  // مراجع لحفظ حالة الفيديو الدقيقة عند تغيير الجودة لتجنب الرجوع للصفر
+  const isSwitchingQuality = useRef(false);
+  const switchState = useRef({ time: 0, wasPlaying: false });
+
+  // Family Mode State (Explicit scene skip)
+  const [isFamilyMode, setIsFamilyMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('alex_family_mode') === 'true';
+    }
+    return false;
+  });
 
   useEffect(() => {
-    resetControlsTimeout();
-    return () => { if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current); };
-  }, [isPaused, activeSheet, resetControlsTimeout]);
+    localStorage.setItem('alex_family_mode', String(isFamilyMode));
+  }, [isFamilyMode]);
 
-  // --- 3. Fullscreen Logic ---
+  // Loading spinner state (with 1s delayed resolution)
+  const [isWaiting, setIsWaiting] = useState(false);
+  const waitingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Dropdown menus visibility
+  const [activeDropdown, setActiveDropdown] = useState<'quality' | 'speed' | 'subtitles' | 'settings' | null>(null);
+  const [settingsView, setSettingsView] = useState<'main' | 'subtitles' | 'quality' | 'speed'>('main');
+
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement || !!(document as any).webkitFullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-    };
+    if (activeDropdown !== 'settings') {
+      setSettingsView('main');
+    }
+  }, [activeDropdown]);
+
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const toggleFullscreen = async () => {
-    const container = playerContainerRef.current;
-    if (!container) return;
-    if (!isFullscreen) {
-      if (container.requestFullscreen) await container.requestFullscreen();
-      else if ((container as any).webkitRequestFullscreen) (container as any).webkitRequestFullscreen();
-    } else {
-      if (document.exitFullscreen) await document.exitFullscreen();
-      else if ((document as any).webkitExitFullscreen) (document as any).webkitExitFullscreen();
+  // Gesture State
+  const [showSeekAnimation, setShowSeekAnimation] = useState<'forward' | 'backward' | null>(null);
+  const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTapRef = useRef<{time: number}>({time: 0});
+  const touchStartRef = useRef<{x: number, y: number, time: number} | null>(null);
+  const initialPinchDistance = useRef<number | null>(null);
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  // Subtitle custom sizing state with localstorage persistence
+  const [subtitleSize, setSubtitleSize] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('alex_subtitle_size');
+      if (saved) {
+        const parsed = parseInt(saved);
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+      }
     }
+    return 100;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('alex_subtitle_size', String(subtitleSize));
+  }, [subtitleSize]);
+
+  // Subtitle custom background state with localstorage persistence
+  const [showSubtitleBg, setShowSubtitleBg] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('alex_show_subtitle_bg');
+      return saved !== 'false';
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('alex_show_subtitle_bg', String(showSubtitleBg));
+  }, [showSubtitleBg]);
+
+  const lastSubtitleText = useRef<string | null>(null);
+
+  // Subtitle custom font state with localstorage persistence
+  const [selectedFont, setSelectedFont] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('alex_subtitle_font');
+      if (saved) return saved;
+    }
+    return 'Tajawal';
+  });
+
+  const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
+
+  useEffect(() => {
+    localStorage.setItem('alex_subtitle_font', selectedFont);
+  }, [selectedFont]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleDocumentClick = (e: MouseEvent) => {
+      if (!activeDropdown) return;
+      const target = e.target as HTMLElement;
+      // Close only if click is not inside a settings-target block
+      if (target.closest('.settings-target')) {
+        return;
+      }
+      setActiveDropdown(null);
+    };
+    document.addEventListener('click', handleDocumentClick);
+    return () => document.removeEventListener('click', handleDocumentClick);
+  }, [activeDropdown]);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Pixel-level adaptation (Ambient Light Glow)
+  useEffect(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || youtubeFallback) return;
+
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let isDrawing = false;
+
+    const updateAmbient = () => {
+      if (video.paused || video.ended) {
+        isDrawing = false;
+        return;
+      }
+      if (video.readyState >= 2) {
+        try {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        } catch (e) {
+          // Ignore cross-origin canvas errors if they happen
+        }
+      }
+      animationFrameId = requestAnimationFrame(updateAmbient);
+    };
+
+    const startDrawing = () => {
+      if (!isDrawing) {
+        isDrawing = true;
+        updateAmbient();
+      }
+    };
+
+    const drawOnce = () => {
+      if (video.readyState >= 2) {
+        try {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        } catch (e) {}
+      }
+    };
+
+    video.addEventListener('play', startDrawing);
+    video.addEventListener('seeked', drawOnce);
+    video.addEventListener('loadeddata', drawOnce);
+
+    return () => {
+      video.removeEventListener('play', startDrawing);
+      video.removeEventListener('seeked', drawOnce);
+      video.removeEventListener('loadeddata', drawOnce);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    };
+  }, [currentStreamUrl, youtubeFallback]);
+
+  // Helper to proxy stream URLs
+  const toProxyUrl = (url: string | undefined | null) => {
+    if (!url) return null;
+    const clean = url.trim();
+    if (clean.startsWith('/api/proxy') || clean.startsWith('/api/stream') || clean.startsWith('/api/img')) return clean;
+    return clean;
   };
 
-  // --- 4. Video Initialization & HLS ---
+  // Parse direct streams on initialization or data change
   useEffect(() => {
-    if (!videoData) return;
-    const preferred = videoData?.streams?.find((s: any) => s.resolution?.includes('1080')) 
-                   || videoData?.streams?.find((s: any) => s.resolution?.includes('720')) 
-                   || videoData?.streams?.[0];
-                   
-    setCurrentStreamUrl(preferred?.videoUrl || videoData.stream_url || null);
-    setSelectedResolution(preferred?.resolution || 'Auto');
-  }, [videoData]);
+    setShowStreamError(false);
+    setYoutubeFallback(false);
+    setRetryCount(0);
+    setLastErrorEvent(null);
+    setIsPaused(true);
+    setCurrentTime(0);
 
+    let initialDuration = 0;
+    if (videoData.duration) {
+      const parsed = parseFloat(String(videoData.duration));
+      if (!isNaN(parsed) && parsed > 0) {
+        initialDuration = parsed;
+      }
+    }
+    setDuration(initialDuration);
+
+    if (streams.length > 0) {
+      const preferred = streams.find(s => s.resolution && s.resolution.toLowerCase().includes('1080')) 
+                     || streams.find(s => s.resolution && s.resolution.toLowerCase().includes('720')) 
+                     || streams[0];
+      setCurrentStreamUrl(toProxyUrl(preferred.videoUrl));
+      setSelectedResolution(preferred.resolution);
+    } else {
+      setCurrentStreamUrl(toProxyUrl(videoData.stream_url));
+      setSelectedResolution('');
+    }
+  }, [videoData, streams]);
+
+  // HLS stream logic & Quality Restore
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !currentStreamUrl) return;
 
+    let hls: Hls | null = null;
+
+    // دالة لاسترجاع التوقيت وحالة التشغيل بعد اكتمال تحميل الجودة الجديدة
+    const restorePlaybackState = () => {
+      if (isSwitchingQuality.current) {
+        video.currentTime = switchState.current.time;
+        if (switchState.current.wasPlaying) {
+          video.play().catch(() => setIsPaused(true));
+        }
+        isSwitchingQuality.current = false;
+      } else if (!isPaused) {
+        video.play().catch(() => {});
+      }
+    };
+
     if (currentStreamUrl.includes('.m3u8')) {
       if (Hls.isSupported()) {
-        if (hlsRef.current) hlsRef.current.destroy();
-        const hls = new Hls();
-        hlsRef.current = hls;
+        hls = new Hls({
+          startLevel: -1,
+          capLevelToPlayerSize: true,
+          fragLoadingTimeOut: 30000,
+          manifestLoadingTimeOut: 30000,
+          levelLoadingTimeOut: 30000,
+          fragLoadingMaxRetry: 6,
+          manifestLoadingMaxRetry: 6,
+          levelLoadingMaxRetry: 6,
+          fragLoadingRetryDelay: 2000,
+          manifestLoadingRetryDelay: 2000,
+          levelLoadingRetryDelay: 2000,
+        });
         hls.loadSource(currentStreamUrl);
         hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          if (!isPaused) video.play().catch(()=> setIsPaused(true));
+        hls.on(Hls.Events.MANIFEST_PARSED, restorePlaybackState);
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            console.error("HLS error:", data);
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                console.warn("Network error encountered, trying to recover...");
+                hls?.startLoad();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                console.warn("Media error encountered, trying to recover...");
+                hls?.recoverMediaError();
+                break;
+              default:
+                hls?.destroy();
+                break;
+            }
+          }
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = currentStreamUrl;
+        video.addEventListener('loadedmetadata', restorePlaybackState, { once: true });
       }
     } else {
       video.src = currentStreamUrl;
+      video.addEventListener('loadedmetadata', restorePlaybackState, { once: true });
     }
-    return () => { if (hlsRef.current) hlsRef.current.destroy(); };
+
+    return () => {
+      if (hls) {
+        hls.destroy();
+      }
+      video.removeEventListener('loadedmetadata', restorePlaybackState);
+    };
   }, [currentStreamUrl]);
 
-  // --- 5. Event Handlers ---
-  const togglePlay = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.play().catch(() => {});
-    } else {
-      videoRef.current.pause();
+  // Sync volume and mute states
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.volume = volume;
+      video.muted = isMuted;
     }
-  };
+  }, [volume, isMuted]);
 
-  const toggleMute = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!videoRef.current) return;
-    videoRef.current.muted = !videoRef.current.muted;
-    setIsMuted(videoRef.current.muted);
-    resetControlsTimeout();
-  };
-
-  const handleTimeUpdate = () => {
-    if (!videoRef.current || isScrubbing) return;
-    const v = videoRef.current;
-    setCurrentTime(v.currentTime);
-    if (isFinite(v.duration) && v.duration > 0) setDuration(v.duration);
-
-    // Family Mode Skip Logic
-    if (isFamilyMode && videoData?.skippingDurations) {
-      const { start, end } = videoData.skippingDurations;
-      for (let i = 0; i < start.length; i++) {
-        if (v.currentTime >= parseFloat(start[i]) && v.currentTime < parseFloat(end[i])) {
-          v.currentTime = parseFloat(end[i]) + 0.1;
-          return;
-        }
-      }
+  // Sync playback speed
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.playbackRate = playbackRate;
     }
-  };
+  }, [playbackRate, currentStreamUrl]);
 
-  const handleScrub = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!videoRef.current || !duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    videoRef.current.currentTime = percent * duration;
-    setCurrentTime(percent * duration);
-  };
-
-  // --- 6. Subtitles Engine ---
-  const vttTracks = useMemo(() => {
-    if (!videoData?.translations) return [];
-    return videoData.translations.filter((t: any) => t.file && t.file.includes('.vtt'));
-  }, [videoData]);
-
+  // Sync Text Tracks (Subtitles) — Single source of truth
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+
     const syncTracks = () => {
-      let activeText = '';
+      let newActiveText = '';
       for (let i = 0; i < video.textTracks.length; i++) {
         const track = video.textTracks[i];
-        if (selectedLanguage === 'off') { track.mode = 'disabled'; continue; }
-        if (track.language === selectedLanguage) {
-          track.mode = 'hidden';
-          if (track.activeCues?.length) {
-            activeText = Array.from(track.activeCues).map((c: any) => c.text.replace(/<[^>]+>/g, '')).join('\n');
+        if (selectedLanguage === 'off') {
+          track.mode = 'disabled';
+        } else if (track.language === selectedLanguage) {
+          track.mode = 'hidden'; // 'hidden' guarantees native cues aren't rendered, but activeCues is populated
+          if (track.activeCues && track.activeCues.length > 0) {
+            newActiveText = Array.from(track.activeCues)
+              .map((c: any) => c.text).join('\n');
+          } else if (track.cues && track.cues.length > 0) {
+            const ct = video.currentTime;
+            newActiveText = Array.from(track.cues)
+              .filter((c: any) => ct >= c.startTime && ct <= c.endTime)
+              .map((c: any) => c.text).join('\n');
           }
         } else {
           track.mode = 'disabled';
         }
       }
-      setCurrentSubtitle(activeText);
+      setCurrentSubtitle(newActiveText);
     };
-    video.addEventListener('timeupdate', syncTracks);
-    return () => video.removeEventListener('timeupdate', syncTracks);
-  }, [selectedLanguage, vttTracks]);
 
-  // --- Render ---
+    // Run once immediately
+    syncTracks();
+
+    // Listen for individual track cue changes (real-time subtitle updates)
+    const onCueChange = () => syncTracks();
+    for (let i = 0; i < video.textTracks.length; i++) {
+      video.textTracks[i].addEventListener('cuechange', onCueChange);
+    }
+    
+    // Listen to events to re-apply the tracks
+    video.addEventListener('play', syncTracks);
+    video.addEventListener('loadedmetadata', syncTracks);
+    video.addEventListener('loadeddata', syncTracks);
+    video.textTracks.addEventListener('change', syncTracks);
+    video.textTracks.addEventListener('addtrack', () => {
+      for (let i = 0; i < video.textTracks.length; i++) {
+        video.textTracks[i].removeEventListener('cuechange', onCueChange);
+        video.textTracks[i].addEventListener('cuechange', onCueChange);
+      }
+      syncTracks();
+    });
+
+    return () => {
+      for (let i = 0; i < video.textTracks.length; i++) {
+        video.textTracks[i].removeEventListener('cuechange', onCueChange);
+      }
+      video.removeEventListener('play', syncTracks);
+      video.removeEventListener('loadedmetadata', syncTracks);
+      video.removeEventListener('loadeddata', syncTracks);
+      video.textTracks.removeEventListener('change', syncTracks);
+    };
+  }, [selectedLanguage, currentStreamUrl]);
+
+  // Control bar auto-hide logic
+  const handleMouseMove = () => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    
+    if (!isPaused) {
+      controlsTimeoutRef.current = setTimeout(() => {
+        setShowControls(false);
+        setActiveDropdown(null);
+      }, 3000);
+    }
+  };
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('mousemove', handleMouseMove);
+      container.addEventListener('touchstart', handleMouseMove);
+    }
+    return () => {
+      if (container) {
+        container.removeEventListener('mousemove', handleMouseMove);
+        container.removeEventListener('touchstart', handleMouseMove);
+      }
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    };
+  }, [isPaused]);
+
+  // Sync play/pause when user triggers manually
+  const togglePlay = () => {
+    const video = videoRef.current;
+    if (video) {
+      if (video.paused || video.ended) {
+        video.play().catch(() => setIsPaused(true));
+      } else {
+        video.pause();
+      }
+    }
+  }
+
+  // Gesture Handlers
+  const handleSeekForward = (seconds: number = 10) => {
+    const video = videoRef.current;
+    if (video) {
+      video.currentTime = Math.min(video.duration || 0, video.currentTime + seconds);
+      setShowSeekAnimation('forward');
+      setTimeout(() => setShowSeekAnimation(null), 600);
+    }
+  };
+
+  const handleSeekBackward = (seconds: number = 10) => {
+    const video = videoRef.current;
+    if (video) {
+      video.currentTime = Math.max(0, video.currentTime - seconds);
+      setShowSeekAnimation('backward');
+      setTimeout(() => setShowSeekAnimation(null), 600);
+    }
+  };
+
+  // المنطق الذكي للمسات المتتابعة على الشاشة
+  const handleVideoPointerUp = (e: React.PointerEvent<HTMLVideoElement>) => {
+    if (activeDropdown !== null) {
+      setActiveDropdown(null);
+      return;
+    }
+
+    const now = Date.now();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const isTouch = e.pointerType === 'touch';
+
+    if (now - lastTapRef.current.time < 300) {
+      // ضغطة مزدوجة (Double tap)
+      if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+      lastTapRef.current = { time: 0 };
+      
+      if (clickX < rect.width * 0.35) {
+        handleSeekBackward(10);
+      } else if (clickX > rect.width * 0.65) {
+        handleSeekForward(10);
+      } else {
+        toggleFullscreen();
+      }
+    } else {
+      // ضغطة واحدة (Single tap)
+      lastTapRef.current = { time: now };
+      if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+      
+      if (isTouch) {
+        tapTimeoutRef.current = setTimeout(() => {
+          // دورة الضغطات الذكية للموبايل
+          setShowControls((prevShow) => {
+            if (!prevShow) {
+              // 1. الضغطة الأولى: إظهار الأدوات والشريط
+              if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+              if (!videoRef.current?.paused) {
+                controlsTimeoutRef.current = setTimeout(() => {
+                  setShowControls(false);
+                  setActiveDropdown(null);
+                }, 3000);
+              }
+              return true;
+            } else {
+              // الأدوات ظاهرة حالياً
+              if (!videoRef.current?.paused) {
+                // 2. الضغطة الثانية (الفيديو يعمل): إيقاف الفيديو وبقاء الأدوات
+                togglePlay();
+                return true;
+              } else {
+                // 3. الضغطة الثالثة (الفيديو متوقف): إخفاء الأدوات
+                setActiveDropdown(null);
+                return false;
+              }
+            }
+          });
+        }, 250);
+      } else {
+        // الكمبيوتر: النقر يوقف ويشغل الفيديو مباشرة
+        togglePlay();
+      }
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 1) {
+      touchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: Date.now()
+      };
+    } else if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      initialPinchDistance.current = dist;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      
+      if (initialPinchDistance.current !== null) {
+        const delta = dist - initialPinchDistance.current;
+        if (delta > 40 && !isZoomed) {
+          setIsZoomed(true); // Pinch out to zoom
+          initialPinchDistance.current = dist;
+        } else if (delta < -40 && isZoomed) {
+          setIsZoomed(false); // Pinch in to fit
+          initialPinchDistance.current = dist;
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length < 2) {
+      initialPinchDistance.current = null;
+    }
+    
+    if (touchStartRef.current && e.changedTouches.length === 1) {
+      const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+      const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+      const dt = Date.now() - touchStartRef.current.time;
+      touchStartRef.current = null;
+    }
+  };
+
+  // Skip Intro Range Action
+  const handleSkipIntro = () => {
+    const video = videoRef.current;
+    if (video && videoData.introSkipping) {
+      const time = video.currentTime;
+      const intro = videoData.introSkipping.find(
+        range => time >= parseFloat(range.start) && time < parseFloat(range.end)
+      );
+      if (intro) {
+        video.currentTime = parseFloat(intro.end) + 0.1;
+        setShowIntroSkip(false);
+      }
+    }
+  };
+
+  // Skip Outro Range Action (Auto-play Next Episode or Seek to end)
+  const handleSkipOutro = () => {
+    if (onNextEpisode) {
+      onNextEpisode();
+    } else {
+      const video = videoRef.current;
+      if (video) {
+        const targetSeek = duration || video.duration;
+        video.currentTime = targetSeek;
+      }
+    }
+  };
+
+  // Handle stream error, fallback to youtube
+  const handleStreamError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    const video = e.currentTarget;
+    const mediaError = video.error;
+    const errMsg = mediaError ? `${mediaError.code}: ${mediaError.message}` : 'unknown';
+    console.error("Direct stream failed to play. URL:", currentStreamUrl, "Error:", errMsg);
+    setLastErrorEvent(errMsg);
+
+    if (retryCount < MAX_RETRIES) {
+      // Retry with backoff before giving up and falling back to YouTube
+      const nextRetry = retryCount + 1;
+      setRetryCount(nextRetry);
+      setTimeout(() => {
+        setCurrentStreamUrl((prev) => {
+          if (!prev) return prev;
+          let cleanUrl = prev.replace(/(&|\?)_retry=\d+_\d+/g, '');
+          const separator = cleanUrl.includes('?') ? '&' : '?';
+          return `${cleanUrl}${separator}_retry=${nextRetry}_${Date.now()}`;
+        });
+      }, 2000 * nextRetry);
+    } else if (youtubeId) {
+      setYoutubeFallback(true);
+    } else {
+      setShowStreamError(true);
+    }
+  };
+
+  // Seek time
+  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const video = videoRef.current;
+    if (video) {
+      const newTime = parseFloat(e.target.value);
+      video.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  // Track time updates
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      const video = videoRef.current;
+      setCurrentTime(video.currentTime);
+
+      // 1. Check Skip Intro Ranges
+      const intro = videoData.introSkipping?.find(
+        range => video.currentTime >= parseFloat(range.start) && video.currentTime < parseFloat(range.end)
+      );
+      setShowIntroSkip(!!intro);
+
+      // 2. Check Skip Outro / Next Episode timings
+      if (videoData.skippingDurations && videoData.skippingDurations.start && videoData.skippingDurations.start.length > 0) {
+        const lastIdx = videoData.skippingDurations.start.length - 1;
+        const outroStart = parseFloat(videoData.skippingDurations.start[lastIdx]);
+        if (!isNaN(outroStart)) {
+          setShowOutroSkip(video.currentTime >= outroStart);
+        } else {
+          setShowOutroSkip(false);
+        }
+      } else {
+        setShowOutroSkip(false);
+      }
+
+      // 3. Family Mode Skip Logic (Explicit scene skip)
+      if (isFamilyMode && videoData?.skippingDurations) {
+        const { start, end } = videoData.skippingDurations;
+        for (let i = 0; i < start.length; i++) {
+          if (video.currentTime >= parseFloat(start[i]) && video.currentTime < parseFloat(end[i])) {
+            video.currentTime = parseFloat(end[i]) + 0.1;
+            return;
+          }
+        }
+      }
+    }
+  };
+
+  // Load Metadata & Adaptive Aspect Ratio
+  const handleLoadedMetadata = () => {
+    const video = videoRef.current;
+    if (video) {
+      if (videoData.duration) {
+        const parsed = parseFloat(String(videoData.duration));
+        if (!isNaN(parsed) && parsed > 0) {
+          setDuration(parsed);
+          return;
+        }
+      }
+      setDuration(video.duration);
+    }
+  };
+
+  // Fullscreen helper
+  const toggleFullscreen = async () => {
+    const container = containerRef.current;
+    if (container) {
+      if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+        try {
+          if (container.requestFullscreen) {
+            await container.requestFullscreen();
+          } else if ((container as any).webkitRequestFullscreen) {
+            await (container as any).webkitRequestFullscreen();
+          }
+          setIsFullscreen(true);
+          
+          if (screen.orientation && (screen.orientation as any).lock) {
+            try {
+              await (screen.orientation as any).lock('landscape');
+            } catch (err) {
+              console.warn('Orientation lock failed:', err);
+            }
+          }
+        } catch (err) {
+          console.error("Fullscreen failed:", err);
+          setIsFullscreen(false);
+        }
+      } else {
+        try {
+          if (document.exitFullscreen) {
+            await document.exitFullscreen();
+          } else if ((document as any).webkitExitFullscreen) {
+            await (document as any).webkitExitFullscreen();
+          }
+          setIsFullscreen(false);
+          
+          if (screen.orientation && (screen.orientation as any).unlock) {
+            (screen.orientation as any).unlock();
+          }
+        } catch (err) {
+          console.error("Exit fullscreen failed:", err);
+          setIsFullscreen(false);
+        }
+      }
+    }
+  };
+
+  // Format seconds to HH:MM:SS or MM:SS
+  const formatTime = (seconds: number) => {
+    if (!isFinite(seconds) || isNaN(seconds)) return '00:00';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+
+    const mStr = m < 10 ? `0${m}` : m;
+    const sStr = s < 10 ? `0${s}` : s;
+
+    if (h > 0) {
+      return `${h}:${mStr}:${sStr}`;
+    }
+    return `${mStr}:${sStr}`;
+  };
+
+  // Quality Switching
+  const handleQualityChange = (stream: Stream) => {
+    const video = videoRef.current;
+    if (video) {
+      isSwitchingQuality.current = true;
+      switchState.current = {
+        time: video.currentTime,
+        wasPlaying: !video.paused
+      };
+
+      setSelectedResolution(stream.resolution);
+      setCurrentStreamUrl(toProxyUrl(stream.videoUrl));
+      setActiveDropdown(null);
+    }
+  };
+
+  // Get Subtitle Track Files (Mapped to proxy and deduplicated)
+  const getVttTracks = () => {
+    const tracksMap = new Map<string, { id: string | number; name: string; type: string; file: string }>();
+    
+    if (translations && translations.length > 0) {
+      translations.forEach((t) => {
+        const fileUrl = t.file;
+        const isVtt = t.extention === 'vtt' || fileUrl.includes('.vtt');
+        const existing = tracksMap.get(t.type);
+        if (!existing || isVtt) {
+          tracksMap.set(t.type, {
+            id: t.id,
+            name: t.name,
+            type: t.type, // 'ar' or 'en'
+            file: fileUrl
+          });
+        }
+      });
+    }
+
+    if (tracksMap.size === 0) {
+      if (videoData.arTranslationFilePath) {
+        tracksMap.set('ar', {
+          id: 'fallback-ar',
+          name: 'arabic',
+          type: 'ar',
+          file: videoData.arTranslationFilePath
+        });
+      }
+      if (videoData.enTranslationFilePath) {
+        tracksMap.set('en', {
+          id: 'fallback-en',
+          name: 'english',
+          type: 'en',
+          file: videoData.enTranslationFilePath
+        });
+      }
+    }
+    return Array.from(tracksMap.values());
+  };
+
+  const vttTranslations = getVttTracks();
+  const getSubtitlesProxyUrl = (url: string) => url;
+
+  // Keyboard Shortcuts Handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+        return;
+      }
+      const video = videoRef.current;
+      if (!video || youtubeFallback) return;
+
+      switch (e.key) {
+        case ' ':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          video.currentTime = Math.max(0, video.currentTime - 10);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          video.currentTime = Math.min(video.duration, video.currentTime + 10);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setVolume(prev => Math.min(1, prev + 0.1));
+          setIsMuted(false);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          setVolume(prev => Math.max(0, prev - 0.1));
+          break;
+        case 'f':
+        case 'F':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [youtubeFallback, volume, isMuted]);
+
+  // Sync fullscreen state change
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const sortedStreams = [...streams].sort((a, b) => {
+    const resA = parseInt(a.resolution) || 0;
+    const resB = parseInt(b.resolution) || 0;
+    return resB - resA; // Descending order: highest quality first!
+  });
+
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const progressStyle = {
+    background: `linear-gradient(to right, #e50914 ${progressPercent}%, rgba(255, 255, 255, 0.2) ${progressPercent}%)`,
+    boxShadow: '0 0 10px rgba(229,9,20,0.5), 0 0 20px rgba(229,9,20,0.3)'
+  };
 
-  return (
-    <div 
-      ref={playerContainerRef}
-      className="relative w-full aspect-video bg-black overflow-hidden font-sans text-white group"
-      onMouseMove={resetControlsTimeout}
-      onMouseLeave={() => { if (!isPaused) setShowControls(false); }}
-      onClick={togglePlay}
-    >
-      <video
-        ref={videoRef}
-        className="w-full h-full object-contain"
-        playsInline
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleTimeUpdate}
-        onWaiting={() => { clearTimeout(waitingTimeoutRef.current!); waitingTimeoutRef.current = setTimeout(() => setIsWaiting(true), 300); }}
-        onPlaying={() => { clearTimeout(waitingTimeoutRef.current!); setIsWaiting(false); setIsPaused(false); }}
-        onPause={() => setIsPaused(true)}
-      >
-        {vttTracks.map((t: any) => <track key={t.id} kind="subtitles" srcLang={t.type} src={t.file} />)}
-      </video>
-
-      {/* Subtitles Overlay */}
-      {currentSubtitle && (
-        <div className="absolute bottom-28 left-0 right-0 flex justify-center pointer-events-none px-4 z-20">
-          <p className="text-white text-center text-lg md:text-2xl font-bold bg-black/70 px-4 py-2 rounded-lg" dir="auto">
-            {currentSubtitle}
-          </p>
-        </div>
-      )}
-
-      {/* Center Play Button */}
-      <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-30 transition-opacity duration-300 ${showControls || isPaused ? 'opacity-100' : 'opacity-0'}`}>
-        <button 
-          onClick={togglePlay}
-          className="w-20 h-20 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/20 pointer-events-auto transition-transform active:scale-90 outline-none"
-        >
-          {isPaused ? (
-            <svg className="w-8 h-8 ml-1 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          ) : (
-            <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-          )}
-        </button>
-      </div>
-
-      {/* Bottom Controls (Strict LTR Direction to fix UI bug) */}
+  // Render Helpers for Dropdown Menus
+  const renderSettingsMenu = () => {
+    return (
       <div 
-        dir="ltr"
-        onClick={(e) => e.stopPropagation()}
-        className={`absolute bottom-4 left-4 right-4 bg-[#0f111a]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex flex-col gap-3 z-40 transition-all duration-500 ${showControls || isPaused ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}
+        className="settings-target relative w-[220px] md:w-[260px] h-auto max-h-full overflow-y-auto overscroll-contain bg-[#141414]/90 md:bg-[#141414]/98 backdrop-blur-xl border border-[#e50914]/40 rounded-2xl shadow-[0_0_30px_rgba(229,9,20,0.25)] flex flex-col p-2.5 animate-fade-in-up [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/20 hover:[&::-webkit-scrollbar-thumb]:bg-alex-primary"
+        onPointerUp={(e) => e.stopPropagation()}
+        dir="rtl"
       >
-        {/* Timeline */}
-        <div 
-          className="relative w-full h-6 flex items-center cursor-pointer group/timeline touch-none"
-          onPointerDown={(e) => {
-            e.currentTarget.setPointerCapture(e.pointerId);
-            setIsScrubbing(true);
-            wasPlayingRef.current = !videoRef.current?.paused;
-            videoRef.current?.pause();
-            handleScrub(e);
-          }}
-          onPointerMove={(e) => { if (isScrubbing) handleScrub(e); }}
-          onPointerUp={(e) => {
-            e.currentTarget.releasePointerCapture(e.pointerId);
-            setIsScrubbing(false);
-            if (wasPlayingRef.current) videoRef.current?.play();
-          }}
-        >
-          <div className="w-full h-1.5 bg-white/20 rounded-full relative overflow-visible">
-            {/* Red Fill */}
-            <div className="absolute left-0 top-0 bottom-0 bg-red-600 rounded-full pointer-events-none" style={{ width: `${progressPercent}%` }}></div>
-            {/* Blue/Red Thumb */}
-            <div 
-              className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-red-600 rounded-full shadow-lg pointer-events-none transition-transform duration-200 ${isScrubbing ? 'scale-125' : 'scale-0 group-hover/timeline:scale-100'}`}
-              style={{ left: `calc(${progressPercent}% - 8px)` }}
-            ></div>
+        {/* --- Main Menu --- */}
+        {settingsView === 'main' && (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between mb-1 pb-1 border-b border-white/10 shrink-0">
+               <div className="text-sm text-white font-black">الإعدادات</div>
+               <button 
+                 onPointerUp={(e) => { e.stopPropagation(); setActiveDropdown(null); }}
+                 className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer outline-none focus:outline-none ring-0"
+               >
+                 <i className="fa-solid fa-xmark text-xs"></i>
+               </button>
+            </div>
+            
+            {/* Family Mode Switch */}
+            <div className="flex flex-row justify-between items-center px-1.5 py-1.5 hover:bg-white/5 rounded-xl transition-colors shrink-0">
+              <div className="flex flex-col text-right">
+                <span className="font-bold text-xs text-white">وضع العائلة</span>
+                <span className="text-[9px] text-gray-400 mt-0.5">تخطي تلقائي للمشاهد المخلة</span>
+              </div>
+              <button 
+                onPointerUp={(e) => { e.stopPropagation(); setIsFamilyMode(!isFamilyMode); }}
+                className={`w-9 h-5 rounded-full relative transition-colors outline-none cursor-pointer ${isFamilyMode ? 'bg-red-600' : 'bg-white/20'}`}
+              >
+                <div className={`w-3 h-3 bg-white rounded-full absolute top-[4px] transition-transform transform-gpu ${isFamilyMode ? 'left-[2px]' : 'right-[2px]'}`}></div>
+              </button>
+            </div>
+
+            {/* Subtitles Button */}
+            {vttTranslations.length > 0 && (
+              <button 
+                onPointerUp={(e) => { e.stopPropagation(); setSettingsView('subtitles'); }}
+                className="flex flex-row justify-between items-center px-1.5 py-2 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right shrink-0"
+              >
+                <span className="font-bold text-xs text-white">الترجمة</span>
+                <span className="text-[10px] text-white/50">{selectedLanguage === 'off' ? 'إيقاف' : selectedLanguage === 'ar' ? 'العربية' : 'English'} &lt;</span>
+              </button>
+            )}
+
+            {/* Quality Button */}
+            <button 
+              onPointerUp={(e) => { e.stopPropagation(); setSettingsView('quality'); }}
+              className="flex flex-row justify-between items-center px-1.5 py-2 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right shrink-0"
+            >
+              <span className="font-bold text-xs text-white">الجودة</span>
+              <span className="text-[10px] text-white/50">{selectedResolution} &lt;</span>
+            </button>
+
+            {/* Speed Button */}
+            <button 
+              onPointerUp={(e) => { e.stopPropagation(); setSettingsView('speed'); }}
+              className="flex flex-row justify-between items-center px-1.5 py-2 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right shrink-0"
+            >
+              <span className="font-bold text-xs text-white">سرعة التشغيل</span>
+              <span className="text-[10px] text-white/50">{playbackRate}x &lt;</span>
+            </button>
           </div>
+        )}
+
+        {/* --- Subtitles Sub-menu --- */}
+        {settingsView === 'subtitles' && (
+          <div className="flex flex-col animate-fade-in-up">
+            <div className="flex items-center gap-2 mb-1.5 pb-1.5 border-b border-white/10 shrink-0">
+              <button 
+                onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
+                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+              >
+                <i className="fa-solid fa-chevron-right text-[10px]"></i>
+              </button>
+              <div className="text-sm text-white font-black">الترجمة</div>
+            </div>
+            
+            <div className="text-[10px] text-gray-400 font-bold mb-1 shrink-0">لغة الترجمة</div>
+            <div className="grid grid-cols-3 gap-1 mb-1.5 shrink-0">
+              <button 
+                onPointerUp={(e) => { e.stopPropagation(); setSelectedLanguage('off'); }}
+                className={`py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === 'off' ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+              >
+                إيقاف
+              </button>
+              {vttTranslations.map((track) => (
+                <button 
+                  key={track.id}
+                  onPointerUp={(e) => { e.stopPropagation(); setSelectedLanguage(track.type); }}
+                  className={`py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === track.type ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                >
+                  {track.name === 'arabic' ? 'العربية' : 'English'}
+                </button>
+              ))}
+            </div>
+
+            <div className="text-[10px] text-gray-400 font-bold mb-1 shrink-0">نوع الخط</div>
+            <div className="grid grid-cols-3 gap-1 mb-1.5 shrink-0">
+              {[
+                { name: 'Tajawal', label: 'تجول' },
+                { name: 'Cairo', label: 'القاهرة' },
+                { name: 'Amiri', label: 'أميري' }
+              ].map((f) => (
+                <button
+                  key={f.name}
+                  onPointerUp={(e) => { e.stopPropagation(); setSelectedFont(f.name); }}
+                  className={`py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedFont === f.name ? 'bg-white text-black' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                  style={{ fontFamily: f.name }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-white/10 mb-1.5 shrink-0">
+              <span className="text-[10px] text-gray-300 font-bold">حجم الخط</span>
+              <div className="flex items-center gap-1.5">
+                <button 
+                  onPointerUp={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
+                  className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none"
+                >
+                  <i className="fa-solid fa-plus text-[10px]"></i>
+                </button>
+                <span className="text-[11px] font-en font-bold text-white min-w-[32px] text-center">{subtitleSize}%</span>
+                <button 
+                  onPointerUp={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
+                  className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none"
+                >
+                  <i className="fa-solid fa-minus text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-white/10 shrink-0">
+              <span className="text-[10px] text-gray-300 font-bold">خلفية سوداء</span>
+              <button
+                onPointerUp={(e) => { e.stopPropagation(); setShowSubtitleBg(prev => !prev); }}
+                className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-300 outline-none flex items-center cursor-pointer ${
+                  showSubtitleBg ? 'bg-alex-primary justify-end' : 'bg-white/20 justify-start'
+                }`}
+              >
+                <span className="w-4 h-4 rounded-full bg-white shadow-md transform will-change-transform"></span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* --- Quality Sub-menu --- */}
+        {settingsView === 'quality' && (
+          <div className="flex flex-col animate-fade-in-up">
+            <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-white/10 shrink-0">
+              <button 
+                onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
+                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+              >
+                <i className="fa-solid fa-chevron-right text-[10px]"></i>
+              </button>
+              <div className="text-sm text-white font-black">الجودة</div>
+            </div>
+            <div className="flex flex-col gap-1 shrink-0">
+              {sortedStreams.map((stream) => (
+                <button 
+                  key={stream.name}
+                  onPointerUp={(e) => { e.stopPropagation(); handleQualityChange(stream); setActiveDropdown(null); }}
+                  className={`w-full text-center py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedResolution === stream.resolution ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                >
+                  {stream.resolution}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* --- Speed Sub-menu --- */}
+        {settingsView === 'speed' && (
+          <div className="flex flex-col animate-fade-in-up font-en">
+            <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-white/10 font-ar shrink-0" dir="rtl">
+              <button 
+                onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
+                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+              >
+                <i className="fa-solid fa-chevron-right text-[10px]"></i>
+              </button>
+              <div className="text-sm text-white font-black">سرعة التشغيل</div>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5 shrink-0">
+              {[0.5, 1, 1.25, 1.5, 2].map((rate) => (
+                <button 
+                  key={rate}
+                  onPointerUp={(e) => { e.stopPropagation(); setPlaybackRate(rate); setActiveDropdown(null); }}
+                  className={`w-full text-center py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${playbackRate === rate ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                >
+                  {rate}x
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // YouTube Fallback Player Render
+  if (youtubeFallback && youtubeId) {
+    return (
+      <div className="relative w-full aspect-video rounded-3xl overflow-hidden shadow-2xl border border-white/5 bg-black">
+        <iframe
+          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1&color=red`}
+          className="w-full h-full"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+          title={videoData.ar_title || 'Video Player'}
+        ></iframe>
+        <div className="absolute top-4 right-4 ios-glass px-4 py-2 rounded-xl text-xs font-bold text-yellow-400 flex items-center gap-2 border border-yellow-500/20 shadow-lg z-10 animate-pulse">
+          <i className="fa-solid fa-triangle-exclamation"></i>
+          يتم تشغيل الإعلان الترويجي (جاري محاولة الاتصال بالخادم الرئيسي...)
+        </div>
+      </div>
+    );
+  }
+
+  // HTML5 Cinema Player with Custom UI Controls
+  if (currentStreamUrl && !showStreamError) {
+    return (
+      <div 
+        ref={containerRef}
+        className={`relative select-none group/player touch-manipulation transition-all duration-300 min-h-[200px] ${
+          isFullscreen 
+            ? 'fixed inset-0 w-screen h-screen z-[9999] rounded-none border-none bg-black' 
+            : 'w-full rounded-3xl shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 bg-black/90 aspect-video'
+        }`}
+        style={{ aspectRatio: isFullscreen ? 'auto' : 16/9 }}
+        dir="ltr"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Inner wrapper for rounded corners and overflow clipping to not affect dropdowns */}
+        <div className={`absolute inset-0 w-full h-full pointer-events-none ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
+          {/* Adaptive Ambient Light Canvas */}
+          <canvas
+            ref={canvasRef}
+            width="64"
+            height="36"
+            className="absolute inset-0 w-full h-full scale-110 blur-[80px] opacity-60 mix-blend-screen transition-opacity duration-1000 z-[-1]"
+            style={{ transform: 'scale(1.15)' }}
+          />
+          {/* Fallback Glow */}
+          <div className="absolute inset-0 z-[-2] opacity-10 blur-[100px] scale-105 bg-[#e50914]/20"></div>
         </div>
 
-        {/* Buttons Row */}
-        <div className="flex items-center justify-between w-full">
-          {/* Left: Play, Mute, Time */}
-          <div className="flex items-center gap-5">
-            <button onClick={togglePlay} className="text-white hover:text-red-500 transition outline-none">
-              {isPaused ? <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> : <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>}
-            </button>
-            <button onClick={toggleMute} className="text-white hover:text-red-500 transition outline-none">
-              {isMuted ? <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg> : <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>}
-            </button>
-            <span className="text-white/80 font-mono text-xs tracking-wider select-none">
-              {formatTime(currentTime)} <span className="text-white/40 mx-1">/</span> {formatTime(duration)}
+        {/* Double Tap Seek Animations */}
+        {showSeekAnimation === 'forward' && (
+          <div className="absolute inset-y-0 right-0 w-1/3 ios-active flex flex-col items-center justify-center rounded-l-[100%] animate-pulse z-30 pointer-events-none transition-all">
+            <div className="flex gap-1 text-white text-3xl md:text-5xl drop-shadow-lg">
+              <i className="fa-solid fa-forward"></i>
+            </div>
+            <span className="text-white font-black mt-2 text-sm md:text-base drop-shadow-md">+10 ثوانٍ</span>
+          </div>
+        )}
+        {showSeekAnimation === 'backward' && (
+          <div className="absolute inset-y-0 left-0 w-1/3 ios-active flex flex-col items-center justify-center rounded-r-[100%] animate-pulse z-30 pointer-events-none transition-all">
+            <div className="flex gap-1 text-white text-3xl md:text-5xl drop-shadow-lg">
+              <i className="fa-solid fa-backward"></i>
+            </div>
+            <span className="text-white font-black mt-2 text-sm md:text-base drop-shadow-md">-10 ثوانٍ</span>
+          </div>
+        )}
+
+        {/* The Native HTML5 Video Element */}
+        <div className={`absolute inset-0 w-full h-full ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
+          <style>{`
+            /* Completely hide native subtitles so our React custom overlay can handle them flawlessly */
+            video::-webkit-media-text-track-display {
+              display: none !important;
+              opacity: 0 !important;
+            }
+            video::cue {
+              color: transparent !important;
+              background: transparent !important;
+              opacity: 0 !important;
+              text-shadow: none !important;
+            }
+          `}</style>
+          <video
+            ref={videoRef}
+            className={`w-full h-full cursor-pointer transition-all duration-300 ${isZoomed ? 'object-cover' : 'object-contain'}`}
+            onPointerUp={handleVideoPointerUp}
+            onTimeUpdate={() => {
+              // منع تحديث التوقيت للصفر أثناء تبديل الجودة
+              if (isSwitchingQuality.current) return;
+              handleTimeUpdate();
+            }}
+            onEnded={() => setIsPaused(true)}
+            onLoadedMetadata={handleLoadedMetadata}
+            onError={handleStreamError}
+            onPlay={() => {
+              if (waitingTimeoutRef.current) {
+                clearTimeout(waitingTimeoutRef.current);
+                waitingTimeoutRef.current = null;
+              }
+              setIsWaiting(false);
+              setIsPaused(false);
+            }}
+            onPause={() => setIsPaused(true)}
+            onWaiting={() => {
+              if (!waitingTimeoutRef.current) {
+                waitingTimeoutRef.current = setTimeout(() => setIsWaiting(true), 1000);
+              }
+            }}
+            onSeeking={() => {
+              if (!waitingTimeoutRef.current) {
+                waitingTimeoutRef.current = setTimeout(() => setIsWaiting(true), 1000);
+              }
+            }}
+            onSeeked={() => {
+              if (waitingTimeoutRef.current) {
+                clearTimeout(waitingTimeoutRef.current);
+                waitingTimeoutRef.current = null;
+              }
+              setIsWaiting(false);
+            }}
+            onPlaying={() => {
+              if (waitingTimeoutRef.current) {
+                clearTimeout(waitingTimeoutRef.current);
+                waitingTimeoutRef.current = null;
+              }
+              setIsWaiting(false);
+              setIsPaused(false);
+            }}
+            autoPlay
+            playsInline
+          >
+            {vttTranslations.map((track) => (
+              <track
+                key={track.id}
+                kind="subtitles"
+                src={getSubtitlesProxyUrl(track.file)}
+                srcLang={track.type}
+                label={track.name === 'arabic' ? 'العربية' : 'English'}
+                onLoad={handleTimeUpdate}
+              />
+            ))}
+          </video>
+        </div>
+
+        {/* Loading Spinner */}
+        {isWaiting && (
+          <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+            <div className="w-16 h-16 border-4 border-white/20 border-t-red-600 rounded-full animate-spin"></div>
+          </div>
+        )}
+
+        {/* Custom React Subtitle Overlay (100% Real-time styling) */}
+        {currentSubtitle && (
+          <div 
+            className="absolute left-0 w-full text-center pointer-events-none flex flex-col items-center justify-end z-20 transition-all duration-300"
+            style={{ 
+               bottom: isZoomed || isFullscreen ? (showControls ? '10vh' : '24px') : (showControls ? '80px' : '24px'),
+               padding: '0 5%'
+            }}
+          >
+            {currentSubtitle.split('\n').map((line, idx) => (
+              <span 
+                key={idx} 
+                className="inline-block"
+                style={{
+                  fontSize: `${(subtitleSize / 100) * (isMobile ? 16 : 24)}px`,
+                  fontFamily: `'${selectedFont}', 'Outfit', sans-serif`,
+                  backgroundColor: showSubtitleBg ? 'rgba(0,0,0,0.65)' : 'transparent',
+                  color: 'white',
+                  padding: showSubtitleBg ? '4px 8px' : '0',
+                  lineHeight: '1.4',
+                  whiteSpace: 'pre-wrap',
+                  textShadow: showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)'
+                }}
+              >
+                {line}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Big Pulsing Center Play Button */}
+        {isPaused && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 md:w-24 md:h-24 rounded-full bg-alex-primary/95 text-white flex items-center justify-center shadow-[0_0_30px_rgba(229,9,20,0.6)] md:shadow-[0_0_45px_rgba(229,9,20,0.6)] hover:scale-110 transition-all duration-300 z-20 cursor-pointer outline-none focus:outline-none ring-0 animate-fade-in-up"
+          >
+            <i className="fa-solid fa-play ml-1 md:mr-1.5 text-2xl md:text-4xl"></i>
+          </button>
+        )}
+
+        {/* TOP TITLE BAR */}
+        <div className={`absolute top-0 inset-x-0 ${isFullscreen ? '' : 'rounded-t-3xl'} p-3 pb-8 md:p-5 md:pt-6 md:pb-20 bg-gradient-to-b from-black/90 md:via-black/40 to-transparent flex flex-row-reverse items-center justify-between transition-all duration-300 transform z-20 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+          <h3 className="text-white text-xs md:text-lg font-black drop-shadow-md flex items-center gap-2 md:gap-3" dir="rtl">
+            <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-alex-primary animate-pulse"></span>
+            {videoData.ar_title}
+          </h3>
+        </div>
+
+        {/* OVERLAY ACTIONS (Skip Intro / Skip Outro) */}
+        {showIntroSkip && (
+          <button
+            onClick={handleSkipIntro}
+            className="absolute bottom-24 right-6 flex items-center justify-center gap-2.5 bg-black/60 backdrop-blur-md hover:bg-black/80 text-white font-black text-sm md:text-base px-5 py-2.5 rounded-xl border border-white/20 hover:border-white/40 hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.5)] z-40 transition-all duration-300 cursor-pointer outline-none focus:outline-none ring-0 leading-none"
+          >
+            <i className="fa-solid fa-forward-step text-xs text-gray-300 leading-none"></i>
+            <span className="leading-none">تخطي المقدمة</span>
+          </button>
+        )}
+
+        {showOutroSkip && (
+          <button
+            onClick={handleSkipOutro}
+            className="absolute bottom-24 right-6 flex items-center justify-center gap-2.5 bg-black/60 backdrop-blur-md hover:bg-black/80 text-white font-black text-sm md:text-base px-5 py-2.5 rounded-xl border border-white/20 hover:border-white/40 hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.5)] z-40 transition-all duration-300 cursor-pointer outline-none focus:outline-none ring-0 leading-none"
+          >
+            <i className="fa-solid fa-forward text-xs text-gray-300 leading-none"></i>
+            <span className="leading-none">{onNextEpisode ? 'الحلقة التالية' : 'تخطي النهاية'}</span>
+          </button>
+        )}
+
+        {/* SETTINGS MENU (BOUNDED BOX) - باستخدام النسب المئوية */}
+            {activeDropdown === 'settings' && (
+              <div 
+                className="absolute z-[60] pointer-events-none flex flex-col justify-end items-end"
+                style={{ 
+                  bottom: '18%',       /* ترتفع القائمة بنسبة 18% من أسفل المشغل لتتجاوز شريط التحكم دائماً */
+                  right: '2%',         /* مسافة بسيطة 2% من الحافة اليمنى */
+                  maxHeight: '75%',    /* لا تتجاوز أبداً 75% من طول الفيديو، لكي لا تضرب بالشعار العلوي */
+                }}
+              >
+                <div className="pointer-events-auto h-full max-h-full flex flex-col justify-end">
+                  {renderSettingsMenu()}
+                </div>
+              </div>
+        )}
+
+        {/* BOTTOM CUSTOM CONTROL BAR */}
+        <div className={`absolute bottom-0 inset-x-0 ${isFullscreen ? '' : 'rounded-b-3xl'} p-2 pt-6 pb-[calc(env(safe-area-inset-bottom)+4px)] sm:px-6 md:pb-8 md:pt-12 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-1.5 md:gap-3 transition-all duration-300 transform z-30 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          
+          {/* Custom Timeline Progress Slider */}
+          <div className="flex items-center gap-2 md:gap-4 w-full">
+            <span className="text-[10px] md:text-xs font-en font-bold text-gray-300 min-w-[32px] md:min-w-[45px] text-left">
+              {formatTime(currentTime)}
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={duration || 100}
+              value={currentTime}
+              onChange={handleProgressChange}
+              style={progressStyle}
+              className="flex-grow h-1 md:h-1.5 rounded-lg appearance-none cursor-pointer accent-alex-primary hover:h-1.5 md:hover:h-2 transition-all outline-none border border-[#e50914]/30"
+            />
+            <span className="text-[10px] md:text-xs font-en font-bold text-gray-300 min-w-[32px] md:min-w-[45px] text-right">
+              {formatTime(duration)}
             </span>
           </div>
 
-          {/* Right: Settings, Fullscreen */}
-          <div className="flex items-center gap-4">
-            <button onClick={() => setActiveSheet('settings')} className="text-white hover:text-white transition outline-none">
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
-            </button>
-            <button onClick={toggleFullscreen} className="text-white hover:text-white transition outline-none">
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-            </button>
+          {/* Controls Buttons */}
+          <div className="flex items-center justify-between relative">
+            
+            {/* Left Controls */}
+            <div className="flex items-center gap-1.5 md:gap-6">
+              
+              {/* Play / Pause */}
+              <button 
+                onClick={togglePlay} 
+                className="text-white hover:text-alex-primary text-lg md:text-2xl transition-colors cursor-pointer outline-none focus:outline-none ring-0 w-8 h-8 md:w-6 md:h-6 flex items-center justify-center"
+              >
+                <i className={`fa-solid ${isPaused ? 'fa-play' : 'fa-pause'}`}></i>
+              </button>
+
+              {/* Next Episode Button (Series only) */}
+              {onNextEpisode && (
+                <button 
+                  onClick={onNextEpisode} 
+                  className="text-white hover:text-alex-primary text-lg md:text-2xl transition-colors cursor-pointer outline-none focus:outline-none ring-0 w-8 h-8 md:w-6 md:h-6 flex items-center justify-center"
+                  title="الحلقة التالية"
+                >
+                  <i className="fa-solid fa-forward-step"></i>
+                </button>
+              )}
+
+              {/* Volume Controller */}
+              <div className="hidden md:flex items-center gap-2 group/volume relative">
+                <button 
+                  onClick={() => setIsMuted(!isMuted)} 
+                  className="text-white hover:text-alex-primary text-base md:text-xl transition-colors cursor-pointer outline-none focus:outline-none ring-0 w-6 h-6 flex items-center justify-center"
+                >
+                  <i className={`fa-solid ${isMuted || volume === 0 ? 'fa-volume-xmark' : volume < 0.5 ? 'fa-volume-low' : 'fa-volume-high'}`}></i>
+                </button>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={isMuted ? 0 : volume}
+                  onChange={(e) => {
+                    setVolume(parseFloat(e.target.value));
+                    setIsMuted(false);
+                  }}
+                  className="w-0 group-hover/volume:w-20 h-1 bg-white/20 rounded accent-alex-primary transition-all duration-300 opacity-0 group-hover/volume:opacity-100 cursor-pointer"
+                />
+              </div>
+
+            </div>
+
+            {/* Right Controls */}
+            <div className="flex items-center justify-end gap-1 md:gap-4 flex-nowrap">
+              
+              {/* Settings Menu Toggle Button */}
+              <div className="static md:relative">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveDropdown(activeDropdown === 'settings' ? null : 'settings');
+                  }}
+                  className={`settings-target flex items-center justify-center gap-1.5 h-8 md:h-10 px-2 md:px-3 rounded-lg md:rounded-xl border text-[10px] md:text-xs font-black transition-all cursor-pointer outline-none focus:outline-none ring-0 min-w-[32px] md:min-w-[40px] ${
+                    activeDropdown === 'settings'
+                      ? 'bg-alex-primary/20 text-alex-primary border-alex-primary/30 shadow' 
+                      : 'ios-button text-gray-300 border-white/5 hover:ios-active'
+                  }`}
+                  title="الإعدادات"
+                >
+                  <i className="fa-solid fa-cog text-sm md:text-base"></i>
+                  <span className="hidden md:inline">الإعدادات</span>
+                </button>
+              </div>
+
+              {/* Fullscreen Toggle */}
+              <button 
+                onClick={toggleFullscreen} 
+                className="text-white hover:text-alex-primary text-lg md:text-2xl transition-colors cursor-pointer outline-none focus:outline-none ring-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center"
+              >
+                <i className={`fa-solid ${isFullscreen ? 'fa-minimize' : 'fa-maximize'}`}></i>
+              </button>
+
+            </div>
+
           </div>
+
         </div>
+
       </div>
+    );
+  }
 
-      {/* Loading Spinner */}
-      {isWaiting && (
-        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-          <div className="w-16 h-16 border-4 border-white/20 border-t-red-600 rounded-full animate-spin"></div>
-        </div>
-      )}
-
-      {/* Settings Modal (Strict RTL Structure) */}
-      {activeSheet && (
-        <div 
-          className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          onClick={() => { setActiveSheet(null); setSheetView('main'); }}
-        >
-          <div 
-            dir="rtl"
-            onClick={e => e.stopPropagation()}
-            className="bg-[#161821] w-[90%] max-w-sm rounded-2xl p-5 border border-white/10 shadow-2xl relative overflow-hidden text-white"
+  // Fallback UI (e.g. No stream and no trailer)
+  return (
+    <div className="aspect-video flex flex-col items-center justify-center bg-alex-card rounded-3xl border border-white/5">
+      <div className="w-24 h-24 rounded-full ios-glass flex items-center justify-center mb-6 text-4xl text-gray-500 shadow-inner">
+        <i className="fa-solid fa-video-slash"></i>
+      </div>
+      <h2 className="text-2xl text-white font-black mb-2">البث غير متوفر حالياً</h2>
+      <p className="text-gray-400 font-medium">عذراً، لم نتمكن من العثور على مسار البث المباشر لهذا المحتوى.</p>
+      {currentStreamUrl && showStreamError && (
+        <div className="mt-4 flex flex-col items-center gap-3">
+          <p className="text-xs text-gray-500 font-mono max-w-md text-center">{lastErrorEvent}</p>
+          <button
+            onClick={() => {
+              setShowStreamError(false);
+              setRetryCount(0);
+              setCurrentStreamUrl((prev) => {
+                if (!prev) return prev;
+                const sep = prev.includes('?') ? '&' : '?';
+                return `${prev}${sep}_manual_retry=${Date.now()}`;
+              });
+            }}
+            className="px-6 py-2 bg-alex-primary text-white rounded-xl font-bold text-sm hover:bg-alex-primary/80 transition-colors cursor-pointer outline-none focus:outline-none ring-0"
           >
-            {/* Main Menu */}
-            <div className={`transition-transform duration-300 w-full ${sheetView === 'main' ? 'translate-x-0' : 'translate-x-full absolute inset-0 invisible'}`}>
-              <div className="flex flex-row justify-between items-center mb-6">
-                 <h3 className="font-bold text-lg">الإعدادات</h3>
-                 <button onClick={() => { setActiveSheet(null); setSheetView('main'); }} className="p-2 bg-white/5 rounded-full hover:bg-white/10 outline-none">
-                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                 </button>
-              </div>
-
-              <div className="flex flex-row justify-between items-center bg-white/5 rounded-xl p-4 mb-4">
-                <div className="flex flex-row items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-red-600/20 flex items-center justify-center text-red-600">
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-                  </div>
-                  <div className="flex flex-col text-right">
-                    <span className="font-bold text-sm">وضع العائلة</span>
-                    <span className="text-xs text-white/50 mt-1">تخطي تلقائي للمقاطع المخلة</span>
-                  </div>
-                </div>
-                <button onClick={() => setIsFamilyMode(!isFamilyMode)} className={`w-12 h-6 rounded-full relative transition-colors outline-none ${isFamilyMode ? 'bg-red-600' : 'bg-white/20'}`}>
-                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${isFamilyMode ? 'left-1' : 'right-1'}`}></div>
-                </button>
-              </div>
-
-              <div className="bg-white/5 rounded-xl flex flex-col">
-                <button onClick={() => setSheetView('subtitles')} className="flex flex-row justify-between items-center p-4 border-b border-white/5 hover:bg-white/5 transition outline-none">
-                  <div className="flex flex-row items-center gap-3">
-                    <svg className="w-5 h-5 text-white/50" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 7H9.5v-.5h-2v3h2V13H11v1c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1zm7 0h-1.5v-.5h-2v3h2V13H18v1c0 .55-.45 1-1 1h-3c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1z"/></svg>
-                    <span className="font-bold text-sm">الترجمة</span>
-                  </div>
-                  <div className="flex flex-row items-center gap-2 text-sm text-white/50">
-                    <span>{selectedLanguage === 'ar' ? 'العربية' : selectedLanguage === 'en' ? 'English' : 'إيقاف'}</span>
-                    <span>&lt;</span>
-                  </div>
-                </button>
-                <button onClick={() => setSheetView('quality')} className="flex flex-row justify-between items-center p-4 hover:bg-white/5 transition outline-none">
-                  <div className="flex flex-row items-center gap-3">
-                    <svg className="w-5 h-5 text-white/50" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
-                    <span className="font-bold text-sm">الجودة</span>
-                  </div>
-                  <div className="flex flex-row items-center gap-2 text-sm text-white/50">
-                    <span>{selectedResolution}</span>
-                    <span>&lt;</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* Subtitles Menu */}
-            <div className={`transition-transform duration-300 w-full ${sheetView === 'subtitles' ? 'translate-x-0' : '-translate-x-full absolute inset-0 invisible'}`}>
-               <div className="flex flex-row justify-between items-center mb-6">
-                 <button onClick={() => setSheetView('main')} className="p-2 bg-white/5 rounded-full hover:bg-white/10 outline-none">
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-                 </button>
-                 <h3 className="font-bold text-lg">الترجمة</h3>
-                 <div className="w-9 h-9"></div> {/* Spacer */}
-              </div>
-              <div className="flex flex-col gap-2">
-                {['off', 'ar', 'en'].map(lang => (
-                  <button 
-                    key={lang}
-                    onClick={() => { setSelectedLanguage(lang); setSheetView('main'); }} 
-                    className={`flex flex-row items-center justify-between p-4 rounded-xl transition outline-none ${selectedLanguage === lang ? 'bg-white/10' : 'hover:bg-white/5'}`}
-                  >
-                    <span className="font-bold text-sm text-right flex-1">{lang === 'off' ? 'إيقاف' : lang === 'ar' ? 'العربية' : 'English'}</span>
-                    {selectedLanguage === lang && <svg className="w-5 h-5 text-red-600" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Quality Menu */}
-            <div className={`transition-transform duration-300 w-full ${sheetView === 'quality' ? 'translate-x-0' : '-translate-x-full absolute inset-0 invisible'}`}>
-               <div className="flex flex-row justify-between items-center mb-6">
-                 <button onClick={() => setSheetView('main')} className="p-2 bg-white/5 rounded-full hover:bg-white/10 outline-none">
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-                 </button>
-                 <h3 className="font-bold text-lg">الجودة</h3>
-                 <div className="w-9 h-9"></div> {/* Spacer */}
-              </div>
-              <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto">
-                {videoData?.streams?.map((stream: any, index: number) => (
-                  <button 
-                    key={index}
-                    onClick={() => { setCurrentStreamUrl(stream.videoUrl); setSelectedResolution(stream.resolution); setSheetView('main'); }} 
-                    className={`flex flex-row items-center justify-between p-4 rounded-xl transition outline-none ${selectedResolution === stream.resolution ? 'bg-white/10' : 'hover:bg-white/5'}`}
-                  >
-                    <span className="font-bold text-sm text-right flex-1">{stream.resolution}</span>
-                    {selectedResolution === stream.resolution && <svg className="w-5 h-5 text-red-600" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+            إعادة المحاولة
+          </button>
         </div>
       )}
     </div>

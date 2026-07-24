@@ -9,30 +9,35 @@ import { useEffect } from 'react';
  */
 export default function AILayoutEngine() {
   useEffect(() => {
+    let ticking = false;
+
     const updateLayout = () => {
-      if (typeof window === 'undefined' || typeof document === 'undefined') return;
+      // FIXED: Added requestAnimationFrame to prevent Layout Thrashing on mobile scroll
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
-      // Calculate perfect sub-pixel values for 1vh and 1vw
-      const vh = window.innerHeight * 0.01;
-      const vw = window.innerWidth * 0.01;
-      
-      // Determine device conditions intelligently
-      const isShort = window.innerHeight < 750 ? 1 : 0;
-      const isMobile = window.innerWidth < 768 ? 1 : 0;
+          const vh = window.innerHeight * 0.01;
+          const vw = window.innerWidth * 0.01;
+          
+          const isShort = window.innerHeight < 750 ? 1 : 0;
+          const isMobile = window.innerWidth < 768 ? 1 : 0;
 
-      // Inject into the CSS root variables for global consumption
-      document.documentElement.style.setProperty('--ai-vh', `${vh}px`);
-      document.documentElement.style.setProperty('--ai-vw', `${vw}px`);
-      document.documentElement.style.setProperty('--ai-short', `${isShort}`);
-      document.documentElement.style.setProperty('--ai-mobile', `${isMobile}`);
+          document.documentElement.style.setProperty('--ai-vh', `${vh}px`);
+          document.documentElement.style.setProperty('--ai-vw', `${vw}px`);
+          document.documentElement.style.setProperty('--ai-short', `${isShort}`);
+          document.documentElement.style.setProperty('--ai-mobile', `${isMobile}`);
+          
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
-    // Initial injection
     updateLayout();
 
-    // Listen to changes continuously
-    window.addEventListener('resize', updateLayout);
-    window.addEventListener('orientationchange', updateLayout);
+    window.addEventListener('resize', updateLayout, { passive: true });
+    window.addEventListener('orientationchange', updateLayout, { passive: true });
 
     return () => {
       window.removeEventListener('resize', updateLayout);
@@ -40,5 +45,5 @@ export default function AILayoutEngine() {
     };
   }, []);
 
-  return null; // Invisible brain component
+  return null; 
 }

@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import { decryptData } from '@/utils/cryptoHelper';
 import WatchLayout from './watch/WatchLayout';
+import { useAuth } from '@clerk/nextjs';
 
 interface Stream {
   name: string;
@@ -29,11 +30,12 @@ interface Season {
 
 interface WatchContainerProps {
   video: any;
-  seasons: Season[];
   episodes: Episode[];
+  seasons: Season[];
+  roomHook?: any;
 }
 
-export default function WatchContainer({ video, seasons, episodes }: WatchContainerProps) {
+export default function WatchContainer({ video, seasons, episodes, roomHook }: WatchContainerProps) {
   const isSeries = video.kind === '2';
   
   // For series, active episode state. Default to first episode of first season.
@@ -96,28 +98,68 @@ export default function WatchContainer({ video, seasons, episodes }: WatchContai
   };
 
   // Initialize favorite status from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('alex_favorites');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as string[];
-        setFavoriteList(parsed);
-        setIsFavorite(parsed.includes(video.nb));
-      } catch (e) {}
-    }
-  }, [video.nb]);
+  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const [isPendingFav, startTransitionFav] = useTransition();
 
-  const toggleFavorite = () => {
-    let newList = [...favoriteList];
-    if (isFavorite) {
-      newList = newList.filter(id => id !== video.nb);
-      setIsFavorite(false);
-    } else {
-      newList.push(video.nb);
-      setIsFavorite(true);
+  // Fetch initial favorite status
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      if (!isLoaded || !isSignedIn) return;
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const res = await fetch('/api/favorites', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success && data.favorites) {
+          const isFav = data.favorites.some((f: any) => f.mediaId === video.nb);
+          setIsFavorite(isFav);
+        }
+      } catch (err) {
+        console.error("Failed to fetch favorites status", err);
+      }
+    };
+    checkFavoriteStatus();
+  }, [video.nb, isLoaded, isSignedIn, getToken]);
+
+  const toggleFavorite = async () => {
+    if (!isLoaded || !isSignedIn) {
+      alert("يجب تسجيل الدخول لإضافة المفضلات");
+      return;
     }
-    setFavoriteList(newList);
-    localStorage.setItem('alex_favorites', JSON.stringify(newList));
+
+    startTransitionFav(() => {
+      setIsFavorite(!isFavorite);
+    });
+
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/favorites', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          mediaId: video.nb, 
+          mediaType: isSeries ? 'tv' : 'movie',
+          title: video.ar_title || video.en_title,
+          posterPath: video.img
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        setIsFavorite(isFavorite);
+        console.error(data.error);
+      } else {
+        setIsFavorite(data.action === 'added');
+      }
+    } catch (err) {
+      console.error(err);
+      setIsFavorite(isFavorite);
+    }
   };
 
   // Set default season and episode on load
@@ -227,6 +269,7 @@ export default function WatchContainer({ video, seasons, episodes }: WatchContai
     <WatchLayout 
       video={video}
       isSeries={isSeries}
+      roomHook={roomHook}
       seasons={seasons}
       episodes={episodes}
       currentSeason={currentSeason}

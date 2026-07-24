@@ -2,7 +2,7 @@ import CryptoJS from 'crypto-js';
 
 // The secret key used for encryption and decryption of API response payloads.
 // This is separate from the URL encryption (which uses server-only keys).
-const SECRET_KEY = 'vA$c1n_S3cr3t_K3y_!2024';
+const SECRET_KEY = process.env.NEXT_PUBLIC_CRYPTO_SECRET || 'vA$c1n_S3cr3t_K3y_!2024';
 
 /**
  * Encrypts data to a Base64 encoded AES string.

@@ -33,7 +33,7 @@ export function decryptPath(token: string): string {
 
 /**
  * Converts a full shabakaty URL to a safe proxy URL.
- * Only the path is encrypted — the domain is NEVER sent to the client.
+ * The full URL is encrypted to avoid open proxy vulnerability.
  */
 export function sanitizeUrl(url: string): string {
   if (!url || typeof url !== 'string') return url;
@@ -42,17 +42,20 @@ export function sanitizeUrl(url: string): string {
   try {
     const parsed = new URL(url);
     const subdomain = parsed.hostname.split('.')[0];
-
     const pathWithSearch = `/${subdomain}${parsed.pathname}${parsed.search}`;
     const encPath = encryptPath(pathWithSearch);
 
-    if (url.includes('.mp4') || url.includes('.m3u8') || url.includes('.ts')) {
-      return `https://64-225-99-144.nip.io/${subdomain}${parsed.pathname}${parsed.search}`;
+    const isVideo = parsed.pathname.endsWith('.mp4') || parsed.pathname.endsWith('.m3u8') || parsed.pathname.endsWith('.ts');
+    const isSub = parsed.pathname.endsWith('.srt') || parsed.pathname.endsWith('.vtt');
+
+    if (isVideo) {
+      return `/api/tunnel-video?ref=${encPath}`;
     }
-    if (url.includes('.srt') || url.includes('.vtt')) {
+    if (isSub) {
       return `/api/stream?ref=${encPath}`;
     }
-    return `/tunnel${pathWithSearch}`;
+    
+    return `/api/img?ref=${encPath}`;
   } catch {
     return url;
   }
@@ -61,8 +64,7 @@ export function sanitizeUrl(url: string): string {
 // Fields that may contain shabakaty URLs
 const URL_FIELDS = [
   'imgObjUrl', 'imgMediumThumb', 'imgThumb', 'imgBig',
-  'stream_url', 'arTranslationFilePath', 'enTranslationFilePath',
-  'videoUrl' // ADDED THIS!
+  'stream_url', 'videoUrl', 'arTranslationFilePath', 'enTranslationFilePath'
 ];
 
 /**

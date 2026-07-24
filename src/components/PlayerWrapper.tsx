@@ -9,6 +9,7 @@ const AlexPlayerMobile = dynamic(() => import('./AlexPlayerMobile'), { ssr: fals
 interface PlayerWrapperProps {
   videoData: any;
   onNextEpisode?: () => void;
+  roomHook?: any;
 }
 
 export default function PlayerWrapper(props: PlayerWrapperProps) {
@@ -18,15 +19,19 @@ export default function PlayerWrapper(props: PlayerWrapperProps) {
     const checkMobile = () => {
       const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
       const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      // It's mobile if it has touch AND is relatively small, or if it has a mobile UA
       setIsMobile(isMobileUA || (isTouch && window.screen.width < 1024));
     };
-    checkMobile(); // Check exactly once on mount
+    checkMobile(); 
   }, []);
 
-  // Avoid hydration mismatch by waiting for mount
   if (isMobile === null) {
-    return <div className="w-full h-full bg-black"></div>; // Placeholder
+    // FIXED: Pulse Skeleton matching exactly the player's shape to prevent CLS
+    return (
+      <div className="w-full aspect-video bg-[#0a0a0f] animate-pulse rounded-3xl border border-white/5 flex items-center justify-center shadow-2xl relative overflow-hidden">
+         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.02] to-transparent w-[200%] animate-[shimmer_2s_infinite]"></div>
+         <i className="fa-solid fa-circle-notch fa-spin text-4xl text-alex-primary/30"></i>
+      </div>
+    ); 
   }
 
   return isMobile ? <AlexPlayerMobile {...props} /> : <AlexPlayer {...props} />;

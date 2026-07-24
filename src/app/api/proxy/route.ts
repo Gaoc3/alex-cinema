@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { encryptData } from '@/utils/cryptoHelper';
 import { encryptPath } from '@/lib/serverCrypto';
+import { fetchWithRedirects } from '@/utils/proxyHelper';
 
 const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'http://64.225.99.144';
 
@@ -63,7 +64,8 @@ function buildEncryptedJsonResponse(data: any, status = 200, extraHeaders?: Reco
 async function fetchWithRetry(url: string, options: RequestInit, retries = 2): Promise<Response> {
   for (let i = 0; i < retries; i++) {
     try {
-      const res = await fetch(url, options);
+      const headers = new Headers(options.headers as any);
+      const res = await fetchWithRedirects(url, headers);
       if (res.ok || res.status === 206) return res;
       if (res.status === 502 && i < retries - 1) {
         await new Promise(r => setTimeout(r, 1000 * (i + 1)));
@@ -126,7 +128,7 @@ export async function GET(req: NextRequest) {
   const isShabakaty = targetUrl.includes('shabakaty.com');
   const isApi = isShabakaty && targetUrl.includes('/api/');
   const isImage = isShabakaty && !isApi && (targetUrl.includes('poster') || targetUrl.includes('cover') || targetUrl.includes('.jpg') || targetUrl.includes('.png') || targetUrl.includes('.webp'));
-  const isVideo = isShabakaty && (targetUrl.includes('mp4') || targetUrl.includes('video'));
+  const isVideo = isShabakaty && (targetUrl.includes('mp4') || targetUrl.includes('video') || targetUrl.includes('cndw') || targetUrl.includes('/vascin'));
   const isSrt = targetUrl.toLowerCase().includes('.srt');
 
   const headers: Record<string, string> = {
@@ -138,15 +140,10 @@ export async function GET(req: NextRequest) {
   const range = req.headers.get('range');
   if (range) headers['Range'] = range;
 
-  let tunnelUrl = targetUrl;
-  try {
-    const tUrl = new URL(targetUrl);
-    const tunnelBase = TUNNEL_BASE_URL.replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
-    if (tunnelBase && tUrl.hostname.includes('shabakaty.com')) {
-      const subdomain = tUrl.hostname.split('.')[0];
-      tunnelUrl = `${tunnelBase}/${subdomain}${tUrl.pathname}${tUrl.search}`;
-    }
-  } catch (e) { }
+
+  // tunnelUrl == targetUrl. /etc/hosts on VPS routes shabakaty.com → 127.0.0.1:443 (router SSH reverse tunnel)
+  const tunnelUrl = targetUrl;
+
 
   // No debug headers — never leak internal URLs
   const debugHeaders = {};
@@ -158,40 +155,26 @@ export async function GET(req: NextRequest) {
 
   if (isImage) {
     // Try tunnel first with a short timeout
-    const imgController = new AbortController();
-    const imgTimeout = setTimeout(() => imgController.abort(), 8000);
+    const imgHeaders = new Headers({ ...headers, 'Bypass-Tunnel-Reminder': 'true' });
     try {
-      const upstreamRes = await fetch(tunnelUrl, { 
-        headers: { ...headers, 'Bypass-Tunnel-Reminder': 'true' }, 
-        method: 'GET', 
-        redirect: 'follow',
-        signal: imgController.signal
-      });
-      clearTimeout(imgTimeout);
+      const upstreamRes = await fetchWithRedirects(tunnelUrl, imgHeaders);
       if (upstreamRes.ok || upstreamRes.status === 206) {
         const response = buildResponse(upstreamRes, debugHeaders);
         response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
         return response;
       }
-    } catch { clearTimeout(imgTimeout); }
+    } catch { /* ignore */ }
 
     // Fallback: try direct fetch
-    const directImgController = new AbortController();
-    const directImgTimeout = setTimeout(() => directImgController.abort(), 8000);
+    const directImgHeaders = new Headers(headers);
     try {
-      const directRes = await fetch(targetUrl, {
-        headers,
-        method: 'GET',
-        redirect: 'follow',
-        signal: directImgController.signal
-      });
-      clearTimeout(directImgTimeout);
+      const directRes = await fetchWithRedirects(targetUrl, directImgHeaders);
       if (directRes.ok || directRes.status === 206) {
         const response = buildResponse(directRes, debugHeaders);
         response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
         return response;
       }
-    } catch { clearTimeout(directImgTimeout); }
+    } catch { /* ignore */ }
 
     return NextResponse.json({ error: 'Image fetch failed' }, { status: 502 });
   }
@@ -203,7 +186,7 @@ export async function GET(req: NextRequest) {
       if (isApi) {
         try {
           let text = await response.text();
-          text = text.replace(/https?:(?:\\?\/){2}(cdn|cnth[0-9]+|cndw[0-9]+|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match, subdomain) => {
+          text = text.replace(/https?:(?:\\?\/){2}([a-zA-Z0-9_-]+)\.shabakaty\.com([^"'\s]*)/g, (match, subdomain) => {
             try {
               const unescapedMatch = match.replace(/\\/g, '');
               const parsed = new URL(unescapedMatch);
@@ -211,14 +194,16 @@ export async function GET(req: NextRequest) {
 
               const pathWithSearch = `/${finalSubdomain}${parsed.pathname}${parsed.search}`;
               const enc = encryptPath(pathWithSearch);
-              // Serve video directly through the VPS via HTTPS to avoid Vercel 4.5MB limits
-              if (parsed.pathname.endsWith('.mp4') || parsed.pathname.endsWith('.m3u8') || parsed.pathname.endsWith('.ts')) {
-                return `https://64-225-99-144.nip.io/${finalSubdomain}${parsed.pathname}${parsed.search}`;
-              }
-              if (parsed.pathname.endsWith('.srt') || parsed.pathname.endsWith('.vtt')) {
+              const isSub = parsed.pathname.endsWith('.srt') || parsed.pathname.endsWith('.vtt') || parsed.pathname.includes('/subtitle/');
+              const isVideo = subdomain.startsWith('cndw') || parsed.pathname.includes('/vascin24/') || parsed.pathname.includes('/vascin/') || parsed.pathname.includes('/video/') || parsed.pathname.endsWith('.mp4') || parsed.pathname.endsWith('.m3u8') || parsed.pathname.endsWith('.ts') || parsed.pathname.endsWith('.mkv');
+              
+              if (isSub) {
                 return `/api/stream?ref=${enc}`;
               }
-              return `/tunnel${pathWithSearch}`;
+              if (isVideo) {
+                return `/api/tunnel-video?ref=${enc}`;
+              }
+              return `/api/img?ref=${enc}`;
             } catch {
               return match;
             }
@@ -245,13 +230,14 @@ export async function GET(req: NextRequest) {
   const directController = new AbortController();
   const directTimeout = setTimeout(() => directController.abort(), 30000);
   try {
-    const response = await fetch(targetUrl, { headers, signal: directController.signal });
+    const directHeaders = new Headers(headers);
+    const response = await fetchWithRedirects(targetUrl, directHeaders);
     clearTimeout(directTimeout);
     if (response.ok || response.status === 206) {
       if (isApi) {
         try {
           let text = await response.text();
-          text = text.replace(/https?:(?:\\?\/){2}(cdn|cnth[0-9]+|cndw[0-9]+|cinemana)\.shabakaty\.com([^"'\s]*)/g, (match, subdomain) => {
+          text = text.replace(/https?:(?:\\?\/){2}([a-zA-Z0-9_-]+)\.shabakaty\.com([^"'\s]*)/g, (match, subdomain) => {
             try {
               const unescapedMatch = match.replace(/\\/g, '');
               const parsed = new URL(unescapedMatch);
@@ -259,14 +245,16 @@ export async function GET(req: NextRequest) {
 
               const pathWithSearch = `/${finalSubdomain}${parsed.pathname}${parsed.search}`;
               const enc = encryptPath(pathWithSearch);
-              // Serve video directly through the VPS via HTTPS to avoid Vercel 4.5MB limits
-              if (parsed.pathname.endsWith('.mp4') || parsed.pathname.endsWith('.m3u8') || parsed.pathname.endsWith('.ts')) {
-                return `https://64-225-99-144.nip.io/${finalSubdomain}${parsed.pathname}${parsed.search}`;
-              }
-              if (parsed.pathname.endsWith('.srt') || parsed.pathname.endsWith('.vtt')) {
+              const isSub = parsed.pathname.endsWith('.srt') || parsed.pathname.endsWith('.vtt') || parsed.pathname.includes('/subtitle/');
+              const isVideo = subdomain.startsWith('cndw') || parsed.pathname.includes('/vascin24/') || parsed.pathname.includes('/vascin/') || parsed.pathname.includes('/video/') || parsed.pathname.endsWith('.mp4') || parsed.pathname.endsWith('.m3u8') || parsed.pathname.endsWith('.ts') || parsed.pathname.endsWith('.mkv');
+              
+              if (isSub) {
                 return `/api/stream?ref=${enc}`;
               }
-              return `/tunnel${pathWithSearch}`;
+              if (isVideo) {
+                return `/api/tunnel-video?ref=${enc}`;
+              }
+              return `/api/img?ref=${enc}`;
             } catch {
               return match;
             }

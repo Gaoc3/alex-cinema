@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Hls from 'hls.js';
+import { useWatchRoom } from '@/hooks/useWatchRoom';
 
 interface Stream {
   name: string;
@@ -45,6 +46,7 @@ interface AlexPlayerProps {
     enTranslationFilePath?: string | null;
   };
   onNextEpisode?: () => void;
+  roomHook?: any;
 }
 
 function extractYouTubeId(url: string): string | null {
@@ -53,10 +55,15 @@ function extractYouTubeId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps) {
+export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexPlayerProps) {
   const youtubeId = extractYouTubeId(videoData.trailer || '');
   const streams = videoData.streams || [];
   const translations = videoData.translations || [];
+
+  const socket = roomHook?.socket;
+  const isHost = roomHook?.isHost;
+  const roomState = roomHook?.roomState;
+  const sendSyncUpdate = roomHook?.sendSyncUpdate;
 
   // Stream URL & Resolution states
   const [currentStreamUrl, setCurrentStreamUrl] = useState<string | null>(null);
@@ -85,9 +92,54 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   const [showOutroSkip, setShowOutroSkip] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+
+  // Family Mode State (Explicit scene skip)
+  const [isFamilyMode, setIsFamilyMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('alex_family_mode') === 'true';
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('alex_family_mode', String(isFamilyMode));
+  }, [isFamilyMode]);
+
+  // SYNC LOGIC
+  const lastSyncTimeRef = useRef(0);
+  useEffect(() => {
+    if (!videoRef.current || !roomState || isHost || !roomHook) return;
+    
+    // Guest logic: we receive roomState from the host
+    const video = videoRef.current;
+    
+    // Check if we need to force seek (if difference is > 2 seconds)
+    const diff = Math.abs(video.currentTime - roomState.time);
+    if (diff > 2) {
+      video.currentTime = roomState.time;
+    }
+
+    // Check play/pause state
+    if (roomState.playing && video.paused) {
+      video.play().catch(e => console.log('Autoplay prevented', e));
+    } else if (!roomState.playing && !video.paused) {
+      video.pause();
+    }
+  }, [roomState, isHost, roomHook]);
+
+  // Loading spinner state (with 1s delayed resolution)
+  const [isWaiting, setIsWaiting] = useState(false);
+  const waitingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Dropdown menus visibility
   const [activeDropdown, setActiveDropdown] = useState<'quality' | 'speed' | 'subtitles' | 'settings' | null>(null);
+  const [settingsView, setSettingsView] = useState<'main' | 'subtitles' | 'quality' | 'speed'>('main');
+
+  useEffect(() => {
+    if (activeDropdown !== 'settings') {
+      setSettingsView('main');
+    }
+  }, [activeDropdown]);
 
   // Mobile detection
   const [isMobile, setIsMobile] = useState(false);
@@ -100,12 +152,11 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
   // Gesture State
   const [showSeekAnimation, setShowSeekAnimation] = useState<'forward' | 'backward' | null>(null);
-  const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTapRef = useRef<{time: number}>({time: 0});
   const touchStartRef = useRef<{x: number, y: number, time: number} | null>(null);
   const initialPinchDistance = useRef<number | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
-  const [videoAspect, setVideoAspect] = useState<number>(16/9);
 
   // Subtitle custom sizing state with localstorage persistence
   const [subtitleSize, setSubtitleSize] = useState<number>(() => {
@@ -135,6 +186,8 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   useEffect(() => {
     localStorage.setItem('alex_show_subtitle_bg', String(showSubtitleBg));
   }, [showSubtitleBg]);
+
+  const lastSubtitleText = useRef<string | null>(null);
 
   // Subtitle custom font state with localstorage persistence
   const [selectedFont, setSelectedFont] = useState<string>(() => {
@@ -169,7 +222,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Pixel-level adaptation (Ambient Light Glow)
   useEffect(() => {
@@ -632,6 +685,14 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
       const video = videoRef.current;
       setCurrentTime(video.currentTime);
 
+      if (isHost && roomHook) {
+        const now = Date.now();
+        if (now - lastSyncTimeRef.current > 1000) {
+          sendSyncUpdate(video.currentTime, !video.paused);
+          lastSyncTimeRef.current = now;
+        }
+      }
+
       // 1. Check Skip Intro Ranges
       const intro = videoData.introSkipping?.find(
         range => video.currentTime >= parseFloat(range.start) && video.currentTime < parseFloat(range.end)
@@ -650,6 +711,17 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
       } else {
         setShowOutroSkip(false);
       }
+
+      // 3. Family Mode Skip Logic (Explicit scene skip)
+      if (isFamilyMode && videoData?.skippingDurations) {
+        const { start, end } = videoData.skippingDurations;
+        for (let i = 0; i < start.length; i++) {
+          if (video.currentTime >= parseFloat(start[i]) && video.currentTime < parseFloat(end[i])) {
+            video.currentTime = parseFloat(end[i]) + 0.1;
+            return;
+          }
+        }
+      }
     }
   };
 
@@ -658,7 +730,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     const video = videoRef.current;
     if (video) {
       if (video.videoWidth && video.videoHeight) {
-        setVideoAspect(video.videoWidth / video.videoHeight);
+        // Removed dynamic aspect ratio to prevent layout shift
       }
       
       if (videoData.duration) {
@@ -695,7 +767,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
           }
         } catch (err) {
           console.error("Fullscreen failed:", err);
-          setIsFullscreen(true); // CSS fallback
+          setIsFullscreen(false);
         }
       } else {
         try {
@@ -712,7 +784,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
           }
         } catch (err) {
           console.error("Exit fullscreen failed:", err);
-          setIsFullscreen(false); // CSS fallback
+          setIsFullscreen(false);
         }
       }
     }
@@ -870,131 +942,208 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   };
 
   // Render Helpers for Dropdown Menus (Mobile Portal vs Desktop Absolute)
-  const renderSubtitlesMenu = () => (
-    <div 
-      className="relative w-full max-w-[340px] md:w-72 max-h-[85vh] md:max-h-[60vh] overflow-y-auto liquid-glass-heavy md:bg-[#141414]/95 border border-[#e50914]/40 rounded-3xl md:rounded-2xl shadow-[0_0_30px_rgba(229,9,20,0.25)] md:shadow-[0_0_40px_rgba(229,9,20,0.3)] flex flex-col p-4 animate-fade-in-up"
-      onPointerUp={(e) => e.stopPropagation()}
-      dir="rtl"
-    >
-      <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
-         <div className="text-base md:text-sm text-white font-black">إعدادات الترجمة</div>
-         <button onClick={() => setActiveDropdown(null)} className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer outline-none focus:outline-none ring-0"><i className="fa-solid fa-xmark md:text-xs"></i></button>
-      </div>
-      
-      <div className="text-sm md:text-xs text-gray-400 font-bold mb-2">لغة الترجمة</div>
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        <button 
-          onClick={(e) => { e.stopPropagation(); setSelectedLanguage('off'); }}
-          className={`px-3 py-3 md:py-2 rounded-xl md:rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === 'off' ? 'bg-alex-primary text-white font-black shadow-lg' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
-        >
-          إيقاف
-        </button>
-        {vttTranslations.map((track) => (
-          <button 
-            key={track.id}
-            onClick={(e) => { e.stopPropagation(); setSelectedLanguage(track.type); }}
-            className={`px-3 py-3 md:py-2 rounded-xl md:rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === track.type ? 'bg-alex-primary text-white font-black shadow-lg' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
-          >
-            {track.name === 'arabic' ? 'العربية' : 'English'}
-          </button>
-        ))}
-      </div>
-      
-      <div className="text-sm md:text-xs text-gray-400 font-bold mb-2">نوع الخط</div>
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        {[
-          { name: 'Tajawal', label: 'تجول' },
-          { name: 'Cairo', label: 'القاهرة' },
-          { name: 'Amiri', label: 'أميري' }
-        ].map((f) => (
-          <button
-            key={f.name}
-            onClick={(e) => { e.stopPropagation(); setSelectedFont(f.name); }}
-            className={`px-2 py-3 md:py-2 rounded-xl md:rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedFont === f.name ? 'bg-white text-black' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
-            style={{ fontFamily: f.name }}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+  const renderSettingsMenu = () => {
+    return (
+      <div 
+        className="relative w-full max-w-[280px] md:w-64 max-h-[80vh] md:max-h-[60vh] overflow-y-auto liquid-glass-heavy md:bg-[#141414]/95 border border-[#e50914]/40 rounded-3xl md:rounded-2xl shadow-[0_0_30px_rgba(229,9,20,0.25)] md:shadow-[0_0_40px_rgba(229,9,20,0.3)] flex flex-col p-4 md:p-3 animate-fade-in-up"
+        onPointerUp={(e) => e.stopPropagation()}
+        dir="rtl"
+      >
+        {/* --- Main Menu --- */}
+        {settingsView === 'main' && (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
+               <div className="text-base md:text-sm text-white font-black">الإعدادات</div>
+               <button 
+                 onPointerUp={(e) => { e.stopPropagation(); setActiveDropdown(null); }}
+                 className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer outline-none focus:outline-none ring-0"
+               >
+                 <i className="fa-solid fa-xmark md:text-xs"></i>
+               </button>
+            </div>
+            
+            {/* Family Mode Switch */}
+            <div className="flex flex-row justify-between items-center px-2 py-2 hover:bg-white/5 rounded-xl transition-colors">
+              <div className="flex flex-col text-right">
+                <span className="font-bold text-xs text-white">وضع العائلة</span>
+                <span className="text-[9px] text-gray-500 font-normal mt-0.5">تخطي تلقائي للمشاهد المخلة</span>
+              </div>
+              <button 
+                onPointerUp={(e) => { e.stopPropagation(); setIsFamilyMode(!isFamilyMode); }}
+                className={`w-10 h-5 rounded-full relative transition-colors outline-none cursor-pointer ${isFamilyMode ? 'bg-red-600' : 'bg-white/20'}`}
+              >
+                <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-transform transform-gpu ${isFamilyMode ? 'left-[2px]' : 'right-[2px]'}`}></div>
+              </button>
+            </div>
 
-      <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10 mb-2">
-        <span className="text-sm md:text-xs text-gray-300 font-bold">حجم الخط</span>
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
-            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/10 hover:bg-alex-primary active:scale-90 text-white transition-all shadow-lg cursor-pointer outline-none focus:outline-none ring-0"
-          >
-            <i className="fa-solid fa-minus text-sm"></i>
-          </button>
-          <span className="text-base font-en font-bold text-white min-w-[48px] text-center drop-shadow-md">{subtitleSize}%</span>
-          <button 
-            onClick={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
-            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/10 hover:bg-alex-primary active:scale-90 text-white transition-all shadow-lg cursor-pointer outline-none focus:outline-none ring-0"
-          >
-            <i className="fa-solid fa-plus text-sm"></i>
-          </button>
-        </div>
-      </div>
+            {/* Subtitles Button */}
+            {vttTranslations.length > 0 && (
+              <button 
+                onPointerUp={(e) => { e.stopPropagation(); setSettingsView('subtitles'); }}
+                className="flex flex-row justify-between items-center px-2 py-2 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
+              >
+                <span className="font-bold text-xs text-white">الترجمة</span>
+                <span className="text-xs text-white/50">{selectedLanguage === 'off' ? 'إيقاف' : selectedLanguage === 'ar' ? 'العربية' : 'English'} &lt;</span>
+              </button>
+            )}
 
-      <div className="flex items-center justify-between mt-2 pt-4 border-t border-white/10">
-        <span className="text-sm md:text-xs text-gray-300 font-bold">خلفية سوداء للترجمة</span>
-        <button
-          onClick={(e) => { e.stopPropagation(); setShowSubtitleBg(prev => !prev); }}
-          className={`w-14 h-7 md:w-12 md:h-6 rounded-full p-1 transition-colors duration-300 outline-none focus:outline-none ring-0 flex items-center cursor-pointer ${
-            showSubtitleBg ? 'bg-alex-primary justify-end' : 'bg-white/20 justify-start'
-          }`}
-        >
-          <span className="w-5 h-5 md:w-4 md:h-4 rounded-full bg-white shadow-md transform will-change-transform"></span>
-        </button>
-      </div>
-    </div>
-  );
+            {/* Quality Button */}
+            <button 
+              onPointerUp={(e) => { e.stopPropagation(); setSettingsView('quality'); }}
+              className="flex flex-row justify-between items-center px-2 py-2 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
+            >
+              <span className="font-bold text-xs text-white">الجودة</span>
+              <span className="text-xs text-white/50">{selectedResolution} &lt;</span>
+            </button>
 
-  const renderQualityMenu = () => (
-    <div 
-      className="relative w-full max-w-[280px] md:w-56 max-h-[80vh] md:max-h-[60vh] overflow-y-auto liquid-glass-heavy md:bg-[#141414]/95 border border-[#e50914]/40 rounded-3xl md:rounded-2xl shadow-[0_0_30px_rgba(229,9,20,0.25)] md:shadow-[0_0_40px_rgba(229,9,20,0.3)] flex flex-col p-4 md:p-3 animate-fade-in-up"
-      onPointerUp={(e) => e.stopPropagation()}
-      dir="rtl"
-    >
-      <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
-         <div className="text-base md:text-sm text-white font-black">جودة العرض</div>
-         <button onClick={() => setActiveDropdown(null)} className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer outline-none focus:outline-none ring-0"><i className="fa-solid fa-xmark md:text-xs"></i></button>
-      </div>
-      {sortedStreams.map((stream) => (
-        <button 
-          key={stream.name}
-          onClick={() => { handleQualityChange(stream); setActiveDropdown(null); }}
-          className={`w-full text-center px-4 py-3.5 md:py-2.5 mb-2 md:mb-1.5 rounded-xl md:rounded-lg text-sm md:text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedResolution === stream.resolution ? 'bg-alex-primary text-white shadow-lg' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
-        >
-          {stream.resolution}
-        </button>
-      ))}
-    </div>
-  );
+            {/* Speed Button */}
+            <button 
+              onPointerUp={(e) => { e.stopPropagation(); setSettingsView('speed'); }}
+              className="flex flex-row justify-between items-center px-2 py-2 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
+            >
+              <span className="font-bold text-xs text-white">سرعة التشغيل</span>
+              <span className="text-xs text-white/50">{playbackRate}x &lt;</span>
+            </button>
+          </div>
+        )}
 
-  const renderSpeedMenu = () => (
-    <div 
-      className="relative w-full max-w-[280px] md:w-56 max-h-[80vh] md:max-h-[60vh] overflow-y-auto liquid-glass-heavy md:bg-[#141414]/95 border border-[#e50914]/40 rounded-3xl md:rounded-2xl shadow-[0_0_30px_rgba(229,9,20,0.25)] md:shadow-[0_0_40px_rgba(229,9,20,0.3)] flex flex-col p-4 md:p-3 animate-fade-in-up font-en"
-      onPointerUp={(e) => e.stopPropagation()}
-    >
-      <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3 font-ar" dir="rtl">
-         <div className="text-base md:text-sm text-white font-black">سرعة التشغيل</div>
-         <button onClick={() => setActiveDropdown(null)} className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer outline-none focus:outline-none ring-0"><i className="fa-solid fa-xmark md:text-xs"></i></button>
+        {/* --- Subtitles Sub-menu --- */}
+        {settingsView === 'subtitles' && (
+          <div className="flex flex-col gap-1 animate-fade-in-up">
+            <div className="flex items-center gap-2 mb-3 border-b border-white/10 pb-2">
+              <button 
+                onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
+                className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+              >
+                <i className="fa-solid fa-chevron-right text-xs"></i>
+              </button>
+              <div className="text-base md:text-sm text-white font-black">الترجمة</div>
+            </div>
+            
+            <div className="text-[10px] text-gray-400 font-bold mb-1">لغة الترجمة</div>
+            <div className="grid grid-cols-2 gap-1.5 mb-3">
+              <button 
+                onPointerUp={(e) => { e.stopPropagation(); setSelectedLanguage('off'); }}
+                className={`px-2 py-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === 'off' ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+              >
+                إيقاف
+              </button>
+              {vttTranslations.map((track) => (
+                <button 
+                  key={track.id}
+                  onPointerUp={(e) => { e.stopPropagation(); setSelectedLanguage(track.type); }}
+                  className={`px-2 py-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === track.type ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                >
+                  {track.name === 'arabic' ? 'العربية' : 'English'}
+                </button>
+              ))}
+            </div>
+
+            <div className="text-[10px] text-gray-400 font-bold mb-1">نوع الخط</div>
+            <div className="grid grid-cols-3 gap-1 mb-3">
+              {[
+                { name: 'Tajawal', label: 'تجول' },
+                { name: 'Cairo', label: 'القاهرة' },
+                { name: 'Amiri', label: 'أميري' }
+              ].map((f) => (
+                <button
+                  key={f.name}
+                  onPointerUp={(e) => { e.stopPropagation(); setSelectedFont(f.name); }}
+                  className={`py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedFont === f.name ? 'bg-white text-black' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                  style={{ fontFamily: f.name }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10 mb-2">
+              <span className="text-[11px] text-gray-300 font-bold">حجم الخط</span>
+              <div className="flex items-center gap-2.5">
+                <button 
+                  onPointerUp={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none"
+                >
+                  <i className="fa-solid fa-plus text-xs"></i>
+                </button>
+                <span className="text-xs font-en font-bold text-white min-w-[36px] text-center">{subtitleSize}%</span>
+                <button 
+                  onPointerUp={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none"
+                >
+                  <i className="fa-solid fa-minus text-xs"></i>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
+              <span className="text-[11px] text-gray-300 font-bold">خلفية سوداء</span>
+              <button
+                onPointerUp={(e) => { e.stopPropagation(); setShowSubtitleBg(prev => !prev); }}
+                className={`w-10 h-5 rounded-full p-0.5 transition-colors duration-300 outline-none flex items-center cursor-pointer ${
+                  showSubtitleBg ? 'bg-alex-primary justify-end' : 'bg-white/20 justify-start'
+                }`}
+              >
+                <span className="w-4 h-4 rounded-full bg-white shadow shadow-md transform will-change-transform"></span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* --- Quality Sub-menu --- */}
+        {settingsView === 'quality' && (
+          <div className="flex flex-col gap-1 animate-fade-in-up">
+            <div className="flex items-center gap-2 mb-3 border-b border-white/10 pb-2">
+              <button 
+                onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
+                className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+              >
+                <i className="fa-solid fa-chevron-right text-xs"></i>
+              </button>
+              <div className="text-base md:text-sm text-white font-black">الجودة</div>
+            </div>
+            <div className="flex flex-col max-h-[30vh] overflow-y-auto gap-1">
+              {sortedStreams.map((stream) => (
+                <button 
+                  key={stream.name}
+                  onPointerUp={(e) => { e.stopPropagation(); handleQualityChange(stream); setActiveDropdown(null); }}
+                  className={`w-full text-center py-2 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedResolution === stream.resolution ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                >
+                  {stream.resolution}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* --- Speed Sub-menu --- */}
+        {settingsView === 'speed' && (
+          <div className="flex flex-col gap-1 animate-fade-in-up font-en">
+            <div className="flex items-center gap-2 mb-3 border-b border-white/10 pb-2 font-ar" dir="rtl">
+              <button 
+                onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
+                className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+              >
+                <i className="fa-solid fa-chevron-right text-xs"></i>
+              </button>
+              <div className="text-base md:text-sm text-white font-black">سرعة التشغيل</div>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {[0.5, 1, 1.25, 1.5, 2].map((rate) => (
+                <button 
+                  key={rate}
+                  onPointerUp={(e) => { e.stopPropagation(); setPlaybackRate(rate); setActiveDropdown(null); }}
+                  className={`w-full text-center py-2 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${playbackRate === rate ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                >
+                  {rate}x
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        {[0.5, 1, 1.25, 1.5, 2].map((rate) => (
-          <button 
-            key={rate}
-            onClick={() => { setPlaybackRate(rate); setActiveDropdown(null); }}
-            className={`w-full text-center px-4 py-3.5 md:py-2.5 rounded-xl md:rounded-lg text-sm md:text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${playbackRate === rate ? 'bg-alex-primary text-white shadow-lg' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
-          >
-            {rate}x
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+    );
+  };
 
   // YouTube Fallback Player Render
   if (youtubeFallback && youtubeId) {
@@ -1023,9 +1172,9 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         className={`relative select-none group/player touch-manipulation transition-all duration-300 min-h-[200px] ${
           isFullscreen 
             ? 'fixed inset-0 w-screen h-screen z-[9999] rounded-none border-none bg-black' 
-            : 'w-full rounded-3xl shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 bg-black/90'
+            : 'w-full rounded-3xl shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 bg-black/90 aspect-video'
         }`}
-        style={{ aspectRatio: isFullscreen ? 'auto' : videoAspect }}
+        style={{ aspectRatio: isFullscreen ? 'auto' : 16/9 }}
         dir="ltr"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -1085,8 +1234,50 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
             onError={handleStreamError}
-            onPlay={() => setIsPaused(false)}
-            onPause={() => setIsPaused(true)}
+            onPlay={() => {
+              if (waitingTimeoutRef.current) {
+                clearTimeout(waitingTimeoutRef.current);
+                waitingTimeoutRef.current = null;
+              }
+              setIsWaiting(false);
+              setIsPaused(false);
+              if (isHost && roomHook && videoRef.current) {
+                sendSyncUpdate(videoRef.current.currentTime, true);
+                lastSyncTimeRef.current = Date.now();
+              }
+            }}
+            onPause={() => {
+              setIsPaused(true);
+              if (isHost && roomHook && videoRef.current) {
+                sendSyncUpdate(videoRef.current.currentTime, false);
+                lastSyncTimeRef.current = Date.now();
+              }
+            }}
+            onWaiting={() => {
+              if (!waitingTimeoutRef.current) {
+                waitingTimeoutRef.current = setTimeout(() => setIsWaiting(true), 1000);
+              }
+            }}
+            onSeeking={() => {
+              if (!waitingTimeoutRef.current) {
+                waitingTimeoutRef.current = setTimeout(() => setIsWaiting(true), 1000);
+              }
+            }}
+            onSeeked={() => {
+              if (waitingTimeoutRef.current) {
+                clearTimeout(waitingTimeoutRef.current);
+                waitingTimeoutRef.current = null;
+              }
+              setIsWaiting(false);
+            }}
+            onPlaying={() => {
+              if (waitingTimeoutRef.current) {
+                clearTimeout(waitingTimeoutRef.current);
+                waitingTimeoutRef.current = null;
+              }
+              setIsWaiting(false);
+              setIsPaused(false);
+            }}
             autoPlay
             playsInline
           >
@@ -1102,6 +1293,13 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
             ))}
           </video>
         </div>
+
+        {/* Loading Spinner */}
+        {isWaiting && (
+          <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+            <div className="w-16 h-16 border-4 border-white/20 border-t-red-600 rounded-full animate-spin"></div>
+          </div>
+        )}
 
         {/* Custom React Subtitle Overlay (100% Real-time styling) */}
         {currentSubtitle && (
@@ -1126,8 +1324,9 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                   whiteSpace: 'pre-wrap',
                   textShadow: showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)'
                 }}
-                dangerouslySetInnerHTML={{ __html: line }}
-              />
+              >
+                {line}
+              </span>
             ))}
           </div>
         )}
@@ -1245,61 +1444,24 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
             {/* Right Controls */}
             <div className="flex items-center justify-end gap-1 md:gap-4 flex-nowrap">
               
-              {/* Subtitles Menu */}
-              {vttTranslations.length > 0 && (
-                <div className="static md:relative dropdown-container">
-                  <button 
-                    onClick={() => setActiveDropdown(activeDropdown === 'subtitles' ? null : 'subtitles')}
-                    className={`flex items-center justify-center gap-1.5 h-8 md:h-10 px-2 md:px-3 rounded-lg md:rounded-xl border text-[10px] md:text-xs font-black transition-all cursor-pointer outline-none focus:outline-none ring-0 min-w-[32px] md:min-w-[40px] ${
-                      selectedLanguage !== 'off' 
-                        ? 'bg-alex-primary/20 text-alex-primary border-alex-primary/30 shadow' 
-                        : 'ios-button text-gray-300 border-white/5 hover:ios-active'
-                    }`}
-                  >
-                    <i className="fa-solid fa-closed-captioning text-sm md:text-base"></i>
-                    <span className="hidden md:inline">الترجمة</span>
-                  </button>
-
-                  {activeDropdown === 'subtitles' && (
-                    <div className="absolute bottom-full right-0 mb-4 z-50 origin-bottom-right scale-75 md:scale-90">
-                      {renderSubtitlesMenu()}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Quality Menu */}
-              {streams.length > 0 && (
-                <div className="static md:relative dropdown-container">
-                  <button 
-                    onClick={() => setActiveDropdown(activeDropdown === 'quality' ? null : 'quality')}
-                    className="flex items-center justify-center gap-1.5 h-8 md:h-10 px-2 md:px-3 ios-button border border-white/5 hover:ios-active hover:border-white/10 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black text-gray-300 transition-all cursor-pointer outline-none focus:outline-none ring-0 min-w-[32px] md:min-w-[40px]"
-                  >
-                    <i className="fa-solid fa-sliders text-sm md:text-xs"></i>
-                    <span className="hidden md:inline">{selectedResolution || 'الجودة'}</span>
-                  </button>
-
-                  {activeDropdown === 'quality' && (
-                    <div className="absolute bottom-full right-0 mb-4 z-50 origin-bottom-right scale-75 md:scale-90">
-                      {renderQualityMenu()}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Speed Control Menu */}
+              {/* Settings Menu */}
               <div className="static md:relative dropdown-container">
                 <button 
-                  onClick={() => setActiveDropdown(activeDropdown === 'speed' ? null : 'speed')}
-                  className="flex items-center justify-center gap-1 h-8 md:h-10 px-2 md:px-3 ios-button border border-white/5 hover:ios-active hover:border-white/10 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black text-gray-300 transition-all font-en cursor-pointer outline-none focus:outline-none ring-0 min-w-[32px] md:min-w-[40px]"
+                  onClick={() => setActiveDropdown(activeDropdown === 'settings' ? null : 'settings')}
+                  className={`flex items-center justify-center gap-1.5 h-8 md:h-10 px-2 md:px-3 rounded-lg md:rounded-xl border text-[10px] md:text-xs font-black transition-all cursor-pointer outline-none focus:outline-none ring-0 min-w-[32px] md:min-w-[40px] ${
+                    activeDropdown === 'settings'
+                      ? 'bg-alex-primary/20 text-alex-primary border-alex-primary/30 shadow' 
+                      : 'ios-button text-gray-300 border-white/5 hover:ios-active'
+                  }`}
+                  title="الإعدادات"
                 >
-                  <i className="fa-solid fa-gauge text-sm md:text-xs"></i>
-                  <span className="hidden md:inline">{playbackRate}x</span>
+                  <i className="fa-solid fa-cog text-sm md:text-base"></i>
+                  <span className="hidden md:inline">الإعدادات</span>
                 </button>
 
-                {activeDropdown === 'speed' && (
-                  <div className="absolute bottom-full right-0 mb-4 z-50 origin-bottom-right scale-75 md:scale-90">
-                    {renderSpeedMenu()}
+                {activeDropdown === 'settings' && (
+                  <div className="absolute bottom-full right-0 mb-4 z-50 origin-bottom-right scale-90 sm:scale-100 lg:scale-110">
+                    {renderSettingsMenu()}
                   </div>
                 )}
               </div>

@@ -165,7 +165,7 @@ html {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(circle at 50% 50%, #0a1128 0%, #030409 50%, #000000 100%);
+  background: #06070a;
   overflow: hidden;
 }
 
@@ -179,7 +179,7 @@ html {
 }
 
 .liquid-bg::before {
-  background: #e50914;
+  background: rgba(229, 9, 20, 0.05); /* Very subtle red glow, no bright colors */
   width: 70vw;
   height: 70vw;
   top: -20%;
@@ -187,7 +187,7 @@ html {
 }
 
 .liquid-bg::after {
-  background: #3b82f6;
+  background: transparent;
   width: 80vw;
   height: 80vw;
   top: -10%;
@@ -196,7 +196,7 @@ html {
 }
 
 .liquid-bg-blob {
-  background: #9333ea;
+  background: transparent;
   width: 60vw;
   height: 60vw;
   bottom: -20%;
@@ -549,3 +549,234 @@ video.alex-video-cue::-webkit-media-text-track-container {
 .min-w-screen { min-width: calc(var(--ai-vw, 1vw) * 100) !important; }
 .max-w-screen { max-width: calc(var(--ai-vw, 1vw) * 100) !important; }
 
+/* --- Clerk User Button Popover & Avatar Overrides --- */
+.cl-userButtonPopoverCard,
+.cl-userButtonPopoverMain,
+.cl-userPreviewTextContainer,
+.cl-userButtonPopoverUserPreviewMainIdentifier,
+.cl-userButtonPopoverUserPreviewSecondaryIdentifier,
+.cl-userButtonPopoverActionButton,
+.cl-userButtonPopoverActionButtonText,
+.cl-navbarButton,
+.cl-profilePage,
+.cl-headerTitle,
+.cl-headerSubtitle,
+.cl-userButtonPopoverActionButtonIcon,
+.cl-userButtonPopoverCustomItemButton,
+.cl-userPreview {
+  color: #ffffff !important;
+}
+
+.cl-userButtonPopoverCard {
+  background-color: #0b0f19 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95) !important;
+  border-radius: 1.25rem !important;
+}
+
+.cl-userButtonPopoverActionButton:hover,
+.cl-userButtonPopoverCustomItemButton:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Hide Clerk branding footers and watermarks everywhere */
+.cl-userButtonPopoverFooter,
+.cl-footer,
+.cl-footerAction,
+.cl-internal-b382ii,
+.cl-internal-157s8i1,
+.cl-internal-1dauvye,
+.cl-watermark,
+[class*="userButtonPopoverFooter"],
+[class*="footer"],
+[class*="watermark"],
+[class*="devRow"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Clerk User Button Avatar Size Overrides */
+.cl-userButtonTrigger,
+.cl-userButtonAvatarBox,
+.cl-userButtonAvatarImage,
+.cl-avatarBox,
+.cl-avatarImage {
+  width: 3.25rem !important; /* 52px */
+  height: 3.25rem !important; /* 52px */
+  min-width: 3.25rem !important;
+  min-height: 3.25rem !important;
+  border-radius: 9999px !important;
+}
+
+@media (max-width: 640px) {
+  .cl-userButtonTrigger,
+  .cl-userButtonAvatarBox,
+  .cl-userButtonAvatarImage,
+  .cl-avatarBox,
+  .cl-avatarImage {
+    width: 2.75rem !important; /* 44px */
+    height: 2.75rem !important; /* 44px */
+    min-width: 2.75rem !important;
+    min-height: 2.75rem !important;
+  }
+}
+
+/* Fix Modal Backdrop: Replace blood-red overlay with sleek dark 78% black glass backdrop */
+.cl-modalBackdrop,
+[class*="modalBackdrop"] {
+  background-color: rgba(0, 0, 0, 0.78) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.cl-modalContent,
+[class*="modalContent"] {
+  background-color: #0b0f19 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 1.5rem !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95) !important;
+}
+
+/* Completely purge Clerk 'Last Used' / 'آخر استخدام' badge on social buttons */
+.cl-socialButtonsBadge,
+.cl-socialButtonsBlockButtonBadge,
+.cl-socialButtonsBadgeDefault,
+.cl-badge,
+.cl-providerIconButtonBadge,
+.cl-userButtonPopoverCard .cl-badge,
+[class*="socialButtonsBadge"],
+[class*="socialButtonsBlockButtonBadge"],
+[class*="providerIconButtonBadge"],
+[class*="badge"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  pointer-events: none !important;
+}
+
+/* Purge Clerk's built-in deprecated Telegram social button so users ONLY click our official Telegram OIDC button */
+.cl-socialButtonsBlockButton__oauth_telegram,
+.cl-socialButtonsBlockButton__telegram,
+button[data-provider="oauth_telegram"],
+button[data-provider="telegram"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Force GitHub social button background & text */
+.cl-socialButtonsBlockButton {
+  background-color: #161e33 !important;
+  background: #161e33 !important;
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  min-height: 58px !important;
+  border-radius: 1rem !important;
+}
+
+.cl-socialButtonsBlockButtonText {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+/* Force ONLY the GitHub SVG/image logo icon to 100% pure snow white */
+.cl-socialButtonsBlockButtonIcon,
+.cl-socialButtonsBlockButtonIcon img,
+.cl-socialButtonsBlockButtonIcon svg,
+.cl-socialButtonsBlockButtonIcon path,
+[class*="socialButtonsBlockButtonIcon"] img,
+[class*="socialButtonsBlockButtonIcon"] svg,
+[class*="socialButtonsBlockButtonIcon"] path,
+[class*="providerIcon"] img,
+[class*="providerIcon"] svg {
+  filter: brightness(0) invert(1) !important;
+  -webkit-filter: brightness(0) invert(1) !important;
+  fill: #ffffff !important;
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Force input field dark glass theme & Arabic right alignment */
+.cl-formFieldInput,
+[class*="formFieldInput"] {
+  background-color: #161e33 !important;
+  background: #161e33 !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  border-radius: 1rem !important;
+  text-align: right !important;
+  direction: rtl !important;
+  font-family: var(--font-cairo), sans-serif !important;
+  font-weight: 700 !important;
+  min-height: 58px !important;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  transition: all 0.3s ease !important;
+}
+
+.cl-formFieldInput:focus,
+[class*="formFieldInput"]:focus {
+  border-color: #e50914 !important;
+  box-shadow: 0 0 25px rgba(229, 9, 20, 0.4), inset 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  background-color: #1a243d !important;
+}
+
+.cl-formFieldInput::placeholder,
+[class*="formFieldInput"]::placeholder {
+  color: #9ca3af !important;
+  opacity: 0.75 !important;
+  text-align: right !important;
+  direction: rtl !important;
+}
+
+/* Force 100% mathematical centering of primary submit button text ("متابعة") */
+.cl-formButtonPrimary,
+[class*="formButtonPrimary"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  position: relative !important;
+}
+
+.cl-formButtonPrimary svg,
+.cl-formButtonPrimary img,
+.cl-formButtonPrimary i,
+.cl-formButtonPrimary [class*="icon"],
+.cl-formButtonPrimary [class*="arrow"],
+[class*="formButtonPrimary"] svg,
+[class*="formButtonPrimary"] img,
+[class*="formButtonPrimary"] i,
+[class*="formButtonPrimary"] [class*="icon"],
+[class*="formButtonPrimary"] [class*="arrow"] {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}

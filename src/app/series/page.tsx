@@ -2,11 +2,11 @@
 import { getVideoImageUrl } from '@/utils/imageHelper';
 import { decryptData } from '@/utils/cryptoHelper';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Pagination from '@/components/Pagination';
-import GridSkeleton from '@/components/skeleton/GridSkeleton';
+import CardSkeleton from '@/components/skeleton/CardSkeleton';
 
 interface VideoItem {
   nb: string;
@@ -20,6 +20,7 @@ interface VideoItem {
 
 const CATEGORIES = [
   { id: '', title: 'كل التصنيفات' },
+  { id: '23', title: 'أنمي' },
   { id: '84', title: 'أكشن' },
   { id: '60', title: 'جريمة' },
   { id: '89', title: 'حياة الغرب' },
@@ -33,12 +34,15 @@ const CATEGORIES = [
   { id: '76', title: 'غموض' },
   { id: '59', title: 'كوميدي' },
   { id: '56', title: 'مغامرة' },
+  { id: '63', title: 'مصارعة حرة' },
   { id: '61', title: 'وثائقي' }
 ];
 
+const currentYear = new Date().getFullYear();
+
 const YEARS = [
-  { value: '1900,2026', label: 'كل السنوات' },
-  { value: '2020,2026', label: '2020 - 2026' },
+  { value: `1900,${currentYear}`, label: 'كل السنوات' },
+  { value: `2020,${currentYear}`, label: `2020 - ${currentYear}` },
   { value: '2010,2019', label: '2010 - 2019' },
   { value: '2000,2009', label: '2000 - 2009' },
   { value: '1900,1999', label: 'قبل 2000' }
@@ -54,6 +58,7 @@ const RATINGS = [
 
 const SORT_OPTIONS = [
   { value: 'recent', label: 'الملفات الحديثة' },
+  { value: 'popular', label: 'المشهورة' },
   { value: 'stars', label: 'الأعلى تقييماً' },
   { value: 'year', label: 'سنة الإصدار' },
   { value: 'name', label: 'الحروف الأبجدية' }
@@ -62,6 +67,7 @@ const SORT_OPTIONS = [
 function SeriesContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
 
   const selectedCategory = searchParams.get('category') || '';
   const selectedSort = searchParams.get('sort') || 'recent';
@@ -73,87 +79,76 @@ function SeriesContent() {
   const [series, setSeries] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Dropdown states for custom selectors
+  const [openDropdown, setOpenDropdown] = useState<'category' | 'sort' | 'rating' | 'year' | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on outside click and disable scroll restoration
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.history.scrollRestoration = 'manual';
+    }
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
   useEffect(() => {
     async function loadSeries() {
       setLoading(true);
 
       try {
         if (viewMode === 'episodes') {
-          // Latest Episodes mode: use latestSeries endpoint
-          const ITEMS_PER_PAGE = 30;
-          const API_PAGE_SIZE = 20;
-
-          const startItem = (page - 1) * ITEMS_PER_PAGE;
-          const endItem = page * ITEMS_PER_PAGE - 1;
-
-          const firstApiPage = Math.floor(startItem / API_PAGE_SIZE) + 1;
-          const lastApiPage = Math.floor(endItem / API_PAGE_SIZE) + 1;
-
-          const apiPagesToFetch = [];
-          for (let i = firstApiPage; i <= lastApiPage; i++) {
-            apiPagesToFetch.push(i);
+          const url = `/api/proxy?endpoint=latestSeries/level/2/itemsPerPage/30/page/${page}/`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const d = await res.json();
+            const list = decryptData(d.payload) || [];
+            setSeries(Array.isArray(list) ? list : []);
           }
-
-          const fetchPromises = apiPagesToFetch.map(apiPage => {
-            const url = `/api/proxy?endpoint=latestSeries/level/2/itemsPerPage/${API_PAGE_SIZE}/page/${apiPage}/`;
-            return fetch(url).then(res => res.ok ? res.json().then(d => decryptData(d.payload)) : []);
-          });
-
-          const results = await Promise.all(fetchPromises);
-          let combinedList: VideoItem[] = [];
-          results.forEach(data => {
-            if (Array.isArray(data)) combinedList.push(...data);
-          });
-
-          const offset = startItem % API_PAGE_SIZE;
-          const list = combinedList.slice(offset, offset + ITEMS_PER_PAGE);
-          setSeries(list);
         } else {
-          // Normal series archive mode: use AdvancedSearch
           const yearRange = selectedYear;
+          const hasFilters = Boolean(selectedCategory || selectedRating || (selectedYear && selectedYear !== '1900,2026'));
+
+          if (!hasFilters) {
+            const url = `/api/proxy?endpoint=latestSeries/level/2/itemsPerPage/30/page/${page}/`;
+            const res = await fetch(url);
+            if (res.ok) {
+              const d = await res.json();
+              let list = decryptData(d.payload) || [];
+              if (Array.isArray(list)) {
+                if (selectedSort === 'recent') {
+                  list = [...list].sort((a, b) => parseInt(b.nb) - parseInt(a.nb));
+                } else if (selectedSort === 'popular' || selectedSort === 'stars') {
+                  list = [...list].sort((a, b) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0'));
+                } else if (selectedSort === 'year') {
+                  list = [...list].sort((a, b) => parseInt(b.year || '0') - parseInt(a.year || '0'));
+                }
+                setSeries(list);
+                return;
+              }
+            }
+          }
+
           const catParam = selectedCategory ? `&category_id=${selectedCategory}` : '';
-          const starParam = selectedRating ? `&star=>=${selectedRating}` : '';
-
-          const ITEMS_PER_PAGE = 30;
-          const API_PAGE_SIZE = 12;
-
-          const startItem = (page - 1) * ITEMS_PER_PAGE;
-          const endItem = page * ITEMS_PER_PAGE - 1;
-
-          const firstApiPage = Math.floor(startItem / API_PAGE_SIZE);
-          const lastApiPage = Math.floor(endItem / API_PAGE_SIZE);
-
-          const apiPagesToFetch = [];
-          for (let i = firstApiPage; i <= lastApiPage; i++) {
-            apiPagesToFetch.push(i);
+          const starParam = selectedRating ? `&star=${selectedRating}` : '';
+          const url = `/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=&staffTitle=&page=${page - 1}&year=${yearRange}&type=series${catParam}${starParam}`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const d = await res.json();
+            let list = decryptData(d.payload) || [];
+            if (Array.isArray(list)) {
+              setSeries(list);
+            } else {
+              setSeries([]);
+            }
+          } else {
+            setSeries([]);
           }
-
-          const fetchPromises = apiPagesToFetch.map(apiPage => {
-            const url = `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=&staffTitle=&page=${apiPage}&year=${yearRange}&type=series${catParam}${starParam}`;
-            return fetch(url).then(res => res.ok ? res.json().then(d => decryptData(d.payload)) : []);
-          });
-
-          const results = await Promise.all(fetchPromises);
-          let combinedList: VideoItem[] = [];
-          results.forEach(data => {
-            if (Array.isArray(data)) combinedList.push(...data);
-          });
-
-          const offset = startItem % API_PAGE_SIZE;
-          let list = combinedList.slice(offset, offset + ITEMS_PER_PAGE);
-
-          // Client-side Sorting
-          if (selectedSort === 'recent') {
-            list = [...list].sort((a, b) => parseInt(b.nb) - parseInt(a.nb));
-          } else if (selectedSort === 'stars') {
-            list = [...list].sort((a, b) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0'));
-          } else if (selectedSort === 'year') {
-            list = [...list].sort((a, b) => parseInt(b.year || '0') - parseInt(a.year || '0'));
-          } else if (selectedSort === 'name') {
-            list = [...list].sort((a, b) => (a.ar_title || '').localeCompare(b.ar_title || ''));
-          }
-
-          setSeries(list);
         }
       } catch (error) {
         console.error('Failed to load series:', error);
@@ -176,162 +171,315 @@ function SeriesContent() {
           params.set(key, val);
         }
       });
-      router.push(`${window.location.pathname}?${params.toString()}`);
+      const queryString = params.toString();
+      router.push(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
     }
   };
 
   const handleCategoryChange = (catId: string) => {
     updateParams({ category: catId, page: '1', view: null });
+    setOpenDropdown(null);
   };
 
   const handleYearChange = (yearVal: string) => {
     updateParams({ year: yearVal === '1900,2026' ? null : yearVal, page: '1', view: null });
+    setOpenDropdown(null);
   };
 
-  const handleRatingChange = (ratingVal: string) => {
-    updateParams({ rating: ratingVal || null, page: '1', view: null });
+  const getFilterUrl = (newParams: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(newParams).forEach(([key, val]) => {
+      if (val === null || val === '') {
+        params.delete(key);
+      } else {
+        params.set(key, val);
+      }
+    });
+    const queryString = params.toString();
+    return queryString ? `${pathname}?${queryString}` : pathname;
   };
 
-  const handleSortChange = (sortVal: string) => {
-    updateParams({ sort: sortVal, page: '1', view: null });
-  };
+  // Find featured spotlight series (highest rated)
+  const featuredSeries = !loading && series.length > 0
+    ? [...series].sort((a, b) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0'))[0]
+    : null;
 
   return (
-    <div className="min-h-screen pt-20 sm:pt-24 lg:pt-32 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 animate-fade-in-up">
-      {/* Title */}
-      <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
-        <div className="w-1.5 h-8 sm:h-10 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
-        <div>
-          <h1 className="text-2xl sm:text-4xl font-black text-white drop-shadow-md tracking-wide">{viewMode === 'episodes' ? 'أحدث الحلقات' : 'أرشيف المسلسلات'}</h1>
-          <p className="text-gray-400 mt-1 text-xs sm:text-sm font-medium">{viewMode === 'episodes' ? 'المسلسلات التي أُضيفت لها حلقات جديدة مؤخراً' : 'استخدم الفلاتر الجانبية والعلوية للوصول للمسلسلات المطلوبة'}</p>
-        </div>
-      </div>
-
-      {/* Main Split Layout: Category sidebar on the right, Grid content on the left */}
-      <div className="flex flex-col lg:flex-row gap-8">
-        
-        {/* Category Selector for Mobile (Horizontal Rail) */}
-        <div className="flex lg:hidden overflow-x-auto gap-2.5 pb-4 hide-scrollbar">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => handleCategoryChange(cat.id)}
-              className={`flex-shrink-0 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                selectedCategory === cat.id
-                  ? 'ios-active'
-                  : 'ios-button text-gray-400 hover:text-white'
-              }`}
-            >
-              {cat.title}
-            </button>
-          ))}
-        </div>
-
-        {/* Left Column (Top Filters and Main Grid) */}
-        <div className="flex-grow">
-          {/* Top Horizontal Filter Bar */}
-          <div className="ios-glass p-5 rounded-2xl mb-8 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-4">
-              {/* صنف حسب */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-400">صنف حسب:</span>
-                <select
-                  value={selectedSort}
-                  onChange={(e) => handleSortChange(e.target.value)}
-                  className="ios-button text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer"
-                >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value} className="bg-[#0c1221] text-white">{opt.label}</option>
-                  ))}
-                </select>
+    <div className="min-h-screen pt-20 sm:pt-24 lg:pt-28 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 animate-fade-in-up">
+      
+      {/* 1. Cinematic Featured Spotlight Hero */}
+      {featuredSeries && (
+        <div className="w-full aspect-[21/9] min-h-[220px] md:min-h-[420px] lg:min-h-[460px] rounded-3xl overflow-hidden relative border border-white/10 mb-10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] group/hero flex items-center justify-between p-4 sm:p-8 md:p-14 gap-4 md:gap-10" dir="rtl">
+          {/* Backdrop Image */}
+          <div className="absolute inset-0 select-none pointer-events-none scale-105 blur-md opacity-25 z-0">
+            <img src={getVideoImageUrl(featuredSeries as any, 'poster')} alt="" className="w-full h-full object-cover" />
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-l from-[#06070a]/90 via-[#06070a]/50 to-transparent z-10" />
+          
+          {/* Content Area */}
+          <div className="relative z-20 flex-1 flex flex-col justify-center text-right select-none">
+            <div className="flex items-center gap-2 mb-2 md:mb-3">
+              <span className="bg-[#E50914] text-white text-[9px] md:text-[10px] font-black px-1.5 md:py-0.5 rounded uppercase tracking-wider">شائع الآن</span>
+              <span className="text-gray-400 text-[10px] md:text-xs font-bold">{featuredSeries.year}</span>
+            </div>
+            
+            <h1 className="text-base sm:text-2xl md:text-4xl lg:text-5xl font-black text-white mb-2 md:mb-4 line-clamp-2 leading-tight drop-shadow-lg group-hover/hero:text-alex-primary transition-colors duration-300">
+              {featuredSeries.ar_title}
+            </h1>
+            
+            <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6 justify-start text-[10px] md:text-xs font-bold text-gray-300 flex-wrap">
+              <div className="flex items-center gap-1 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded-lg">
+                <i className="fa-solid fa-star text-[8px] md:text-[10px]"></i>
+                {featuredSeries.stars} IMDb
               </div>
-
-              {/* التقييم */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-400">التقييم:</span>
-                <select
-                  value={selectedRating}
-                  onChange={(e) => handleRatingChange(e.target.value)}
-                  className="ios-button text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer"
-                >
-                  {RATINGS.map((opt) => (
-                    <option key={opt.value} value={opt.value} className="bg-[#0c1221] text-white">{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* السنة */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-400">السنة:</span>
-                <select
-                  value={selectedYear}
-                  onChange={(e) => handleYearChange(e.target.value)}
-                  className="ios-button text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 outline-none cursor-pointer"
-                >
-                  {YEARS.map((opt) => (
-                    <option key={opt.value} value={opt.value} className="bg-[#0c1221] text-white">{opt.label}</option>
-                  ))}
-                </select>
+              <div className="truncate max-w-[150px] md:max-w-none">
+                {featuredSeries.categories?.map(c => c.ar_title).join(' • ')}
               </div>
             </div>
-
-            {/* Total Indicator */}
-            <div className="text-xs text-gray-400 font-bold">
-              وجدت <span className="font-en text-blue-500 text-sm font-black mx-1">{series.length}</span> مسلسلاً
+            
+            <div>
+              <Link
+                href={`/watch/${featuredSeries.nb}?title=${encodeURIComponent(featuredSeries.ar_title || featuredSeries.en_title)}`}
+                className="inline-flex items-center justify-center bg-[#E50914] hover:bg-[#b8070f] text-white font-black text-[10px] md:text-sm px-4 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl shadow-lg transition-all active:scale-[0.97]"
+              >
+                <i className="fa-solid fa-play ml-1.5 md:ml-2 text-[8px] md:text-xs"></i>
+                شاهد الآن
+              </Link>
             </div>
           </div>
 
-          {/* Grid Content / Loading */}
-          {loading ? (
-            <div className="py-10 w-full">
-              <GridSkeleton count={20} />
+          {/* Main Cover Poster - Visible on both desktop and mobile */}
+          <div className="relative z-20 h-[80%] md:h-[90%] aspect-[2/3] rounded-xl md:rounded-2xl overflow-hidden border border-white/10 shadow-2xl flex-shrink-0 transition-all duration-300 group-hover/hero:scale-[1.02] group-hover/hero:border-white/20">
+            <img src={getVideoImageUrl(featuredSeries as any, 'poster')} alt="" className="w-full h-full object-cover" />
+          </div>
+        </div>
+      )}
+
+      {/* Title */}
+      <div className="flex items-center gap-3 mb-8" dir="rtl">
+        <div className="w-1.5 h-7 bg-alex-primary rounded-full shadow-[0_0_10px_rgba(229,9,20,0.5)]"></div>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-white">{viewMode === 'episodes' ? 'أحدث الحلقات المضافة' : 'أرشيف المسلسلات'}</h1>
+        </div>
+      </div>
+
+      {/* 2. Main Layout Grid (Filter Sidebar + Series Grid) */}
+      <div className="w-full mb-8 relative z-50">
+        {/* Horizontal Filter Bar */}
+        <div className="bg-[#141722]/60 border border-white/5 backdrop-blur-xl p-4 rounded-2xl flex flex-col xl:flex-row xl:items-center justify-between gap-4 shadow-xl relative z-50" ref={dropdownRef} dir="rtl">
+          <div className="flex items-center gap-2 px-2">
+            <i className="fa-solid fa-sliders text-[#E50914] text-sm"></i>
+            <span className="text-sm font-black text-white">خيارات التصفية</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 flex-1 xl:justify-end">
+            
+            {/* Custom Glass Selectors - Only show if not in latest episodes mode */}
+            {viewMode !== 'episodes' ? (
+              <>
+                {/* Category Selector */}
+                <div className="relative flex-1 min-w-[130px] max-w-[200px]">
+                  <button
+                    onClick={() => setOpenDropdown(openDropdown === 'category' ? null : 'category')}
+                    className="w-full bg-[#0b0c10]/80 border border-white/10 text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 text-right flex items-center justify-between cursor-pointer hover:border-white/20 transition-all"
+                  >
+                    <span>{CATEGORIES.find(c => c.id === selectedCategory)?.title || 'كل التصنيفات'}</span>
+                    <i className="fa-solid fa-chevron-down text-[10px] text-gray-400"></i>
+                  </button>
+                  {openDropdown === 'category' && (
+                    <div className="absolute right-0 top-full mt-2 w-full min-w-[180px] bg-[#0b0c10]/95 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden z-40 shadow-2xl py-1.5 animate-fade-in max-h-60 overflow-y-auto custom-scrollbar">
+                      {CATEGORIES.map((cat) => (
+                        <Link
+                          key={cat.id}
+                          href={getFilterUrl({ category: cat.id || null, page: '1', view: null })}
+                          scroll={false}
+                          onClick={() => setOpenDropdown(null)}
+                          className={`w-[calc(100%-12px)] mx-1.5 my-0.5 rounded-lg text-right px-3 py-2 text-xs font-bold transition-all block ${
+                            selectedCategory === cat.id ? 'bg-[#E50914] text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          {cat.title}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Sort Selector */}
+                <div className="relative flex-1 min-w-[130px] max-w-[200px]">
+                  <button
+                    onClick={() => setOpenDropdown(openDropdown === 'sort' ? null : 'sort')}
+                    className="w-full bg-[#0b0c10]/80 border border-white/10 text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 text-right flex items-center justify-between cursor-pointer hover:border-white/20 transition-all"
+                  >
+                    <span>{SORT_OPTIONS.find(o => o.value === selectedSort)?.label}</span>
+                    <i className="fa-solid fa-chevron-down text-[10px] text-gray-400"></i>
+                  </button>
+                  {openDropdown === 'sort' && (
+                    <div className="absolute right-0 top-full mt-2 w-full min-w-[180px] bg-[#0b0c10]/95 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden z-40 shadow-2xl py-1.5 animate-fade-in">
+                      {SORT_OPTIONS.map((opt) => (
+                        <Link
+                          key={opt.value}
+                          href={getFilterUrl({ sort: opt.value, page: '1', view: null })}
+                          scroll={false}
+                          onClick={() => setOpenDropdown(null)}
+                          className={`w-[calc(100%-12px)] mx-1.5 my-0.5 rounded-lg text-right px-3 py-2 text-xs font-bold transition-all block ${
+                            selectedSort === opt.value ? 'bg-[#E50914] text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          {opt.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Ratings Selector */}
+                <div className="relative flex-1 min-w-[130px] max-w-[200px]">
+                  <button
+                    onClick={() => setOpenDropdown(openDropdown === 'rating' ? null : 'rating')}
+                    className="w-full bg-[#0b0c10]/80 border border-white/10 text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 text-right flex items-center justify-between cursor-pointer hover:border-white/20 transition-all"
+                  >
+                    <span>{RATINGS.find(o => o.value === selectedRating)?.label || 'كل التقييمات'}</span>
+                    <i className="fa-solid fa-chevron-down text-[10px] text-gray-400"></i>
+                  </button>
+                  {openDropdown === 'rating' && (
+                    <div className="absolute right-0 top-full mt-2 w-full min-w-[180px] bg-[#0b0c10]/95 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden z-40 shadow-2xl py-1.5 animate-fade-in">
+                      {RATINGS.map((opt) => (
+                        <Link
+                          key={opt.value}
+                          href={getFilterUrl({ rating: opt.value || null, page: '1', view: null })}
+                          scroll={false}
+                          onClick={() => setOpenDropdown(null)}
+                          className={`w-[calc(100%-12px)] mx-1.5 my-0.5 rounded-lg text-right px-3 py-2 text-xs font-bold transition-all block ${
+                            selectedRating === opt.value ? 'bg-[#E50914] text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          {opt.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Year Selector */}
+                <div className="relative flex-1 min-w-[130px] max-w-[200px]">
+                  <button
+                    onClick={() => setOpenDropdown(openDropdown === 'year' ? null : 'year')}
+                    className="w-full bg-[#0b0c10]/80 border border-white/10 text-gray-200 text-xs font-bold rounded-xl px-4 py-2.5 text-right flex items-center justify-between cursor-pointer hover:border-white/20 transition-all"
+                  >
+                    <span>{YEARS.find(o => o.value === selectedYear)?.label}</span>
+                    <i className="fa-solid fa-chevron-down text-[10px] text-gray-400"></i>
+                  </button>
+                  {openDropdown === 'year' && (
+                    <div className="absolute right-0 top-full mt-2 w-full min-w-[180px] bg-[#0b0c10]/95 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden z-40 shadow-2xl py-1.5 animate-fade-in">
+                      {YEARS.map((opt) => (
+                        <Link
+                          key={opt.value}
+                          href={getFilterUrl({ year: opt.value === '1900,2026' ? null : opt.value, page: '1', view: null })}
+                          scroll={false}
+                          onClick={() => setOpenDropdown(null)}
+                          className={`w-[calc(100%-12px)] mx-1.5 my-0.5 rounded-lg text-right px-3 py-2 text-xs font-bold transition-all block ${
+                            selectedYear === opt.value ? 'bg-[#E50914] text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          {opt.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Reset/Back to Archive Filter */}
+                {(selectedCategory || selectedSort !== 'recent' || selectedYear !== '1900,2026' || selectedRating) && (
+                  <Link
+                    href={pathname}
+                    scroll={false}
+                    onClick={() => setOpenDropdown(null)}
+                    className="px-4 py-2.5 rounded-xl border border-[#E50914]/20 bg-[#E50914]/5 hover:bg-[#E50914]/10 text-[#E50914] text-xs font-black cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap inline-flex items-center"
+                  >
+                    <i className="fa-solid fa-rotate-right ml-2"></i>
+                    إعادة ضبط
+                  </Link>
+                )}
+              </>
+            ) : (
+              <div className="flex-1 text-xs text-gray-400 font-bold leading-relaxed text-right py-2">
+                الفلاتر غير متاحة في وضع "أحدث الحلقات". 
+                <button
+                  onClick={() => router.push('/series')}
+                  className="mr-3 px-4 py-2 rounded-xl border border-[#E50914]/20 bg-[#E50914]/5 hover:bg-[#E50914]/10 text-[#E50914] text-[10px] font-black cursor-pointer transition-all inline-block"
+                >
+                  الذهاب لأرشيف المسلسلات
+                </button>
+              </div>
+            )}
+
+            {/* Results Count */}
+            <div className="px-4 py-2.5 bg-white/5 rounded-xl border border-white/5 text-[11px] text-gray-400 font-bold whitespace-nowrap">
+              وجدت <span className="font-en text-white mx-1">{series.length}</span> نتيجة
             </div>
-          ) : series.length > 0 ? (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-5 gap-y-12">
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Full Width Series Grid Content */}
+      <div className="w-full">
+        
+        {loading ? (
+          <div className="py-2 w-full">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-x-6 gap-y-12">
+              {Array.from({ length: 30 }).map((_, i) => (
+                <CardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
+        ) : series.length > 0 ? (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-x-6 gap-y-12">
                 {series.map((video, index) => (
                   <Link 
                     key={video.nb} 
-                    href={`/watch/${video.nb}`} 
-                    className="group/card block relative snap-start animate-fade-in-up"
+                    href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title)}`} 
+                    className="group/card block relative snap-start animate-fade-in-up active:scale-95 transition-transform duration-200"
                     style={{ animationDelay: `${index * 15}ms` }}
                   >
                     {/* Poster Wrapper */}
-                    <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
+                    <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden bg-[#141722]/50 border border-white/5 transition-all duration-300 ease-out group-hover/card:scale-[1.03] group-hover/card:shadow-[0_15px_35px_rgba(0,0,0,0.6)] group-hover/card:border-white/20">
                       <img 
                         src={getVideoImageUrl(video as any, 'poster')}
                         alt={video.ar_title} 
-                        className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
+                        className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-105"
                         loading="lazy"
                       />
-                      <div className="movie-card-overlay"></div>
+                      
+                      {/* Dark overlay & Watch Play Badge */}
+                      <div className="absolute inset-0 bg-black/45 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 z-10 flex items-center justify-center backdrop-blur-[1px]">
+                        <div className="px-3.5 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-white text-xs font-black tracking-wide flex items-center gap-1.5 transform scale-75 group-hover/card:scale-100 transition-transform duration-300">
+                          <i className="fa-solid fa-play text-[9px] text-[#E50914] animate-pulse"></i>
+                          <span>مشاهدة الحلقات</span>
+                        </div>
+                      </div>
 
-                      {/* Play Hover Indicator */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 transform scale-50 group-hover/card:opacity-100 group-hover/card:scale-100 transition-all duration-300 z-20">
-                        <div className="w-14 h-14 rounded-full bg-alex-primary/95 flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.5)] backdrop-blur-md">
-                          <i className="fa-solid fa-play ml-1 text-xl"></i>
+                      {/* Floating Metadata badges inside poster */}
+                      <div className="absolute bottom-2.5 right-2.5 left-2.5 z-20 flex justify-between items-center select-none pointer-events-none">
+                        {/* Rating Badge (IMDb Gold) */}
+                        <div className="bg-black/60 backdrop-blur-md px-2 py-1 rounded-xl text-[10px] font-black text-[#F5C518] flex items-center gap-1 font-en">
+                          <i className="fa-solid fa-star text-[8px]"></i>
+                          <span>{video.stars}</span>
+                        </div>
+
+                        {/* Year Badge (Cool Muted) */}
+                        <div className="bg-black/60 backdrop-blur-md px-2 py-1 rounded-xl text-[10px] font-black text-gray-300 font-en">
+                          {video.year}
                         </div>
                       </div>
                     </div>
 
-                    {/* Info Details directly below the poster */}
-                    <div className="mt-3 px-1 space-y-1.5">
-                      {/* Rating & Title Row */}
-                      <div className="flex items-center justify-between gap-2.5">
-                        <h3 className="text-sm font-bold text-gray-100 group-hover/card:text-white transition-colors truncate flex-grow text-right leading-tight" title={video.ar_title}>
-                          {video.ar_title}
-                        </h3>
-
-                        <div className="flex-shrink-0 flex items-center gap-1.5 bg-yellow-500/10 border border-yellow-500/20 px-1.5 py-0.5 rounded text-[10px] font-black text-yellow-400">
-                          <span className="font-en mt-0.5">{video.stars}</span>
-                          <span className="text-[8px] opacity-70">IMDb</span>
-                        </div>
-                      </div>
-
-                      {/* Category & Year Row */}
-                      <div className="flex items-center text-[11px] font-semibold text-gray-400 justify-end gap-1.5 leading-none">
-                        <span>{video.year}</span>
-                      </div>
+                    {/* Title Info Directly Below Poster */}
+                    <div className="mt-3 px-1 text-right">
+                      <h3 className="text-[13px] font-black text-[#F8FAFC] group-hover/card:text-[#E50914] transition-colors truncate leading-tight" title={video.ar_title}>
+                        {video.ar_title}
+                      </h3>
                     </div>
                   </Link>
                 ))}
@@ -341,42 +489,18 @@ function SeriesContent() {
               <Pagination 
                 currentPage={page} 
                 onPageChange={(p) => updateParams({ page: p.toString() })} 
-                hasNextPage={series.length >= 20} 
-                accentColor="blue" 
+                hasNextPage={series.length >= 24} 
+                accentColor="primary" 
               />
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center py-32 opacity-60">
-              <i className="fa-solid fa-tv text-7xl text-gray-600 mb-4 animate-pulse"></i>
-              <p className="text-2xl text-gray-400 font-medium">لا توجد مسلسلات مطابقة للفلاتر المختارة</p>
+            <div className="flex flex-col items-center justify-center py-28 opacity-50" dir="rtl">
+              <i className="fa-solid fa-tv text-6xl text-gray-500 mb-4 animate-pulse"></i>
+              <p className="text-lg text-gray-300 font-black">لا توجد نتائج مطابقة للفلاتر المختارة</p>
             </div>
           )}
         </div>
 
-        {/* Right Column (Category Sidebar Selector for Desktop) */}
-        <aside className="hidden lg:block w-64 flex-shrink-0">
-          <div className="ios-glass rounded-2xl p-5 sticky top-32 space-y-4">
-            <h3 className="text-sm font-bold text-gray-400 border-b border-white/5 pb-3">تصنيفات المسلسلات</h3>
-            <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-1 hide-scrollbar">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCategoryChange(cat.id)}
-                  className={`w-full text-right px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
-                    selectedCategory === cat.id
-                      ? 'ios-active font-black'
-                      : 'ios-button text-gray-400 hover:text-white'
-                  }`}
-                >
-                  <span>{cat.title}</span>
-                  {selectedCategory === cat.id && <i className="fa-solid fa-check text-[10px]"></i>}
-                </button>
-              ))}
-            </div>
-          </div>
-        </aside>
-
-      </div>
     </div>
   );
 }
@@ -385,7 +509,7 @@ export default function SeriesPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen pt-32 flex flex-col items-center justify-center">
-        <div className="w-12 h-12 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin mb-4"></div>
+        <div className="w-12 h-12 rounded-full border-4 border-alex-primary/20 border-t-alex-primary animate-spin mb-4"></div>
         <p className="text-gray-400 font-semibold text-sm">جاري التحميل...</p>
       </div>
     }>

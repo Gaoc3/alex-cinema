@@ -2,7 +2,6 @@ import React from 'react';
 import MediaPoster from './MediaPoster';
 import MediaDetails from './MediaDetails';
 import ActionToolbar from './ActionToolbar';
-import AdditionalInfo from './AdditionalInfo';
 import PlayerSection from './PlayerSection';
 import SeriesNavigator from './SeriesNavigator';
 
@@ -35,19 +34,20 @@ interface WatchLayoutProps {
   dislikes: number;
   userVote: 'like' | 'dislike' | null;
   handleVote: (type: 'like' | 'dislike') => void;
+  roomHook?: any;
 }
 
 export default function WatchLayout({
   video, isSeries, seasons, episodes, currentSeason, setCurrentSeason, activeEpisode, setActiveEpisode, seasonEpisodes,
   isLoadingStreams, activeEpisodeDetails, displayTitle, displayEnTitle, displayContent, hasNextEpisode, playNextEpisode,
-  isFavorite, toggleFavorite, likes, dislikes, userVote, handleVote
+  isFavorite, toggleFavorite, likes, dislikes, userVote, handleVote, roomHook
 }: WatchLayoutProps) {
   return (
     <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto relative z-10">
       
       {/* Row 1: Player & Poster */}
       <div className="grid grid-cols-12 gap-4 sm:gap-6 lg:gap-8 items-stretch">
-        <div className="col-span-12 lg:col-span-9 flex flex-col justify-stretch">
+        <div className={`col-span-12 ${roomHook ? '' : 'lg:col-span-9'} flex flex-col justify-stretch`}>
           <PlayerSection 
             isLoadingStreams={isLoadingStreams}
             isSeries={isSeries}
@@ -56,24 +56,34 @@ export default function WatchLayout({
             displayTitle={displayTitle}
             hasNextEpisode={hasNextEpisode}
             playNextEpisode={playNextEpisode}
+            roomHook={roomHook}
           />
         </div>
-        <div className="col-span-12 lg:col-span-3 flex flex-col px-4 sm:px-0 mt-4 sm:mt-0">
-          <MediaPoster img={video.img} imdbUrlRef={video.imdbUrlRef} />
-        </div>
+        {!roomHook && (
+          <div className="col-span-12 lg:col-span-3 flex flex-col px-4 sm:px-0 mt-4 sm:mt-0">
+            <MediaPoster img={video.img} imdbUrlRef={video.imdbUrlRef} />
+          </div>
+        )}
       </div>
 
-      {/* Row 2: Details & Additional Info */}
-      <div className="grid grid-cols-12 gap-4 sm:gap-6 lg:gap-8 items-stretch px-4 sm:px-0">
-        <div className="col-span-12 lg:col-span-9 flex flex-col">
+      {/* Row 2: Dynamic Full Width Details Panel */}
+      {!roomHook && (
+        <div className="px-4 sm:px-0">
           <MediaDetails 
-            title={displayTitle}
-            enTitle={displayEnTitle}
+            title={video.ar_title}
+            enTitle={video.en_title || video.ar_title}
+            episodeNum={isSeries && activeEpisode ? activeEpisode.episodeNummer : undefined}
+            seasonNum={isSeries ? currentSeason : undefined}
             year={video.year}
             categories={video.categories}
             duration={video.duration ? parseInt(video.duration) : undefined}
             stars={video.stars}
             content={displayContent}
+            actorsInfo={video.actorsInfo}
+            directorsInfo={video.directorsInfo}
+            writersInfo={video.writersInfo}
+            kind={video.kind}
+            itemDate={video.itemDate || video.mDate}
           >
             <ActionToolbar 
               isFavorite={isFavorite}
@@ -82,32 +92,26 @@ export default function WatchLayout({
               dislikes={dislikes}
               userVote={userVote}
               handleVote={handleVote}
+              videoId={video.nb}
             />
           </MediaDetails>
         </div>
-        <div className="col-span-12 lg:col-span-3 flex flex-col">
-          <AdditionalInfo 
-            kind={video.kind}
-            year={video.year}
-            duration={video.duration ? parseInt(video.duration) : undefined}
-            itemDate={video.itemDate || video.mDate}
-          />
-        </div>
-      </div>
+      )}
 
       {/* Row 3: Seasons & Episodes (Series Only) */}
       {isSeries && episodes.length > 0 && (
         <div className="px-4 sm:px-0 pb-10 sm:pb-0">
           <SeriesNavigator 
-          seasons={seasons}
-          episodes={episodes}
-          currentSeason={currentSeason}
-          setCurrentSeason={setCurrentSeason}
-          activeEpisode={activeEpisode}
-          setActiveEpisode={setActiveEpisode}
-          seasonEpisodes={seasonEpisodes}
-          videoTitle={video.ar_title}
-        />
+            seasons={seasons}
+            episodes={episodes}
+            currentSeason={currentSeason}
+            setCurrentSeason={setCurrentSeason}
+            activeEpisode={activeEpisode}
+            setActiveEpisode={setActiveEpisode}
+            seasonEpisodes={seasonEpisodes}
+            videoTitle={video.ar_title}
+            videoImg={video.img}
+          />
         </div>
       )}
     </div>

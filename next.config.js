@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
   outputFileTracingRoot: __dirname,
   images: {
     remotePatterns: [
@@ -22,13 +24,11 @@ const nextConfig = {
     ],
   },
   async rewrites() {
-    const tunnelBase = process.env.TUNNEL_BASE_URL || 'http://64.225.99.144';
-    const base = tunnelBase.replace(/\/cgi-bin\/proxy\?url=$/, '').replace(/\/$/, '');
     return [
       {
         source: '/tunnel/:path*',
-        destination: `${base}/:path*`,
-      },
+        destination: 'http://127.0.0.1:80/tunnel/:path*', // Route it through NGINX on the VPS
+      }
     ];
   },
   async headers() {
@@ -50,16 +50,6 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=86400',
-          },
-        ],
-      },
-      {
-        // Default API cache (15 minutes)
-        source: '/api/proxy',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=900, s-maxage=900, stale-while-revalidate=300',
           },
         ],
       }

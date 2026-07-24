@@ -1,19 +1,25 @@
 import React, { Suspense } from "react";
 import type { Metadata } from "next";
-import { Cairo, Outfit } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import SearchBar from "@/components/SearchBar";
-import Sidebar from "@/components/Sidebar";
 import SidebarToggle from "@/components/SidebarToggle";
 import SecurityWrapper from "@/components/SecurityWrapper";
 import AILayoutEngine from "@/components/AILayoutEngine";
+import CinematicLogo from "@/components/CinematicLogo";
+import UserNav from "@/components/UserNav";
 import Script from "next/script";
+import { Toaster } from 'react-hot-toast';
+import ConditionalNavbar from "@/components/ConditionalNavbar";
+import ConditionalSidebar from "@/components/ConditionalSidebar";
+import ClientMainWrapper from "@/components/ClientMainWrapper";
+import ConditionalFooter from "@/components/ConditionalFooter";
+import TelegramAutoAuth from "@/components/auth/TelegramAutoAuth";
+import { UnifiedAuthProvider } from "@/components/auth/UnifiedAuthProvider";
 
-const cairo = Cairo({ subsets: ["arabic"], variable: "--font-cairo" });
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
-
-
+import { ClerkProvider } from '@clerk/nextjs'
+import { arSA } from '@clerk/localizations'
+import { dark } from '@clerk/themes'
 
 export const metadata: Metadata = {
   title: "ALEX CINEMA | اليكس سينما",
@@ -26,78 +32,63 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl" className={`${cairo.variable} ${outfit.variable}`} suppressHydrationWarning>
+    <ClerkProvider 
+      localization={arSA}
+      appearance={{
+        baseTheme: dark,
+        layout: {
+          unsafe_disableDevelopmentModeWarnings: true,
+        },
+        variables: {
+          colorPrimary: '#e50914',
+          colorBackground: '#0b0f19',
+          colorText: '#ffffff',
+          colorTextSecondary: '#e5e7eb',
+          fontFamily: 'Cairo, sans-serif',
+          borderRadius: '1rem',
+        },
+        elements: {
+          footer: '!hidden',
+          footerAction: '!hidden',
+          devRow: '!hidden',
+          watermark: '!hidden',
+          userButtonPopoverFooter: '!hidden',
+        }
+      }}
+    >
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
       </head>
+
       <body className="antialiased min-h-screen font-sans bg-black" suppressHydrationWarning>
-        <AILayoutEngine />
-        <SecurityWrapper>
-        
-        {/* Liquid Glass Animated Background */}
-        <div className="liquid-bg"></div>
+        <UnifiedAuthProvider>
+          <TelegramAutoAuth />
+          <Toaster position="top-center" toastOptions={{ style: { background: '#111', color: '#fff', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' } }} />
+          <AILayoutEngine />
+          <SecurityWrapper>
 
-        <div className="relative overflow-x-clip w-full min-h-screen flex flex-col z-10">
-          <Suspense fallback={null}>
-            <Sidebar />
-          </Suspense>        {/* Navbar */}
-        <nav className="absolute w-full max-w-[100vw] z-40 transition-all duration-300 pointer-events-none pt-2 sm:pt-4" id="navbar">
-          <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 xl:px-8">
-                <div className="flex items-center justify-between h-14 sm:h-16 xl:h-20 pointer-events-auto px-4 sm:px-6 relative">
-                    {/* Right side (Hamburger in RTL) */}
-                    <div className="flex items-center shrink-0 xl:hidden z-10">
-                        <SidebarToggle />
-                    </div>
+          <div className="relative overflow-x-clip w-full min-h-screen flex flex-col z-10">
+            <ConditionalSidebar />
+            <ConditionalNavbar />
 
-                    {/* Center (Logo) - Flexible centering to prevent overlap on all devices */}
-                    <div className="flex justify-center items-center xl:hidden flex-1 px-2">
-                        <Link href="/" className="flex items-center gap-1.5 sm:gap-2 md:gap-3 group hover-scale shrink-0">
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full overflow-hidden flex items-center justify-center shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all duration-300 border border-white/10 bg-[#070a13]">
-                                <img src="/logo.svg" alt="AleX Cinema Logo" className="w-full h-full object-cover scale-[1.05]" />
-                            </div>
-                            <div className="hidden md:flex flex-col leading-none mt-0.5">
-                                <span className="text-xl font-black font-en tracking-wider text-white drop-shadow-md">ALEX<span className="text-alex-primary">CINEMA</span></span>
-                            </div>
-                        </Link>
-                    </div>
+            {/* Main Content */}
+            <ClientMainWrapper>
+              {children}
+            </ClientMainWrapper>
 
-                    {/* Desktop spacer to push search bar to left since logo is hidden on desktop */}
-                    <div className="hidden xl:block flex-1 pointer-events-none"></div>
-   
-                    {/* Left side (Search Bar) */}
-                    <div className="flex items-center shrink-0 z-10">
-                        <Suspense fallback={<div className="w-8 h-8 rounded-full bg-white/5 animate-pulse"></div>}>
-                          <SearchBar />
-                      </Suspense>
-                  </div>
-              </div>
+            {/* Footer */}
+            <ConditionalFooter />
           </div>
-        </nav>
-
-        {/* Main Content */}
-        <main className="flex-grow xl:pr-72 pt-16 sm:pt-20 xl:pt-0">
-          {children}
-        </main>
-
-        {/* Footer */}
-        <footer className="pt-16 pb-10 mt-auto relative z-10 xl:pr-72">
-            <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-8">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-
-                    <div className="flex items-center gap-4">
-                        <a href="#" className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-white hover:bg-alex-primary transition-all hover-scale"><i className="fa-brands fa-twitter"></i></a>
-                        <a href="#" className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-white hover:bg-alex-primary transition-all hover-scale"><i className="fa-brands fa-instagram"></i></a>
-                        <a href="#" className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-white hover:bg-alex-primary transition-all hover-scale"><i className="fa-brands fa-telegram"></i></a>
-                    </div>
-                    <p className="text-gray-500 text-sm font-medium">
-                        جميع الحقوق محفوظة &copy; 2026 <span className="font-en text-gray-300 font-bold">ALEX CINEMA</span>
-                    </p>
-                </div>
-            </div>
-        </footer>
-        </div>
-        </SecurityWrapper>
+          
+          </SecurityWrapper>
+        </UnifiedAuthProvider>
       </body>
     </html>
+    </ClerkProvider>
   );
 }

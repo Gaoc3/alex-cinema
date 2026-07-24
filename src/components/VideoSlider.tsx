@@ -86,7 +86,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
             return (
               <Link 
                 key={video.nb} 
-                href={`/watch/${video.nb}`} 
+                href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title)}`} 
                 className="w-[170px] sm:w-[190px] flex-shrink-0 group/card block relative snap-start transition-transform duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-105"
                 style={{ animationDelay: `${index * 25}ms` }}
               >
@@ -96,7 +96,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
                     src={getVideoImageUrl(video as any, 'poster')} 
                     alt={video.ar_title} 
                     fill
-                    sizes="(max-width: 640px) 170px, 190px"
+                    unoptimized
                     className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
                     loading="lazy"
                   />

@@ -1,130 +1,29 @@
 import paramiko
 
-config_lines = [
-    "worker_processes  1;",
-    "error_log /tmp/nginx_error.log;",
-    "pid /tmp/nginx.pid;",
-    "",
-    "events {",
-    "    worker_connections  1024;",
-    "}",
-    "",
-    "http {",
-    "    access_log off;",
-    "    client_body_temp_path /tmp/nginx_client_temp;",
-    "    proxy_temp_path /tmp/nginx_proxy_temp;",
-    "    fastcgi_temp_path /tmp/nginx_fastcgi_temp;",
-    "    uwsgi_temp_path /tmp/nginx_uwsgi_temp;",
-    "    scgi_temp_path /tmp/nginx_scgi_temp;",
-    "",
-    "    server {",
-    "        listen 8080;",
-    "        server_name localhost;",
-    "        resolver 8.8.8.8 1.1.1.1;",
-    "",
-    "        location ~ ^/vascin[0-9]+-mp4 {",
-    "            proxy_pass https://cdn.shabakaty.com;",
-    "            proxy_ssl_server_name on;",
-    "            proxy_buffering off;",
-    "            proxy_set_header Range $http_range;",
-    "            proxy_set_header If-Range $http_if_range;",
-    "            proxy_set_header Host cdn.shabakaty.com;",
-    "            proxy_set_header Referer \"https://cinemana.shabakaty.com/\";",
-    "            proxy_intercept_errors on;",
-    "            error_page 301 302 307 = @handle_redirect;",
-    "        }",
-    "",
-    "        location ~ ^/m[0-9]+ {",
-    "            proxy_pass https://cndw2.shabakaty.com;",
-    "            proxy_ssl_server_name on;",
-    "            proxy_buffering off;",
-    "            proxy_set_header Range $http_range;",
-    "            proxy_set_header If-Range $http_if_range;",
-    "            proxy_set_header Host cndw2.shabakaty.com;",
-    "            proxy_set_header Referer \"https://cinemana.shabakaty.com/\";",
-    "            proxy_intercept_errors on;",
-    "            error_page 301 302 307 = @handle_redirect;",
-    "        }",
-    "",
-    "        location /api/ {",
-    "            proxy_pass https://cinemana.shabakaty.com;",
-    "            proxy_ssl_server_name on;",
-    "            proxy_buffering off;",
-    "            proxy_set_header Host cinemana.shabakaty.com;",
-    "            proxy_set_header Referer \"https://cinemana.shabakaty.com/\";",
-    "        }",
-    "",
-    "        location /uploads/images/ {",
-    "            proxy_pass https://cdn.shabakaty.com;",
-    "            proxy_ssl_server_name on;",
-    "            proxy_set_header Host cdn.shabakaty.com;",
-    "        }",
-    "",
-    "        location /vascin-poster-images/ {",
-    "            proxy_pass https://cnth2.shabakaty.com;",
-    "            proxy_ssl_server_name on;",
-    "            proxy_set_header Host cnth2.shabakaty.com;",
-    "        }",
-    "",
-    "        location /vascin-cover-images/ {",
-    "            proxy_pass https://cnth2.shabakaty.com;",
-    "            proxy_ssl_server_name on;",
-    "            proxy_set_header Host cnth2.shabakaty.com;",
-    "        }",
-    "",
-    "        location /vascin-translation-files/ {",
-    "            proxy_pass https://cnth2.shabakaty.com;",
-    "            proxy_ssl_server_name on;",
-    "            proxy_set_header Host cnth2.shabakaty.com;",
-    "        }",
-    "",
-    "        location /vascin-staff-poster/ {",
-    "            proxy_pass https://cinemana.shabakaty.com;",
-    "            proxy_ssl_server_name on;",
-    "            proxy_set_header Host cinemana.shabakaty.com;",
-    "        }",
-    "",
-    "        location /assetsUI/ {",
-    "            proxy_pass https://cinemana.shabakaty.com;",
-    "            proxy_ssl_server_name on;",
-    "            proxy_set_header Host cinemana.shabakaty.com;",
-    "        }",
-    "",
-    "        location @handle_redirect {",
-    "            resolver 8.8.8.8 1.1.1.1 ipv6=off;",
-    "            set $saved_redirect_location '$upstream_http_location';",
-    "            proxy_pass $saved_redirect_location;",
-    "            proxy_ssl_server_name on;",
-    "            proxy_buffering off;",
-    "            proxy_set_header Range $http_range;",
-    "            proxy_set_header If-Range $http_if_range;",
-    "            proxy_set_header Referer \"https://cinemana.shabakaty.com/\";",
-    "        }",
-    "    }",
-    "}"
-]
+VPS_IP = "64.225.99.144"
 
-client = paramiko.SSHClient()
-client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-try:
-    client.connect('192.168.1.1', username='root', password='punisher001', timeout=10)
-    
-    # Empty file first
-    client.exec_command("echo '' > /tmp/nginx_proxy.conf")
-    
-    for line in config_lines:
-        escaped_line = line.replace('$', '\\$').replace('"', '\\"')
-        client.exec_command(f'echo "{escaped_line}" >> /tmp/nginx_proxy.conf')
+# Read the new nginx config
+with open("new_nginx.conf", "r") as f:
+    nginx_content = f.read()
 
-    # Restart nginx
-    stdin, stdout, stderr = client.exec_command('/etc/init.d/nginx_proxy restart')
-    out = stdout.read().decode('utf-8')
-    err = stderr.read().decode('utf-8')
-    
-    print("Nginx config rebuilt and service restarted successfully!")
-    print(out)
-    if err: print("ERR:", err)
-except Exception as e:
-    print(f'Error: {e}')
-finally:
-    client.close()
+ssh = paramiko.SSHClient()
+ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+ssh.connect("192.168.1.1", username="root", password="punisher001", timeout=15)
+
+# Write the new nginx.conf to VPS
+# Use SFTP via paramiko
+transport = ssh.get_transport()
+sftp_chan = transport.open_session()
+sftp_chan.exec_command(f"dbclient -y -y -i /etc/dropbear/id_rsa root@{VPS_IP} 'cat > /tmp/nginx_new.conf'")
+sftp_chan.sendall(nginx_content.encode())
+sftp_chan.shutdown_write()
+sftp_chan.recv(1024)
+sftp_chan.close()
+
+# Now test the new config and reload
+stdin, stdout, stderr = ssh.exec_command(f"dbclient -y -y -i /etc/dropbear/id_rsa root@{VPS_IP} 'nginx -t -c /tmp/nginx_new.conf 2>&1'")
+test_out = stdout.read().decode('utf-8', errors='ignore')
+test_err = stderr.read().decode('utf-8', errors='ignore')
+print("nginx -t:", test_out, test_err)
+
+ssh.close()

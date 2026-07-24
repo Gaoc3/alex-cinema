@@ -1,11 +1,22 @@
 import { getVideoImageUrl } from '@/utils/imageHelper';
-import { getMoviesByCategory } from '@/lib/api';
+import { getMoviesByCategory, getCategories } from '@/lib/api';
 import Link from 'next/link';
 
-// We need to implement getMoviesByCategory in lib/api.ts
 export default async function CategoryPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
-  const videos = await getMoviesByCategory(resolvedParams.id);
+  
+  const [videos, categoriesRaw] = await Promise.all([
+    getMoviesByCategory(resolvedParams.id),
+    getCategories()
+  ]);
+
+  let categoryName = 'أفلام التصنيف';
+  if (categoriesRaw && Array.isArray(categoriesRaw)) {
+    const matchedCategory = categoriesRaw.find((cat: any) => String(cat.nb) === String(resolvedParams.id));
+    if (matchedCategory && matchedCategory.ar_title) {
+      categoryName = matchedCategory.ar_title;
+    }
+  }
 
   return (
     <div className="min-h-screen pt-32 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
@@ -13,16 +24,16 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
       <div className="flex items-center gap-4 mb-10">
         <div className="w-1.5 h-8 bg-alex-primary rounded-full shadow-[0_0_10px_rgba(229,9,20,0.5)]"></div>
         <h1 className="text-3xl font-black text-white drop-shadow-md tracking-wide">
-          أفلام التصنيف
+          {categoryName}
         </h1>
       </div>
 
       {videos && videos.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-12">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 2xl:grid-cols-5 gap-x-6 gap-y-12">
           {videos.map((video: any, index: number) => (
             <Link 
               key={video.nb} 
-              href={`/watch/${video.nb}`} 
+              href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title)}`} 
               className="group/card block relative snap-start"
               style={{ animationDelay: `${index * 25}ms` }}
             >

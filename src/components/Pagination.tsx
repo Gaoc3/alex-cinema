@@ -42,15 +42,15 @@ export default function Pagination({ currentPage, onPageChange, hasNextPage, acc
   const currentTheme = colorStyles[accentColor];
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 mt-12 sm:mt-16 mb-8 w-full" dir="rtl">
+    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-12 sm:mt-16 mb-8 w-full" dir="rtl">
       {/* Previous Button */}
       <button 
         onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
         disabled={currentPage <= 1}
-        className={`flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-sm transition-all duration-300 ${
+        className={`flex items-center gap-2 px-5 py-2 rounded-full font-bold text-sm transition-all duration-300 ${
           currentPage > 1 
-            ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20 hover:-translate-y-1 shadow-lg' 
-            : 'bg-white/[0.02] text-gray-500 border border-white/5 cursor-not-allowed'
+            ? 'bg-[#141722] hover:bg-[#E50914] text-white border border-white/5 shadow-lg' 
+            : 'bg-[#141722]/40 text-gray-600 border border-white/5 cursor-not-allowed'
         }`}
       >
         <i className="fa-solid fa-arrow-right text-xs"></i>
@@ -58,20 +58,18 @@ export default function Pagination({ currentPage, onPageChange, hasNextPage, acc
       </button>
       
       {/* Current Page Display */}
-      <div className={`relative px-6 sm:px-8 py-2.5 sm:py-3 rounded-2xl font-black text-sm border border-white/10 shadow-xl overflow-hidden group`}>
-        <div className={`absolute inset-0 ${currentTheme.bg} opacity-10`}></div>
-        <div className={`absolute -inset-1 ${currentTheme.bg} opacity-20 blur-md`}></div>
-        <span className={`relative z-10 font-en ${currentTheme.text} drop-shadow-md`}>{currentPage}</span>
+      <div className="relative px-6 py-2 rounded-full font-black text-sm border border-white/5 bg-[#141722] shadow-xl text-center min-w-[50px] font-en text-[#E50914] drop-shadow-md">
+        {currentPage}
       </div>
 
       {/* Next Button */}
       <button 
         onClick={() => hasNextPage && onPageChange(currentPage + 1)}
         disabled={!hasNextPage}
-        className={`flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-sm transition-all duration-300 ${
+        className={`flex items-center gap-2 px-5 py-2 rounded-full font-bold text-sm transition-all duration-300 ${
           hasNextPage 
-            ? `${currentTheme.bg} text-white border border-transparent ${currentTheme.shadow} ${currentTheme.hover} hover:-translate-y-1` 
-            : 'bg-white/[0.02] text-gray-500 border border-white/5 cursor-not-allowed'
+            ? 'bg-[#141722] hover:bg-[#E50914] text-white border border-white/5 shadow-lg' 
+            : 'bg-[#141722]/40 text-gray-600 border border-white/5 cursor-not-allowed'
         }`}
       >
         <span>التالية</span>

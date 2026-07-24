@@ -4,7 +4,7 @@ export default function Loading() {
   return (
     <div className="min-h-screen flex flex-col relative pt-24 animate-fade-in-up overflow-x-hidden">
       {/* Skeleton Background Glow */}
-      <div className="fixed inset-0 z-[-1] opacity-20 blur-[60px] bg-gradient-to-tr from-[#0a0e17] via-[#16203a] to-[#0a0e17] animate-pulse"></div>
+      <div className="fixed inset-0 z-[-1] opacity-20 blur-[60px] bg-gradient-to-tr from-[#0a0e17] via-[#16203a] to-[#0a0e17] animate-pulse pointer-events-none"></div>
 
       <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto relative z-10 px-4 sm:px-6 lg:px-8 py-10 flex-grow">
         

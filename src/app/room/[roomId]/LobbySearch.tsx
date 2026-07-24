@@ -1,0 +1,199 @@
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { decryptData } from '@/utils/cryptoHelper';
+import { getVideoImageUrl } from '@/utils/imageHelper';
+
+interface SearchResult {
+  nb: string;
+  ar_title: string;
+  en_title?: string;
+  year: string;
+  stars: string;
+  img?: string;
+  kind?: string;
+}
+
+interface LobbySearchProps {
+  roomId: string;
+}
+
+export default function LobbySearch({ roomId }: LobbySearchProps) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+
+    if (query.trim().length < 2) {
+      setResults([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    debounceTimer.current = setTimeout(async () => {
+      try {
+        const queryEncoded = encodeURIComponent(query);
+        const [resMovies, resSeries] = await Promise.all([
+          fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,2026&type=movies`, { signal }),
+          fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,2026&type=series`, { signal })
+        ]);
+
+        let moviesList: SearchResult[] = [];
+        let seriesList: SearchResult[] = [];
+
+        if (resMovies.ok) {
+          const encrypted_data = await resMovies.json();
+          const data = decryptData(encrypted_data.payload);
+          moviesList = Array.isArray(data) ? data : [];
+        }
+        if (resSeries.ok) {
+          const encrypted_data = await resSeries.json();
+          const data = decryptData(encrypted_data.payload);
+          seriesList = Array.isArray(data) ? data : [];
+        }
+
+        const combined = [...moviesList, ...seriesList];
+        const queryClean = query.trim().toLowerCase();
+        const sorted = combined.sort((a, b) => {
+          const titleA = (a.en_title || a.ar_title || '').trim().toLowerCase();
+          const titleB = (b.en_title || b.ar_title || '').trim().toLowerCase();
+
+          const exactA = titleA === queryClean;
+          const exactB = titleB === queryClean;
+          if (exactA && !exactB) return -1;
+          if (!exactA && exactB) return 1;
+
+          const startsA = titleA.startsWith(queryClean);
+          const startsB = titleB.startsWith(queryClean);
+          if (startsA && !startsB) return -1;
+          if (!startsA && startsB) return 1;
+
+          const starsA = parseFloat(a.stars) || 0;
+          const starsB = parseFloat(b.stars) || 0;
+          return starsB - starsA;
+        });
+
+        if (!signal.aborted) {
+          setResults(sorted.slice(0, 12)); // Show up to 12 results in lobby
+        }
+      } catch (e: any) {
+        if (e.name === 'AbortError') return;
+        setResults([]);
+      } finally {
+        if (!signal.aborted) setIsLoading(false);
+      }
+    }, 500);
+
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      controller.abort();
+    };
+  }, [query]);
+
+  const handleSelectVideo = async (item: SearchResult) => {
+    setIsLoading(true);
+    try {
+      const { updateRoomVideo } = await import('@/app/actions/room.actions');
+      const res = await updateRoomVideo(roomId, {
+        movieId: item.nb,
+        movieTitle: item.ar_title,
+        moviePoster: item.img
+      });
+      if (res.success) {
+        router.push(`/room/${roomId}?videoId=${item.nb}`);
+      } else {
+        alert(res.error || 'حدث خطأ أثناء حفظ الفلم في الروم');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('حدث خطأ أثناء الاتصال بالخادم');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-4xl mx-auto mt-4">
+      <div className="relative mb-8">
+        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+          <i className="fa-solid fa-search text-gray-400"></i>
+        </div>
+        <input 
+          type="text" 
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="ابحث عن أي فيلم أو مسلسل..." 
+          className="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl pr-12 pl-4 py-4 text-white text-lg focus:outline-none focus:border-purple-500 focus:bg-white/10 transition-all shadow-inner placeholder-gray-400"
+        />
+        {isLoading && (
+          <div className="absolute inset-y-0 left-0 flex items-center pl-4">
+            <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
+      </div>
+
+      {results.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 text-right">
+          {results.map((item, idx) => (
+            <div 
+              key={`${item.nb}-${idx}`}
+              onClick={() => handleSelectVideo(item)}
+              className="bg-black/30 backdrop-blur-md border border-white/5 rounded-xl overflow-hidden cursor-pointer hover:border-purple-500 hover:bg-white/5 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(147,51,234,0.3)]"
+            >
+              <div className="relative aspect-[2/3] w-full bg-gray-900">
+                <img 
+                  src={getVideoImageUrl(item)} 
+                  alt={item.ar_title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  loading="lazy"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/logo.png';
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                <div className="absolute bottom-2 right-2 left-2 flex justify-between items-end">
+                  <div className="bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                    {item.kind === '2' ? 'مسلسل' : 'فيلم'}
+                  </div>
+                  {item.stars && (
+                    <div className="flex items-center gap-1 text-yellow-400 text-xs font-bold">
+                      <span>{item.stars}</span>
+                      <i className="fa-solid fa-star text-[10px]"></i>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center text-white shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                    <i className="fa-solid fa-play ml-1"></i>
+                  </div>
+                </div>
+              </div>
+              <div className="p-3">
+                <h4 className="text-white text-sm font-bold truncate" title={item.ar_title}>{item.ar_title}</h4>
+                <p className="text-gray-400 text-xs truncate mt-1" dir="ltr">{item.year || item.en_title}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {query.trim().length >= 2 && results.length === 0 && !isLoading && (
+        <div className="text-center text-gray-400 py-12">
+          <i className="fa-solid fa-search-minus text-4xl mb-4 opacity-50"></i>
+          <p>لم يتم العثور على نتائج لـ "{query}"</p>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,12 +1,9 @@
-'use client';
 import { decryptData } from '@/utils/cryptoHelper';
-
 import { getVideoImageUrl } from '@/utils/imageHelper';
-import React, { useState, useEffect, Suspense } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
-import Pagination from '@/components/Pagination';
-import GridSkeleton from '@/components/skeleton/GridSkeleton';
+import NewReleasesPagination from '@/components/NewReleasesPagination';
+import { fetchCinemana } from '@/lib/api';
 
 interface VideoItem {
   nb: string;
@@ -18,65 +15,26 @@ interface VideoItem {
   kind?: string; // '1' for movie, '2' for series
 }
 
-function NewReleasesContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const page = parseInt(searchParams.get('page') || '1', 10);
+interface PageProps {
+  searchParams: Promise<{ page?: string }>;
+}
 
-  const [items, setItems] = useState<VideoItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export default async function NewReleasesPage({ searchParams }: PageProps) {
+  const resolvedSearchParams = await searchParams;
+  const page = parseInt(resolvedSearchParams.page || '1', 10);
 
-  useEffect(() => {
-    async function loadReleases() {
-      setLoading(true);
-      
-      const moviesUrl = `/api/proxy?endpoint=latestMovies/level/2/itemsPerPage/20/page/${page}/`;
-      const seriesUrl = `/api/proxy?endpoint=latestSeries/level/2/itemsPerPage/20/page/${page}/`;
+  const [moviesRaw, seriesRaw] = await Promise.all([
+    fetchCinemana(`latestMovies/level/2/itemsPerPage/30/page/${page}/`),
+    fetchCinemana(`latestSeries/level/2/itemsPerPage/30/page/${page}/`)
+  ]);
 
-      try {
-        const [moviesRes, seriesRes] = await Promise.all([
-          fetch(moviesUrl),
-          fetch(seriesUrl)
-        ]);
+  const movies = Array.isArray(moviesRaw) ? moviesRaw : [];
+  const series = Array.isArray(seriesRaw) ? seriesRaw : [];
 
-        let moviesList = [];
-        let seriesList = [];
-
-        if (moviesRes.ok) {
-          const encrypted_data = await moviesRes.json();
-      const data = decryptData(encrypted_data.payload);
-          moviesList = Array.isArray(data) ? data : [];
-        }
-        if (seriesRes.ok) {
-          const encrypted_data = await seriesRes.json();
-      const data = decryptData(encrypted_data.payload);
-          seriesList = Array.isArray(data) ? data : [];
-        }
-
-        // Merge both list and sort by sequential ID (nb) descending
-        const merged = [...moviesList, ...seriesList].sort(
-          (a, b) => parseInt(b.nb) - parseInt(a.nb)
-        );
-
-        setItems(merged);
-      } catch (error) {
-        console.error('Failed to load new releases:', error);
-        setItems([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadReleases();
-  }, [page]);
-
-  const setPage = (pageNum: number) => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      params.set('page', pageNum.toString());
-      router.push(`${window.location.pathname}?${params.toString()}`);
-    }
-  };
+  // Merge both lists and sort by sequential ID (nb) descending
+  const merged = [...movies, ...series].sort(
+    (a, b) => parseInt(b.nb) - parseInt(a.nb)
+  );
 
   return (
     <div className="min-h-screen pt-20 sm:pt-24 lg:pt-32 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 animate-fade-in-up">
@@ -89,18 +47,13 @@ function NewReleasesContent() {
         </div>
       </div>
 
-      {/* Grid Content / Loading */}
-      {loading ? (
-        <div className="py-10 w-full">
-          <GridSkeleton count={24} />
-        </div>
-      ) : items.length > 0 ? (
+      {merged.length > 0 ? (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-5 gap-y-12">
-            {items.map((video, index) => (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-x-6 gap-y-12">
+            {merged.map((video: VideoItem, index) => (
               <Link 
                 key={video.nb} 
-                href={`/watch/${video.nb}`} 
+                href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title)}`} 
                 className="group/card block relative snap-start animate-fade-in-up"
                 style={{ animationDelay: `${index * 15}ms` }}
               >
@@ -147,11 +100,10 @@ function NewReleasesContent() {
           </div>
 
           {/* Pagination Controls */}
-          <Pagination 
+          <NewReleasesPagination 
             currentPage={page} 
-            onPageChange={setPage} 
-            hasNextPage={items.length >= 35} 
-            accentColor="orange" 
+            hasNextPage={movies.length >= 30 || series.length >= 30} 
+            accentColor="orange"
           />
         </>
       ) : (
@@ -161,18 +113,5 @@ function NewReleasesContent() {
         </div>
       )}
     </div>
-  );
-}
-
-export default function NewReleasesPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen pt-32 flex flex-col items-center justify-center">
-        <div className="w-12 h-12 rounded-full border-4 border-orange-500/20 border-t-orange-500 animate-spin mb-4"></div>
-        <p className="text-gray-400 font-semibold text-sm">جاري التحميل...</p>
-      </div>
-    }>
-      <NewReleasesContent />
-    </Suspense>
   );
 }

@@ -1,7 +1,17 @@
 import paramiko
-c = paramiko.SSHClient()
-c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-c.connect('192.168.1.1', username='root', password='punisher001', timeout=5)
-stdin, stdout, stderr = c.exec_command('dbclient -y -y -i /etc/dropbear/id_rsa root@64.225.99.144 "curl -I -H \\"Host: cinemana.shabakaty.com\\" -k https://127.0.0.1:8081/api/android/banner/level/1"')
-print(stdout.read().decode('utf-8'))
-print(stderr.read().decode('utf-8'))
+
+VPS_IP = "64.225.99.144"
+
+cmd = "curl -v https://cinemana.shabakaty.com/api/android/banner/level/1"
+
+ssh = paramiko.SSHClient()
+ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+ssh.connect("192.168.1.1", username="root", password="punisher001", timeout=15)
+stdin, stdout, stderr = ssh.exec_command(f"dbclient -y -y -i /etc/dropbear/id_rsa root@{VPS_IP} '{cmd}'")
+
+out = stdout.read().decode('utf-8', errors='ignore')
+err = stderr.read().decode('utf-8', errors='ignore')
+
+print("STDOUT:", out)
+print("STDERR:", err)
+ssh.close()

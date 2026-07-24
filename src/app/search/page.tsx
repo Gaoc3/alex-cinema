@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Pagination from '@/components/Pagination';
-import GridSkeleton from '@/components/skeleton/GridSkeleton';
+import CardSkeleton from '@/components/skeleton/CardSkeleton';
 
 interface VideoItem {
   nb: string;
@@ -36,9 +36,11 @@ const GENRES = [
   { nb: '61', title: 'وثائقي' }
 ];
 
+const currentYear = new Date().getFullYear();
+
 const YEARS = [
-  { value: '1900,2026', label: 'الكل' },
-  { value: '2020,2026', label: '2020 - 2026' },
+  { value: `1900,${currentYear}`, label: 'كل السنوات' },
+  { value: `2020,${currentYear}`, label: `2020 - ${currentYear}` },
   { value: '2010,2019', label: '2010 - 2019' },
   { value: '2000,2009', label: '2000 - 2009' },
   { value: '1900,1999', label: 'قبل 2000' }
@@ -102,7 +104,7 @@ function SearchPageContent() {
 
         if (fetchMovies) {
           moviesPromise = fetch(
-            `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=movies${categoryParam}${starParam}`,
+            `/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=movies${categoryParam}${starParam}`,
             { signal }
           )
             .then((res) => (res.ok ? res.json() : null))
@@ -115,7 +117,7 @@ function SearchPageContent() {
 
         if (fetchSeries) {
           seriesPromise = fetch(
-            `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=series${categoryParam}${starParam}`,
+            `/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=series${categoryParam}${starParam}`,
             { signal }
           )
             .then((res) => (res.ok ? res.json() : null))
@@ -199,7 +201,7 @@ function SearchPageContent() {
       </div>
 
       {/* ADVANCED FILTER BAR */}
-      <div className="mb-8 sm:mb-14 flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3 sm:gap-6 glass-panel p-3 sm:p-4 rounded-2xl shadow-xl select-none">
+      <div className="mb-8 sm:mb-14 flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3 sm:gap-6 glass-panel p-3 sm:p-4 rounded-2xl shadow-xl select-none relative z-50">
         
         {/* Right side: Type toggles and Dropdowns */}
         <div className="flex flex-wrap items-center gap-4">
@@ -254,7 +256,7 @@ function SearchPageContent() {
                       setCategoryId(g.nb);
                       setIsGenreOpen(false);
                     }}
-                    className={`w-full text-right px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    className={`w-[calc(100%-12px)] mx-1.5 my-0.5 rounded-lg text-right px-3 py-2 text-xs font-bold transition-all ${
                       categoryId === g.nb ? 'bg-alex-primary text-white' : 'text-gray-300 hover:bg-white/5'
                     }`}
                   >
@@ -287,7 +289,7 @@ function SearchPageContent() {
                       setYearRange(y.value);
                       setIsYearOpen(false);
                     }}
-                    className={`w-full text-right px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    className={`w-[calc(100%-12px)] mx-1.5 my-0.5 rounded-lg text-right px-3 py-2 text-xs font-bold transition-all ${
                       yearRange === y.value ? 'bg-alex-primary text-white' : 'text-gray-300 hover:bg-white/5'
                     }`}
                   >
@@ -329,7 +331,11 @@ function SearchPageContent() {
       {isLoading ? (
         /* Skeleton Loader Grid */
         <div className="space-y-16">
-          <GridSkeleton count={12} />
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-x-6 gap-y-12">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <CardSkeleton key={i} />
+            ))}
+          </div>
         </div>
       ) : totalResults === 0 ? (
         /* Empty State */
@@ -360,11 +366,11 @@ function SearchPageContent() {
                 <div className="w-1.5 h-7 bg-alex-primary rounded-full shadow-[0_0_10px_rgba(229,9,20,0.5)]"></div>
                 الأفلام المطابقة ({movies.length})
               </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-8">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-x-6 gap-y-12">
                 {movies.map((video, index) => (
                   <Link 
                     key={video.nb} 
-                    href={`/watch/${video.nb}`} 
+                    href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title)}`} 
                     className="group/card block relative snap-start"
                     style={{ animationDelay: `${index * 25}ms` }}
                   >
@@ -416,11 +422,11 @@ function SearchPageContent() {
                 <div className="w-1.5 h-7 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
                 المسلسلات المطابقة ({series.length})
               </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-8">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-x-6 gap-y-12">
                 {series.map((video, index) => (
                   <Link 
                     key={video.nb} 
-                    href={`/watch/${video.nb}`} 
+                    href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title)}`} 
                     className="group/card block relative snap-start"
                     style={{ animationDelay: `${index * 25}ms` }}
                   >

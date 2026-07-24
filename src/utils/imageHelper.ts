@@ -11,24 +11,16 @@
  */
 export function getImageUrl(
   imgField: string | undefined | null,
-  type: 'poster' | 'cover' = 'poster'
+  type: 'poster' | 'cover' | 'backdrop' = 'poster'
 ): string {
   if (!imgField) return '';
   // Already a proxied/rewritten URL from sanitized server data
   if (imgField.startsWith('/api/') || imgField.startsWith('/tunnel/')) return imgField;
   if (imgField.startsWith('http')) {
-      try {
-          const parsed = new URL(imgField);
-          const separator = parsed.search ? '&' : '?';
-          return `/tunnel${parsed.pathname}${parsed.search}${separator}v=2`;
-      } catch {
-          const basePath = type === 'poster' ? '/cnth2/vascin-poster-images/' : '/cnth2/vascin-cover-images/';
-          return `/tunnel${basePath}${encodeURIComponent(imgField.split('/').pop() || imgField)}?v=2`;
-      }
+      return `/api/img?type=${type}&file=${encodeURIComponent(imgField.split('/').pop() || imgField)}`;
   }
   // Plain filename — construct the simple proxy URL
-  const basePath = type === 'poster' ? '/cnth2/vascin-poster-images/' : '/cnth2/vascin-cover-images/';
-  return `/tunnel${basePath}${encodeURIComponent(imgField)}?v=2`;
+  return `/api/img?type=${type}&file=${encodeURIComponent(imgField)}`;
 }
 
 /**
@@ -37,7 +29,7 @@ export function getImageUrl(
  */
 export function getVideoImageUrl(
   video: { img?: string; imgObjUrl?: string; imgMediumThumb?: string; imgThumb?: string },
-  type: 'poster' | 'cover' = 'poster'
+  type: 'poster' | 'cover' | 'backdrop' = 'poster'
 ): string {
   // imgObjUrl is already sanitized by the server to /api/img?ref=...
   if (video.imgObjUrl && (video.imgObjUrl.startsWith('/api/') || video.imgObjUrl.startsWith('/tunnel/'))) {
