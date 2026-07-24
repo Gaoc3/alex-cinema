@@ -172,7 +172,7 @@ export default function MyRoomsList() {
                   <span className="animate-pulse">جاري الحذف...</span>
                 ) : (
                   <>
-                    <i className="fa-solid fa-trash-can"></i> حذف الغرفة
+                    <i className="fa-solid fa-trash-can"></i> حذف الغرفة 🗑️
                   </>
                 )}
              </button>

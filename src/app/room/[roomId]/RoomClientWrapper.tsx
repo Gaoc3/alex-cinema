@@ -174,7 +174,7 @@ export default function RoomClientWrapper({
                 title="حذف وإغلاق الغرفة"
               >
                 <i className="fa-solid fa-trash-can text-[10px]"></i>
-                <span className="hidden sm:inline">حذف الغرفة</span>
+                <span className="inline-block font-bold">حذف الغرفة 🗑️</span>
               </button>
             </>
           ) : (
