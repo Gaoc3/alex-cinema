@@ -76,6 +76,9 @@ export function useWatchRoom(roomId: string, initIsHost: boolean, username: stri
       if (data.state) {
         setRoomState(data.state);
       }
+      if (data.members) {
+        setMembers(data.members);
+      }
     });
 
     newSocket.on('room_members', (updatedMembers: RoomMember[]) => {
