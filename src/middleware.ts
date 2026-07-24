@@ -1,13 +1,10 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
-// Only protect specific page routes (NOT /api/* routes, which handle auth via getAuthUser internally)
+// Only protect specific private user routes (favorites & profile)
 const isProtectedRoute = createRouteMatcher([
   '/favorites',
   '/favorites/(.*)',
-  '/rooms',
-  '/rooms/(.*)',
-  '/room/(.*)',
   '/profile'
 ]);
 

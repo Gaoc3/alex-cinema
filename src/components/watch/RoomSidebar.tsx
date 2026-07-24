@@ -41,6 +41,22 @@ export default function RoomSidebar({
   const hosts = members.filter(m => m.isHost);
   const viewers = members.filter(m => !m.isHost);
 
+  // Prevent background scrolling on mobile when chat drawer is open
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (isOpen && window.innerWidth < 1024) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        document.body.style.overflow = '';
+      }
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     if (activeTab === 'chat') {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
