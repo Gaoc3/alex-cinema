@@ -39,7 +39,7 @@ export function useWatchRoom(roomId: string, initIsHost: boolean, username: stri
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isHost, setIsHost] = useState(initIsHost);
   const [roomState, setRoomState] = useState<RoomState | null>(null);
-  const [members, setMembers] = useState<RoomMember[]>([]);
+  const [members, setMembers] = useState<RoomMember[]>(() => username ? [{ id: 'self', name: username, isHost: initIsHost }] : []);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [remoteVideoId, setRemoteVideoId] = useState<string | null>(null);
   const [isKicked, setIsKicked] = useState(false);

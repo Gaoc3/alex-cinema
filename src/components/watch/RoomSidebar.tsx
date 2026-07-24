@@ -195,7 +195,7 @@ export default function RoomSidebar({
               className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${activeTab === 'members' ? 'bg-[#E50914] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
             >
               <i className="fa-solid fa-users text-[10px]"></i>
-              الأعضاء ({members.length})
+              الأعضاء ({Math.max(members.length, 1)})
             </button>
             <button 
               onClick={() => setActiveTab('settings')}
