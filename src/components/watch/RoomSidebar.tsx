@@ -88,13 +88,26 @@ export default function RoomSidebar({
       `}>
         <div className="w-80 h-full flex flex-col min-w-[20rem]" dir="rtl">
           {/* Header */}
-          <div className="p-4 border-b border-white/10 flex items-center justify-between">
-            <h3 className="text-white font-black flex items-center gap-2 text-base">
-              <i className="fa-solid fa-[#E50914] fa-comments text-red-500"></i> دردشة ومجلس الغرفة
-            </h3>
-            <button onClick={() => setIsOpen(false)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors lg:hidden">
-              <i className="fa-solid fa-times"></i>
-            </button>
+          <div className="relative border-b border-white/10 bg-[#0c1120]">
+            <div className="h-1 w-full bg-gradient-to-r from-[#E50914] via-rose-500 to-red-700"></div>
+            <div className="p-4 flex items-center justify-between">
+              <h3 className="text-white font-black flex items-center gap-2.5 text-sm sm:text-base">
+                <div className="w-7 h-7 rounded-lg bg-[#E50914]/20 border border-[#E50914]/40 flex items-center justify-center text-[#E50914] shrink-0 shadow-[0_0_10px_rgba(229,9,20,0.3)]">
+                  <i className="fa-solid fa-comments text-xs"></i>
+                </div>
+                <span>دردشة ومجلس الغرفة</span>
+              </h3>
+
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-600/20 border border-red-500/40 text-[10px] font-black text-red-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                  <span>مباشر</span>
+                </div>
+                <button onClick={() => setIsOpen(false)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors lg:hidden">
+                  <i className="fa-solid fa-times text-xs"></i>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* 3-Tab Bar */}
