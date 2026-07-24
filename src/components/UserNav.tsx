@@ -94,6 +94,8 @@ export default function UserNav() {
   }
 
   // Telegram User Avatar & Custom Profile Dropdown Menu
+  const isTelegramWebApp = typeof window !== 'undefined' && Boolean((window as any).Telegram?.WebApp?.initData);
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -157,13 +159,15 @@ export default function UserNav() {
               <span>غرف المشاهدة الخاصة بي</span>
             </button>
 
-            <button
-              onClick={signOut}
-              className="flex items-center gap-3 w-full text-right px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all mt-2 border-t border-white/10 pt-2.5"
-            >
-              <LogOutIcon />
-              <span>تسجيل الخروج</span>
-            </button>
+            {!isTelegramWebApp && (
+              <button
+                onClick={signOut}
+                className="flex items-center gap-3 w-full text-right px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all mt-2 border-t border-white/10 pt-2.5 cursor-pointer"
+              >
+                <LogOutIcon />
+                <span>تسجيل الخروج</span>
+              </button>
+            )}
           </div>
         </div>
       )}

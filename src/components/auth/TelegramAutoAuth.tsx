@@ -6,14 +6,26 @@ export default function TelegramAutoAuth() {
   const attemptedRef = useRef(false);
 
   useEffect(() => {
-    if (attemptedRef.current || typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
 
     const tg = (window as any).Telegram?.WebApp;
     if (tg) {
       try {
         tg.ready();
         tg.expand();
-      } catch (e) {}
+        if (typeof tg.requestFullscreen === "function") {
+          tg.requestFullscreen();
+        }
+        if (typeof tg.disableVerticalSwipes === "function") {
+          tg.disableVerticalSwipes();
+        }
+        tg.isVerticalSwipesEnabled = false;
+        if (typeof tg.enableClosingConfirmation === "function") {
+          tg.enableClosingConfirmation();
+        }
+      } catch (e) {
+        console.error("[Telegram WebApp Init Error]:", e);
+      }
     }
 
     let initData = tg?.initData || "";
@@ -24,26 +36,42 @@ export default function TelegramAutoAuth() {
       initData = hashParams.get("tgWebAppData") || "";
     }
 
-    if (initData || unsafeUser) {
-      attemptedRef.current = true;
-      fetch("/api/auth/telegram", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          initData: initData || "",
-          telegramData: unsafeUser || null,
-        }),
+    if (!initData && !unsafeUser) return;
+
+    const currentTgUserId = unsafeUser?.id ? String(unsafeUser.id) : null;
+
+    // Check currently logged in session first to detect Telegram account switching in real-time
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((meData) => {
+        const loggedInTgId = meData?.user?.telegramId ? String(meData.user.telegramId) : null;
+
+        // If not logged in OR logged in under a different Telegram account (user switched TG account)
+        if (!meData?.success || (currentTgUserId && loggedInTgId !== currentTgUserId)) {
+          console.log("[Telegram Auth Account Switch/Login Triggered]", { currentTgUserId, loggedInTgId });
+
+          fetch("/api/auth/telegram", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              initData: initData || "",
+              telegramData: unsafeUser || null,
+            }),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data?.success) {
+                console.log("[Telegram Silent Auth Success]:", data.user?.name);
+                // If user switched accounts, reload to update UI in real-time
+                if (loggedInTgId && loggedInTgId !== currentTgUserId) {
+                  window.location.reload();
+                }
+              }
+            })
+            .catch((e) => console.error("[Telegram Silent Auth Error]:", e));
+        }
       })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data?.success) {
-            console.log("[Telegram Silent Auth Success]:", data.user?.name);
-          }
-        })
-        .catch((e) => {
-          console.error("[Telegram Silent Auth Error]:", e);
-        });
-    }
+      .catch((e) => console.error("[Auth Me Check Error]:", e));
   }, []);
 
   return null;
