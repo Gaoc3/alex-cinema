@@ -226,6 +226,18 @@ export default function RoomClientWrapper({
           )}
         </div>
       </div>
+      {/* Mobile Floating Chat FAB */}
+      <button 
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        className="lg:hidden fixed bottom-6 left-6 z-50 bg-[#E50914] hover:bg-[#b8070f] text-white p-3.5 rounded-full shadow-[0_4px_25px_rgba(229,9,20,0.7)] border border-white/20 flex items-center justify-center gap-2 font-black text-xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
+        title="فتح المحادثة والأعضاء"
+      >
+        <i className="fa-solid fa-comments text-lg"></i>
+        <span className="hidden sm:inline font-bold">دردشة الغرفة</span>
+        {roomHook.messages.length > 0 && (
+          <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse"></span>
+        )}
+      </button>
       </div>
     </div>
   );
