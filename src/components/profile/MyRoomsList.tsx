@@ -48,8 +48,6 @@ export default function MyRoomsList() {
     fetchRooms();
   }, []);
 
-import toast from 'react-hot-toast';
-
   const handleCopyLink = (roomId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();

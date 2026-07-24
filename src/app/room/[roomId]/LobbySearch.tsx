@@ -139,8 +139,6 @@ export default function LobbySearch({ roomId }: LobbySearchProps) {
     };
   }, [query]);
 
-import toast from 'react-hot-toast';
-
   const handleSelectVideo = async (item: SearchResult) => {
     setIsLoading(true);
     try {

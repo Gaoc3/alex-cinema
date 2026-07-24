@@ -125,8 +125,6 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
     checkFavoriteStatus();
   }, [video.nb, isLoaded, isSignedIn, user, getToken]);
 
-import toast from 'react-hot-toast';
-
   const toggleFavorite = async () => {
     if (!isLoaded || (!isSignedIn && !user)) {
       toast.error("يجب تسجيل الدخول لإضافة المفضلات ⚠️");

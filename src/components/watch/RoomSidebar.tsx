@@ -49,8 +49,6 @@ export default function RoomSidebar({
     setInputText('');
   };
 
-import toast from 'react-hot-toast';
-
   const handleTogglePrivacy = async () => {
     if (!isHost || isToggling) return;
     setIsToggling(true);

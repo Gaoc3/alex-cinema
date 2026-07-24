@@ -25,8 +25,6 @@ export default function FavoriteButton({
   const { isSignedIn, isLoaded, user } = useUnifiedAuth();
   const { getToken } = useAuth();
 
-import toast from 'react-hot-toast';
-
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
