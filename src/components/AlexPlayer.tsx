@@ -683,6 +683,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const handleTimeUpdate = () => {
     if (videoRef.current) {
       const video = videoRef.current;
+      if (video.paused !== isPaused) {
+        setIsPaused(video.paused);
+      }
       setCurrentTime(video.currentTime);
 
       if (isHost && roomHook) {
@@ -1332,9 +1335,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         )}
 
         {/* Big Pulsing Center Play Button */}
-        {isPaused && (
+        {isPaused && (videoRef.current ? videoRef.current.paused : true) && !isWaiting && (
           <button 
-            onClick={togglePlay}
+            onClick={(e) => { e.stopPropagation(); togglePlay(); }}
             className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 md:w-24 md:h-24 rounded-full bg-alex-primary/95 text-white flex items-center justify-center shadow-[0_0_30px_rgba(229,9,20,0.6)] md:shadow-[0_0_45px_rgba(229,9,20,0.6)] hover:scale-110 transition-all duration-300 z-20 cursor-pointer outline-none focus:outline-none ring-0 animate-fade-in-up"
           >
             <i className="fa-solid fa-play ml-1 md:mr-1.5 text-2xl md:text-4xl"></i>
