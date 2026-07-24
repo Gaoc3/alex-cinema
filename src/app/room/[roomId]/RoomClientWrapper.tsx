@@ -122,7 +122,7 @@ export default function RoomClientWrapper({
       )}
       
       {/* Content wrapper */}
-      <div className="relative z-10 w-full h-full pt-20 sm:pt-24 lg:pt-28">
+      <div className="relative z-10 w-full h-full pt-28 sm:pt-36 lg:pt-40 xl:pt-44">
       
       {/* Room Header Overlay */}
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-8 mb-6 flex flex-wrap items-center justify-between gap-3 sm:gap-4 bg-black/40 border border-white/10 p-4 rounded-2xl relative z-20 backdrop-blur-md">
