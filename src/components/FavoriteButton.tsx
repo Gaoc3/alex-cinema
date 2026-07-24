@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useUnifiedAuth } from "@/components/auth/UnifiedAuthProvider";
 import { useAuth } from "@clerk/nextjs";
+import toast from 'react-hot-toast';
 
 interface FavoriteButtonProps {
   mediaId: string;
@@ -24,12 +25,14 @@ export default function FavoriteButton({
   const { isSignedIn, isLoaded, user } = useUnifiedAuth();
   const { getToken } = useAuth();
 
+import toast from 'react-hot-toast';
+
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!isLoaded || (!isSignedIn && !user)) {
-      alert("يجب تسجيل الدخول لإضافة المفضلات");
+      toast.error("يجب تسجيل الدخول لإضافة المفضلات ⚠️");
       return;
     }
 
@@ -57,15 +60,20 @@ export default function FavoriteButton({
       if (!data.success) {
         // Revert on failure
         setIsFavorite(isFavorite);
-        console.error(data.error);
+        toast.error(data.error || 'حدث خطأ أثناء التعديل');
       } else {
-        // Ensure state matches server
-        setIsFavorite(data.action === 'added');
+        const added = data.action === 'added';
+        setIsFavorite(added);
+        if (added) {
+          toast.success(`تمت إضافة ${title} للمفضلة ❤️`);
+        } else {
+          toast(`تمت إزالة ${title} من المفضلة`, { icon: '🗑️' });
+        }
       }
     } catch (err) {
       console.error(err);
-      // Revert on failure
       setIsFavorite(isFavorite);
+      toast.error('حدث خطأ أثناء الاتصال بالخادم');
     }
   };
 

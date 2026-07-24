@@ -5,6 +5,7 @@ import { decryptData } from '@/utils/cryptoHelper';
 import WatchLayout from './watch/WatchLayout';
 import { useUnifiedAuth } from './auth/UnifiedAuthProvider';
 import { useAuth } from '@clerk/nextjs';
+import toast from 'react-hot-toast';
 
 interface Stream {
   name: string;
@@ -124,9 +125,11 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
     checkFavoriteStatus();
   }, [video.nb, isLoaded, isSignedIn, user, getToken]);
 
+import toast from 'react-hot-toast';
+
   const toggleFavorite = async () => {
     if (!isLoaded || (!isSignedIn && !user)) {
-      alert("يجب تسجيل الدخول لإضافة المفضلات");
+      toast.error("يجب تسجيل الدخول لإضافة المفضلات ⚠️");
       return;
     }
 
@@ -155,13 +158,20 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
       const data = await res.json();
       if (!data.success) {
         setIsFavorite(isFavorite);
-        console.error(data.error);
+        toast.error(data.error || 'حدث خطأ أثناء تعديل المفضلات');
       } else {
-        setIsFavorite(data.action === 'added');
+        const added = data.action === 'added';
+        setIsFavorite(added);
+        if (added) {
+          toast.success('تمت الإضافة للمفضلة بنجاح! ❤️');
+        } else {
+          toast('تمت الإزالة من المفضلة', { icon: '🗑️' });
+        }
       }
     } catch (err) {
       console.error(err);
       setIsFavorite(isFavorite);
+      toast.error('حدث خطأ أثناء الاتصال بالخادم');
     }
   };
 

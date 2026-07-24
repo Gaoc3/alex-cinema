@@ -68,7 +68,37 @@ export default function RootLayout({
       <body className="antialiased min-h-screen font-sans bg-black" suppressHydrationWarning>
         <UnifiedAuthProvider>
           <TelegramAutoAuth />
-          <Toaster position="top-center" toastOptions={{ style: { background: '#111', color: '#fff', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' } }} />
+          <Toaster 
+            position="top-center" 
+            reverseOrder={false}
+            toastOptions={{
+              duration: 3500,
+              style: {
+                background: '#0d1222',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.18)',
+                borderRadius: '16px',
+                padding: '12px 20px',
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(229, 9, 20, 0.35)',
+                fontSize: '14px',
+                fontWeight: '700',
+                fontFamily: 'Cairo, sans-serif',
+                direction: 'rtl'
+              },
+              success: {
+                iconTheme: {
+                  primary: '#E50914',
+                  secondary: '#ffffff',
+                },
+              },
+              error: {
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#ffffff',
+                },
+              }
+            }} 
+          />
           <AILayoutEngine />
           <SecurityWrapper>
 

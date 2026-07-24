@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { decryptData } from '@/utils/cryptoHelper';
 import { getVideoImageUrl } from '@/utils/imageHelper';
+import toast from 'react-hot-toast';
 
 interface SearchResult {
   nb: string;
@@ -138,6 +139,8 @@ export default function LobbySearch({ roomId }: LobbySearchProps) {
     };
   }, [query]);
 
+import toast from 'react-hot-toast';
+
   const handleSelectVideo = async (item: SearchResult) => {
     setIsLoading(true);
     try {
@@ -148,13 +151,14 @@ export default function LobbySearch({ roomId }: LobbySearchProps) {
         moviePoster: item.img
       });
       if (res.success) {
+        toast.success(`تم اختيار ${item.ar_title || item.en_title} للروم! 🎬`);
         router.push(`/room/${roomId}?videoId=${item.nb}`);
       } else {
-        alert(res.error || 'حدث خطأ أثناء اختيار الفيديو للروم');
+        toast.error(res.error || 'حدث خطأ أثناء اختيار الفيديو للروم');
       }
     } catch (err) {
       console.error(err);
-      alert('حدث خطأ أثناء الاتصال بالخادم');
+      toast.error('حدث خطأ أثناء الاتصال بالخادم');
     } finally {
       setIsLoading(false);
     }

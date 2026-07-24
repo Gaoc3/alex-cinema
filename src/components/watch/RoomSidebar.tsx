@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { RoomMember, ChatMessage } from '@/hooks/useWatchRoom';
+import toast from 'react-hot-toast';
 
 interface RoomSidebarProps {
   roomId: string;
@@ -48,6 +49,8 @@ export default function RoomSidebar({
     setInputText('');
   };
 
+import toast from 'react-hot-toast';
+
   const handleTogglePrivacy = async () => {
     if (!isHost || isToggling) return;
     setIsToggling(true);
@@ -56,12 +59,13 @@ export default function RoomSidebar({
       const res = await toggleRoomPrivacy(roomId, !isPrivate);
       if (res.success) {
         setIsPrivate(!isPrivate);
+        toast.success(`تم تغيير خصوصية الغرفة إلى ${!isPrivate ? 'خاصة' : 'عامة'} 🔒`);
       } else {
-        alert(res.error || 'حدث خطأ أثناء تعديل الخصوصية');
+        toast.error(res.error || 'حدث خطأ أثناء تعديل الخصوصية');
       }
     } catch (err) {
       console.error(err);
-      alert('فشل الاتصال بالخادم');
+      toast.error('فشل الاتصال بالخادم');
     } finally {
       setIsToggling(false);
     }
@@ -256,7 +260,7 @@ export default function RoomSidebar({
                     onClick={() => {
                       if (typeof window !== 'undefined') {
                         navigator.clipboard.writeText(window.location.href);
-                        alert('تم نسخ رابط الغرفة بنجاح!');
+                        toast.success('تم نسخ رابط الغرفة بنجاح! 📋');
                       }
                     }}
                     className="w-full bg-[#E50914] hover:bg-[#b8070f] text-white py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-95"

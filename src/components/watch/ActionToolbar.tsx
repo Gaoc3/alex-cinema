@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 interface ActionToolbarProps {
   isFavorite: boolean;
@@ -46,13 +47,14 @@ const WatchWithFriendsButton = ({ videoId }: { videoId: string }) => {
       const { createRoom } = await import('@/app/actions/room.actions');
       const res = await createRoom({ title: 'روم مشاهدة جماعية', movieId: videoId });
       if (res.success && res.roomId) {
+        toast.success('تم إنشاء روم المشاهدة بنجاح! 🍿');
         router.push(`/room/${res.roomId}?create=true`);
       } else {
-        alert(res.error || 'يجب تسجيل الدخول لإنشاء روم');
+        toast.error(res.error || 'يجب تسجيل الدخول لإنشاء روم');
       }
     } catch (err) {
       console.error(err);
-      alert('حدث خطأ أثناء إنشاء الروم');
+      toast.error('حدث خطأ أثناء إنشاء الروم');
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +108,7 @@ export default function ActionToolbar({
   const handleShare = () => {
     if (typeof window !== 'undefined') {
       navigator.clipboard.writeText(window.location.href);
-      alert('تم نسخ رابط الصفحة لمشاركتها!');
+      toast.success('تم نسخ رابط الصفحة لمشاركتها! 🔗');
     }
   };
 

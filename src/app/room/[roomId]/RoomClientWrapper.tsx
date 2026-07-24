@@ -94,10 +94,10 @@ export default function RoomClientWrapper({
       )}
       
       {/* Content wrapper */}
-      <div className="relative z-10 w-full h-full">
+      <div className="relative z-10 w-full h-full pt-20 sm:pt-24 lg:pt-28">
       
       {/* Room Header Overlay */}
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-8 mt-4 xl:mt-24 mb-6 flex items-center justify-between bg-black/40 border border-white/10 p-4 rounded-2xl relative z-20 backdrop-blur-md">
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-8 mb-6 flex items-center justify-between bg-black/40 border border-white/10 p-4 rounded-2xl relative z-20 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-[#e50914] flex items-center justify-center text-white shadow-[0_0_20px_rgba(229,9,20,0.5)]">
             <i className="fa-solid fa-users text-lg"></i>
@@ -110,7 +110,7 @@ export default function RoomClientWrapper({
                 onClick={() => {
                   if (typeof window !== 'undefined') {
                     navigator.clipboard.writeText(window.location.href);
-                    alert('تم نسخ رابط الغرفة بنجاح!');
+                    toast.success('تم نسخ رابط الغرفة بنجاح! 📋');
                   }
                 }}
                 className="bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 hover:text-white px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer"

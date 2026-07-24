@@ -6,6 +6,7 @@ import Image from "next/image";
 import { getImageUrl } from "@/utils/imageHelper";
 import { getUserRooms, deleteRoom } from "@/app/actions/room.actions";
 import { useClerk } from "@clerk/nextjs";
+import toast from 'react-hot-toast';
 
 export default function MyRoomsList() {
   let closeUserProfile: (() => void) | undefined;
@@ -47,12 +48,14 @@ export default function MyRoomsList() {
     fetchRooms();
   }, []);
 
+import toast from 'react-hot-toast';
+
   const handleCopyLink = (roomId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const url = `${window.location.origin}/room/${roomId}`;
     navigator.clipboard.writeText(url);
-    alert('تم نسخ رابط الغرفة بنجاح!');
+    toast.success('تم نسخ رابط الغرفة بنجاح! 📋');
   };
 
   const handleDelete = async (roomId: string, e: React.MouseEvent) => {
@@ -68,12 +71,13 @@ export default function MyRoomsList() {
       const res = await deleteRoom(roomId);
       if (res.success) {
         setRooms((prev) => prev.filter((r) => r.id !== roomId));
+        toast.success('تم حذف الغرفة نهائياً 🗑️');
       } else {
-        alert(res.error || 'حدث خطأ أثناء حذف الغرفة');
+        toast.error(res.error || 'حدث خطأ أثناء حذف الغرفة');
       }
     } catch (err) {
       console.error("Delete room error:", err);
-      alert('حدث خطأ أثناء حذف الغرفة');
+      toast.error('حدث خطأ أثناء حذف الغرفة');
     } finally {
       setDeletingId(null);
     }
