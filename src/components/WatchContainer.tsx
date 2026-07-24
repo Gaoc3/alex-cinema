@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useTransition } from 'react';
 import { decryptData } from '@/utils/cryptoHelper';
 import WatchLayout from './watch/WatchLayout';
+import { useUnifiedAuth } from './auth/UnifiedAuthProvider';
 import { useAuth } from '@clerk/nextjs';
 
 interface Stream {
@@ -97,20 +98,20 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
     }
   };
 
-  // Initialize favorite status from localStorage
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  // Initialize favorite status using unified auth
+  const { isSignedIn, isLoaded, user } = useUnifiedAuth();
+  const { getToken } = useAuth();
   const [isPendingFav, startTransitionFav] = useTransition();
 
   // Fetch initial favorite status
   useEffect(() => {
     const checkFavoriteStatus = async () => {
-      if (!isLoaded || !isSignedIn) return;
+      if (!isLoaded || (!isSignedIn && !user)) return;
       try {
-        const token = await getToken();
-        if (!token) return;
-        const res = await fetch('/api/favorites', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const token = await getToken().catch(() => null);
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch('/api/favorites', { headers });
         const data = await res.json();
         if (data.success && data.favorites) {
           const isFav = data.favorites.some((f: any) => f.mediaId === video.nb);
@@ -121,10 +122,10 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
       }
     };
     checkFavoriteStatus();
-  }, [video.nb, isLoaded, isSignedIn, getToken]);
+  }, [video.nb, isLoaded, isSignedIn, user, getToken]);
 
   const toggleFavorite = async () => {
-    if (!isLoaded || !isSignedIn) {
+    if (!isLoaded || (!isSignedIn && !user)) {
       alert("يجب تسجيل الدخول لإضافة المفضلات");
       return;
     }
@@ -134,13 +135,15 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
     });
 
     try {
-      const token = await getToken();
+      const token = await getToken().catch(() => null);
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch('/api/favorites', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers,
         body: JSON.stringify({ 
           mediaId: video.nb, 
           mediaType: isSeries ? 'tv' : 'movie',

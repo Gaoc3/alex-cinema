@@ -46,6 +46,31 @@ const YEARS = [
   { value: '1900,1999', label: 'قبل 2000' }
 ];
 
+const ARABIC_EN_MAP: Record<string, string> = {
+  'باتمان': 'batman',
+  'سبايدرمان': 'spider-man',
+  'سوبرمان': 'superman',
+  'انتقام': 'avengers',
+  'المنتقمون': 'avengers',
+  'هاري بوتر': 'harry potter',
+  'جوكر': 'joker',
+  'تيتانيك': 'titanic',
+  'ماتريكس': 'matrix',
+  'ترانسفورمرز': 'transformers',
+  'توب غان': 'top gun',
+  'فاست': 'fast',
+  'افاتار': 'avatar',
+  'أفاتار': 'avatar'
+};
+
+function getEnglishSearchQuery(arQuery: string): string {
+  const q = arQuery.trim().toLowerCase();
+  for (const [ar, en] of Object.entries(ARABIC_EN_MAP)) {
+    if (q.includes(ar)) return en;
+  }
+  return q;
+}
+
 function SearchPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -91,7 +116,13 @@ function SearchPageContent() {
 
     async function performSearch() {
       setIsLoading(true);
-      const queryEncoded = encodeURIComponent(query);
+
+      const queriesToTry = [query];
+      const mappedEn = getEnglishSearchQuery(query);
+      if (mappedEn !== query.trim().toLowerCase()) {
+        queriesToTry.push(mappedEn);
+      }
+
       const categoryParam = categoryId ? `&category_id=${categoryId}` : '';
       const starParam = starRating ? `&star=${starRating}` : '';
 
@@ -99,40 +130,53 @@ function SearchPageContent() {
         const fetchMovies = typeFilter === 'all' || typeFilter === 'movies';
         const fetchSeries = typeFilter === 'all' || typeFilter === 'series';
 
-        let moviesPromise = Promise.resolve<VideoItem[]>([]);
-        let seriesPromise = Promise.resolve<VideoItem[]>([]);
+        let allFetchedMovies: VideoItem[] = [];
+        let allFetchedSeries: VideoItem[] = [];
 
-        if (fetchMovies) {
-          moviesPromise = fetch(
-            `/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=movies${categoryParam}${starParam}`,
-            { signal }
-          )
-            .then((res) => (res.ok ? res.json() : null))
-            .then((encrypted) => {
-              if (!encrypted || !encrypted.payload) return [];
-              const data = decryptData(encrypted.payload);
-              return Array.isArray(data) ? data : [];
-            });
+        for (const qTerm of queriesToTry) {
+          const queryEncoded = encodeURIComponent(qTerm);
+
+          let moviesPromise = Promise.resolve<VideoItem[]>([]);
+          let seriesPromise = Promise.resolve<VideoItem[]>([]);
+
+          if (fetchMovies) {
+            moviesPromise = fetch(
+              `/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=movies${categoryParam}${starParam}`,
+              { signal }
+            )
+              .then((res) => (res.ok ? res.json() : null))
+              .then((encrypted) => {
+                if (!encrypted || !encrypted.payload) return [];
+                const data = decryptData(encrypted.payload);
+                return Array.isArray(data) ? data : [];
+              });
+          }
+
+          if (fetchSeries) {
+            seriesPromise = fetch(
+              `/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=series${categoryParam}${starParam}`,
+              { signal }
+            )
+              .then((res) => (res.ok ? res.json() : null))
+              .then((encrypted) => {
+                if (!encrypted || !encrypted.payload) return [];
+                const data = decryptData(encrypted.payload);
+                return Array.isArray(data) ? data : [];
+              });
+          }
+
+          const [mList, sList] = await Promise.all([moviesPromise, seriesPromise]);
+          allFetchedMovies.push(...mList);
+          allFetchedSeries.push(...sList);
         }
 
-        if (fetchSeries) {
-          seriesPromise = fetch(
-            `/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=series${categoryParam}${starParam}`,
-            { signal }
-          )
-            .then((res) => (res.ok ? res.json() : null))
-            .then((encrypted) => {
-              if (!encrypted || !encrypted.payload) return [];
-              const data = decryptData(encrypted.payload);
-              return Array.isArray(data) ? data : [];
-            });
-        }
-
-        const [moviesData, seriesData] = await Promise.all([moviesPromise, seriesPromise]);
+        // Deduplicate items by nb ID
+        const uniqueMovies = Array.from(new Map(allFetchedMovies.map(item => [item.nb, item])).values());
+        const uniqueSeries = Array.from(new Map(allFetchedSeries.map(item => [item.nb, item])).values());
 
         if (!signal.aborted) {
-          setMovies(moviesData);
-          setSeries(seriesData);
+          setMovies(uniqueMovies);
+          setSeries(uniqueSeries);
         }
       } catch (e: any) {
         if (e.name === 'AbortError') return;
