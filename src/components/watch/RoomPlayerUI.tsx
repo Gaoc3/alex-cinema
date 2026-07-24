@@ -158,9 +158,8 @@ export default function RoomPlayerUI({ video, seasons, episodes, roomHook }: Roo
 
       {/* Series episodes navigator directly attached below the video player in the same container */}
       {isSeries && episodes.length > 0 && (
-        <div className="bg-white/5 border-t border-white/10 pt-6 pb-4">
-          <div className="px-4 md:px-8">
-            <SeriesNavigator 
+        <div className="pt-6 pb-4 px-2 sm:px-6">
+          <SeriesNavigator 
               seasons={seasons}
               episodes={episodes}
               currentSeason={currentSeason}
@@ -170,8 +169,7 @@ export default function RoomPlayerUI({ video, seasons, episodes, roomHook }: Roo
               seasonEpisodes={seasonEpisodes}
               videoTitle={video.ar_title}
               videoImg={video.img}
-            />
-          </div>
+          />
         </div>
       )}
     </div>
