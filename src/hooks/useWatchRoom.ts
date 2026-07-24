@@ -57,6 +57,7 @@ export function useWatchRoom(roomId: string, initIsHost: boolean, username: stri
 
     newSocket.on('connect', () => {
       console.log('Connected to sync server');
+      setMembers([{ id: newSocket.id || 'self', name: username || 'مشاهد', isHost: initIsHost }]);
       newSocket.emit('join_room', {
         roomId,
         isHost: initIsHost,
