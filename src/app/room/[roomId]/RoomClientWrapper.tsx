@@ -8,6 +8,8 @@ import LobbySearch from './LobbySearch';
 import RoomSidebar from '@/components/watch/RoomSidebar';
 import { getVideoImageUrl } from '@/utils/imageHelper';
 import { useUser } from '@clerk/nextjs';
+import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
+import toast from 'react-hot-toast';
 
 interface RoomClientWrapperProps {
   roomId: string;
@@ -23,19 +25,26 @@ export default function RoomClientWrapper({
   roomId, 
   roomData, 
   currentUserId, 
-  isHostUser, 
+  isHostUser: isHostUserProp, 
   video, 
   seasons, 
   episodes 
 }: RoomClientWrapperProps) {
   const { user, isLoaded } = useUser();
+  const { user: unifiedUser } = useUnifiedAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
+
+  // Dynamic host evaluation using server prop + client unified auth session
+  const isHostUser = Boolean(
+    isHostUserProp || 
+    (unifiedUser && (unifiedUser.id === roomData.hostId || unifiedUser.clerkId === roomData.host?.clerkId))
+  );
 
   // Auto-resolve username from Clerk user session automatically without any modal prompt!
   const username = user 
     ? (user.fullName || user.firstName || user.username || 'مشاهد')
-    : (isHostUser && roomData.host?.name ? roomData.host.name : `ضيف ${roomId.slice(0, 4)}`);
+    : (unifiedUser?.name || (isHostUser && roomData.host?.name ? roomData.host.name : `ضيف ${roomId.slice(0, 4)}`));
 
   // Auto-open sidebar on desktop screens
   useEffect(() => {

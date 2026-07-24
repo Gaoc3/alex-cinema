@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { RoomMember, ChatMessage } from '@/hooks/useWatchRoom';
+import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
 import toast from 'react-hot-toast';
 
 interface RoomSidebarProps {
@@ -21,17 +22,21 @@ export default function RoomSidebar({
   members, 
   messages,
   sendChatMessage,
-  isHost, 
+  isHost: isHostProp, 
   kickUser, 
   myId, 
   isOpen, 
   setIsOpen 
 }: RoomSidebarProps) {
+  const { user: unifiedUser } = useUnifiedAuth();
   const [activeTab, setActiveTab] = useState<'chat' | 'members' | 'settings'>('chat');
   const [inputText, setInputText] = useState('');
   const [isPrivate, setIsPrivate] = useState(initialPrivacy);
   const [isToggling, setIsToggling] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic host evaluation
+  const isHost = isHostProp || Boolean(unifiedUser && members.some(m => m.isHost && (m.id === unifiedUser.id || m.name === unifiedUser.name)));
 
   const hosts = members.filter(m => m.isHost);
   const viewers = members.filter(m => !m.isHost);
