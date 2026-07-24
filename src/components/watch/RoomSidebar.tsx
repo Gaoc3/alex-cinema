@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { RoomMember, ChatMessage } from '@/hooks/useWatchRoom';
 import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
 import toast from 'react-hot-toast';
+import ConfirmModal from '@/components/ConfirmModal';
 
 interface RoomSidebarProps {
   roomId: string;
@@ -33,6 +34,9 @@ export default function RoomSidebar({
   const [inputText, setInputText] = useState('');
   const [isPrivate, setIsPrivate] = useState(initialPrivacy);
   const [isToggling, setIsToggling] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [kickMemberTarget, setKickMemberTarget] = useState<RoomMember | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Dynamic host evaluation
@@ -89,11 +93,9 @@ export default function RoomSidebar({
     }
   };
 
-  const handleDeleteRoom = async () => {
+  const handleConfirmDelete = async () => {
+    setShowDeleteModal(false);
     if (!isHost || isDeleting) return;
-    if (!window.confirm('هل أنت متأكد من إغلاق وحذف هذه الغرفة نهائياً؟ سيتم طرد جميع الحضور.')) {
-      return;
-    }
     setIsDeleting(true);
     try {
       const { deleteRoom } = await import('@/app/actions/room.actions');
@@ -112,8 +114,32 @@ export default function RoomSidebar({
     }
   };
 
+  const handleConfirmKick = () => {
+    if (kickMemberTarget) {
+      kickUser(kickMemberTarget.id);
+      setKickMemberTarget(null);
+    }
+  };
+
   return (
     <>
+      <ConfirmModal 
+        isOpen={showDeleteModal} 
+        onCancel={() => setShowDeleteModal(false)} 
+        onConfirm={handleConfirmDelete}
+        title="حذف وإغلاق الغرفة 🗑️"
+        message="هل أنت متأكد من إغلاق وحذف هذه الغرفة نهائياً؟ سيتم طرد جميع الحضور."
+        confirmText="حذف الآن"
+      />
+      <ConfirmModal 
+        isOpen={!!kickMemberTarget} 
+        onCancel={() => setKickMemberTarget(null)} 
+        onConfirm={handleConfirmKick}
+        title="طرد عضو من الغرفة 🚫"
+        message={`هل أنت متأكد من طرد ${kickMemberTarget?.name} من الغرفة؟`}
+        confirmText="طرد العضو"
+      />
+
       {/* Mobile Drawer Overlay */}
       {isOpen && (
         <div 
@@ -274,8 +300,8 @@ export default function RoomSidebar({
                         </div>
                         {isHost && (
                           <button 
-                            onClick={() => { if(confirm(`طرد ${member.name}؟`)) kickUser(member.id); }}
-                            className="text-red-400 hover:text-red-300 text-xs font-bold"
+                            onClick={() => setKickMemberTarget(member)}
+                            className="text-red-400 hover:text-red-300 text-xs font-bold px-2 py-1 bg-red-500/10 rounded-lg border border-red-500/20 hover:bg-red-500/20 transition-all cursor-pointer"
                           >
                             طرد
                           </button>
@@ -328,7 +354,7 @@ export default function RoomSidebar({
                 {isHost && (
                   <div className="pt-3 border-t border-white/10">
                     <button
-                      onClick={handleDeleteRoom}
+                      onClick={() => setShowDeleteModal(true)}
                       disabled={isDeleting}
                       className="w-full bg-red-600/20 hover:bg-red-600 border border-red-500/40 hover:border-red-500 text-red-300 hover:text-white py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-95 disabled:opacity-50"
                     >

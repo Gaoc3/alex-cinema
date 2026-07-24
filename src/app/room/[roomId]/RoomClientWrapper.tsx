@@ -11,6 +11,8 @@ import { useUser } from '@clerk/nextjs';
 import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
 import toast from 'react-hot-toast';
 
+import ConfirmModal from '@/components/ConfirmModal';
+
 interface RoomClientWrapperProps {
   roomId: string;
   roomData: any;
@@ -33,7 +35,24 @@ export default function RoomClientWrapper({
   const { user, isLoaded } = useUser();
   const { user: unifiedUser } = useUnifiedAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const router = useRouter();
+
+  const handleConfirmDelete = async () => {
+    setShowDeleteConfirm(false);
+    try {
+      const { deleteRoom } = await import('@/app/actions/room.actions');
+      const res = await deleteRoom(roomId);
+      if (res.success) {
+        toast.success('تم حذف الغرفة نهائياً 🗑️');
+        window.location.href = '/rooms';
+      } else {
+        toast.error(res.error || 'حدث خطأ أثناء حذف الغرفة');
+      }
+    } catch (err) {
+      toast.error('فشل حذف الغرفة');
+    }
+  };
 
   // Dynamic host evaluation using server prop + client unified auth session
   const isHostUser = Boolean(
@@ -158,18 +177,7 @@ export default function RoomClientWrapper({
                 <i className="fa-solid fa-crown text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.8)]"></i> أنت المضيف
               </span>
               <button
-                onClick={async () => {
-                  if (confirm('هل أنت متأكد من إغلاق وحذف هذه الغرفة نهائياً؟')) {
-                    const { deleteRoom } = await import('@/app/actions/room.actions');
-                    const res = await deleteRoom(roomId);
-                    if (res.success) {
-                      toast.success('تم حذف الغرفة نهائياً 🗑️');
-                      window.location.href = '/rooms';
-                    } else {
-                      toast.error(res.error || 'حدث خطأ أثناء حذف الغرفة');
-                    }
-                  }
-                }}
+                onClick={() => setShowDeleteConfirm(true)}
                 className="bg-red-600/20 hover:bg-red-600 border border-red-500/40 text-red-300 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
                 title="حذف وإغلاق الغرفة"
               >
@@ -268,6 +276,18 @@ export default function RoomClientWrapper({
           <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse"></span>
         )}
       </button>
+
+      {/* Delete Room Custom Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="إغلاق وحذف الغرفة نهائياً 🗑️"
+        message="هل أنت متأكد من إغلاق وحذف هذه الغرفة نهائياً؟ سيتم طرد جميع الحضور المباشرين فوراً."
+        confirmText="حذف الغرفة الآن"
+        cancelText="التراجع"
+        isDangerous={true}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
       </div>
     </div>
   );

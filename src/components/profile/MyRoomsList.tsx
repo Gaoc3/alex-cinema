@@ -8,6 +8,8 @@ import { getUserRooms, deleteRoom } from "@/app/actions/room.actions";
 import { useClerk } from "@clerk/nextjs";
 import toast from 'react-hot-toast';
 
+import ConfirmModal from "@/components/ConfirmModal";
+
 export default function MyRoomsList() {
   let closeUserProfile: (() => void) | undefined;
   try {
@@ -20,6 +22,7 @@ export default function MyRoomsList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const handleBrowse = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -56,13 +59,10 @@ export default function MyRoomsList() {
     toast.success('تم نسخ رابط الغرفة بنجاح! 📋');
   };
 
-  const handleDelete = async (roomId: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!window.confirm('هل أنت متاكد من إغلاق وحذف هذه الغرفة نهائياً؟')) {
-      return;
-    }
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    const roomId = deleteTargetId;
+    setDeleteTargetId(null);
 
     setDeletingId(roomId);
     try {
@@ -163,11 +163,15 @@ export default function MyRoomsList() {
                 <i className="fa-solid fa-link text-red-500"></i> نسخ الرابط
              </button>
              
-             <button
-                onClick={(e) => handleDelete(room.id, e)}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setDeleteTargetId(room.id);
+                }}
                 disabled={deletingId === room.id}
                 className="text-xs text-red-500 hover:text-red-400 font-extrabold flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
-             >
+              >
                 {deletingId === room.id ? (
                   <span className="animate-pulse">جاري الحذف...</span>
                 ) : (
@@ -175,10 +179,21 @@ export default function MyRoomsList() {
                     <i className="fa-solid fa-trash-can"></i> حذف الغرفة 🗑️
                   </>
                 )}
-             </button>
+              </button>
           </div>
         </div>
       ))}
+
+      <ConfirmModal
+        isOpen={Boolean(deleteTargetId)}
+        title="حذف الغرفة نهائياً 🗑️"
+        message="هل أنت متأكد من إغلاق وحذف هذه الغرفة من قائمة غرفك؟"
+        confirmText="حذف الآن"
+        cancelText="إلغاء"
+        isDangerous={true}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </div>
   );
 }
