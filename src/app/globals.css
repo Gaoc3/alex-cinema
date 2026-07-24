@@ -67,6 +67,19 @@ body {
   scroll-behavior: smooth;
 }
 
+/* Telegram WebApp Native Header Safe Area Insets */
+.is-telegram-webapp nav#navbar {
+  padding-top: max(env(safe-area-inset-top, 48px), 44px) !important;
+}
+
+.is-telegram-webapp .sidebar {
+  padding-top: max(env(safe-area-inset-top, 48px), 44px) !important;
+}
+
+.is-telegram-webapp main {
+  padding-top: max(env(safe-area-inset-top, 48px), 44px) !important;
+}
+
 html {
   overflow-x: hidden;
   width: 100%;

@@ -1,18 +1,30 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 export default function TelegramAutoAuth() {
-  const attemptedRef = useRef(false);
-
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const tg = (window as any).Telegram?.WebApp;
+    const isTgApp = Boolean(tg && (tg.initData || tg.initDataUnsafe?.user));
+
+    if (isTgApp || (typeof window !== "undefined" && window.location.search.includes("tgWebApp"))) {
+      document.body.classList.add("is-telegram-webapp");
+      document.documentElement.classList.add("is-telegram-webapp");
+    }
+
     if (tg) {
       try {
         tg.ready();
         tg.expand();
+
+        if (typeof tg.setHeaderColor === "function") {
+          tg.setHeaderColor("#050505");
+        }
+        if (typeof tg.setBackgroundColor === "function") {
+          tg.setBackgroundColor("#050505");
+        }
         if (typeof tg.requestFullscreen === "function") {
           tg.requestFullscreen();
         }
@@ -20,6 +32,7 @@ export default function TelegramAutoAuth() {
           tg.disableVerticalSwipes();
         }
         tg.isVerticalSwipesEnabled = false;
+
         if (typeof tg.enableClosingConfirmation === "function") {
           tg.enableClosingConfirmation();
         }
@@ -27,6 +40,22 @@ export default function TelegramAutoAuth() {
         console.error("[Telegram WebApp Init Error]:", e);
       }
     }
+
+    // Block external OAuth / sign-in links inside Telegram WebApp to prevent "Failed to load Outh" error
+    const handleGlobalClick = (e: MouseEvent) => {
+      if (!isTgApp) return;
+      const target = (e.target as HTMLElement)?.closest("a");
+      if (target) {
+        const href = target.getAttribute("href") || "";
+        if (href.includes("/sign-in") || href.includes("/sign-up") || href.includes("clerk.") || href.includes("accounts.")) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log("[Telegram WebApp] Blocked OAuth navigation inside webview to prevent 'Failed to load Outh' error.");
+        }
+      }
+    };
+
+    window.addEventListener("click", handleGlobalClick, true);
 
     let initData = tg?.initData || "";
     let unsafeUser = tg?.initDataUnsafe?.user || null;
@@ -36,7 +65,11 @@ export default function TelegramAutoAuth() {
       initData = hashParams.get("tgWebAppData") || "";
     }
 
-    if (!initData && !unsafeUser) return;
+    if (!initData && !unsafeUser) {
+      return () => {
+        window.removeEventListener("click", handleGlobalClick, true);
+      };
+    }
 
     const currentTgUserId = unsafeUser?.id ? String(unsafeUser.id) : null;
 
@@ -72,6 +105,10 @@ export default function TelegramAutoAuth() {
         }
       })
       .catch((e) => console.error("[Auth Me Check Error]:", e));
+
+    return () => {
+      window.removeEventListener("click", handleGlobalClick, true);
+    };
   }, []);
 
   return null;
