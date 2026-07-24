@@ -57,15 +57,37 @@ export default function RoomSidebar({
       const res = await toggleRoomPrivacy(roomId, !isPrivate);
       if (res.success) {
         setIsPrivate(!isPrivate);
-        toast.success(`تم تغيير خصوصية الغرفة إلى ${!isPrivate ? 'خاصة' : 'عامة'} 🔒`);
+        toast.success(!isPrivate ? 'تم تحويل الغرفة إلى خاصة 🔒' : 'تم تحويل الغرفة إلى عامة 🌐');
       } else {
-        toast.error(res.error || 'حدث خطأ أثناء تعديل الخصوصية');
+        toast.error(res.error || 'فشل تغيير الخصوصية');
+      }
+    } catch (err) {
+      toast.error('حدث خطأ أثناء تحديث الإعدادات');
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
+  const handleDeleteRoom = async () => {
+    if (!isHost || isDeleting) return;
+    if (!window.confirm('هل أنت متأكد من إغلاق وحذف هذه الغرفة نهائياً؟ سيتم طرد جميع الحضور.')) {
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      const { deleteRoom } = await import('@/app/actions/room.actions');
+      const res = await deleteRoom(roomId);
+      if (res.success) {
+        toast.success('تم حذف وإغلاق الغرفة بنجاح 🗑️');
+        window.location.href = '/rooms';
+      } else {
+        toast.error(res.error || 'حدث خطأ أثناء حذف الغرفة');
       }
     } catch (err) {
       console.error(err);
-      toast.error('فشل الاتصال بالخادم');
+      toast.error('حدث خطأ أثناء حذف الغرفة');
     } finally {
-      setIsToggling(false);
+      setIsDeleting(false);
     }
   };
 
@@ -281,6 +303,19 @@ export default function RoomSidebar({
                     <div className={`w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all ${isPrivate ? 'left-1' : 'right-1'}`}></div>
                   </button>
                 </div>
+
+                {isHost && (
+                  <div className="pt-3 border-t border-white/10">
+                    <button
+                      onClick={handleDeleteRoom}
+                      disabled={isDeleting}
+                      className="w-full bg-red-600/20 hover:bg-red-600 border border-red-500/40 hover:border-red-500 text-red-300 hover:text-white py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-95 disabled:opacity-50"
+                    >
+                      <i className="fa-solid fa-trash-can text-xs"></i>
+                      <span>{isDeleting ? 'جاري حذف وإغلاق الغرفة...' : 'حذف وإغلاق الغرفة نهائياً'}</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

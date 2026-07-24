@@ -142,11 +142,32 @@ export default function RoomClientWrapper({
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {isHostUser ? (
-            <span className="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-2">
-              <i className="fa-solid fa-crown text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.8)]"></i> أنت المضيف
-            </span>
+            <>
+              <span className="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-2">
+                <i className="fa-solid fa-crown text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.8)]"></i> أنت المضيف
+              </span>
+              <button
+                onClick={async () => {
+                  if (confirm('هل أنت متأكد من إغلاق وحذف هذه الغرفة نهائياً؟')) {
+                    const { deleteRoom } = await import('@/app/actions/room.actions');
+                    const res = await deleteRoom(roomId);
+                    if (res.success) {
+                      toast.success('تم حذف الغرفة نهائياً 🗑️');
+                      window.location.href = '/rooms';
+                    } else {
+                      toast.error(res.error || 'حدث خطأ أثناء حذف الغرفة');
+                    }
+                  }
+                }}
+                className="bg-red-600/20 hover:bg-red-600 border border-red-500/40 text-red-300 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                title="حذف وإغلاق الغرفة"
+              >
+                <i className="fa-solid fa-trash-can text-[10px]"></i>
+                <span className="hidden sm:inline">حذف الغرفة</span>
+              </button>
+            </>
           ) : (
             <span className="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-2">
               <i className="fa-solid fa-user"></i> مشاهد
