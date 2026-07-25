@@ -69,15 +69,15 @@ body {
 
 /* Telegram WebApp Native Header Safe Area Insets */
 .is-telegram-webapp nav#navbar {
-  padding-top: max(env(safe-area-inset-top, 48px), 44px) !important;
+  padding-top: max(env(safe-area-inset-top, 72px), 72px) !important;
 }
 
 .is-telegram-webapp .sidebar {
-  padding-top: max(env(safe-area-inset-top, 48px), 44px) !important;
+  padding-top: max(env(safe-area-inset-top, 72px), 72px) !important;
 }
 
 .is-telegram-webapp main {
-  padding-top: max(env(safe-area-inset-top, 48px), 44px) !important;
+  padding-top: max(env(safe-area-inset-top, 72px), 72px) !important;
 }
 
 html {
