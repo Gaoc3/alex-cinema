@@ -67,17 +67,19 @@ body {
   scroll-behavior: smooth;
 }
 
-/* Telegram WebApp Native Header Safe Area Insets */
-.is-telegram-webapp nav#navbar {
-  padding-top: max(env(safe-area-inset-top, 72px), 72px) !important;
-}
+/* Telegram WebApp Native Header Safe Area Insets (MOBILE ONLY < 640px) */
+@media (max-width: 639px) {
+  .is-telegram-webapp nav#navbar {
+    padding-top: max(env(safe-area-inset-top, 48px), 44px) !important;
+  }
 
-.is-telegram-webapp .sidebar {
-  padding-top: max(env(safe-area-inset-top, 72px), 72px) !important;
-}
+  .is-telegram-webapp .sidebar {
+    padding-top: max(env(safe-area-inset-top, 48px), 44px) !important;
+  }
 
-.is-telegram-webapp main {
-  padding-top: max(env(safe-area-inset-top, 72px), 72px) !important;
+  .is-telegram-webapp main {
+    padding-top: max(env(safe-area-inset-top, 100px), 96px) !important;
+  }
 }
 
 html {
