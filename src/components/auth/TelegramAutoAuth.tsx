@@ -7,11 +7,19 @@ export default function TelegramAutoAuth() {
     if (typeof window === "undefined") return;
 
     const tg = (window as any).Telegram?.WebApp;
-    const isTgApp = Boolean(tg && (tg.initData || tg.initDataUnsafe?.user));
+    const isStoredTg = typeof window !== "undefined" && (
+      sessionStorage.getItem("isTgWebApp") === "true" ||
+      window.location.search.includes("tgWebApp") ||
+      Boolean(tg)
+    );
+    const isTgApp = Boolean(tg && (tg.initData || tg.initDataUnsafe?.user)) || isStoredTg;
 
-    if (isTgApp || (typeof window !== "undefined" && window.location.search.includes("tgWebApp"))) {
+    if (isStoredTg) {
       document.body.classList.add("is-telegram-webapp");
       document.documentElement.classList.add("is-telegram-webapp");
+      try {
+        sessionStorage.setItem("isTgWebApp", "true");
+      } catch (e) {}
     }
 
     if (tg) {

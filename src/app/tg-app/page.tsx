@@ -6,11 +6,20 @@ export default function TgAppPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    // Set persistent session flag for Telegram WebApp safe area styling
+    try {
+      sessionStorage.setItem("isTgWebApp", "true");
+      document.body.classList.add("is-telegram-webapp");
+      document.documentElement.classList.add("is-telegram-webapp");
+    } catch (e) {}
+
     const tg = (window as any).Telegram?.WebApp;
     if (tg) {
       try {
         tg.ready();
         tg.expand();
+        tg.setHeaderColor?.("#050505");
+        tg.setBackgroundColor?.("#050505");
       } catch (e) {}
     }
 
@@ -38,11 +47,11 @@ export default function TgAppPage() {
       .then((res) => res.json())
       .then((data) => {
         console.log("[TgApp Direct Auth Success]:", data);
-        window.location.replace("/home");
+        window.location.replace("/home?tgWebApp=true");
       })
       .catch((err) => {
         console.error("[TgApp Direct Auth Error]:", err);
-        window.location.replace("/home");
+        window.location.replace("/home?tgWebApp=true");
       });
   }, []);
 
