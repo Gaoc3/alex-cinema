@@ -406,9 +406,9 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
               />
             )}
 
-            <div className="mt-4 flex min-w-0 flex-col items-stretch gap-3 rounded-2xl border border-white/12 bg-white/[0.045] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] min-[380px]:flex-row min-[380px]:items-center min-[380px]:justify-between">
-              <div className="min-w-0 text-center min-[380px]:text-right">
-                <p className="text-sm font-black text-slate-100">
+            <div className="mt-4 flex min-w-0 flex-col items-stretch gap-3 rounded-2xl border border-white/12 bg-white/[0.045] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] min-[440px]:flex-row min-[440px]:items-center min-[440px]:justify-between">
+              <div className="min-w-0 text-center min-[440px]:text-right">
+                <p className="text-sm font-black text-slate-100 min-[440px]:whitespace-nowrap">
                   {mode === "sign-in" ? "ليس لديك حساب بعد؟" : "لديك حساب بالفعل؟"}
                 </p>
                 <p className="mt-1 text-[0.68rem] font-semibold leading-5 text-slate-400">
@@ -417,7 +417,7 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
               </div>
               <Link
                 href={mode === "sign-in" ? "/sign-up" : "/sign-in"}
-                className="inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/12 px-4 py-2 text-sm font-black text-red-200 shadow-[0_8px_22px_rgba(229,9,20,0.12)] transition hover:border-red-300/50 hover:bg-red-500/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/70 min-[380px]:w-auto"
+                className="inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/12 px-4 py-2 text-sm font-black text-red-200 shadow-[0_8px_22px_rgba(229,9,20,0.12)] transition hover:border-red-300/50 hover:bg-red-500/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/70 min-[440px]:w-auto"
               >
                 <i className={`fa-solid ${mode === "sign-in" ? "fa-user-plus" : "fa-arrow-right-to-bracket"} text-xs`} aria-hidden="true" />
                 <span>{mode === "sign-in" ? "إنشاء حساب جديد" : "تسجيل الدخول"}</span>
