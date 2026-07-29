@@ -283,7 +283,7 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
                 {isTelegramContext
                   ? "مزامنة حساب تليجرام"
                   : mode === "sign-in"
-                    ? "تسجيل الدخول"
+                    ? "حساب أليكس سينما"
                     : "إنشاء حساب جديد"}
               </p>
             </div>
