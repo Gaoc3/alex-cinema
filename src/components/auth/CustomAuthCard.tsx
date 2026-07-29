@@ -1,6 +1,7 @@
 "use client";
 
 import { SignIn, SignUp } from "@clerk/nextjs";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface CustomAuthCardProps {
@@ -56,23 +57,32 @@ const clerkAppearance = {
     spacing: "1rem",
   },
   elements: {
-    rootBox: { width: "100%" },
-    cardBox: { width: "100%", boxShadow: "none" },
+    rootBox: { width: "100%", minWidth: 0, maxWidth: "100%", overflow: "visible" },
+    cardBox: { width: "100%", minWidth: 0, maxWidth: "100%", overflow: "visible", boxShadow: "none" },
     card: {
       width: "100%",
+      minWidth: 0,
+      maxWidth: "100%",
       padding: 0,
       gap: "0.75rem",
       border: 0,
       background: "transparent",
+      overflow: "visible",
+      boxSizing: "border-box" as const,
       boxShadow: "none",
     },
     header: { marginBottom: "0.25rem", gap: "0.25rem", textAlign: "right" as const },
     headerTitle: "text-xl font-black tracking-tight text-white sm:text-2xl",
     headerSubtitle: { display: "none" as const },
-    main: { gap: "0.875rem" },
-    socialButtonsRoot: { gap: "0.5rem" },
+    main: { width: "100%", minWidth: 0, maxWidth: "100%", gap: "0.875rem", overflow: "visible" },
+    socialButtonsRoot: { width: "100%", minWidth: 0, maxWidth: "100%", gap: "0.5rem", padding: "0 1px" },
     socialButtonsBlockButton: {
+      width: "100%",
+      minWidth: 0,
+      maxWidth: "100%",
       minHeight: "3rem",
+      margin: 0,
+      boxSizing: "border-box" as const,
       border: "1px solid rgba(255, 255, 255, 0.28)",
       borderRadius: "1rem",
       background: "linear-gradient(135deg, rgba(51, 65, 85, 0.92), rgba(30, 41, 59, 0.96))",
@@ -84,12 +94,16 @@ const clerkAppearance = {
     dividerRow: { margin: "0.75rem 0" },
     dividerLine: { background: "rgba(255, 255, 255, 0.14)" },
     dividerText: { padding: "0 0.75rem", color: "#cbd5e1", fontSize: "0.75rem", fontWeight: 700 },
-    form: { gap: "0.75rem" },
+    form: { width: "100%", minWidth: 0, maxWidth: "100%", gap: "0.75rem", padding: "0 1px" },
     formFieldRow: { gap: "0.5rem" },
     formFieldLabel: "mb-1.5 text-sm font-extrabold text-slate-200",
     formFieldInput: {
+      width: "100%",
+      minWidth: 0,
+      maxWidth: "100%",
       minHeight: "3rem",
       padding: "0 1rem",
+      boxSizing: "border-box" as const,
       direction: "ltr" as const,
       textAlign: "left" as const,
       border: "1px solid rgba(148, 163, 184, 0.28)",
@@ -102,7 +116,7 @@ const clerkAppearance = {
     formFieldAction: "font-bold text-red-400 hover:text-red-300",
     formFieldErrorText: "mt-1 text-xs font-bold text-red-300",
     formButtonPrimary:
-      "min-h-12 rounded-2xl border border-red-400/25 bg-gradient-to-l from-red-700 via-[#e50914] to-red-600 text-sm font-black text-white shadow-[0_12px_30px_rgba(229,9,20,0.3)] transition hover:brightness-110 hover:shadow-[0_16px_38px_rgba(229,9,20,0.42)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 active:scale-[0.99]",
+      "min-h-12 w-full max-w-full rounded-2xl border border-red-400/25 bg-gradient-to-l from-red-700 via-[#e50914] to-red-600 text-sm font-black text-white shadow-[0_12px_30px_rgba(229,9,20,0.3)] transition hover:brightness-110 hover:shadow-[0_16px_38px_rgba(229,9,20,0.42)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 active:scale-[0.99]",
     formResendCodeLink: "font-extrabold text-red-400 hover:text-red-300",
     otpCodeFieldInput:
       "border-white/15 bg-slate-950/80 text-white [direction:ltr] focus:border-red-500 focus:ring-red-500/20",
@@ -110,11 +124,9 @@ const clerkAppearance = {
     identityPreviewText: "text-white",
     identityPreviewEditButton: "text-red-400 hover:text-red-300",
     alternativeMethodsBlockButton:
-      "rounded-2xl border border-white/15 bg-white/[0.05] text-white hover:bg-white/[0.09]",
-    footer: { marginTop: "0.75rem", paddingTop: 0, background: "transparent" },
-    footerAction: { minHeight: "auto", padding: 0, gap: "0.35rem", justifyContent: "center" },
-    footerActionText: { color: "#cbd5e1", fontWeight: 600 },
-    footerActionLink: "font-black text-red-400 hover:text-red-300",
+      "w-full max-w-full rounded-2xl border border-white/15 bg-white/[0.05] text-white hover:bg-white/[0.09]",
+    footer: { marginTop: 0, paddingTop: 0, background: "transparent" },
+    footerAction: { display: "none" as const },
     footerPages: { display: "none" as const },
     footerItem: { display: "none" as const },
     lastAuthenticationStrategyBadge: { display: "none" as const },
@@ -291,13 +303,15 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
 
   return (
     <section
-      className="relative w-full max-w-[29rem]"
+      className="relative min-w-0 w-full max-w-[29rem] px-px"
       aria-label={mode === "sign-in" ? "تسجيل الدخول إلى أليكس سينما" : "إنشاء حساب أليكس سينما"}
     >
-      <div className="pointer-events-none absolute -inset-px rounded-[2rem] bg-gradient-to-b from-white/25 via-white/[0.04] to-red-500/20" />
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-[#0b1727]/96 p-4 shadow-[0_28px_80px_rgba(0,0,0,0.58)] backdrop-blur-2xl sm:p-5">
-        <div className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full bg-red-600/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 -left-20 size-64 rounded-full bg-sky-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-gradient-to-b from-white/25 via-white/[0.04] to-red-500/20" />
+      <div className="relative isolate rounded-[1.75rem] border border-white/15 bg-[#0b1727]/96 p-4 shadow-[0_28px_80px_rgba(0,0,0,0.58)] backdrop-blur-2xl sm:p-5">
+        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]">
+          <div className="absolute -right-24 -top-24 size-64 rounded-full bg-red-600/15 blur-3xl" />
+          <div className="absolute -bottom-28 -left-20 size-64 rounded-full bg-sky-500/10 blur-3xl" />
+        </div>
 
         <header className="relative mb-4 flex items-center justify-between gap-3 border-b border-white/10 pb-4">
           <div className="flex min-w-0 items-center gap-3">
@@ -391,6 +405,24 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
                 appearance={clerkAppearance}
               />
             )}
+
+            <div className="mt-4 flex min-w-0 flex-col items-stretch gap-3 rounded-2xl border border-white/12 bg-white/[0.045] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] min-[380px]:flex-row min-[380px]:items-center min-[380px]:justify-between">
+              <div className="min-w-0 text-center min-[380px]:text-right">
+                <p className="text-sm font-black text-slate-100">
+                  {mode === "sign-in" ? "ليس لديك حساب بعد؟" : "لديك حساب بالفعل؟"}
+                </p>
+                <p className="mt-1 text-[0.68rem] font-semibold leading-5 text-slate-400">
+                  {mode === "sign-in" ? "ابدأ حسابك خلال لحظات." : "ارجع إلى حسابك بأمان."}
+                </p>
+              </div>
+              <Link
+                href={mode === "sign-in" ? "/sign-up" : "/sign-in"}
+                className="inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/12 px-4 py-2 text-sm font-black text-red-200 shadow-[0_8px_22px_rgba(229,9,20,0.12)] transition hover:border-red-300/50 hover:bg-red-500/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/70 min-[380px]:w-auto"
+              >
+                <i className={`fa-solid ${mode === "sign-in" ? "fa-user-plus" : "fa-arrow-right-to-bracket"} text-xs`} aria-hidden="true" />
+                <span>{mode === "sign-in" ? "إنشاء حساب جديد" : "تسجيل الدخول"}</span>
+              </Link>
+            </div>
           </div>
         ) : (
           <div role="alert" className="relative flex min-h-52 flex-col items-center justify-center gap-4 rounded-3xl border border-red-400/25 bg-red-950/30 p-6 text-center">

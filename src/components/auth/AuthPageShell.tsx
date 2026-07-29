@@ -15,7 +15,7 @@ const features = [
 
 export default function AuthPageShell({ mode, children }: AuthPageShellProps) {
   return (
-    <div className="auth-page-shell relative flex min-h-[100svh] w-full flex-col overflow-x-hidden bg-[#07111f] px-3 py-4 text-white sm:px-6 sm:py-6 lg:px-10 lg:py-8">
+    <div className="auth-page-shell relative flex min-h-[100svh] w-full flex-col overflow-x-hidden bg-[#07111f] px-4 py-4 text-white sm:px-6 sm:py-6 lg:px-10 lg:py-8">
       <InteractiveCinematicBg />
 
       <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_78%_18%,rgba(229,9,20,0.2),transparent_34%),radial-gradient(circle_at_15%_78%,rgba(14,165,233,0.16),transparent_34%),radial-gradient(circle_at_50%_48%,rgba(59,130,246,0.08),transparent_42%)]" />
@@ -81,7 +81,7 @@ export default function AuthPageShell({ mode, children }: AuthPageShellProps) {
             </div>
           </aside>
 
-          <div className="flex w-full items-center justify-center lg:justify-end">{children}</div>
+          <div className="flex min-w-0 w-full items-center justify-center px-0.5 lg:justify-end">{children}</div>
         </div>
 
         <footer className="flex flex-col items-center justify-between gap-2 border-t border-white/[0.06] py-3 text-[0.68rem] font-semibold text-slate-500 sm:flex-row sm:py-4">
