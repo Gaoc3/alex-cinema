@@ -49,7 +49,7 @@ export default function Pagination({ currentPage, onPageChange, hasNextPage, acc
         disabled={currentPage <= 1}
         className={`flex items-center gap-2 px-5 py-2 rounded-full font-bold text-sm transition-all duration-300 ${
           currentPage > 1 
-            ? 'bg-[#141722] hover:bg-[#E50914] text-white border border-white/5 shadow-lg' 
+            ? `bg-[#141722] ${currentTheme.hover} text-white border border-white/5 shadow-lg`
             : 'bg-[#141722]/40 text-gray-600 border border-white/5 cursor-not-allowed'
         }`}
       >
@@ -58,7 +58,7 @@ export default function Pagination({ currentPage, onPageChange, hasNextPage, acc
       </button>
       
       {/* Current Page Display */}
-      <div className="relative px-6 py-2 rounded-full font-black text-sm border border-white/5 bg-[#141722] shadow-xl text-center min-w-[50px] font-en text-[#E50914] drop-shadow-md">
+      <div className={`relative px-6 py-2 rounded-full font-black text-sm border border-white/5 bg-[#141722] shadow-xl text-center min-w-[50px] font-en drop-shadow-md ${currentTheme.text}`}>
         {currentPage}
       </div>
 
@@ -68,7 +68,7 @@ export default function Pagination({ currentPage, onPageChange, hasNextPage, acc
         disabled={!hasNextPage}
         className={`flex items-center gap-2 px-5 py-2 rounded-full font-bold text-sm transition-all duration-300 ${
           hasNextPage 
-            ? 'bg-[#141722] hover:bg-[#E50914] text-white border border-white/5 shadow-lg' 
+            ? `bg-[#141722] ${currentTheme.hover} text-white border border-white/5 shadow-lg`
             : 'bg-[#141722]/40 text-gray-600 border border-white/5 cursor-not-allowed'
         }`}
       >

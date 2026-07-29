@@ -108,7 +108,7 @@ function MoviesContent() {
           const res = await fetch(url);
           if (res.ok) {
             const d = await res.json();
-            let list = decryptData(d.payload) || [];
+            let list = decryptData<VideoItem[]>(d.payload) || [];
             if (Array.isArray(list)) {
               if (selectedSort === 'recent') {
                 list = [...list].sort((a, b) => parseInt(b.nb) - parseInt(a.nb));
@@ -129,7 +129,7 @@ function MoviesContent() {
         const res = await fetch(url);
         if (res.ok) {
           const d = await res.json();
-          let list = decryptData(d.payload) || [];
+          const list = decryptData<VideoItem[]>(d.payload) || [];
           if (Array.isArray(list)) {
             setMovies(list);
           } else {
@@ -164,20 +164,6 @@ function MoviesContent() {
     }
   };
 
-  const handleCategoryChange = (catId: string) => {
-    updateParams({ category: catId, page: '1' });
-    setOpenDropdown(null);
-  };
-
-  const handleYearChange = (yearVal: string) => {
-    updateParams({ year: yearVal === '1900,2026' ? null : yearVal, page: '1' });
-    setOpenDropdown(null);
-  };
-
-  const handleRatingChange = (ratingVal: string) => {
-    updateParams({ rating: ratingVal || null, page: '1' });
-    setOpenDropdown(null);
-  };
   const getFilterUrl = (newParams: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(newParams).forEach(([key, val]) => {
@@ -204,7 +190,7 @@ function MoviesContent() {
         <div className="w-full aspect-[21/9] min-h-[220px] md:min-h-[420px] lg:min-h-[460px] rounded-3xl overflow-hidden relative border border-white/10 mb-10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] group/hero flex items-center justify-between p-4 sm:p-8 md:p-14 gap-4 md:gap-10" dir="rtl">
           {/* Backdrop Image */}
           <div className="absolute inset-0 select-none pointer-events-none scale-105 blur-md opacity-25 z-0">
-            <img src={getVideoImageUrl(featuredMovie as any, 'poster')} alt="" className="w-full h-full object-cover" />
+            <img src={getVideoImageUrl(featuredMovie, 'poster')} alt="" className="w-full h-full object-cover" />
           </div>
           <div className="absolute inset-0 bg-gradient-to-l from-[#06070a]/90 via-[#06070a]/50 to-transparent z-10" />
           
@@ -242,7 +228,7 @@ function MoviesContent() {
 
           {/* Main Cover Poster - Visible on both desktop and mobile */}
           <div className="relative z-20 h-[80%] md:h-[90%] aspect-[2/3] rounded-xl md:rounded-2xl overflow-hidden border border-white/10 shadow-2xl flex-shrink-0 transition-all duration-300 group-hover/hero:scale-[1.02] group-hover/hero:border-white/20">
-            <img src={getVideoImageUrl(featuredMovie as any, 'poster')} alt="" className="w-full h-full object-cover" />
+            <img src={getVideoImageUrl(featuredMovie, 'poster')} alt="" className="w-full h-full object-cover" />
           </div>
         </div>
       )}
@@ -422,7 +408,7 @@ function MoviesContent() {
                     {/* Poster Wrapper */}
                     <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden bg-[#141722]/50 border border-white/5 transition-all duration-300 ease-out group-hover/card:scale-[1.03] group-hover/card:shadow-[0_15px_35px_rgba(0,0,0,0.6)] group-hover/card:border-white/20">
                       <img 
-                        src={getVideoImageUrl(video as any, 'poster')}
+                        src={getVideoImageUrl(video, 'poster')}
                         alt={video.ar_title} 
                         className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-105"
                         loading="lazy"

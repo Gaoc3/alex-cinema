@@ -64,12 +64,12 @@ export default function SearchBar() {
 
         if (resMovies.ok) {
           const encrypted_data = await resMovies.json();
-          const data = decryptData(encrypted_data.payload);
+          const data = decryptData<SearchResult[]>(encrypted_data.payload);
           moviesList = Array.isArray(data) ? data : [];
         }
         if (resSeries.ok) {
           const encrypted_data = await resSeries.json();
-          const data = decryptData(encrypted_data.payload);
+          const data = decryptData<SearchResult[]>(encrypted_data.payload);
           seriesList = Array.isArray(data) ? data : [];
         }
 

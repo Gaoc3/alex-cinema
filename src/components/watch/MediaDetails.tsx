@@ -1,18 +1,30 @@
 import React from 'react';
 
+export interface MediaCategory {
+  nb?: string | number;
+  ar_title: string;
+}
+
+export interface MediaPerson {
+  nb?: string | number;
+  name: string;
+  staff_img_thumb?: string | null;
+  staff_img?: string | null;
+}
+
 interface MediaDetailsProps {
   title: string;
   enTitle?: string;
   episodeNum?: string;
   seasonNum?: string;
   year?: string;
-  categories?: any[];
+  categories?: MediaCategory[];
   duration?: number;
   stars?: string;
   content?: string;
-  actorsInfo?: any[];
-  directorsInfo?: any[];
-  writersInfo?: any[];
+  actorsInfo?: MediaPerson[];
+  directorsInfo?: MediaPerson[];
+  writersInfo?: MediaPerson[];
   kind?: string;
   itemDate?: string;
   children?: React.ReactNode;
@@ -26,7 +38,7 @@ const getSmartCategoryStyle = (catName: string) => {
   return 'bg-[#1a1c23]/80 hover:bg-white text-gray-200 hover:text-black border border-white/20 hover:border-transparent shadow-lg backdrop-blur-md transition-all duration-300';
 };
 
-const ActorCard = ({ name, img }: { name: string; img?: string }) => {
+const ActorCard = ({ name, img }: { name: string; img?: string | null }) => {
   const [imgFailed, setImgFailed] = React.useState(false);
   return (
     <div className="flex flex-col items-center text-center gap-2.5 group select-none min-w-0 w-full transition-all duration-300 hover:-translate-y-1">
@@ -145,7 +157,7 @@ export default function MediaDetails({
         {/* ═══════ Section 3: Genre / Category Pills (RTL flow) ═══════ */}
         {categories && categories.length > 0 && (
           <div className="flex flex-wrap gap-2" dir="rtl">
-            {categories.map((cat: any, index: number) => (
+            {categories.map((cat, index) => (
               <span
                 key={cat.nb || index}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-black select-none tracking-wide cursor-pointer ${getSmartCategoryStyle(cat.ar_title)}`}
@@ -175,13 +187,13 @@ export default function MediaDetails({
             {directorsInfo && directorsInfo.length > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-gray-500 text-xs font-bold">الإخراج:</span>
-                <span className="text-white font-en font-bold text-sm">{directorsInfo.map((d: any) => d.name).join(' ، ')}</span>
+                <span className="text-white font-en font-bold text-sm">{directorsInfo.map((director) => director.name).join(' ، ')}</span>
               </div>
             )}
             {writersInfo && writersInfo.length > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-gray-500 text-xs font-bold">التأليف:</span>
-                <span className="text-white font-en font-bold text-sm">{writersInfo.map((w: any) => w.name).join(' ، ')}</span>
+                <span className="text-white font-en font-bold text-sm">{writersInfo.map((writer) => writer.name).join(' ، ')}</span>
               </div>
             )}
           </div>
@@ -200,7 +212,7 @@ export default function MediaDetails({
               الطاقم
             </h3>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-x-4 gap-y-7 justify-items-center justify-center">
-              {actorsInfo.map((actor: any, index: number) => (
+              {actorsInfo.map((actor, index) => (
                 <ActorCard key={actor.nb || index} name={actor.name} img={actor.staff_img_thumb || actor.staff_img} />
               ))}
             </div>

@@ -2,24 +2,48 @@ import React from 'react';
 import MediaPoster from './MediaPoster';
 import MediaDetails from './MediaDetails';
 import ActionToolbar from './ActionToolbar';
-import PlayerSection from './PlayerSection';
-import SeriesNavigator from './SeriesNavigator';
+import PlayerSection, { type EpisodeDetails, type RoomVideoData } from './PlayerSection';
+import SeriesNavigator, { type SeriesEpisode, type SeriesSeason } from './SeriesNavigator';
+import type { WatchRoomHook } from '@/hooks/useWatchRoom';
+import type { MediaCategory, MediaPerson } from './MediaDetails';
+
+type WatchVideoData = Omit<RoomVideoData, 'nb' | 'img'> & {
+  nb: string | number;
+  ar_title: string;
+  img?: string | null;
+  en_title?: string;
+  imdbUrlRef?: string;
+  year?: string;
+  categories?: MediaCategory[];
+  stars?: string;
+  ar_content?: string;
+  actorsInfo?: MediaPerson[];
+  directorsInfo?: MediaPerson[];
+  writersInfo?: MediaPerson[];
+  itemDate?: string;
+  mDate?: string;
+};
+
+interface WatchEpisode extends SeriesEpisode {
+  ar_title: string;
+  en_title: string;
+}
 
 interface WatchLayoutProps {
   // Video and Series state
-  video: any;
+  video: WatchVideoData;
   isSeries: boolean;
-  seasons: any[];
-  episodes: any[];
+  seasons: SeriesSeason[];
+  episodes: WatchEpisode[];
   currentSeason: string;
   setCurrentSeason: (season: string) => void;
-  activeEpisode: any;
-  setActiveEpisode: (ep: any) => void;
-  seasonEpisodes: any[];
+  activeEpisode: WatchEpisode | null;
+  setActiveEpisode: (episode: WatchEpisode) => void;
+  seasonEpisodes: WatchEpisode[];
   
   // Player state
   isLoadingStreams: boolean;
-  activeEpisodeDetails: any;
+  activeEpisodeDetails: EpisodeDetails | null;
   displayTitle: string;
   displayEnTitle: string;
   displayContent: string;
@@ -34,14 +58,20 @@ interface WatchLayoutProps {
   dislikes: number;
   userVote: 'like' | 'dislike' | null;
   handleVote: (type: 'like' | 'dislike') => void;
-  roomHook?: any;
+  roomHook?: WatchRoomHook;
 }
 
 export default function WatchLayout({
   video, isSeries, seasons, episodes, currentSeason, setCurrentSeason, activeEpisode, setActiveEpisode, seasonEpisodes,
-  isLoadingStreams, activeEpisodeDetails, displayTitle, displayEnTitle, displayContent, hasNextEpisode, playNextEpisode,
+  isLoadingStreams, activeEpisodeDetails, displayTitle, displayContent, hasNextEpisode, playNextEpisode,
   isFavorite, toggleFavorite, likes, dislikes, userVote, handleVote, roomHook
 }: WatchLayoutProps) {
+  const playerVideo: RoomVideoData = {
+    ...video,
+    nb: String(video.nb),
+    img: video.img || undefined,
+  };
+
   return (
     <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto relative z-10">
       
@@ -52,7 +82,7 @@ export default function WatchLayout({
             isLoadingStreams={isLoadingStreams}
             isSeries={isSeries}
             activeEpisodeDetails={activeEpisodeDetails}
-            video={video}
+            video={playerVideo}
             displayTitle={displayTitle}
             hasNextEpisode={hasNextEpisode}
             playNextEpisode={playNextEpisode}
@@ -61,7 +91,7 @@ export default function WatchLayout({
         </div>
         {!roomHook && (
           <div className="col-span-12 lg:col-span-3 flex flex-col px-4 sm:px-0 mt-4 sm:mt-0">
-            <MediaPoster img={video.img} imdbUrlRef={video.imdbUrlRef} />
+            <MediaPoster img={video.img || ''} imdbUrlRef={video.imdbUrlRef} />
           </div>
         )}
       </div>
@@ -76,7 +106,7 @@ export default function WatchLayout({
             seasonNum={isSeries ? currentSeason : undefined}
             year={video.year}
             categories={video.categories}
-            duration={video.duration ? parseInt(video.duration) : undefined}
+            duration={video.duration ? parseInt(String(video.duration)) : undefined}
             stars={video.stars}
             content={displayContent}
             actorsInfo={video.actorsInfo}
@@ -92,7 +122,7 @@ export default function WatchLayout({
               dislikes={dislikes}
               userVote={userVote}
               handleVote={handleVote}
-              videoId={video.nb}
+              videoId={String(video.nb)}
             />
           </MediaDetails>
         </div>
@@ -107,10 +137,10 @@ export default function WatchLayout({
             currentSeason={currentSeason}
             setCurrentSeason={setCurrentSeason}
             activeEpisode={activeEpisode}
-            setActiveEpisode={setActiveEpisode}
+            setActiveEpisode={(episode) => setActiveEpisode(episode as WatchEpisode)}
             seasonEpisodes={seasonEpisodes}
             videoTitle={video.ar_title}
-            videoImg={video.img}
+            videoImg={video.img || ''}
           />
         </div>
       )}

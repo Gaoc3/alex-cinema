@@ -82,10 +82,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
   useEffect(() => {
     if (videos.length <= 1) return;
     const interval = setInterval(() => {
-      triggerSlideChange((activeIndex + 1) % videos.length);
+      setActiveIndex((currentIndex) => (currentIndex + 1) % videos.length);
     }, 7000); // 7 seconds per slide for better readability
     return () => clearInterval(interval);
-  }, [activeIndex, videos.length]);
+  }, [videos.length]);
 
   const triggerSlideChange = (nextIndex: number) => {
     if (nextIndex === activeIndex) return;
@@ -106,9 +106,6 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
   } else if (titleLength > 16) {
     titleFontSizeClass = "text-3xl sm:text-4xl lg:text-5xl";
   }
-
-  // Build the correct landscape cover image URL
-  const coverImgUrl = getVideoImageUrl(current, 'cover');
 
   return (
     <div className="w-full relative mt-0 bg-transparent group flex flex-col lg:block">

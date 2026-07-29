@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
-import { v4 as uuidv4 } from 'uuid';
-
 import { useAuth } from '@clerk/nextjs';
 import { useUnifiedAuth } from './auth/UnifiedAuthProvider';
 import { toast } from 'react-hot-toast';
@@ -12,7 +10,6 @@ import { toast } from 'react-hot-toast';
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [activePath, setActivePath] = useState(pathname);
   const searchParams = useSearchParams();
   const [moviesOpen, setMoviesOpen] = useState(false);
   const [seriesOpen, setSeriesOpen] = useState(false);
@@ -23,40 +20,31 @@ export default function Sidebar() {
 
   // Force re-render on query parameter changes to keep link highlights updated
   const searchParamsString = searchParams ? searchParams.toString() : '';
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    setTick(t => t + 1);
-  }, [pathname, searchParamsString]);
 
   const handleNav = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    void e;
+    void href;
     // Let Next.js <Link> handle the actual routing so it correctly clears query params
     closeSidebar();
-    setActivePath(href);
   };
 
   // Auto-expand submenus based on pathname context (Zero-Legacy Context-Awareness)
   useEffect(() => {
-    setActivePath(pathname);
-  }, [pathname]);
-
-  useEffect(() => {
-    const hasCategory = searchParams ? searchParams.get('category') : null;
-    const hasView = searchParams ? searchParams.get('view') : null;
-    if (pathname.startsWith('/movies') && !hasCategory) {
-      setMoviesOpen(true);
-    }
-    if (pathname.startsWith('/series') && !hasCategory && !hasView) {
-      setSeriesOpen(true);
-    }
-  }, [pathname, searchParamsString]);
+    const frame = window.requestAnimationFrame(() => {
+      const hasCategory = searchParams ? searchParams.get('category') : null;
+      const hasView = searchParams ? searchParams.get('view') : null;
+      if (pathname.startsWith('/movies') && !hasCategory) {
+        setMoviesOpen(true);
+      }
+      if (pathname.startsWith('/series') && !hasCategory && !hasView) {
+        setSeriesOpen(true);
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname, searchParams, searchParamsString]);
   
   // Local short screen check (Can optionally use global var, but keeping it here for reactivity on padding)
   const [layout, setLayout] = useState({ isShortScreen: false });
-
-  useEffect(() => {
-    setActivePath(pathname);
-  }, [pathname]);
 
   useEffect(() => {
     const checkState = () => {
@@ -70,7 +58,7 @@ export default function Sidebar() {
       }
     };
 
-    checkState();
+    const initialFrame = window.requestAnimationFrame(checkState);
 
     window.addEventListener('sidebar-state-change', checkState);
     window.addEventListener('resize', checkState);
@@ -84,6 +72,7 @@ export default function Sidebar() {
       window.removeEventListener('resize', checkState);
       window.removeEventListener('orientationchange', checkState);
       clearInterval(interval);
+      window.cancelAnimationFrame(initialFrame);
     };
   }, []);
 
@@ -181,7 +170,7 @@ export default function Sidebar() {
           
           {/* Logo and Brand Name (Hidden on Collapsed) */}
           <div className={`flex items-center gap-2.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-right ${isCollapsed ? 'opacity-0 max-w-0 overflow-hidden scale-90 pointer-events-none' : 'opacity-100 max-w-[300px] scale-100 delay-100'}`}>
-            <Link href="/home" className="flex items-center gap-2.5 group" onClick={(e) => { closeSidebar(); setActivePath(e.currentTarget.getAttribute('href') || ''); }}>
+            <Link href="/home" className="flex items-center gap-2.5 group" onClick={closeSidebar}>
               <div className="w-10 h-10 shrink-0 rounded-full overflow-hidden flex items-center justify-center transition-all duration-300 border border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.4)] group-hover:shadow-[0_2px_12px_rgba(229,9,20,0.25)]">
                 <img src="/logo.svg" alt="AleX Cinema Logo" className="w-full h-full object-cover scale-[1.05]" />
               </div>

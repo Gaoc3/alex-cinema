@@ -10,15 +10,24 @@ import toast from 'react-hot-toast';
 
 import ConfirmModal from "@/components/ConfirmModal";
 
+interface RoomSummary {
+  id: string;
+  title: string;
+  movieTitle: string | null;
+  moviePoster: string | null;
+  isPrivate: boolean;
+  isActive: boolean;
+}
+
 export default function MyRoomsList() {
   let closeUserProfile: (() => void) | undefined;
   try {
     const clerk = useClerk();
     closeUserProfile = clerk?.closeUserProfile;
-  } catch (e) {
+  } catch {
     // Pure Telegram Session
   }
-  const [rooms, setRooms] = useState<any[]>([]);
+  const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);

@@ -2,6 +2,28 @@ import { getVideoImageUrl } from '@/utils/imageHelper';
 import { getVideoDetails, getSeriesSeasons, getSeriesEpisodes, searchMovies, fetchCinemana } from '@/lib/api';
 import WatchContainer from '@/components/WatchContainer';
 import Link from 'next/link';
+import type { PlayerStream, RoomVideoData } from '@/components/watch/PlayerSection';
+import type { SeriesEpisode, SeriesSeason } from '@/components/watch/SeriesNavigator';
+
+interface WatchStream extends PlayerStream {
+  videoUrl: string;
+}
+
+type WatchVideo = Omit<RoomVideoData, 'streams'> & Record<string, unknown> & {
+  nb: string;
+  ar_title: string;
+  streams?: WatchStream[];
+  en_title?: string;
+  fileFile?: string;
+  imgObjUrl?: string;
+  imgMediumThumb?: string;
+  imgThumb?: string;
+};
+
+interface WatchEpisode extends SeriesEpisode {
+  ar_title: string;
+  en_title: string;
+}
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -16,20 +38,20 @@ export default async function WatchPage({
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
   
-  let video = await getVideoDetails(resolvedParams.id);
+  let video = await getVideoDetails(resolvedParams.id) as WatchVideo | null;
 
   if (!video && resolvedSearchParams.title) {
     try {
       const decodedTitle = decodeURIComponent(resolvedSearchParams.title);
-      let searchResults = await searchMovies(decodedTitle, 'movies');
-      let found = Array.isArray(searchResults) 
-        ? searchResults.find((m: any) => m.nb === resolvedParams.id) 
+      const searchResults: unknown = await searchMovies(decodedTitle, 'movies');
+      let found = Array.isArray(searchResults)
+        ? (searchResults as WatchVideo[]).find((movie) => movie.nb === resolvedParams.id)
         : null;
       
       if (!found) {
-        const seriesResults = await searchMovies(decodedTitle, 'series');
+        const seriesResults: unknown = await searchMovies(decodedTitle, 'series');
         found = Array.isArray(seriesResults) 
-          ? seriesResults.find((m: any) => m.nb === resolvedParams.id) 
+          ? (seriesResults as WatchVideo[]).find((movie) => movie.nb === resolvedParams.id)
           : null;
       }
       
@@ -40,16 +62,17 @@ export default async function WatchPage({
         };
 
         try {
-          const streams = await fetchCinemana(`transcoddedFiles/id/${resolvedParams.id}`);
-          video.streams = Array.isArray(streams) ? streams : [];
+          const streamsData: unknown = await fetchCinemana(`transcoddedFiles/id/${resolvedParams.id}`);
+          const recoveredStreams = Array.isArray(streamsData) ? streamsData as WatchStream[] : [];
+          video = { ...video, streams: recoveredStreams };
+
+          if (recoveredStreams.length > 0) {
+            video.stream_url = recoveredStreams[0].videoUrl;
+          } else if (video.fileFile) {
+            video.stream_url = `/api/stream-fallback?file=${video.fileFile}`;
+          }
         } catch (e) {
           console.error('Error fetching fallback streams:', e);
-        }
-        
-        if (video.streams.length > 0) {
-          video.stream_url = video.streams[0].videoUrl;
-        } else if (video.fileFile) {
-          video.stream_url = `/api/stream-fallback?file=${video.fileFile}`;
         }
       }
     } catch (err) {
@@ -59,8 +82,9 @@ export default async function WatchPage({
 
   if (!video) {
     try {
-      const streams = await fetchCinemana(`transcoddedFiles/id/${resolvedParams.id}`);
-      if (Array.isArray(streams) && streams.length > 0) {
+      const streamsData: unknown = await fetchCinemana(`transcoddedFiles/id/${resolvedParams.id}`);
+      if (Array.isArray(streamsData) && streamsData.length > 0) {
+        const streams = streamsData as WatchStream[];
         video = {
           nb: resolvedParams.id,
           ar_title: 'فيلم سينمائي (رابط مباشر)',
@@ -90,16 +114,16 @@ export default async function WatchPage({
   }
 
   // Fetch seasons and episodes if the video is a series (kind === '2')
-  let seasons: any[] = [];
-  let episodes: any[] = [];
+  let seasons: SeriesSeason[] = [];
+  let episodes: WatchEpisode[] = [];
   if (video.kind === '2') {
     try {
       const [seasonsData, episodesData] = await Promise.all([
         getSeriesSeasons(video.nb),
         getSeriesEpisodes(video.nb)
       ]);
-      seasons = Array.isArray(seasonsData) ? seasonsData : [];
-      episodes = Array.isArray(episodesData) ? episodesData : [];
+      seasons = Array.isArray(seasonsData) ? seasonsData as SeriesSeason[] : [];
+      episodes = Array.isArray(episodesData) ? episodesData as WatchEpisode[] : [];
     } catch (e) {
       console.error("Failed to fetch seasons or episodes details:", e);
     }
@@ -109,7 +133,7 @@ export default async function WatchPage({
     <div className="min-h-screen flex flex-col relative pt-24 animate-fade-in-up overflow-x-clip z-10">
       <div 
         className="fixed inset-0 z-[-1] opacity-20 blur-[60px] bg-cover bg-center saturate-150 transform scale-110 pointer-events-none"
-        style={{ backgroundImage: `url(${getVideoImageUrl(video as any, 'poster')})` }}
+        style={{ backgroundImage: `url(${getVideoImageUrl(video, 'poster')})` }}
       ></div>
 
       <div className="max-w-screen-2xl mx-auto px-0 sm:px-6 lg:px-8 py-0 sm:py-10 w-full z-10 flex-grow relative">

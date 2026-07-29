@@ -2,20 +2,37 @@ import { getVideoImageUrl } from '@/utils/imageHelper';
 import { getMoviesByCategory, getCategories } from '@/lib/api';
 import Link from 'next/link';
 
+interface Category {
+  nb: string | number;
+  ar_title?: string;
+}
+
+interface CategoryVideo {
+  nb: string;
+  ar_title: string;
+  en_title?: string;
+  stars?: string;
+  year?: string;
+  img?: string;
+  imgObjUrl?: string;
+  imgMediumThumb?: string;
+  imgThumb?: string;
+}
+
 export default async function CategoryPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   
-  const [videos, categoriesRaw] = await Promise.all([
+  const [videosRaw, categoriesRaw] = await Promise.all([
     getMoviesByCategory(resolvedParams.id),
     getCategories()
   ]);
+  const videos: CategoryVideo[] = Array.isArray(videosRaw) ? videosRaw : [];
+  const categories: Category[] = Array.isArray(categoriesRaw) ? categoriesRaw : [];
 
   let categoryName = 'أفلام التصنيف';
-  if (categoriesRaw && Array.isArray(categoriesRaw)) {
-    const matchedCategory = categoriesRaw.find((cat: any) => String(cat.nb) === String(resolvedParams.id));
-    if (matchedCategory && matchedCategory.ar_title) {
-      categoryName = matchedCategory.ar_title;
-    }
+  const matchedCategory = categories.find((category) => String(category.nb) === resolvedParams.id);
+  if (matchedCategory?.ar_title) {
+    categoryName = matchedCategory.ar_title;
   }
 
   return (
@@ -30,17 +47,17 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
 
       {videos && videos.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 2xl:grid-cols-5 gap-x-6 gap-y-12">
-          {videos.map((video: any, index: number) => (
+          {videos.map((video, index) => (
             <Link 
               key={video.nb} 
-              href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title)}`} 
+              href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
               className="group/card block relative snap-start"
               style={{ animationDelay: `${index * 25}ms` }}
             >
               {/* Poster Wrapper */}
               <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
                 <img 
-                  src={getVideoImageUrl(video as any, 'poster')}
+                  src={getVideoImageUrl(video, 'poster')}
                   alt={video.ar_title} 
                   className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
                   loading="lazy"

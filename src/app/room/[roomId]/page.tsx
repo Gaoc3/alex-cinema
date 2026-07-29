@@ -3,6 +3,10 @@ import RoomClientWrapper from './RoomClientWrapper';
 import Link from 'next/link';
 import { getRoom } from '@/app/actions/room.actions';
 import { syncUser } from '@/app/actions/user.actions';
+import type { PlayerStream, RoomVideoData } from '@/components/watch/PlayerSection';
+import type { SeriesEpisode, SeriesSeason } from '@/components/watch/SeriesNavigator';
+
+type RoomPageVideo = RoomVideoData & { en_title?: string };
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -42,17 +46,18 @@ export default async function RoomPage({
   // 3. Determine videoId (from URL searchParams first, then DB room.movieId)
   const videoId = resolvedSearchParams.videoId || room.movieId;
   
-  let video = null;
-  let seasons: any[] = [];
-  let episodes: any[] = [];
+  let video: RoomPageVideo | null = null;
+  let seasons: SeriesSeason[] = [];
+  let episodes: SeriesEpisode[] = [];
 
   if (videoId) {
-    video = await getVideoDetails(videoId);
+    video = await getVideoDetails(videoId) as RoomPageVideo | null;
 
     if (!video) {
       try {
-        const streams = await fetchCinemana(`transcoddedFiles/id/${videoId}`);
-        if (Array.isArray(streams) && streams.length > 0) {
+        const streamsData: unknown = await fetchCinemana(`transcoddedFiles/id/${videoId}`);
+        if (Array.isArray(streamsData) && streamsData.length > 0) {
+          const streams = streamsData as PlayerStream[];
           video = {
             nb: videoId,
             ar_title: 'فيلم سينمائي (روم)',
@@ -70,12 +75,13 @@ export default async function RoomPage({
     // Fetch seasons and episodes if the video is a series (kind === '2')
     if (video && video.kind === '2') {
       try {
+        const seriesId = String(video.nb || video.id || videoId);
         const [seasonsData, episodesData] = await Promise.all([
-          getSeriesSeasons(video.nb),
-          getSeriesEpisodes(video.nb)
+          getSeriesSeasons(seriesId),
+          getSeriesEpisodes(seriesId)
         ]);
-        seasons = Array.isArray(seasonsData) ? seasonsData : [];
-        episodes = Array.isArray(episodesData) ? episodesData : [];
+        seasons = Array.isArray(seasonsData) ? seasonsData as SeriesSeason[] : [];
+        episodes = Array.isArray(episodesData) ? episodesData as SeriesEpisode[] : [];
       } catch (error) {
         console.error('Error fetching series data for room:', error);
       }

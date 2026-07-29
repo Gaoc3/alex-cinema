@@ -52,7 +52,7 @@ export default function CreateRoomButton({ className }: { className?: string }) 
       } else {
         toast.error(data.error || 'حدث خطأ أثناء إنشاء الغرفة');
       }
-    } catch (err) {
+    } catch {
       toast.dismiss(toastId);
       toast.error('فشل الاتصال أثناء إنشاء الغرفة');
     } finally {

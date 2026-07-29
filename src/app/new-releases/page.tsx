@@ -1,4 +1,3 @@
-import { decryptData } from '@/utils/cryptoHelper';
 import { getVideoImageUrl } from '@/utils/imageHelper';
 import React from 'react';
 import Link from 'next/link';
@@ -60,7 +59,7 @@ export default async function NewReleasesPage({ searchParams }: PageProps) {
                 {/* Poster Wrapper */}
                 <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
                   <img 
-                    src={getVideoImageUrl(video as any, 'poster')}
+                    src={getVideoImageUrl(video, 'poster')}
                     alt={video.ar_title} 
                     className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
                     loading="lazy"

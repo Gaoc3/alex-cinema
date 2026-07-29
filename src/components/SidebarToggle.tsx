@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 
 export default function SidebarToggle() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
   useEffect(() => {
     // Check initial sidebar state from localStorage on mount
     if (typeof window !== 'undefined') {
@@ -16,19 +14,6 @@ export default function SidebarToggle() {
       }
     }
 
-    const checkState = () => {
-      if (typeof document !== 'undefined') {
-        const isMobile = window.innerWidth < 1280;
-        setIsCollapsed(isMobile ? false : document.body.classList.contains('sidebar-collapsed'));
-      }
-    };
-
-    checkState();
-
-    window.addEventListener('sidebar-state-change', checkState);
-    return () => {
-      window.removeEventListener('sidebar-state-change', checkState);
-    };
   }, []);
 
   const toggleSidebar = () => {
@@ -41,11 +26,9 @@ export default function SidebarToggle() {
         if (nextCollapsed) {
           document.body.classList.add('sidebar-collapsed');
           localStorage.setItem('sidebar-collapsed', 'true');
-          setIsCollapsed(true);
         } else {
           document.body.classList.remove('sidebar-collapsed');
           localStorage.setItem('sidebar-collapsed', 'false');
-          setIsCollapsed(false);
         }
         window.dispatchEvent(new Event('sidebar-state-change'));
       }

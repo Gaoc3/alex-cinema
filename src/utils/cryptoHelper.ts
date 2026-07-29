@@ -8,7 +8,7 @@ const SECRET_KEY = process.env.NEXT_PUBLIC_CRYPTO_SECRET || 'vA$c1n_S3cr3t_K3y_!
  * Encrypts data to a Base64 encoded AES string.
  * Used by the API route before sending JSON responses to the client.
  */
-export const encryptData = (data: any): string => {
+export const encryptData = (data: unknown): string => {
   const jsonStr = JSON.stringify(data);
   return CryptoJS.AES.encrypt(jsonStr, SECRET_KEY).toString();
 };
@@ -17,14 +17,14 @@ export const encryptData = (data: any): string => {
  * Decrypts a Base64 encoded AES string back to its original JSON object.
  * Used by frontend components to read API responses.
  */
-export const decryptData = (ciphertext: string): any => {
+export const decryptData = <T = unknown>(ciphertext: string): T | null => {
   try {
     const bytes = CryptoJS.AES.decrypt(ciphertext, SECRET_KEY);
     const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
     if (!decryptedStr) {
       throw new Error("Decryption returned empty string (likely wrong key).");
     }
-    return JSON.parse(decryptedStr);
+    return JSON.parse(decryptedStr) as T;
   } catch (error) {
     console.error("Failed to decrypt data:", error);
     return null;

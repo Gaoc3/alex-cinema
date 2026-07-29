@@ -15,9 +15,11 @@ interface VideoItem {
   year: string;
   stars: string;
   img?: string;
+  imgObjUrl?: string;
   imgMediumThumb?: string;
   imgThumb?: string;
   kind?: string;
+  type_name?: string;
   categories?: { ar_title: string }[];
 }
 
@@ -130,8 +132,8 @@ function SearchPageContent() {
         const fetchMovies = typeFilter === 'all' || typeFilter === 'movies';
         const fetchSeries = typeFilter === 'all' || typeFilter === 'series';
 
-        let allFetchedMovies: VideoItem[] = [];
-        let allFetchedSeries: VideoItem[] = [];
+        const allFetchedMovies: VideoItem[] = [];
+        const allFetchedSeries: VideoItem[] = [];
 
         for (const qTerm of queriesToTry) {
           const queryEncoded = encodeURIComponent(qTerm);
@@ -147,7 +149,7 @@ function SearchPageContent() {
               .then((res) => (res.ok ? res.json() : null))
               .then((encrypted) => {
                 if (!encrypted || !encrypted.payload) return [];
-                const data = decryptData(encrypted.payload);
+                const data = decryptData<VideoItem[]>(encrypted.payload);
                 return Array.isArray(data) ? data : [];
               });
           }
@@ -160,7 +162,7 @@ function SearchPageContent() {
               .then((res) => (res.ok ? res.json() : null))
               .then((encrypted) => {
                 if (!encrypted || !encrypted.payload) return [];
-                const data = decryptData(encrypted.payload);
+                const data = decryptData<VideoItem[]>(encrypted.payload);
                 return Array.isArray(data) ? data : [];
               });
           }
@@ -178,9 +180,9 @@ function SearchPageContent() {
           setMovies(uniqueMovies);
           setSeries(uniqueSeries);
         }
-      } catch (e: any) {
-        if (e.name === 'AbortError') return;
-        console.error('Advanced Search failed:', e);
+      } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'AbortError') return;
+        console.error('Advanced Search failed:', error);
         if (!signal.aborted) {
           setMovies([]);
           setSeries([]);
@@ -193,11 +195,17 @@ function SearchPageContent() {
     }
 
     if (query.trim()) {
-      performSearch();
+      void performSearch();
     } else {
-      setMovies([]);
-      setSeries([]);
-      setIsLoading(false);
+      const resetFrame = window.requestAnimationFrame(() => {
+        setMovies([]);
+        setSeries([]);
+        setIsLoading(false);
+      });
+      return () => {
+        window.cancelAnimationFrame(resetFrame);
+        controller.abort();
+      };
     }
 
     return () => {
@@ -237,7 +245,7 @@ function SearchPageContent() {
       <div className="mb-10 text-center relative">
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-alex-primary/10 rounded-full blur-[80px] pointer-events-none"></div>
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-4 drop-shadow-md break-words">
-          نتائج البحث عن: <span className="text-alex-primary tracking-tight break-all">"{query}"</span>
+          نتائج البحث عن: <span className="text-alex-primary tracking-tight break-all">«{query}»</span>
         </h1>
         <p className="text-gray-400 font-medium">
           تم العثور على {isLoading ? '...' : totalResults} نتيجة مطابقة
@@ -421,7 +429,7 @@ function SearchPageContent() {
                     {/* Poster Wrapper */}
                     <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper shadow-lg group-hover/card:shadow-[0_10px_30px_rgba(229,9,20,0.2)] transition-shadow duration-500">
                       <img 
-                        src={getVideoImageUrl(video as any, 'poster')}
+                        src={getVideoImageUrl(video, 'poster')}
                         alt={video.ar_title} 
                         className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
                         loading="lazy"
@@ -449,7 +457,7 @@ function SearchPageContent() {
                       </h3>
 
                       <div className="flex items-center justify-between mt-1.5 opacity-70 group-hover/card:opacity-100 transition-opacity">
-                        <span className="font-cairo bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] text-gray-300">{(video as any).type_name || video.categories?.[0]?.ar_title || 'فيلم'}</span>
+                        <span className="font-cairo bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] text-gray-300">{video.type_name || video.categories?.[0]?.ar_title || 'فيلم'}</span>
                         <span className="font-en text-[11px] font-bold text-gray-400">{video.year}</span>
                       </div>
                     </div>
@@ -477,7 +485,7 @@ function SearchPageContent() {
                     {/* Poster Wrapper */}
                     <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper shadow-lg group-hover/card:shadow-[0_10px_30px_rgba(59,130,246,0.2)] transition-shadow duration-500">
                       <img 
-                        src={getVideoImageUrl(video as any, 'poster')}
+                        src={getVideoImageUrl(video, 'poster')}
                         alt={video.ar_title} 
                         className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
                         loading="lazy"
@@ -505,7 +513,7 @@ function SearchPageContent() {
                       </h3>
 
                       <div className="flex items-center justify-between mt-1.5 opacity-70 group-hover/card:opacity-100 transition-opacity">
-                        <span className="font-cairo bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] text-gray-300">{(video as any).type_name || video.categories?.[0]?.ar_title || 'مسلسل'}</span>
+                        <span className="font-cairo bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] text-gray-300">{video.type_name || video.categories?.[0]?.ar_title || 'مسلسل'}</span>
                         <span className="font-en text-[11px] font-bold text-gray-400">{video.year}</span>
                       </div>
                     </div>

@@ -2,35 +2,44 @@ import { getPromoVideos, getLatestMovies, getLatestSeries } from '@/lib/api';
 import HeroCarousel from '@/components/HeroCarousel';
 import VideoSlider from '@/components/VideoSlider';
 
+interface HomeVideo {
+  nb: string;
+  ar_title: string;
+  en_title?: string;
+  ar_content: string;
+  img: string;
+  imgObjUrl?: string;
+  stars: string;
+  year: string;
+  trailer?: string;
+  kind?: string;
+  categories?: { ar_title: string }[];
+}
 
 export default async function Home() {
-  const [promoVideos, latestMovies, latestSeries] = await Promise.all([
+  const [promoResult, moviesResult, seriesResult] = await Promise.all([
     getPromoVideos(),
     getLatestMovies(1),
     getLatestSeries(1)
   ]);
-
-  let carouselVideos = [];
-  if (promoVideos && promoVideos.length > 0) {
-    carouselVideos = promoVideos;
-  }
+  const promoVideos: HomeVideo[] = Array.isArray(promoResult) ? promoResult : [];
+  const latestMovies: HomeVideo[] = Array.isArray(moviesResult) ? moviesResult : [];
+  const latestSeries: HomeVideo[] = Array.isArray(seriesResult) ? seriesResult : [];
 
   // Sort movies by rating to get "Featured Movies"
-  const featuredMovies = latestMovies 
-    ? [...latestMovies].sort((a: any, b: any) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0')) 
-    : [];
+  const featuredMovies = [...latestMovies]
+    .sort((a, b) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0'));
 
   // Sort series by rating to get "Featured Series"
-  const featuredSeries = latestSeries 
-    ? [...latestSeries].sort((a: any, b: any) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0')) 
-    : [];
+  const featuredSeries = [...latestSeries]
+    .sort((a, b) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0'));
 
   return (
     <div className="animate-fade-in-up pb-20">
       {/* Hero Section Carousel */}
-      {carouselVideos.length > 0 && (
+      {promoVideos.length > 0 && (
         <div className="-mt-16 sm:-mt-20 lg:mt-0 relative z-0">
-          <HeroCarousel videos={carouselVideos} />
+          <HeroCarousel videos={promoVideos} />
         </div>
       )}
 

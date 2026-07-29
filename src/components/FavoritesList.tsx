@@ -21,7 +21,7 @@ export default function FavoritesList() {
   try {
     const clerk = useClerk();
     closeUserProfile = clerk?.closeUserProfile;
-  } catch (e) {
+  } catch {
     // Pure Telegram Session
   }
   const [favorites, setFavorites] = useState<Favorite[]>([]);
