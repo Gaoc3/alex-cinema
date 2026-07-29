@@ -49,22 +49,6 @@ export default function TelegramAutoAuth() {
       }
     }
 
-    // Block external OAuth / sign-in links inside Telegram WebApp to prevent "Failed to load Outh" error
-    const handleGlobalClick = (e: MouseEvent) => {
-      if (!isTgApp) return;
-      const target = (e.target as HTMLElement)?.closest("a");
-      if (target) {
-        const href = target.getAttribute("href") || "";
-        if (href.includes("/sign-in") || href.includes("/sign-up") || href.includes("clerk.") || href.includes("accounts.")) {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log("[Telegram WebApp] Blocked OAuth navigation inside webview to prevent 'Failed to load Outh' error.");
-        }
-      }
-    };
-
-    window.addEventListener("click", handleGlobalClick, true);
-
     let initData = tg?.initData || "";
     let unsafeUser = tg?.initDataUnsafe?.user || null;
 
@@ -74,9 +58,7 @@ export default function TelegramAutoAuth() {
     }
 
     if (!initData && !unsafeUser) {
-      return () => {
-        window.removeEventListener("click", handleGlobalClick, true);
-      };
+      return;
     }
 
     const currentTgUserId = unsafeUser?.id ? String(unsafeUser.id) : null;
@@ -113,10 +95,6 @@ export default function TelegramAutoAuth() {
         }
       })
       .catch((e) => console.error("[Auth Me Check Error]:", e));
-
-    return () => {
-      window.removeEventListener("click", handleGlobalClick, true);
-    };
   }, []);
 
   return null;
