@@ -3,6 +3,9 @@
 import { prisma } from '@/lib/prisma';
 import { syncUser } from './user.actions';
 
+const MAX_ROOMS_PER_USER = 25;
+const INACTIVE_ROOM_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
 export async function createRoom(data: {
   title: string;
   movieId?: string;
@@ -16,16 +19,37 @@ export async function createRoom(data: {
       return { success: false, error: userSync.error || 'يجب تسجيل الدخول لإنشاء روم' };
     }
 
-    const newRoom = await prisma.room.create({
-      data: {
-        title: data.title,
-        movieId: data.movieId,
-        movieTitle: data.movieTitle,
-        moviePoster: data.moviePoster,
-        isPrivate: data.isPrivate ?? false,
-        hostId: userSync.user.id, // Store our DB User ID as host
-      }
-    });
+    const inactiveBefore = new Date(Date.now() - INACTIVE_ROOM_RETENTION_MS);
+    const newRoom = await prisma.$transaction(async (tx) => {
+      await tx.room.deleteMany({
+        where: {
+          hostId: userSync.user.id,
+          isActive: false,
+          updatedAt: { lt: inactiveBefore },
+        },
+      });
+
+      const existingRoomCount = await tx.room.count({
+        where: { hostId: userSync.user.id },
+      });
+      if (existingRoomCount >= MAX_ROOMS_PER_USER) return null;
+
+      return tx.room.create({
+        data: {
+          title: data.title.trim().slice(0, 100) || 'روم مشاهدة جماعية',
+          movieId: data.movieId?.trim().slice(0, 128),
+          movieTitle: data.movieTitle?.trim().slice(0, 200),
+          moviePoster: data.moviePoster?.trim().slice(0, 2048),
+          isPrivate: data.isPrivate ?? false,
+          isActive: false,
+          hostId: userSync.user.id,
+        },
+      });
+    }, { isolationLevel: 'Serializable' });
+
+    if (!newRoom) {
+      return { success: false, error: 'وصلت إلى الحد الأقصى المسموح للغرف' };
+    }
 
     return { success: true, roomId: newRoom.id };
   } catch (error) {
@@ -43,8 +67,7 @@ export async function getRoom(roomId: string) {
           select: {
             id: true,
             name: true,
-            imageUrl: true,
-            clerkId: true
+            imageUrl: true
           }
         }
       }
@@ -81,9 +104,12 @@ export async function updateRoomVideo(roomId: string, data: {
     const updatedRoom = await prisma.room.update({
       where: { id: roomId },
       data: {
-        movieId: data.movieId,
-        movieTitle: data.movieTitle,
-        moviePoster: data.moviePoster,
+        movieId: data.movieId.trim().slice(0, 128),
+        movieTitle: data.movieTitle.trim().slice(0, 200),
+        moviePoster: data.moviePoster?.trim().slice(0, 2048),
+        currentEpisodeId: null,
+        currentSeason: null,
+        currentEpisode: null,
       }
     });
 

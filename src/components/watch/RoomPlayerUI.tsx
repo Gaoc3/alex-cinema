@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { decryptData } from '@/utils/cryptoHelper';
 import PlayerSection from './PlayerSection';
 import SeriesNavigator from './SeriesNavigator';
+import toast from 'react-hot-toast';
 
 interface Stream {
   name: string;
@@ -28,6 +29,12 @@ interface Season {
   season: string;
 }
 
+const compareEpisodes = (a: Episode, b: Episode) => {
+  const seasonDifference = (parseInt(a.season) || 0) - (parseInt(b.season) || 0);
+  if (seasonDifference !== 0) return seasonDifference;
+  return (parseInt(a.episodeNummer) || 0) - (parseInt(b.episodeNummer) || 0);
+};
+
 interface RoomPlayerUIProps {
   video: any;
   episodes: Episode[];
@@ -37,6 +44,7 @@ interface RoomPlayerUIProps {
 
 export default function RoomPlayerUI({ video, seasons, episodes, roomHook }: RoomPlayerUIProps) {
   const isSeries = video.kind === '2';
+  const canChangeEpisode = !roomHook || Boolean(roomHook.isHost);
   
   // For series, active episode state. Default to first episode of first season.
   const [activeEpisode, setActiveEpisode] = useState<Episode | null>(null);
@@ -44,21 +52,22 @@ export default function RoomPlayerUI({ video, seasons, episodes, roomHook }: Roo
   const [episodeStreams, setEpisodeStreams] = useState<Stream[]>([]);
   const [activeEpisodeDetails, setActiveEpisodeDetails] = useState<any>(null);
   const [isLoadingStreams, setIsLoadingStreams] = useState(false);
+  const requestControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
 
   // Set default season and episode on load
   useEffect(() => {
     if (isSeries && episodes.length > 0) {
-      const sortedEpisodes = [...episodes].sort((a, b) => {
-        const numA = parseInt(a.episodeNummer) || 0;
-        const numB = parseInt(b.episodeNummer) || 0;
-        return numA - numB;
-      });
+      const sortedEpisodes = [...episodes].sort(compareEpisodes);
       
-      const firstEp = sortedEpisodes[0];
+      const remoteEpisode = roomHook?.remoteEpisodeId
+        ? sortedEpisodes.find((episode) => episode.nb === roomHook.remoteEpisodeId)
+        : null;
+      const firstEp = remoteEpisode || sortedEpisodes[0];
       setActiveEpisode(firstEp);
       setCurrentSeason(firstEp.season || '1');
     }
-  }, [isSeries, episodes]);
+  }, [isSeries, episodes, roomHook?.remoteEpisodeId]);
 
   // Fetch streams and details when active episode changes (for series)
   useEffect(() => {
@@ -72,11 +81,15 @@ export default function RoomPlayerUI({ video, seasons, episodes, roomHook }: Roo
   }, [activeEpisode, isSeries, video]);
 
   const fetchEpisodeDetails = async (episodeId: string) => {
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    const requestId = ++requestIdRef.current;
+    requestControllerRef.current = controller;
     setIsLoadingStreams(true);
     try {
       const [infoRes, streamsRes] = await Promise.all([
-        fetch(`/api/proxy?endpoint=allVideoInfo/id/${episodeId}`),
-        fetch(`/api/proxy?endpoint=transcoddedFiles/id/${episodeId}`)
+        fetch(`/api/proxy?endpoint=allVideoInfo/id/${encodeURIComponent(episodeId)}`, { signal: controller.signal }),
+        fetch(`/api/proxy?endpoint=transcoddedFiles/id/${encodeURIComponent(episodeId)}`, { signal: controller.signal })
       ]);
 
       let info: any = {};
@@ -94,23 +107,24 @@ export default function RoomPlayerUI({ video, seasons, episodes, roomHook }: Roo
         streams: Array.isArray(streams) ? streams : []
       };
 
-      setActiveEpisodeDetails(combined);
-      setEpisodeStreams(combined.streams);
+      if (requestId === requestIdRef.current) {
+        setActiveEpisodeDetails(combined);
+        setEpisodeStreams(combined.streams);
+      }
     } catch (e) {
+      if (controller.signal.aborted) return;
       console.error("Failed to fetch episode details:", e);
       setActiveEpisodeDetails(null);
       setEpisodeStreams([]);
     } finally {
-      setIsLoadingStreams(false);
+      if (requestId === requestIdRef.current) setIsLoadingStreams(false);
     }
   };
 
+  useEffect(() => () => requestControllerRef.current?.abort(), []);
+
   // Determine if there is a next episode
-  const sortedEpisodesList = [...episodes].sort((a, b) => {
-    const numA = parseInt(a.episodeNummer) || 0;
-    const numB = parseInt(b.episodeNummer) || 0;
-    return numA - numB;
-  });
+  const sortedEpisodesList = [...episodes].sort(compareEpisodes);
 
   const activeIndex = activeEpisode
     ? sortedEpisodesList.findIndex(ep => ep.nb === activeEpisode.nb)
@@ -119,11 +133,27 @@ export default function RoomPlayerUI({ video, seasons, episodes, roomHook }: Roo
   const hasNextEpisode = isSeries && activeIndex !== -1 && activeIndex < sortedEpisodesList.length - 1;
 
   const playNextEpisode = () => {
-    if (hasNextEpisode) {
+    if (hasNextEpisode && canChangeEpisode) {
       const nextEp = sortedEpisodesList[activeIndex + 1];
-      setActiveEpisode(nextEp);
-      setCurrentSeason(nextEp.season || '1');
+      void selectEpisode(nextEp);
     }
+  };
+
+  const selectEpisode = async (episode: Episode) => {
+    if (!canChangeEpisode) return;
+    if (roomHook?.isHost) {
+      const result = await roomHook.changeEpisode?.(
+        episode.nb,
+        episode.season || '',
+        episode.episodeNummer || '',
+      );
+      if (!result?.ok) {
+        toast.error(result?.error || 'تعذر مزامنة الحلقة مع الغرفة');
+        return;
+      }
+    }
+    setActiveEpisode(episode);
+    setCurrentSeason(episode.season || '1');
   };
 
   // Filter episodes for selected season
@@ -150,7 +180,7 @@ export default function RoomPlayerUI({ video, seasons, episodes, roomHook }: Roo
           activeEpisodeDetails={activeEpisodeDetails}
           video={video}
           displayTitle={displayTitle}
-          hasNextEpisode={hasNextEpisode}
+          hasNextEpisode={hasNextEpisode && canChangeEpisode}
           playNextEpisode={playNextEpisode}
           roomHook={roomHook}
         />
@@ -165,10 +195,11 @@ export default function RoomPlayerUI({ video, seasons, episodes, roomHook }: Roo
               currentSeason={currentSeason}
               setCurrentSeason={setCurrentSeason}
               activeEpisode={activeEpisode}
-              setActiveEpisode={setActiveEpisode}
+              setActiveEpisode={selectEpisode}
               seasonEpisodes={seasonEpisodes}
               videoTitle={video.ar_title}
               videoImg={video.img}
+              canSelectEpisodes={canChangeEpisode}
           />
         </div>
       )}

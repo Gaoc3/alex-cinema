@@ -66,6 +66,21 @@ body {
   scroll-behavior: smooth;
 }
 
+/* Keep the click affordance consistent across native and custom controls. */
+a[href],
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary,
+label[for],
+select {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 /* Telegram WebApp Native Header Safe Area Insets (MOBILE ONLY < 640px) */
 @media (max-width: 639px) {
   .is-telegram-webapp nav#navbar {
@@ -82,6 +97,10 @@ body {
 
   .is-telegram-webapp .auth-page-shell {
     padding-top: max(env(safe-area-inset-top, 48px), 52px) !important;
+  }
+
+  .is-telegram-webapp .room-chat-header {
+    padding-top: max(env(safe-area-inset-top, 48px), 44px) !important;
   }
 }
 

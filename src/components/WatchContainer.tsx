@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useTransition } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { decryptData } from '@/utils/cryptoHelper';
 import WatchLayout from './watch/WatchLayout';
 import { useUnifiedAuth } from './auth/UnifiedAuthProvider';
@@ -30,6 +30,12 @@ interface Season {
   season: string;
 }
 
+const compareEpisodes = (a: Episode, b: Episode) => {
+  const seasonDifference = (parseInt(a.season) || 0) - (parseInt(b.season) || 0);
+  if (seasonDifference !== 0) return seasonDifference;
+  return (parseInt(a.episodeNummer) || 0) - (parseInt(b.episodeNummer) || 0);
+};
+
 interface WatchContainerProps {
   video: any;
   episodes: Episode[];
@@ -48,6 +54,8 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
   const [isLoadingStreams, setIsLoadingStreams] = useState(false);
   const [favoriteList, setFavoriteList] = useState<string[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
+  const episodeRequestControllerRef = useRef<AbortController | null>(null);
+  const episodeRequestIdRef = useRef(0);
 
   // Likes and Dislikes States
   const [likes, setLikes] = useState<number>(0);
@@ -102,7 +110,7 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
   // Initialize favorite status using unified auth
   const { isSignedIn, isLoaded, user } = useUnifiedAuth();
   const { getToken } = useAuth();
-  const [isPendingFav, startTransitionFav] = useTransition();
+  const [isFavoriteSaving, setIsFavoriteSaving] = useState(false);
 
   // Fetch initial favorite status
   useEffect(() => {
@@ -112,28 +120,30 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
         const token = await getToken().catch(() => null);
         const headers: Record<string, string> = {};
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const res = await fetch('/api/favorites', { headers });
+        const mediaType = isSeries ? 'tv' : 'movie';
+        const params = new URLSearchParams({ mediaId: String(video.nb), mediaType });
+        const res = await fetch(`/api/favorites?${params.toString()}`, { headers, cache: 'no-store' });
         const data = await res.json();
-        if (data.success && data.favorites) {
-          const isFav = data.favorites.some((f: any) => f.mediaId === video.nb);
-          setIsFavorite(isFav);
+        if (data.success && typeof data.isFavorite === 'boolean') {
+          setIsFavorite(data.isFavorite);
         }
       } catch (err) {
         console.error("Failed to fetch favorites status", err);
       }
     };
     checkFavoriteStatus();
-  }, [video.nb, isLoaded, isSignedIn, user, getToken]);
+  }, [video.nb, isSeries, isLoaded, isSignedIn, user, getToken]);
 
   const toggleFavorite = async () => {
     if (!isLoaded || (!isSignedIn && !user)) {
       toast.error("يجب تسجيل الدخول لإضافة المفضلات ⚠️");
       return;
     }
+    if (isFavoriteSaving) return;
 
-    startTransitionFav(() => {
-      setIsFavorite(!isFavorite);
-    });
+    const desiredState = !isFavorite;
+    setIsFavoriteSaving(true);
+    setIsFavorite(desiredState);
 
     try {
       const token = await getToken().catch(() => null);
@@ -149,7 +159,8 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
           mediaId: video.nb, 
           mediaType: isSeries ? 'tv' : 'movie',
           title: video.ar_title || video.en_title,
-          posterPath: video.img
+          posterPath: video.img,
+          isFavorite: desiredState,
         })
       });
 
@@ -170,17 +181,15 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
       console.error(err);
       setIsFavorite(isFavorite);
       toast.error('حدث خطأ أثناء الاتصال بالخادم');
+    } finally {
+      setIsFavoriteSaving(false);
     }
   };
 
   // Set default season and episode on load
   useEffect(() => {
     if (isSeries && episodes.length > 0) {
-      const sortedEpisodes = [...episodes].sort((a, b) => {
-        const numA = parseInt(a.episodeNummer) || 0;
-        const numB = parseInt(b.episodeNummer) || 0;
-        return numA - numB;
-      });
+      const sortedEpisodes = [...episodes].sort(compareEpisodes);
       
       const firstEp = sortedEpisodes[0];
       setActiveEpisode(firstEp);
@@ -200,11 +209,15 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
   }, [activeEpisode, isSeries, video]);
 
   const fetchEpisodeDetails = async (episodeId: string) => {
+    episodeRequestControllerRef.current?.abort();
+    const controller = new AbortController();
+    const requestId = ++episodeRequestIdRef.current;
+    episodeRequestControllerRef.current = controller;
     setIsLoadingStreams(true);
     try {
       const [infoRes, streamsRes] = await Promise.all([
-        fetch(`/api/proxy?endpoint=allVideoInfo/id/${episodeId}`),
-        fetch(`/api/proxy?endpoint=transcoddedFiles/id/${episodeId}`)
+        fetch(`/api/proxy?endpoint=allVideoInfo/id/${encodeURIComponent(episodeId)}`, { signal: controller.signal }),
+        fetch(`/api/proxy?endpoint=transcoddedFiles/id/${encodeURIComponent(episodeId)}`, { signal: controller.signal })
       ]);
 
       let info: any = {};
@@ -222,23 +235,24 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
         streams: Array.isArray(streams) ? streams : []
       };
 
-      setActiveEpisodeDetails(combined);
-      setEpisodeStreams(combined.streams);
+      if (requestId === episodeRequestIdRef.current) {
+        setActiveEpisodeDetails(combined);
+        setEpisodeStreams(combined.streams);
+      }
     } catch (e) {
+      if (controller.signal.aborted) return;
       console.error("Failed to fetch episode details:", e);
       setActiveEpisodeDetails(null);
       setEpisodeStreams([]);
     } finally {
-      setIsLoadingStreams(false);
+      if (requestId === episodeRequestIdRef.current) setIsLoadingStreams(false);
     }
   };
 
+  useEffect(() => () => episodeRequestControllerRef.current?.abort(), []);
+
   // Determine if there is a next episode
-  const sortedEpisodesList = [...episodes].sort((a, b) => {
-    const numA = parseInt(a.episodeNummer) || 0;
-    const numB = parseInt(b.episodeNummer) || 0;
-    return numA - numB;
-  });
+  const sortedEpisodesList = [...episodes].sort(compareEpisodes);
 
   const activeIndex = activeEpisode
     ? sortedEpisodesList.findIndex(ep => ep.nb === activeEpisode.nb)

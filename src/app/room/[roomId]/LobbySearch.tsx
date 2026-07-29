@@ -18,6 +18,7 @@ interface SearchResult {
 
 interface LobbySearchProps {
   roomId: string;
+  onVideoSelected?: (videoId: string, kind?: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 const ARABIC_EN_MAP: Record<string, string> = {
@@ -45,7 +46,7 @@ function getEnglishSearchQuery(arQuery: string): string {
   return q;
 }
 
-export default function LobbySearch({ roomId }: LobbySearchProps) {
+export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -149,8 +150,17 @@ export default function LobbySearch({ roomId }: LobbySearchProps) {
         moviePoster: item.img || ''
       });
       if (res.success) {
+        const syncResult = onVideoSelected
+          ? await onVideoSelected(item.nb, item.kind || '')
+          : { ok: true };
         toast.success(`تم اختيار ${item.ar_title || item.en_title} للروم! 🎬`);
-        router.push(`/room/${roomId}?videoId=${item.nb}`);
+        const nextUrl = `/room/${roomId}?videoId=${item.nb}`;
+        if (!syncResult.ok) {
+          toast('سيُعاد الاتصال بالغرفة لإكمال المزامنة', { icon: '🔄' });
+          window.location.assign(nextUrl);
+        } else {
+          router.push(nextUrl);
+        }
       } else {
         toast.error(res.error || 'حدث خطأ أثناء اختيار الفيديو للروم');
       }

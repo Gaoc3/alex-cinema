@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { getImageUrl } from '@/utils/imageHelper';
 
 interface SeriesNavigatorProps {
@@ -11,6 +11,7 @@ interface SeriesNavigatorProps {
   seasonEpisodes: any[];
   videoTitle: string;
   videoImg: string;
+  canSelectEpisodes?: boolean;
 }
 
 export default function SeriesNavigator({
@@ -22,7 +23,8 @@ export default function SeriesNavigator({
   setActiveEpisode,
   seasonEpisodes,
   videoTitle,
-  videoImg
+  videoImg,
+  canSelectEpisodes = true,
 }: SeriesNavigatorProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
@@ -112,8 +114,14 @@ export default function SeriesNavigator({
               <div
                 key={ep.nb}
                 data-active={isActiveEp ? "true" : "false"}
-                onClick={() => setActiveEpisode(ep)}
-                className={`flex items-center gap-3.5 p-3 rounded-2xl border transition-all duration-300 cursor-pointer ${
+                onClick={() => canSelectEpisodes && setActiveEpisode(ep)}
+                onKeyDown={(event) => {
+                  if (canSelectEpisodes && (event.key === 'Enter' || event.key === ' ')) setActiveEpisode(ep);
+                }}
+                role="button"
+                tabIndex={canSelectEpisodes ? 0 : -1}
+                aria-disabled={!canSelectEpisodes}
+                className={`flex items-center gap-3.5 p-3 rounded-2xl border transition-all duration-300 ${canSelectEpisodes ? 'cursor-pointer' : 'cursor-default opacity-85'} ${
                   isActiveEp
                     ? 'bg-red-950/30 border-red-500/60 shadow-[0_4px_20px_rgba(229,9,20,0.25)]'
                     : 'bg-white/[0.03] border-white/10 hover:border-white/20 active:scale-[0.98]'
@@ -155,7 +163,7 @@ export default function SeriesNavigator({
                   </p>
 
                   <div className="flex items-center gap-2">
-                    <button className={`px-3 py-1 rounded-lg text-[10px] font-black flex items-center gap-1.5 transition-all ${
+                    <button disabled={!canSelectEpisodes} className={`px-3 py-1 rounded-lg text-[10px] font-black flex items-center gap-1.5 transition-all ${
                       isActiveEp 
                         ? 'bg-red-600 text-white shadow-md' 
                         : 'bg-white/10 text-gray-300 hover:text-white'
@@ -189,6 +197,7 @@ export default function SeriesNavigator({
               >
                 <button
                   onClick={() => setActiveEpisode(ep)}
+                  disabled={!canSelectEpisodes}
                   className={`relative aspect-[16/10] w-full rounded-2xl overflow-hidden border transition-all duration-300 cursor-pointer ${
                     isActiveEp 
                       ? 'border-red-500 shadow-[0_8px_30px_rgba(229,9,20,0.4)] scale-[1.03]' 

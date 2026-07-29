@@ -1,31 +1,60 @@
 import { decryptData } from '@/utils/cryptoHelper';
 
+const CINEMANA_API_BASE = new URL('https://cinemana.shabakaty.com/api/android/');
+
+function resolveCinemanaEndpoint(endpoint: string, params: Record<string, string>): URL | null {
+  const relativeEndpoint = endpoint.trim();
+  if (
+    !relativeEndpoint
+    || relativeEndpoint.startsWith('/')
+    || relativeEndpoint.includes('\\')
+    || /^[a-z][a-z\d+.-]*:/i.test(relativeEndpoint)
+  ) return null;
+
+  try {
+    const target = new URL(relativeEndpoint, CINEMANA_API_BASE);
+    if (target.origin !== CINEMANA_API_BASE.origin) return null;
+    if (!target.pathname.startsWith(CINEMANA_API_BASE.pathname) || target.pathname === CINEMANA_API_BASE.pathname) return null;
+    if (target.hash) return null;
+
+    for (const [key, value] of Object.entries(params)) {
+      target.searchParams.set(key, value);
+    }
+    return target;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchCinemana(endpoint: string, params: Record<string, string> = {}, revalidate: number = 3600) {
-  const queryString = new URLSearchParams(params).toString();
-  const fullEndpoint = queryString ? `${endpoint}?${queryString}` : endpoint;
-  
+  void revalidate;
+  const targetUrl = resolveCinemanaEndpoint(endpoint, params);
+  if (!targetUrl) {
+    console.error('[Cinemana Fetch Error]: Invalid API endpoint');
+    return null;
+  }
+
+  const fullEndpoint = `${targetUrl.pathname.slice(CINEMANA_API_BASE.pathname.length)}${targetUrl.search}`;
   const isServer = typeof window === 'undefined';
 
   if (isServer) {
     // /etc/hosts routes shabakaty.com → 127.0.0.1:443 (router SSH reverse tunnel)
-    const targetUrl = `https://cinemana.shabakaty.com/api/android/${fullEndpoint}`;
-
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s fast timeout to prevent NGINX 502 Gateway timeouts
 
     try {
-      const res = await fetch(targetUrl, {
-        cache: 'no-store',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'bypass-tunnel-reminder': 'true'
-        },
-        signal: controller.signal,
+      const { fetchWithRedirects, readResponseTextWithLimit } = await import('@/utils/proxyHelper');
+      const headers = new Headers({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'bypass-tunnel-reminder': 'true',
       });
-      clearTimeout(timeoutId);
+      const res = await fetchWithRedirects(targetUrl.href, headers, 5, controller.signal);
 
-      if (!res.ok) return null;
-      const text = await res.text();
+      if (!res.ok) {
+        await res.body?.cancel().catch(() => undefined);
+        return null;
+      }
+      const text = await readResponseTextWithLimit(res, 10 * 1024 * 1024);
       try {
         const raw = JSON.parse(text);
         
@@ -35,10 +64,13 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
       } catch {
         return null;
       }
-    } catch (e: any) {
-      clearTimeout(timeoutId);
-      if (e.name !== 'AbortError') console.error('[Server Fetch Error]:', e.message);
+    } catch (error: unknown) {
+      if (!(error instanceof Error && error.name === 'AbortError')) {
+        console.error('[Server Fetch Error]:', error instanceof Error ? error.message : 'Unknown error');
+      }
       return null;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -60,10 +92,13 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
     if (!res.ok) return null;
     const data = await res.json();
     return decryptData(data.payload);
-  } catch (e: any) {
-    clearTimeout(timeoutId);
-    if (e.name !== 'AbortError') console.error('[Client Fetch Error]:', e.message);
+  } catch (error: unknown) {
+    if (!(error instanceof Error && error.name === 'AbortError')) {
+      console.error('[Client Fetch Error]:', error instanceof Error ? error.message : 'Unknown error');
+    }
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

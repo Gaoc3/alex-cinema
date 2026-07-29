@@ -16,12 +16,12 @@ export default function PlayerWrapper(props: PlayerWrapperProps) {
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const checkMobile = () => {
-      const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      setIsMobile(isMobileUA || (isTouch && window.screen.width < 1024));
-    };
-    checkMobile(); 
+    // Pick one implementation for the lifetime of this mount. Switching player
+    // components during a resize/orientation change destroys playback state.
+    const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    setIsMobile((isMobileUA || isTouch || hasCoarsePointer) && window.innerWidth < 1024);
   }, []);
 
   if (isMobile === null) {

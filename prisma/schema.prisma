@@ -8,45 +8,70 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(cuid())
-  clerkId   String   @unique
-  name      String?
-  imageUrl  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  rooms     Room[]
-  favorites Favorite[]
+  id           String        @id @default(cuid())
+  clerkId      String        @unique
+  name         String?
+  imageUrl     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  rooms        Room[]
+  favorites    Favorite[]
+  roomMessages RoomMessage[]
 }
 
 model Room {
+  id               String        @id @default(uuid())
+  title            String
+  description      String?
+  movieId          String?
+  movieTitle       String?
+  moviePoster      String?
+  currentEpisodeId String?
+  currentSeason    String?
+  currentEpisode   String?
+  isPrivate        Boolean       @default(false)
+  isActive         Boolean       @default(false)
+  hostId           String
+  host             User          @relation(fields: [hostId], references: [id])
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  messages         RoomMessage[]
+
+  @@index([hostId, updatedAt])
+  @@index([isActive, isPrivate, updatedAt])
+}
+
+model RoomMessage {
   id          String   @id @default(uuid())
-  title       String
-  description String?
-  movieId     String?
-  movieTitle  String?
-  moviePoster String?
-  isPrivate   Boolean  @default(false)
-  isActive    Boolean  @default(true)
-  hostId      String
-  host        User     @relation(fields: [hostId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  roomId      String
+  senderId    String?
+  senderName  String   @db.VarChar(120)
+  text        String   @db.VarChar(1000)
+  clientNonce String   @db.Uuid
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender      User?    @relation(fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@unique([roomId, clientNonce])
+  @@index([roomId, createdAt])
+  @@index([createdAt])
 }
 
 model Favorite {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  mediaId     String
-  mediaType   String   // 'movie' or 'tv'
-  title       String
-  posterPath  String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  mediaId    String
+  mediaType  String // 'movie' or 'tv'
+  title      String
+  posterPath String?
+  createdAt  DateTime @default(now())
 
   @@unique([userId, mediaId, mediaType])
+  @@index([userId, createdAt])
 }

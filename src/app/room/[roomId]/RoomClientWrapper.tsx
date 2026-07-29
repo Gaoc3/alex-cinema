@@ -38,32 +38,13 @@ export default function RoomClientWrapper({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const router = useRouter();
 
-  const handleConfirmDelete = async () => {
-    setShowDeleteConfirm(false);
-    try {
-      const { deleteRoom } = await import('@/app/actions/room.actions');
-      const res = await deleteRoom(roomId);
-      if (res.success) {
-        toast.success('تم حذف الغرفة نهائياً 🗑️');
-        window.location.href = '/rooms';
-      } else {
-        toast.error(res.error || 'حدث خطأ أثناء حذف الغرفة');
-      }
-    } catch (err) {
-      toast.error('فشل حذف الغرفة');
-    }
-  };
-
   // Dynamic host evaluation using server prop + client unified auth session
-  const isHostUser = Boolean(
-    isHostUserProp || 
-    (unifiedUser && (unifiedUser.id === roomData.hostId || unifiedUser.clerkId === roomData.host?.clerkId))
-  );
+  const initialIsHostUser = Boolean(isHostUserProp || unifiedUser?.id === roomData.hostId);
 
   // Auto-resolve username from Clerk user session automatically without any modal prompt!
   const username = user 
     ? (user.fullName || user.firstName || user.username || 'مشاهد')
-    : (unifiedUser?.name || (isHostUser && roomData.host?.name ? roomData.host.name : `ضيف ${roomId.slice(0, 4)}`));
+    : (unifiedUser?.name || (initialIsHostUser && roomData.host?.name ? roomData.host.name : `ضيف ${roomId.slice(0, 4)}`));
 
   // Auto-open sidebar on desktop screens
   useEffect(() => {
@@ -73,13 +54,38 @@ export default function RoomClientWrapper({
   }, []);
 
   // Call the watch room hook unconditionally with auto-bound username
-  const roomHook = useWatchRoom(roomId, isHostUser, username, video?.nb);
+  const roomHook = useWatchRoom(roomId, initialIsHostUser, username);
+  const isHostUser = roomHook.isHost;
+
+  const handleConfirmDelete = async () => {
+    setShowDeleteConfirm(false);
+    try {
+      const { deleteRoom } = await import('@/app/actions/room.actions');
+      const res = await deleteRoom(roomId);
+      if (res.success) {
+        await roomHook.closeRoom();
+        toast.success('تم حذف الغرفة نهائياً 🗑️');
+        window.location.href = '/rooms';
+      } else {
+        toast.error(res.error || 'حدث خطأ أثناء حذف الغرفة');
+      }
+    } catch {
+      toast.error('فشل حذف الغرفة');
+    }
+  };
   
   useEffect(() => {
-    if (roomHook.remoteVideoId && !video) {
+    const currentVideoId = video?.nb || video?.id || null;
+    if (roomHook.remoteVideoId && roomHook.remoteVideoId !== currentVideoId) {
       router.push(`/room/${roomId}?videoId=${roomHook.remoteVideoId}`);
     }
   }, [roomHook.remoteVideoId, video, roomId, router]);
+
+  useEffect(() => {
+    if (roomHook.connectionError) {
+      toast.error(roomHook.connectionError, { id: `room-socket-${roomId}` });
+    }
+  }, [roomHook.connectionError, roomId]);
 
   if (!isLoaded) {
     return (
@@ -101,6 +107,24 @@ export default function RoomClientWrapper({
             className="px-6 py-2.5 bg-[#e50914] hover:bg-[#b91c1c] text-white font-extrabold rounded-xl transition-all shadow-[0_4px_15px_rgba(229,9,20,0.5)] cursor-pointer"
           >
             تصفح المحتوى
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (roomHook.isRoomClosed) {
+    return (
+      <div className="flex-grow flex items-center justify-center min-h-[60vh] p-4">
+        <div className="text-center p-10 bg-[#0c101c] border border-white/15 rounded-3xl max-w-md w-full shadow-2xl">
+          <i className="fa-solid fa-door-closed text-6xl text-[#e50914] mb-4"></i>
+          <h1 className="text-2xl font-black text-white mb-2">تم إغلاق الغرفة</h1>
+          <p className="text-gray-300 text-sm mb-6">أنهى المضيف جلسة المشاهدة لهذه الغرفة.</p>
+          <button
+            onClick={() => router.push('/rooms')}
+            className="px-6 py-2.5 bg-[#e50914] hover:bg-[#b91c1c] text-white font-extrabold rounded-xl transition-all shadow-[0_4px_15px_rgba(229,9,20,0.5)]"
+          >
+            تصفح الغرف النشطة
           </button>
         </div>
       </div>
@@ -204,7 +228,7 @@ export default function RoomClientWrapper({
           sendChatMessage={roomHook.sendChatMessage}
           isHost={isHostUser} 
           kickUser={roomHook.kickUser} 
-          myId={roomHook.socket?.id} 
+          closeRoom={roomHook.closeRoom}
           isOpen={isSidebarOpen}
           setIsOpen={setIsSidebarOpen}
         />
@@ -227,7 +251,7 @@ export default function RoomClientWrapper({
                     <p className="text-gray-300 mb-8 max-w-lg mx-auto text-sm sm:text-base leading-relaxed">
                       أنت المضيف لهذه الغرفة. ابحث عن أي فيلم أو مسلسل في مكتبة الموقع لاختياره والبدء فوراً:
                     </p>
-                    <LobbySearch roomId={roomId} />
+                    <LobbySearch roomId={roomId} onVideoSelected={roomHook.changeVideo} />
                   </>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-4">
@@ -257,7 +281,7 @@ export default function RoomClientWrapper({
                     <i className="fa-solid fa-film text-red-500"></i>
                     تغيير الفيلم أو المسلسل
                   </h3>
-                  <LobbySearch roomId={roomId} />
+                  <LobbySearch roomId={roomId} onVideoSelected={roomHook.changeVideo} />
                 </div>
               )}
             </div>

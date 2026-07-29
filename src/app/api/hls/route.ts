@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { decryptPath, encryptPath } from '@/lib/serverCrypto';
+import { fetchWithRedirects, readResponseTextWithLimit } from '@/utils/proxyHelper';
+import { isHlsUrl, parseAllowedShabakatyUrl, resolveShabakatyReference } from '@/utils/shabakatyUrl';
 
 function rewriteHlsUri(uri: string, manifestUrl: string): string {
   // If it's already rewritten or empty, return as is
@@ -15,10 +17,12 @@ function rewriteHlsUri(uri: string, manifestUrl: string): string {
       resolved = new URL(uri, manifestUrl);
     }
 
-    const fullUrl = resolved.href;
+    const approved = parseAllowedShabakatyUrl(resolved.href);
+    if (!approved) return '';
+    const fullUrl = approved.href;
     const encrypted = encryptPath(fullUrl);
 
-    if (fullUrl.toLowerCase().includes('.m3u8')) {
+    if (isHlsUrl(fullUrl)) {
       return `/api/hls?ref=${encrypted}`;
     } else {
       return `/api/tunnel-video?ref=${encrypted}`;
@@ -57,28 +61,33 @@ export async function GET(req: NextRequest) {
     return new NextResponse('Invalid ref parameter', { status: 400 });
   }
 
-  // decrypted is the full absolute URL
-  let targetUrl = decrypted;
+  const target = resolveShabakatyReference(decrypted);
+  if (!target || !isHlsUrl(target.href)) {
+    return new NextResponse('Invalid HLS reference', { status: 400 });
+  }
+  const targetUrl = target.href;
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
   try {
-    const res = await fetch(targetUrl, {
-      headers: {
+    const headers = new Headers({
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Bypass-Tunnel-Reminder': 'true',
         'Referer': 'https://cinemana.shabakaty.com/',
-      },
-      cache: 'no-store',
     });
+    const res = await fetchWithRedirects(targetUrl, headers, 5, controller.signal);
 
     if (!res.ok) {
+      await res.body?.cancel().catch(() => undefined);
       return new NextResponse(`HLS manifest fetch failed: ${res.status}`, { status: 502 });
     }
 
-    const text = await res.text();
+    const text = await readResponseTextWithLimit(res, 5 * 1024 * 1024);
     
     // Process and rewrite the manifest
+    const manifestUrl = parseAllowedShabakatyUrl(res.url)?.href || targetUrl;
     const manifestLines = text.split('\n');
-    const rewrittenLines = manifestLines.map(line => rewriteLine(line, targetUrl));
+    const rewrittenLines = manifestLines.map(line => rewriteLine(line, manifestUrl));
     const rewrittenManifest = rewrittenLines.join('\n');
 
     return new NextResponse(rewrittenManifest, {
@@ -91,9 +100,12 @@ export async function GET(req: NextRequest) {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in /api/hls:', error);
-    return new NextResponse(`HLS route error: ${error.message || error}`, { status: 502 });
+    const message = error instanceof Error ? error.message : 'Unknown upstream error';
+    return new NextResponse(`HLS route error: ${message}`, { status: 502 });
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useUnifiedAuth } from "@/components/auth/UnifiedAuthProvider";
 import { useAuth } from "@clerk/nextjs";
 import toast from 'react-hot-toast';
@@ -21,7 +21,7 @@ export default function FavoriteButton({
   initialIsFavorite = false 
 }: FavoriteButtonProps) {
   const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const { isSignedIn, isLoaded, user } = useUnifiedAuth();
   const { getToken } = useAuth();
 
@@ -33,11 +33,11 @@ export default function FavoriteButton({
       toast.error("يجب تسجيل الدخول لإضافة المفضلات ⚠️");
       return;
     }
+    if (isPending) return;
 
-    // Optimistic update
-    startTransition(() => {
-      setIsFavorite(!isFavorite);
-    });
+    const desiredState = !isFavorite;
+    setIsPending(true);
+    setIsFavorite(desiredState);
 
     try {
       const token = await getToken().catch(() => null);
@@ -51,7 +51,7 @@ export default function FavoriteButton({
       const res = await fetch('/api/favorites', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ mediaId, mediaType, title, posterPath })
+        body: JSON.stringify({ mediaId, mediaType, title, posterPath, isFavorite: desiredState })
       });
 
       const data = await res.json();
@@ -72,6 +72,8 @@ export default function FavoriteButton({
       console.error(err);
       setIsFavorite(isFavorite);
       toast.error('حدث خطأ أثناء الاتصال بالخادم');
+    } finally {
+      setIsPending(false);
     }
   };
 

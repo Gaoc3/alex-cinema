@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { RoomMember, ChatMessage } from '@/hooks/useWatchRoom';
-import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
 import toast from 'react-hot-toast';
 import ConfirmModal from '@/components/ConfirmModal';
 
@@ -9,10 +8,10 @@ interface RoomSidebarProps {
   initialPrivacy: boolean;
   members: RoomMember[];
   messages: ChatMessage[];
-  sendChatMessage: (text: string) => void;
+  sendChatMessage: (text: string) => Promise<{ ok: boolean; error?: string }>;
   isHost: boolean;
   kickUser: (socketId: string) => void;
-  myId?: string;
+  closeRoom: () => Promise<void>;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
@@ -25,22 +24,21 @@ export default function RoomSidebar({
   sendChatMessage,
   isHost: isHostProp, 
   kickUser, 
-  myId, 
+  closeRoom,
   isOpen, 
   setIsOpen 
 }: RoomSidebarProps) {
-  const { user: unifiedUser } = useUnifiedAuth();
   const [activeTab, setActiveTab] = useState<'chat' | 'members' | 'settings'>('chat');
   const [inputText, setInputText] = useState('');
   const [isPrivate, setIsPrivate] = useState(initialPrivacy);
   const [isToggling, setIsToggling] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [kickMemberTarget, setKickMemberTarget] = useState<RoomMember | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Dynamic host evaluation
-  const isHost = isHostProp || Boolean(unifiedUser && members.some(m => m.isHost && (m.id === unifiedUser.id || m.name === unifiedUser.name)));
+  const isHost = isHostProp;
 
   const hosts = members.filter(m => m.isHost);
   const viewers = members.filter(m => !m.isHost);
@@ -67,11 +65,26 @@ export default function RoomSidebar({
     }
   }, [messages, activeTab]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim()) return;
-    sendChatMessage(inputText);
-    setInputText('');
+    if (!inputText.trim() || isSending) return;
+    setIsSending(true);
+    const result = await sendChatMessage(inputText);
+    if (result.ok) {
+      setInputText('');
+    } else {
+      toast.error(result.error || 'تعذر إرسال الرسالة');
+    }
+    setIsSending(false);
+  };
+
+  const formatMessageTime = (createdAt: string) => {
+    const date = new Date(createdAt);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat('ar-IQ', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
   };
 
   const handleTogglePrivacy = async () => {
@@ -86,7 +99,7 @@ export default function RoomSidebar({
       } else {
         toast.error(res.error || 'فشل تغيير الخصوصية');
       }
-    } catch (err) {
+    } catch {
       toast.error('حدث خطأ أثناء تحديث الإعدادات');
     } finally {
       setIsToggling(false);
@@ -101,6 +114,7 @@ export default function RoomSidebar({
       const { deleteRoom } = await import('@/app/actions/room.actions');
       const res = await deleteRoom(roomId);
       if (res.success) {
+        await closeRoom();
         toast.success('تم حذف وإغلاق الغرفة بنجاح 🗑️');
         window.location.href = '/rooms';
       } else {
@@ -143,23 +157,23 @@ export default function RoomSidebar({
       {/* Mobile Drawer Overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/80 z-[60] backdrop-blur-md transition-opacity lg:hidden"
+          className="fixed inset-0 bg-black/85 z-[105] backdrop-blur-md transition-opacity lg:hidden"
           onClick={() => setIsOpen(false)}
         ></div>
       )}
 
       {/* Sidebar Container */}
       <div className={`
-        fixed lg:relative top-0 left-0 h-full lg:h-[750px] 
+        room-chat-drawer fixed lg:relative inset-y-0 left-0 h-full lg:h-[750px]
         bg-[#080808] lg:bg-[#0c101c]/80 backdrop-blur-3xl border-r border-white/10 lg:border-white/10 lg:rounded-3xl
-        z-[70] lg:z-10 
+        z-[110] lg:z-10
         transition-all duration-300 ease-in-out shadow-2xl lg:shadow-none
-        ${isOpen ? 'translate-x-0 w-80 lg:w-80 lg:ml-6 lg:opacity-100' : '-translate-x-full w-80 lg:w-0 lg:translate-x-0 lg:ml-0 lg:opacity-0'}
+        ${isOpen ? 'translate-x-0 w-full sm:w-96 lg:w-80 lg:ml-6 lg:opacity-100' : '-translate-x-full w-full sm:w-96 lg:w-0 lg:translate-x-0 lg:ml-0 lg:opacity-0'}
         overflow-hidden flex flex-col shrink-0
       `}>
-        <div className="w-80 h-full flex flex-col min-w-[20rem]" dir="rtl">
+        <div className="w-full lg:w-80 h-full flex flex-col min-w-0 lg:min-w-[20rem]" dir="rtl">
           {/* Header */}
-          <div className="relative border-b border-white/10 bg-[#0c1120]">
+          <div className="room-chat-header relative border-b border-white/10 bg-[#0c1120]">
             <div className="h-1 w-full bg-gradient-to-r from-[#E50914] via-rose-500 to-red-700"></div>
             <div className="p-4 flex items-center justify-between">
               <h3 className="text-white font-black flex items-center gap-2.5 text-sm sm:text-base">
@@ -174,7 +188,12 @@ export default function RoomSidebar({
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
                   <span>مباشر</span>
                 </div>
-                <button onClick={() => setIsOpen(false)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors lg:hidden">
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors lg:hidden"
+                  aria-label="إغلاق دردشة الغرفة"
+                >
                   <i className="fa-solid fa-times text-xs"></i>
                 </button>
               </div>
@@ -184,6 +203,7 @@ export default function RoomSidebar({
           {/* 3-Tab Bar */}
           <div className="flex bg-black/50 p-1 mx-3 mt-3 mb-2 rounded-xl border border-white/5 gap-1">
             <button 
+              type="button"
               onClick={() => setActiveTab('chat')}
               className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${activeTab === 'chat' ? 'bg-[#E50914] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
             >
@@ -191,6 +211,7 @@ export default function RoomSidebar({
               دردشة
             </button>
             <button 
+              type="button"
               onClick={() => setActiveTab('members')}
               className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${activeTab === 'members' ? 'bg-[#E50914] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
             >
@@ -198,6 +219,7 @@ export default function RoomSidebar({
               الأعضاء ({Math.max(members.length, 1)})
             </button>
             <button 
+              type="button"
               onClick={() => setActiveTab('settings')}
               className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${activeTab === 'settings' ? 'bg-[#E50914] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
             >
@@ -235,7 +257,9 @@ export default function RoomSidebar({
                             </span>
                           )}
                         </span>
-                        <span className="text-[10px] text-gray-400 font-en tracking-tight">{msg.time}</span>
+                        <time className="text-[10px] text-gray-400 font-en tracking-tight" dateTime={msg.createdAt}>
+                          {formatMessageTime(msg.createdAt)}
+                        </time>
                       </div>
                       <div className="bg-[#141b2d] border border-white/15 rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-xs text-white leading-relaxed break-words max-w-[95%] shadow-md">
                         {msg.text}
@@ -252,15 +276,18 @@ export default function RoomSidebar({
                   type="text"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
+                  maxLength={1000}
                   placeholder="اكتب رسالتك هنا..."
+                  aria-label="رسالة الدردشة"
                   className="flex-1 bg-[#151c2e] border border-white/20 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold placeholder-gray-400 outline-none focus:border-[#E50914] focus:bg-[#1a233a] transition-all shadow-inner"
                 />
                 <button
                   type="submit"
-                  disabled={!inputText.trim()}
+                  disabled={!inputText.trim() || isSending}
+                  aria-label={isSending ? 'جارٍ إرسال الرسالة' : 'إرسال الرسالة'}
                   className="bg-[#E50914] hover:bg-[#b8070f] active:scale-95 disabled:opacity-30 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-[0_0_12px_rgba(229,9,20,0.4)]"
                 >
-                  <i className="fa-solid fa-paper-plane text-xs"></i>
+                  <i className={`fa-solid ${isSending ? 'fa-spinner fa-spin' : 'fa-paper-plane'} text-xs`}></i>
                 </button>
               </form>
             </div>
@@ -343,6 +370,7 @@ export default function RoomSidebar({
                     <span className="text-[10px] text-gray-400">إخفاء الروم من قائمة الرومات النشطة</span>
                   </div>
                   <button 
+                    type="button"
                     onClick={handleTogglePrivacy}
                     disabled={!isHost || isToggling}
                     className={`w-10 h-5 rounded-full relative transition-colors ${isPrivate ? 'bg-[#E50914]' : 'bg-gray-700'}`}

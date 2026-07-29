@@ -1,63 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { decryptPath } from '@/lib/serverCrypto';
-
-const TUNNEL_BASE_URL = process.env.TUNNEL_BASE_URL || 'http://64.225.99.144';
+import { fetchWithRedirects, readResponseTextWithLimit } from '@/utils/proxyHelper';
+import { resolveShabakatyReference } from '@/utils/shabakatyUrl';
 
 export async function GET(req: NextRequest) {
   const ref = req.nextUrl.searchParams.get('ref');
-  const urlParam = req.nextUrl.searchParams.get('url');
+  if (!ref) return new NextResponse('Missing stream parameter', { status: 400 });
 
-  let subtitleUrl = '';
+  const approvedUrl = resolveShabakatyReference(decryptPath(ref));
+  if (!approvedUrl) return new NextResponse('Invalid stream reference', { status: 400 });
 
-  if (ref) {
-    const dec = decryptPath(ref);
-    if (dec) {
-      if (dec.startsWith('http')) {
-        subtitleUrl = dec;
-      } else {
-        const parts = dec.split('/').filter(Boolean);
-        if (parts.length >= 2) {
-          subtitleUrl = `https://${parts[0]}.shabakaty.com/${parts.slice(1).join('/')}`;
-        }
-      }
-    }
-  } else if (urlParam) {
-    if (urlParam.startsWith('http')) {
-      subtitleUrl = urlParam;
-    } else {
-      try {
-        const decoded = atob(urlParam);
-        if (decoded.startsWith('http')) {
-          subtitleUrl = decoded;
-        }
-      } catch { /* ignore */ }
-    }
-  }
-
-  if (!subtitleUrl) return new NextResponse('Missing stream parameter', { status: 400 });
-
-  const lowerPath = subtitleUrl.toLowerCase();
-  const isSrt = lowerPath.includes('.srt');
-  const isVtt = lowerPath.includes('.vtt');
+  const lowerPath = approvedUrl.pathname.toLowerCase();
+  const isSrt = lowerPath.endsWith('.srt');
+  const isVtt = lowerPath.endsWith('.vtt');
 
   if (!isSrt && !isVtt) {
     return new NextResponse('Only subtitles are handled here', { status: 400 });
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
   try {
-    const res = await fetch(subtitleUrl, {
-      headers: {
+    const headers = new Headers({
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Bypass-Tunnel-Reminder': 'true',
         'Referer': 'https://cinemana.shabakaty.com/',
-      },
     });
+    const res = await fetchWithRedirects(approvedUrl.href, headers, 5, controller.signal);
 
     if (!res.ok) {
+      await res.body?.cancel().catch(() => undefined);
       return new NextResponse('Subtitle fetch failed', { status: 502 });
     }
 
-    let text = await res.text();
+    let text = await readResponseTextWithLimit(res, 5 * 1024 * 1024);
 
     // Convert SRT to VTT format
     if (isSrt) {
@@ -76,6 +52,8 @@ export async function GET(req: NextRequest) {
     });
   } catch {
     return new NextResponse('Subtitle fetch failed', { status: 502 });
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

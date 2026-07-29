@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import Hls from 'hls.js';
 
 interface Stream {
@@ -45,7 +44,10 @@ interface AlexPlayerProps {
     enTranslationFilePath?: string | null;
   };
   onNextEpisode?: () => void;
+  roomHook?: any;
 }
+
+const EMPTY_STREAMS: Stream[] = [];
 
 function extractYouTubeId(url: string): string | null {
   if (!url) return null;
@@ -53,10 +55,13 @@ function extractYouTubeId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps) {
+export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexPlayerProps) {
   const youtubeId = extractYouTubeId(videoData.trailer || '');
-  const streams = videoData.streams || [];
+  const streams = videoData.streams || EMPTY_STREAMS;
   const translations = videoData.translations || [];
+  const isHost = roomHook?.isHost;
+  const roomState = roomHook?.roomState;
+  const sendSyncUpdate = roomHook?.sendSyncUpdate;
 
   // Stream URL & Resolution states
   const [currentStreamUrl, setCurrentStreamUrl] = useState<string | null>(null);
@@ -105,6 +110,14 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   // Loading spinner state (with 1s delayed resolution)
   const [isWaiting, setIsWaiting] = useState(false);
   const waitingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const streamRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (streamRetryTimeoutRef.current) {
+      clearTimeout(streamRetryTimeoutRef.current);
+      streamRetryTimeoutRef.current = null;
+    }
+  }, [currentStreamUrl]);
   
   // Dropdown menus visibility
   const [activeDropdown, setActiveDropdown] = useState<'quality' | 'speed' | 'subtitles' | 'settings' | null>(null);
@@ -198,6 +211,24 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSyncTimeRef = useRef(0);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !roomState || isHost || !roomHook) return;
+
+    const elapsed = roomState.playing
+      ? Math.max(0, (Date.now() - (roomState.receivedAt || Date.now())) / 1000)
+      : 0;
+    const targetTime = Math.max(0, roomState.time + elapsed);
+    if (Math.abs(video.currentTime - targetTime) > 1.5) video.currentTime = targetTime;
+
+    if (roomState.playing && video.paused) {
+      video.play().catch(() => setIsPaused(true));
+    } else if (!roomState.playing && !video.paused) {
+      video.pause();
+    }
+  }, [roomState, isHost, roomHook]);
 
   // Pixel-level adaptation (Ambient Light Glow)
   useEffect(() => {
@@ -311,7 +342,10 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
       }
     };
 
-    if (currentStreamUrl.includes('.m3u8')) {
+    const isHlsStream = currentStreamUrl.includes('.m3u8') || currentStreamUrl.startsWith('/api/hls?');
+    let fatalRecoveryAttempts = 0;
+
+    if (isHlsStream) {
       if (Hls.isSupported()) {
         hls = new Hls({
           startLevel: -1,
@@ -332,6 +366,13 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         hls.on(Hls.Events.ERROR, (event, data) => {
           if (data.fatal) {
             console.error("HLS error:", data);
+            fatalRecoveryAttempts += 1;
+            if (fatalRecoveryAttempts > 2) {
+              hls?.destroy();
+              if (youtubeId) setYoutubeFallback(true);
+              else setShowStreamError(true);
+              return;
+            }
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
                 console.warn("Network error encountered, trying to recover...");
@@ -377,9 +418,11 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
-      video.playbackRate = playbackRate;
+      const effectiveRate = roomHook ? 1 : playbackRate;
+      video.playbackRate = effectiveRate;
+      if (roomHook && playbackRate !== 1) setPlaybackRate(1);
     }
-  }, [playbackRate, currentStreamUrl]);
+  }, [playbackRate, currentStreamUrl, roomHook]);
 
   // Sync Text Tracks (Subtitles) — Single source of truth
   useEffect(() => {
@@ -475,6 +518,16 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   const togglePlay = () => {
     const video = videoRef.current;
     if (video) {
+      if (roomHook && !isHost) {
+        if (roomState?.playing) {
+          const elapsed = Math.max(0, (Date.now() - (roomState.receivedAt || Date.now())) / 1000);
+          video.currentTime = Math.max(0, roomState.time + elapsed);
+          video.play().catch(() => setIsPaused(true));
+        } else {
+          video.pause();
+        }
+        return;
+      }
       if (video.paused || video.ended) {
         video.play().catch(() => setIsPaused(true));
       } else {
@@ -485,6 +538,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
   // Gesture Handlers
   const handleSeekForward = (seconds: number = 10) => {
+    if (roomHook && !isHost) return;
     const video = videoRef.current;
     if (video) {
       video.currentTime = Math.min(video.duration || 0, video.currentTime + seconds);
@@ -494,6 +548,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   };
 
   const handleSeekBackward = (seconds: number = 10) => {
+    if (roomHook && !isHost) return;
     const video = videoRef.current;
     if (video) {
       video.currentTime = Math.max(0, video.currentTime - seconds);
@@ -617,6 +672,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
   // Skip Intro Range Action
   const handleSkipIntro = () => {
+    if (roomHook && !isHost) return;
     const video = videoRef.current;
     if (video && videoData.introSkipping) {
       const time = video.currentTime;
@@ -632,6 +688,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
   // Skip Outro Range Action (Auto-play Next Episode or Seek to end)
   const handleSkipOutro = () => {
+    if (roomHook && !isHost) return;
     if (onNextEpisode) {
       onNextEpisode();
     } else {
@@ -655,9 +712,12 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
       // Retry with backoff before giving up and falling back to YouTube
       const nextRetry = retryCount + 1;
       setRetryCount(nextRetry);
-      setTimeout(() => {
+      const failedUrl = currentStreamUrl;
+      if (streamRetryTimeoutRef.current) clearTimeout(streamRetryTimeoutRef.current);
+      streamRetryTimeoutRef.current = setTimeout(() => {
+        streamRetryTimeoutRef.current = null;
         setCurrentStreamUrl((prev) => {
-          if (!prev) return prev;
+          if (!prev || prev !== failedUrl) return prev;
           let cleanUrl = prev.replace(/(&|\?)_retry=\d+_\d+/g, '');
           const separator = cleanUrl.includes('?') ? '&' : '?';
           return `${cleanUrl}${separator}_retry=${nextRetry}_${Date.now()}`;
@@ -672,6 +732,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
   // Seek time
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (roomHook && !isHost) return;
     const video = videoRef.current;
     if (video) {
       const newTime = parseFloat(e.target.value);
@@ -688,6 +749,14 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         setIsPaused(video.paused);
       }
       setCurrentTime(video.currentTime);
+
+      if (isHost && roomHook) {
+        const now = Date.now();
+        if (now - lastSyncTimeRef.current > 1000) {
+          sendSyncUpdate?.(video.currentTime, !video.paused);
+          lastSyncTimeRef.current = now;
+        }
+      }
 
       // 1. Check Skip Intro Ranges
       const intro = videoData.introSkipping?.find(
@@ -709,7 +778,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
       }
 
       // 3. Family Mode Skip Logic (Explicit scene skip)
-      if (isFamilyMode && videoData?.skippingDurations) {
+      if (isFamilyMode && (!roomHook || isHost) && videoData?.skippingDurations) {
         const { start, end } = videoData.skippingDurations;
         for (let i = 0; i < start.length; i++) {
           if (video.currentTime >= parseFloat(start[i]) && video.currentTime < parseFloat(end[i])) {
@@ -739,13 +808,29 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   // Fullscreen helper
   const toggleFullscreen = async () => {
     const container = containerRef.current;
+    const video = videoRef.current as (HTMLVideoElement & {
+      webkitEnterFullscreen?: () => void;
+      webkitExitFullscreen?: () => void;
+      webkitDisplayingFullscreen?: boolean;
+    }) | null;
+    const webkitDocument = document as Document & {
+      webkitFullscreenElement?: Element;
+      webkitExitFullscreen?: () => Promise<void> | void;
+    };
+    const webkitContainer = container as (HTMLDivElement & {
+      webkitRequestFullscreen?: () => Promise<void> | void;
+    }) | null;
     if (container) {
-      if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+      if (!document.fullscreenElement && !webkitDocument.webkitFullscreenElement && !video?.webkitDisplayingFullscreen) {
         try {
           if (container.requestFullscreen) {
             await container.requestFullscreen();
-          } else if ((container as any).webkitRequestFullscreen) {
-            await (container as any).webkitRequestFullscreen();
+          } else if (webkitContainer?.webkitRequestFullscreen) {
+            await webkitContainer.webkitRequestFullscreen();
+          } else if (video?.webkitEnterFullscreen) {
+            video.webkitEnterFullscreen();
+          } else {
+            return;
           }
           setIsFullscreen(true);
           
@@ -764,8 +849,12 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         try {
           if (document.exitFullscreen) {
             await document.exitFullscreen();
-          } else if ((document as any).webkitExitFullscreen) {
-            await (document as any).webkitExitFullscreen();
+          } else if (webkitDocument.webkitExitFullscreen) {
+            await webkitDocument.webkitExitFullscreen();
+          } else if (video?.webkitDisplayingFullscreen && video.webkitExitFullscreen) {
+            video.webkitExitFullscreen();
+          } else {
+            return;
           }
           setIsFullscreen(false);
           
@@ -859,9 +948,19 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
   // Keyboard Shortcuts Handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
-        return;
-      }
+      const container = containerRef.current;
+      const target = e.target instanceof Element ? e.target : null;
+      const activeElement = document.activeElement;
+      const fullscreenElement = document.fullscreenElement
+        || (document as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement;
+      const isPlayerFullscreen = !!fullscreenElement
+        && (fullscreenElement === container || !!container?.contains(fullscreenElement));
+      const isInsidePlayer = !!container
+        && ((!!target && container.contains(target)) || (!!activeElement && container.contains(activeElement)));
+
+      if (!container || (!isPlayerFullscreen && !isInsidePlayer)) return;
+      if (target?.closest('input, textarea, select, button, a[href], [role="button"], [contenteditable]:not([contenteditable="false"])')) return;
+
       const video = videoRef.current;
       if (!video || youtubeFallback) return;
 
@@ -871,10 +970,12 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
           togglePlay();
           break;
         case 'ArrowLeft':
+          if (roomHook && !isHost) break;
           e.preventDefault();
           video.currentTime = Math.max(0, video.currentTime - 10);
           break;
         case 'ArrowRight':
+          if (roomHook && !isHost) break;
           e.preventDefault();
           video.currentTime = Math.min(video.duration, video.currentTime + 10);
           break;
@@ -899,16 +1000,27 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [youtubeFallback, volume, isMuted]);
+  }, [youtubeFallback, volume, isMuted, roomHook, isHost]);
 
   // Sync fullscreen state change
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const webkitDocument = document as Document & { webkitFullscreenElement?: Element };
+      const webkitVideo = videoRef.current as (HTMLVideoElement & { webkitDisplayingFullscreen?: boolean }) | null;
+      setIsFullscreen(Boolean(document.fullscreenElement || webkitDocument.webkitFullscreenElement || webkitVideo?.webkitDisplayingFullscreen));
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    const video = videoRef.current;
+    video?.addEventListener('webkitbeginfullscreen', handleFullscreenChange);
+    video?.addEventListener('webkitendfullscreen', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      video?.removeEventListener('webkitbeginfullscreen', handleFullscreenChange);
+      video?.removeEventListener('webkitendfullscreen', handleFullscreenChange);
+    };
+  }, [currentStreamUrl, youtubeFallback]);
 
   const sortedStreams = [...streams].sort((a, b) => {
     const resA = parseInt(a.resolution) || 0;
@@ -944,7 +1056,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
             </div>
             
             {/* Family Mode Switch */}
-            <div className="flex flex-row justify-between items-center px-1.5 py-1.5 hover:bg-white/5 rounded-xl transition-colors shrink-0">
+            {(!roomHook || isHost) && <div className="flex flex-row justify-between items-center px-1.5 py-1.5 hover:bg-white/5 rounded-xl transition-colors shrink-0">
               <div className="flex flex-col text-right">
                 <span className="font-bold text-xs text-white">وضع العائلة</span>
                 <span className="text-[9px] text-gray-400 mt-0.5">تخطي تلقائي للمشاهد المخلة</span>
@@ -955,7 +1067,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               >
                 <div className={`w-3 h-3 bg-white rounded-full absolute top-[4px] transition-transform transform-gpu ${isFamilyMode ? 'left-[2px]' : 'right-[2px]'}`}></div>
               </button>
-            </div>
+            </div>}
 
             {/* Subtitles Button */}
             {vttTranslations.length > 0 && (
@@ -978,13 +1090,13 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
             </button>
 
             {/* Speed Button */}
-            <button 
+            {!roomHook && <button
               onPointerUp={(e) => { e.stopPropagation(); setSettingsView('speed'); }}
               className="flex flex-row justify-between items-center px-1.5 py-2 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right shrink-0"
             >
               <span className="font-bold text-xs text-white">سرعة التشغيل</span>
               <span className="text-[10px] text-white/50">{playbackRate}x &lt;</span>
-            </button>
+            </button>}
           </div>
         )}
 
@@ -1113,7 +1225,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               {[0.5, 1, 1.25, 1.5, 2].map((rate) => (
                 <button 
                   key={rate}
-                  onPointerUp={(e) => { e.stopPropagation(); setPlaybackRate(rate); setActiveDropdown(null); }}
+                  onPointerUp={(e) => { e.stopPropagation(); if (!roomHook) setPlaybackRate(rate); setActiveDropdown(null); }}
                   className={`w-full text-center py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${playbackRate === rate ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
                 >
                   {rate}x
@@ -1150,6 +1262,8 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
     return (
       <div 
         ref={containerRef}
+        tabIndex={0}
+        aria-label="مشغل الفيديو"
         className={`relative select-none group/player touch-manipulation transition-all duration-300 min-h-[200px] ${
           isFullscreen 
             ? 'fixed inset-0 w-screen h-screen z-[9999] rounded-none border-none bg-black' 
@@ -1227,8 +1341,18 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               }
               setIsWaiting(false);
               setIsPaused(false);
+              if (isHost && roomHook && videoRef.current) {
+                sendSyncUpdate?.(videoRef.current.currentTime, true);
+                lastSyncTimeRef.current = Date.now();
+              }
             }}
-            onPause={() => setIsPaused(true)}
+            onPause={() => {
+              setIsPaused(true);
+              if (isHost && roomHook && videoRef.current) {
+                sendSyncUpdate?.(videoRef.current.currentTime, false);
+                lastSyncTimeRef.current = Date.now();
+              }
+            }}
             onWaiting={() => {
               if (!waitingTimeoutRef.current) {
                 waitingTimeoutRef.current = setTimeout(() => setIsWaiting(true), 1000);
@@ -1245,6 +1369,10 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                 waitingTimeoutRef.current = null;
               }
               setIsWaiting(false);
+              if (isHost && roomHook && videoRef.current) {
+                sendSyncUpdate?.(videoRef.current.currentTime, !videoRef.current.paused);
+                lastSyncTimeRef.current = Date.now();
+              }
             }}
             onPlaying={() => {
               if (waitingTimeoutRef.current) {
@@ -1318,7 +1446,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         )}
 
         {/* TOP TITLE BAR */}
-        <div className={`absolute top-0 inset-x-0 ${isFullscreen ? '' : 'rounded-t-3xl'} p-3 pb-8 md:p-5 md:pt-6 md:pb-20 bg-gradient-to-b from-black/90 md:via-black/40 to-transparent flex flex-row-reverse items-center justify-between transition-all duration-300 transform z-20 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+        <div aria-hidden={!(showControls || isPaused)} className={`absolute top-0 inset-x-0 ${isFullscreen ? '' : 'rounded-t-3xl'} p-3 pb-8 md:p-5 md:pt-6 md:pb-20 bg-gradient-to-b from-black/90 md:via-black/40 to-transparent flex flex-row-reverse items-center justify-between transition-all duration-300 transform z-20 ${showControls || isPaused ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
           <h3 className="text-white text-xs md:text-lg font-black drop-shadow-md flex items-center gap-2 md:gap-3" dir="rtl">
             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-alex-primary animate-pulse"></span>
             {videoData.ar_title}
@@ -1326,7 +1454,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         </div>
 
         {/* OVERLAY ACTIONS (Skip Intro / Skip Outro) */}
-        {showIntroSkip && (
+        {showIntroSkip && (!roomHook || isHost) && (
           <button
             onClick={handleSkipIntro}
             className="absolute bottom-24 right-6 flex items-center justify-center gap-2.5 bg-black/60 backdrop-blur-md hover:bg-black/80 text-white font-black text-sm md:text-base px-5 py-2.5 rounded-xl border border-white/20 hover:border-white/40 hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.5)] z-40 transition-all duration-300 cursor-pointer outline-none focus:outline-none ring-0 leading-none"
@@ -1336,7 +1464,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
           </button>
         )}
 
-        {showOutroSkip && (
+        {showOutroSkip && (!roomHook || isHost) && (
           <button
             onClick={handleSkipOutro}
             className="absolute bottom-24 right-6 flex items-center justify-center gap-2.5 bg-black/60 backdrop-blur-md hover:bg-black/80 text-white font-black text-sm md:text-base px-5 py-2.5 rounded-xl border border-white/20 hover:border-white/40 hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.5)] z-40 transition-all duration-300 cursor-pointer outline-none focus:outline-none ring-0 leading-none"
@@ -1363,7 +1491,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
         )}
 
         {/* BOTTOM CUSTOM CONTROL BAR */}
-        <div className={`absolute bottom-0 inset-x-0 ${isFullscreen ? '' : 'rounded-b-3xl'} p-2 pt-6 pb-[calc(env(safe-area-inset-bottom)+4px)] sm:px-6 md:pb-8 md:pt-12 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-1.5 md:gap-3 transition-all duration-300 transform z-30 ${showControls || isPaused ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div aria-hidden={!(showControls || isPaused)} className={`absolute bottom-0 inset-x-0 ${isFullscreen ? '' : 'rounded-b-3xl'} p-2 pt-6 pb-[calc(env(safe-area-inset-bottom)+4px)] sm:px-6 md:pb-8 md:pt-12 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-1.5 md:gap-3 transition-all duration-300 transform z-30 ${showControls || isPaused ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
           
           {/* Custom Timeline Progress Slider */}
           <div className="flex items-center gap-2 md:gap-4 w-full">
@@ -1376,6 +1504,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               max={duration || 100}
               value={currentTime}
               onChange={handleProgressChange}
+              aria-label="موضع تشغيل الفيديو"
               style={progressStyle}
               className="flex-grow h-1 md:h-1.5 rounded-lg appearance-none cursor-pointer accent-alex-primary hover:h-1.5 md:hover:h-2 transition-all outline-none border border-[#e50914]/30"
             />
@@ -1393,6 +1522,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               {/* Play / Pause */}
               <button 
                 onClick={togglePlay} 
+                aria-label={isPaused ? 'تشغيل الفيديو' : 'إيقاف الفيديو مؤقتاً'}
                 className="text-white hover:text-alex-primary text-lg md:text-2xl transition-colors cursor-pointer outline-none focus:outline-none ring-0 w-8 h-8 md:w-6 md:h-6 flex items-center justify-center"
               >
                 <i className={`fa-solid ${isPaused ? 'fa-play' : 'fa-pause'}`}></i>
@@ -1413,6 +1543,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               <div className="hidden md:flex items-center gap-2 group/volume relative">
                 <button 
                   onClick={() => setIsMuted(!isMuted)} 
+                  aria-label={isMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
                   className="text-white hover:text-alex-primary text-base md:text-xl transition-colors cursor-pointer outline-none focus:outline-none ring-0 w-6 h-6 flex items-center justify-center"
                 >
                   <i className={`fa-solid ${isMuted || volume === 0 ? 'fa-volume-xmark' : volume < 0.5 ? 'fa-volume-low' : 'fa-volume-high'}`}></i>
@@ -1427,6 +1558,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
                     setVolume(parseFloat(e.target.value));
                     setIsMuted(false);
                   }}
+                  aria-label="مستوى الصوت"
                   className="w-0 group-hover/volume:w-20 h-1 bg-white/20 rounded accent-alex-primary transition-all duration-300 opacity-0 group-hover/volume:opacity-100 cursor-pointer"
                 />
               </div>
@@ -1458,6 +1590,7 @@ export default function AlexPlayer({ videoData, onNextEpisode }: AlexPlayerProps
               {/* Fullscreen Toggle */}
               <button 
                 onClick={toggleFullscreen} 
+                aria-label={isFullscreen ? 'الخروج من ملء الشاشة' : 'ملء الشاشة'}
                 className="text-white hover:text-alex-primary text-lg md:text-2xl transition-colors cursor-pointer outline-none focus:outline-none ring-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center"
               >
                 <i className={`fa-solid ${isFullscreen ? 'fa-minimize' : 'fa-maximize'}`}></i>

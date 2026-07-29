@@ -53,9 +53,14 @@ export async function getAuthUser(): Promise<AuthUserInfo | null> {
         const user = await currentUser();
         if (user) {
           const name = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "User";
-          dbUser = await prisma.user.create({
-            data: {
+          dbUser = await prisma.user.upsert({
+            where: { clerkId: authObj.userId },
+            create: {
               clerkId: authObj.userId,
+              name,
+              imageUrl: user.imageUrl,
+            },
+            update: {
               name,
               imageUrl: user.imageUrl,
             },
