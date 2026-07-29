@@ -15,33 +15,34 @@ const features = [
 
 export default function AuthPageShell({ mode, children }: AuthPageShellProps) {
   return (
-    <div className="relative min-h-[100svh] w-full overflow-x-hidden bg-[#020408] px-4 py-6 text-white sm:px-6 lg:px-10 lg:py-8">
+    <div className="auth-page-shell relative flex min-h-[100svh] w-full flex-col overflow-x-hidden bg-[#020408] px-3 py-4 text-white sm:px-6 sm:py-6 lg:px-10 lg:py-8">
       <InteractiveCinematicBg />
 
       <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_78%_18%,rgba(229,9,20,0.15),transparent_32%),radial-gradient(circle_at_15%_78%,rgba(14,165,233,0.1),transparent_30%)]" />
       <div className="pointer-events-none fixed inset-0 z-[1] bg-[linear-gradient(120deg,rgba(2,4,8,0.2),rgba(2,4,8,0.78))]" />
 
-      <div className="relative z-10 mx-auto flex min-h-[calc(100svh-3rem)] w-full max-w-[92rem] flex-col">
-        <header className="flex items-center justify-between gap-4 py-1 lg:py-2">
-          <Link href="/" className="group inline-flex items-center gap-3" aria-label="AleX Cinema">
-            <span className="flex size-10 items-center justify-center rounded-xl border border-red-500/25 bg-red-500/10 text-red-400 shadow-[0_0_25px_rgba(229,9,20,0.16)] transition group-hover:scale-105">
+      <div className="relative z-10 mx-auto flex w-full max-w-[92rem] flex-1 flex-col">
+        <header className="flex items-center justify-between gap-2 py-1 sm:gap-4 lg:py-2">
+          <Link href="/" className="group inline-flex min-w-0 items-center gap-2 sm:gap-3" aria-label="AleX Cinema">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-red-500/25 bg-red-500/10 text-red-400 shadow-[0_0_25px_rgba(229,9,20,0.16)] transition group-hover:scale-105 sm:size-10">
               <i className="fa-solid fa-play text-sm" aria-hidden="true" />
             </span>
-            <span className="font-en text-lg font-black tracking-[0.12em] text-white sm:text-xl">
+            <span dir="ltr" className="whitespace-nowrap font-en text-base font-black tracking-[0.08em] text-white min-[360px]:text-lg sm:text-xl sm:tracking-[0.12em]">
               ALEX <span className="text-[#e50914]">CINEMA</span>
             </span>
           </Link>
 
           <Link
             href="/home"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-xs font-extrabold text-slate-300 backdrop-blur-md transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+            aria-label="تصفح المنصة"
+            className="inline-flex size-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] text-xs font-extrabold text-slate-300 backdrop-blur-md transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70 min-[360px]:size-auto min-[360px]:px-3 min-[360px]:py-2.5 sm:px-4"
           >
             <i className="fa-solid fa-arrow-right" aria-hidden="true" />
-            تصفح المنصة
+            <span className="hidden min-[360px]:inline">تصفح المنصة</span>
           </Link>
         </header>
 
-        <div className="grid flex-1 items-center gap-10 py-8 lg:grid-cols-[minmax(0,0.88fr)_minmax(32rem,1.12fr)] lg:gap-16 lg:py-10 xl:gap-24">
+        <div className="grid flex-1 items-center gap-8 py-5 sm:py-7 lg:grid-cols-[minmax(0,0.88fr)_minmax(30rem,1.12fr)] lg:gap-14 lg:py-8 xl:gap-20">
           <aside className="hidden max-w-xl lg:block">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-500/[0.08] px-4 py-2 text-xs font-black text-red-300 backdrop-blur-md">
               <span className="size-1.5 animate-pulse rounded-full bg-red-400 shadow-[0_0_12px_rgba(248,113,113,0.9)]" />
@@ -83,7 +84,7 @@ export default function AuthPageShell({ mode, children }: AuthPageShellProps) {
           <div className="flex w-full items-center justify-center lg:justify-end">{children}</div>
         </div>
 
-        <footer className="flex flex-col items-center justify-between gap-3 border-t border-white/[0.06] py-4 text-[0.68rem] font-semibold text-slate-600 sm:flex-row">
+        <footer className="flex flex-col items-center justify-between gap-2 border-t border-white/[0.06] py-3 text-[0.68rem] font-semibold text-slate-500 sm:flex-row sm:py-4">
           <span>© 2026 AleX Cinema</span>
           <span className="inline-flex items-center gap-2">
             <i className="fa-solid fa-lock text-emerald-500" aria-hidden="true" />

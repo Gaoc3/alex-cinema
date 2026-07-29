@@ -76,8 +76,12 @@ body {
     padding-top: max(env(safe-area-inset-top, 48px), 44px) !important;
   }
 
-  .is-telegram-webapp main {
+  .is-telegram-webapp main:not(.auth-main) {
     padding-top: max(env(safe-area-inset-top, 100px), 96px) !important;
+  }
+
+  .is-telegram-webapp .auth-page-shell {
+    padding-top: max(env(safe-area-inset-top, 48px), 52px) !important;
   }
 }
 

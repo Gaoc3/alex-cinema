@@ -3,6 +3,21 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
 
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
 interface UnifiedUser {
   id: string;
   clerkId: string;
@@ -42,7 +57,8 @@ export function UnifiedAuthProvider({ children }: { children: React.ReactNode })
     const requestId = ++fetchRequestIdRef.current;
 
     try {
-      const res = await fetch("/api/auth/me", { cache: "no-store" });
+      const res = await fetchWithTimeout("/api/auth/me", { cache: "no-store" }, 8_000);
+      if (!res.ok) throw new Error("Failed to load Telegram session.");
       const data = await res.json();
 
       if (requestId !== fetchRequestIdRef.current) return;

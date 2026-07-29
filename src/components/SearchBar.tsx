@@ -4,6 +4,7 @@ import { getVideoImageUrl } from '@/utils/imageHelper';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface SearchResult {
   nb: string;
@@ -44,13 +45,8 @@ export default function SearchBar() {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
     if (query.trim().length < 2) {
-      setResults([]);
-      setIsLoading(false);
       return;
     }
-
-    setIsLoading(true);
-    setShowDropdown(true);
 
     const controller = new AbortController();
     const { signal } = controller;
@@ -101,8 +97,8 @@ export default function SearchBar() {
         if (!signal.aborted) {
           setResults(sorted.slice(0, 8));
         }
-      } catch (e: any) {
-        if (e.name === 'AbortError') return;
+      } catch (error: unknown) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
         setResults([]);
       } finally {
         if (!signal.aborted) setIsLoading(false);
@@ -115,6 +111,20 @@ export default function SearchBar() {
     };
   }, [query]);
 
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+
+    if (value.trim().length < 2) {
+      setResults([]);
+      setIsLoading(false);
+      setShowDropdown(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setShowDropdown(true);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
@@ -126,6 +136,7 @@ export default function SearchBar() {
   const handleItemClick = () => {
     setQuery('');
     setResults([]);
+    setIsLoading(false);
     setShowDropdown(false);
     setIsMobileExpanded(false);
   };
@@ -136,6 +147,7 @@ export default function SearchBar() {
       <div className="xl:hidden flex justify-end w-full">
         <button
           type="button"
+          aria-label="فتح البحث"
           onClick={() => {
             setIsMobileExpanded(true);
             setTimeout(() => inputRef.current?.focus(), 100);
@@ -161,10 +173,11 @@ export default function SearchBar() {
               ref={inputRef}
               type="text"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => handleQueryChange(e.target.value)}
               onFocus={() => query.trim().length >= 2 && setShowDropdown(true)}
               className="bg-transparent xl:bg-white/5 focus:xl:bg-[#06070a]/90 xl:backdrop-blur-md border-none xl:border xl:border-white/5 focus:xl:border-alex-primary/40 text-white pr-14 xl:pr-10 pl-4 py-4 xl:py-2 h-auto rounded-none xl:rounded-full w-full xl:w-64 focus:w-full xl:focus:w-80 transition-all duration-500 outline-none text-xl sm:text-2xl font-bold xl:font-normal xl:text-sm block shadow-none focus:shadow-none xl:shadow-inner xl:focus:shadow-[0_0_20px_rgba(229,9,20,0.15)] placeholder:text-gray-500 xl:placeholder:text-gray-400"
               placeholder="ابحث..."
+              aria-label="البحث عن فيلم أو مسلسل"
             />
             <div className="absolute inset-y-0 right-0 pr-4 xl:pr-4 flex items-center pointer-events-none text-gray-500 xl:text-gray-400 group-focus-within:text-alex-primary transition-colors">
               <i className="fa-solid fa-search text-xl sm:text-2xl xl:text-base drop-shadow-md"></i>
@@ -180,11 +193,13 @@ export default function SearchBar() {
           {/* Close button for mobile inside palette */}
           <button 
             type="button" 
+            aria-label="إغلاق البحث"
             onClick={() => {
                 setIsMobileExpanded(false);
                 setShowDropdown(false);
                 setQuery('');
                 setResults([]);
+                setIsLoading(false);
             }} 
             className="xl:hidden w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-gray-400 hover:text-white bg-transparent hover:bg-white/5 transition-colors"
           >
@@ -214,11 +229,14 @@ export default function SearchBar() {
 
                     <div className="flex items-center gap-4 flex-grow min-w-0">
                       <div className="w-16 h-24 rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-md relative movie-card-img-wrapper group-hover/item:border-alex-primary/30 transition-colors duration-300">
-                        <img
-                          src={item.img ? getVideoImageUrl(item as any, 'poster') : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.ar_title)}`}
+                        <Image
+                          src={item.img ? getVideoImageUrl(item, 'poster') : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.ar_title)}`}
                           alt={item.ar_title}
+                          width={64}
+                          height={96}
+                          sizes="64px"
+                          unoptimized
                           className="w-full h-full object-cover movie-card-img transition-transform duration-500 group-hover/item:scale-110"
-                          loading="lazy"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity duration-300"></div>
                       </div>
@@ -274,6 +292,7 @@ export default function SearchBar() {
               setShowDropdown(false);
               setQuery('');
               setResults([]);
+              setIsLoading(false);
             }}
           />
         )}

@@ -12,6 +12,21 @@ interface TelegramAuthPayload {
   telegramData: TelegramWebAppUser | null;
 }
 
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
 const clerkAppearance = {
   theme: "simple" as const,
   options: {
@@ -44,40 +59,41 @@ const clerkAppearance = {
     rootBox: "w-full",
     cardBox: "w-full shadow-none",
     card: "w-full border-0 bg-transparent p-0 shadow-none",
-    header: "mb-5 text-right",
+    header: "mb-3 text-right",
     headerTitle: "text-xl font-black tracking-tight text-white sm:text-2xl",
-    headerSubtitle: "mt-1.5 text-sm font-semibold leading-6 text-slate-400",
-    socialButtonsRoot: "gap-3",
+    headerSubtitle: "mt-1 text-sm font-semibold leading-5 text-slate-400",
+    socialButtonsRoot: "gap-2",
     socialButtonsBlockButton:
       "min-h-12 rounded-2xl border border-white/15 bg-white/[0.06] text-white shadow-none transition hover:border-white/30 hover:bg-white/[0.1]",
     socialButtonsBlockButtonText: "font-extrabold text-white",
     socialButtonsProviderIcon: "size-5",
-    dividerRow: "my-5",
+    dividerRow: "my-3.5",
     dividerLine: "bg-white/10",
     dividerText: "px-3 text-xs font-bold text-slate-500",
-    form: "gap-4",
+    form: { gap: "1rem" },
     formFieldRow: "gap-2",
     formFieldLabel: "mb-1.5 text-sm font-extrabold text-slate-200",
     formFieldInput:
-      "min-h-12 rounded-2xl border border-white/15 bg-slate-950/70 px-4 text-right text-white shadow-inner outline-none transition placeholder:text-slate-500 focus:border-red-500/70 focus:ring-4 focus:ring-red-500/15",
+      "min-h-12 rounded-2xl border border-white/15 bg-slate-950/70 px-4 text-left text-white shadow-inner outline-none transition [direction:ltr] placeholder:text-slate-500 focus:border-red-500/70 focus:ring-4 focus:ring-red-500/15",
     formFieldInputShowPasswordButton: "text-slate-400 hover:text-white",
     formFieldAction: "font-bold text-red-400 hover:text-red-300",
     formFieldErrorText: "mt-1 text-xs font-bold text-red-300",
     formButtonPrimary:
-      "min-h-12 rounded-2xl border border-red-400/25 bg-gradient-to-l from-red-700 via-[#e50914] to-red-600 text-sm font-black text-white shadow-[0_12px_30px_rgba(229,9,20,0.3)] transition hover:brightness-110 hover:shadow-[0_16px_38px_rgba(229,9,20,0.42)] active:scale-[0.99]",
+      "min-h-12 rounded-2xl border border-red-400/25 bg-gradient-to-l from-red-700 via-[#e50914] to-red-600 text-sm font-black text-white shadow-[0_12px_30px_rgba(229,9,20,0.3)] transition hover:brightness-110 hover:shadow-[0_16px_38px_rgba(229,9,20,0.42)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 active:scale-[0.99]",
     formResendCodeLink: "font-extrabold text-red-400 hover:text-red-300",
     otpCodeFieldInput:
-      "border-white/15 bg-slate-950/80 text-white focus:border-red-500 focus:ring-red-500/20",
+      "border-white/15 bg-slate-950/80 text-white [direction:ltr] focus:border-red-500 focus:ring-red-500/20",
     identityPreview: "rounded-2xl border border-white/10 bg-white/[0.05]",
     identityPreviewText: "text-white",
     identityPreviewEditButton: "text-red-400 hover:text-red-300",
     alternativeMethodsBlockButton:
       "rounded-2xl border border-white/15 bg-white/[0.05] text-white hover:bg-white/[0.09]",
-    footer: "mt-5 bg-transparent",
+    footer: { marginTop: "0.75rem", background: "transparent" },
     footerAction: "justify-center gap-2",
     footerActionText: "font-semibold text-slate-400",
     footerActionLink: "font-black text-red-400 hover:text-red-300",
-    footerPages: "hidden",
+    footerPages: { display: "none" as const },
+    footerItem: { display: "none" as const },
   },
   captcha: { theme: "dark" as const },
 };
@@ -90,6 +106,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps) {
   const [loading, setLoading] = useState(true);
   const [isOutsideTelegram, setIsOutsideTelegram] = useState(false);
+  const [isTelegramContext, setIsTelegramContext] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const authProcessedRef = useRef(false);
   const browserPreparationRef = useRef<Promise<void> | null>(null);
@@ -97,17 +114,19 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
   const processTelegramAuth = useCallback(async (payload: TelegramAuthPayload) => {
     if (authProcessedRef.current) return;
     authProcessedRef.current = true;
+    setIsTelegramContext(true);
+    setIsOutsideTelegram(false);
     setLoading(true);
     setErrorMessage(null);
 
     try {
-      const response = await fetch("/api/auth/telegram", {
+      const response = await fetchWithTimeout("/api/auth/telegram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
         cache: "no-store",
         body: JSON.stringify(payload),
-      });
+      }, 15_000);
       const data = await response.json().catch(() => null);
 
       if (!response.ok || !data?.success) {
@@ -119,10 +138,10 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
       console.error("[Telegram Login Error]:", error);
 
       try {
-        await fetch("/api/auth/logout", {
+        await fetchWithTimeout("/api/auth/logout", {
           method: "POST",
           credentials: "same-origin",
-        });
+        }, 4_000);
       } catch (logoutError) {
         console.error("[Telegram Stale Session Clear Error]:", logoutError);
       }
@@ -143,6 +162,7 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
       if (disposed) return;
 
       setIsOutsideTelegram(true);
+      setIsTelegramContext(false);
       setLoading(false);
 
       const callbackError = new URLSearchParams(window.location.search).get("error");
@@ -154,11 +174,11 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
     const prepareBrowserAuth = () => {
       if (!browserPreparationRef.current) {
         // A Telegram cookie must never override the Clerk account selected here.
-        browserPreparationRef.current = fetch("/api/auth/logout", {
+        browserPreparationRef.current = fetchWithTimeout("/api/auth/logout", {
           method: "POST",
           credentials: "same-origin",
           cache: "no-store",
-        })
+        }, 4_000)
           .then(() => undefined)
           .catch((error) => {
             console.error("[Telegram Session Cleanup Error]:", error);
@@ -189,7 +209,6 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
       const isTelegramApp = Boolean(initData || unsafeUser);
 
       if (isTelegramApp) {
-        setIsOutsideTelegram(false);
         void processTelegramAuth({ initData, telegramData: unsafeUser });
         return;
       }
@@ -233,49 +252,64 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
   };
 
   return (
-    <section className="relative w-full max-w-[34rem]" aria-labelledby="auth-card-title">
+    <section
+      className="relative w-full max-w-[31rem]"
+      aria-label={mode === "sign-in" ? "تسجيل الدخول إلى أليكس سينما" : "إنشاء حساب أليكس سينما"}
+    >
       <div className="pointer-events-none absolute -inset-px rounded-[2rem] bg-gradient-to-b from-white/25 via-white/[0.04] to-red-500/20" />
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#080d18]/92 p-5 shadow-[0_32px_100px_rgba(0,0,0,0.72)] backdrop-blur-2xl sm:p-7">
+      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#080d18]/92 p-4 shadow-[0_32px_100px_rgba(0,0,0,0.72)] backdrop-blur-2xl sm:p-6">
         <div className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full bg-red-600/15 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-28 -left-20 size-64 rounded-full bg-sky-500/10 blur-3xl" />
 
-        <header className="relative mb-6 flex items-center justify-between gap-4 border-b border-white/10 pb-5">
-          <div className="text-right">
-            <p className="mb-1 text-[0.68rem] font-black uppercase tracking-[0.32em] text-red-400">
-              Secure Access
-            </p>
-            <h1 id="auth-card-title" className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-              {mode === "sign-in" ? "مرحبًا بعودتك" : "ابدأ رحلتك السينمائية"}
-            </h1>
-            <p className="mt-2 text-sm font-semibold leading-6 text-slate-400">
-              {mode === "sign-in"
-                ? "ادخل إلى قوائمك وغرف المشاهدة بأمان."
-                : "أنشئ حسابك واحفظ أفلامك وغرفك في مكان واحد."}
-            </p>
+        <header className="relative mb-4 flex items-center justify-between gap-3 border-b border-white/10 pb-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-lg text-red-400 shadow-[0_0_30px_rgba(229,9,20,0.18)]">
+              <i className="fa-solid fa-clapperboard" aria-hidden="true" />
+            </span>
+            <div className="min-w-0 text-right">
+              <p dir="ltr" className="font-en text-[0.65rem] font-black tracking-[0.24em] text-red-400">
+                ALEX CINEMA
+              </p>
+              <p className="mt-1 truncate text-sm font-extrabold text-slate-200">
+                {isTelegramContext ? "مزامنة الحساب النشط" : "بوابة حسابك الآمنة"}
+              </p>
+            </div>
           </div>
-          <div className="hidden size-14 shrink-0 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-2xl text-red-400 shadow-[0_0_30px_rgba(229,9,20,0.18)] sm:flex">
-            <i className="fa-solid fa-clapperboard" aria-hidden="true" />
-          </div>
+          <span className="hidden items-center gap-1.5 rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-1 text-[0.62rem] font-black text-emerald-300 min-[360px]:inline-flex">
+            <i className="fa-solid fa-lock text-[0.58rem]" aria-hidden="true" />
+            دخول آمن
+          </span>
         </header>
 
         {loading && !isOutsideTelegram ? (
-          <div className="relative flex min-h-64 flex-col items-center justify-center gap-5 rounded-3xl border border-red-500/20 bg-red-950/15 p-8 text-center">
-            <div className="relative size-16">
+          <div
+            className="relative flex min-h-52 flex-col items-center justify-center gap-4 rounded-3xl border border-red-500/20 bg-red-950/15 p-6 text-center"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="relative size-14">
               <div className="absolute inset-0 rounded-full border border-red-400/20" />
-              <div className="absolute inset-1 animate-spin rounded-full border-[3px] border-red-500/20 border-t-red-500" />
-              <i className="fa-brands fa-telegram absolute inset-0 flex items-center justify-center text-xl text-sky-400" />
+              <div className="absolute inset-1 animate-spin rounded-full border-[3px] border-red-500/20 border-t-red-500 motion-reduce:animate-none" />
+              <i
+                className={`${isTelegramContext ? "fa-brands fa-telegram text-sky-400" : "fa-solid fa-shield-halved text-red-300"} absolute inset-0 flex items-center justify-center text-lg`}
+                aria-hidden="true"
+              />
             </div>
             <div>
-              <p className="text-base font-black text-white">جاري مزامنة حساب تليجرام الحالي</p>
-              <p className="mt-2 text-xs font-semibold leading-6 text-slate-400">
-                نتحقق من بيانات التطبيق الموقعة ثم نحدّث الجلسة تلقائيًا.
+              <p className="text-sm font-black text-white sm:text-base">
+                {isTelegramContext ? "جاري مزامنة حساب تليجرام الحالي" : "جاري تجهيز تسجيل الدخول"}
+              </p>
+              <p className="mt-1.5 text-xs font-semibold leading-5 text-slate-400">
+                {isTelegramContext
+                  ? "نتحقق من بيانات التطبيق الموقعة ونحدّث الجلسة تلقائيًا."
+                  : "لحظات ونجهز لك خيارات الدخول الآمنة."}
               </p>
             </div>
           </div>
         ) : isOutsideTelegram ? (
           <div className="relative">
             {errorMessage && (
-              <div className="mb-4 flex items-start gap-3 rounded-2xl border border-red-400/25 bg-red-950/35 p-4 text-sm font-bold leading-6 text-red-100">
+              <div role="alert" className="mb-4 flex items-start gap-3 rounded-2xl border border-red-400/25 bg-red-950/35 p-4 text-sm font-bold leading-6 text-red-100">
                 <i className="fa-solid fa-circle-exclamation mt-1 text-red-400" aria-hidden="true" />
                 <p>{errorMessage}</p>
               </div>
@@ -284,7 +318,7 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
             <button
               type="button"
               onClick={startTelegramOidc}
-              className="group flex min-h-13 w-full items-center justify-center gap-3 rounded-2xl border border-sky-400/25 bg-gradient-to-l from-sky-500/15 to-blue-500/10 px-5 py-3.5 text-sm font-black text-white shadow-[0_12px_30px_rgba(14,165,233,0.1)] transition hover:border-sky-300/45 hover:from-sky-500/25 hover:to-blue-500/20 active:scale-[0.99]"
+              className="group flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl border border-sky-400/25 bg-gradient-to-l from-sky-500/15 to-blue-500/10 px-4 py-3 text-sm font-black text-white shadow-[0_12px_30px_rgba(14,165,233,0.1)] transition hover:border-sky-300/45 hover:from-sky-500/25 hover:to-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 active:scale-[0.99]"
             >
               <span className="flex size-9 items-center justify-center rounded-xl bg-sky-400/15 text-xl text-sky-300 transition group-hover:scale-105">
                 <i className="fa-brands fa-telegram" aria-hidden="true" />
@@ -292,7 +326,7 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
               <span>المتابعة مباشرة عبر تليجرام</span>
             </button>
 
-            <div className="my-5 flex items-center gap-3" aria-hidden="true">
+            <div className="my-4 flex items-center gap-3" aria-hidden="true">
               <span className="h-px flex-1 bg-white/10" />
               <span className="text-[0.68rem] font-black tracking-wider text-slate-500">أو حساب المنصة</span>
               <span className="h-px flex-1 bg-white/10" />
@@ -317,7 +351,7 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
             )}
           </div>
         ) : (
-          <div className="relative flex min-h-64 flex-col items-center justify-center gap-4 rounded-3xl border border-red-400/25 bg-red-950/30 p-7 text-center">
+          <div role="alert" className="relative flex min-h-52 flex-col items-center justify-center gap-4 rounded-3xl border border-red-400/25 bg-red-950/30 p-6 text-center">
             <i className="fa-solid fa-triangle-exclamation text-3xl text-red-400" aria-hidden="true" />
             <p className="text-sm font-bold leading-7 text-red-100">
               {errorMessage || "تعذر التحقق من حساب تليجرام الحالي."}
@@ -325,14 +359,14 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="rounded-xl bg-[#e50914] px-6 py-3 text-sm font-black text-white transition hover:bg-red-700 active:scale-[0.98]"
+              className="rounded-xl bg-[#e50914] px-6 py-3 text-sm font-black text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 active:scale-[0.98]"
             >
               إعادة المحاولة
             </button>
           </div>
         )}
 
-        <div className="relative mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-white/10 pt-4 text-[0.68rem] font-bold text-slate-500">
+        <div className="relative mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 border-t border-white/10 pt-3 text-[0.68rem] font-bold text-slate-400">
           <span className="inline-flex items-center gap-1.5">
             <i className="fa-solid fa-shield-halved text-emerald-400" aria-hidden="true" />
             جلسة مشفرة

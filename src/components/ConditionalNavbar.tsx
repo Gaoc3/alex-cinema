@@ -47,8 +47,8 @@ export default function ConditionalNavbar() {
               <div className="hidden xl:block flex-grow"></div>
 
               {/* Left side (RTL End): Search Input & User Actions */}
-              <div className="flex items-center gap-2 sm:gap-4 z-10 flex-1 xl:flex-none justify-end min-w-0">
-                  <div className="min-w-0 flex-1 sm:flex-initial max-w-[180px] xs:max-w-[220px] sm:max-w-xs md:max-w-sm">
+              <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-4 xl:flex-none">
+                  <div className="w-10 shrink-0 sm:w-auto sm:flex-initial sm:max-w-xs md:max-w-sm">
                       <Suspense fallback={<div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/5 animate-pulse"></div>}>
                           <SearchBar />
                       </Suspense>
@@ -62,10 +62,11 @@ export default function ConditionalNavbar() {
                        ) : (
                          <Link 
                            href="/sign-in" 
-                           className="flex items-center justify-center gap-1.5 sm:gap-2 bg-[#e50914] hover:bg-[#b91c1c] text-white font-extrabold py-2 px-3 sm:px-5 sm:py-2.5 rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(229,9,20,0.5)] hover:shadow-[0_6px_25px_rgba(229,9,20,0.7)] text-xs sm:text-sm whitespace-nowrap shrink-0 border border-red-500/50 min-h-[40px] cursor-pointer hover:scale-[1.03] active:scale-95"
+                           aria-label="تسجيل الدخول"
+                           className="flex size-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-red-500/50 bg-[#e50914] text-xs font-extrabold text-white shadow-[0_4px_18px_rgba(229,9,20,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#b91c1c] hover:shadow-[0_6px_25px_rgba(229,9,20,0.7)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 active:scale-95 min-[430px]:w-auto min-[430px]:px-3 sm:min-h-[40px] sm:w-auto sm:gap-2 sm:px-5 sm:py-2.5 sm:text-sm"
                          >
                              <i className="fa-solid fa-right-to-bracket text-xs"></i>
-                             <span>تسجيل الدخول</span>
+                             <span className="hidden min-[430px]:inline">تسجيل الدخول</span>
                          </Link>
                        )}
                   </div>

@@ -1,7 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useUnifiedAuth } from "@/components/auth/UnifiedAuthProvider";
+
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
 
 function getTelegramUserId(
   initData: string,
@@ -41,6 +57,7 @@ function getAuthenticatedTelegramId(user: unknown): string | null {
 
 export default function TelegramAutoAuth() {
   const { refetchUser } = useUnifiedAuth();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -50,6 +67,8 @@ export default function TelegramAutoAuth() {
     let navigationPending = false;
 
     const initialTg = window.Telegram?.WebApp;
+    const isImmersiveRoute =
+      pathname?.startsWith("/room/") || pathname?.startsWith("/watch/");
     const isStoredTg =
       sessionStorage.getItem("isTgWebApp") === "true" ||
       window.location.search.includes("tgWebApp") ||
@@ -76,16 +95,28 @@ export default function TelegramAutoAuth() {
         if (initialTg.isVersionAtLeast?.("6.1") && initialTg.setBackgroundColor) {
           initialTg.setBackgroundColor("#050505");
         }
-        if (initialTg.isVersionAtLeast?.("8.0") && initialTg.requestFullscreen) {
-          initialTg.requestFullscreen();
-        }
-        if (initialTg.isVersionAtLeast?.("7.7") && initialTg.disableVerticalSwipes) {
-          initialTg.disableVerticalSwipes();
-          initialTg.isVerticalSwipesEnabled = false;
-        }
-
-        if (initialTg.isVersionAtLeast?.("6.2") && initialTg.enableClosingConfirmation) {
-          initialTg.enableClosingConfirmation();
+        if (isImmersiveRoute) {
+          if (initialTg.isVersionAtLeast?.("8.0") && initialTg.requestFullscreen) {
+            initialTg.requestFullscreen();
+          }
+          if (initialTg.isVersionAtLeast?.("7.7") && initialTg.disableVerticalSwipes) {
+            initialTg.disableVerticalSwipes();
+            initialTg.isVerticalSwipesEnabled = false;
+          }
+          if (initialTg.isVersionAtLeast?.("6.2") && initialTg.enableClosingConfirmation) {
+            initialTg.enableClosingConfirmation();
+          }
+        } else {
+          if (initialTg.isVersionAtLeast?.("8.0") && initialTg.exitFullscreen) {
+            initialTg.exitFullscreen();
+          }
+          if (initialTg.isVersionAtLeast?.("7.7") && initialTg.enableVerticalSwipes) {
+            initialTg.enableVerticalSwipes();
+            initialTg.isVerticalSwipesEnabled = true;
+          }
+          if (initialTg.isVersionAtLeast?.("6.2") && initialTg.disableClosingConfirmation) {
+            initialTg.disableClosingConfirmation();
+          }
         }
       } catch (error) {
         console.error("[Telegram WebApp Init Error]:", error);
@@ -130,23 +161,27 @@ export default function TelegramAutoAuth() {
       syncInFlight = true;
 
       try {
-        const meResponse = await fetch("/api/auth/me", {
-          cache: "no-store",
-          credentials: "same-origin",
-        });
-        const meData = meResponse.ok
-          ? await meResponse.json()
-          : { authenticated: false, user: null };
+        try {
+          const meResponse = await fetchWithTimeout("/api/auth/me", {
+            cache: "no-store",
+            credentials: "same-origin",
+          }, 6_000);
+          const meData = meResponse.ok
+            ? await meResponse.json()
+            : { authenticated: false, user: null };
 
-        wasAuthenticated = Boolean(meData?.authenticated);
-        loggedInTgId = getAuthenticatedTelegramId(meData?.user);
+          wasAuthenticated = Boolean(meData?.authenticated);
+          loggedInTgId = getAuthenticatedTelegramId(meData?.user);
+        } catch (error) {
+          console.error("[Telegram Current Session Check Error]:", error);
+        }
 
         if (wasAuthenticated && currentTgUserId && loggedInTgId === currentTgUserId) {
           await refetchUser();
           return;
         }
 
-        const authResponse = await fetch("/api/auth/telegram", {
+        const authResponse = await fetchWithTimeout("/api/auth/telegram", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "same-origin",
@@ -155,7 +190,7 @@ export default function TelegramAutoAuth() {
             initData,
             telegramData: unsafeUser,
           }),
-        });
+        }, 15_000);
         const authData = await authResponse.json().catch(() => null);
 
         if (!authResponse.ok || !authData?.success) {
@@ -191,10 +226,10 @@ export default function TelegramAutoAuth() {
 
         if (staleTelegramSession) {
           try {
-            await fetch("/api/auth/logout", {
+            await fetchWithTimeout("/api/auth/logout", {
               method: "POST",
               credentials: "same-origin",
-            });
+            }, 4_000);
           } catch (logoutError) {
             console.error("[Telegram Stale Session Clear Error]:", logoutError);
           }
@@ -241,8 +276,9 @@ export default function TelegramAutoAuth() {
       } catch (error) {
         console.error("[Telegram Activated Listener Cleanup Error]:", error);
       }
+
     };
-  }, [refetchUser]);
+  }, [pathname, refetchUser]);
 
   return null;
 }
