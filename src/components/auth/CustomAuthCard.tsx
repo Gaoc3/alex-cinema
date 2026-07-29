@@ -1,359 +1,352 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { useSignIn, useSignUp } from "@clerk/nextjs";
-import Link from "next/link";
-import toast from "react-hot-toast";
+import { SignIn, SignUp } from "@clerk/nextjs";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface CustomAuthCardProps {
   mode?: "sign-in" | "sign-up";
 }
 
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: {
-        ready: () => void;
-        initData: string;
-        initDataUnsafe?: {
-          user?: {
-            id: number;
-            first_name?: string;
-            last_name?: string;
-            username?: string;
-            photo_url?: string;
-          };
-        };
-        expand: () => void;
-      };
-    };
-  }
+interface TelegramAuthPayload {
+  initData: string;
+  telegramData: TelegramWebAppUser | null;
+}
+
+const clerkAppearance = {
+  theme: "simple" as const,
+  options: {
+    logoPlacement: "none" as const,
+    socialButtonsVariant: "blockButton" as const,
+    socialButtonsPlacement: "top" as const,
+    showOptionalFields: false,
+  },
+  variables: {
+    colorPrimary: "#e50914",
+    colorPrimaryForeground: "#ffffff",
+    colorDanger: "#fb7185",
+    colorSuccess: "#22c55e",
+    colorWarning: "#f59e0b",
+    colorNeutral: "#e2e8f0",
+    colorForeground: "#f8fafc",
+    colorMuted: "#111827",
+    colorMutedForeground: "#94a3b8",
+    colorBackground: "transparent",
+    colorInput: "rgba(15, 23, 42, 0.82)",
+    colorInputForeground: "#ffffff",
+    colorRing: "rgba(229, 9, 20, 0.42)",
+    colorBorder: "rgba(255, 255, 255, 0.16)",
+    fontFamily: "Cairo, sans-serif",
+    fontFamilyButtons: "Cairo, sans-serif",
+    borderRadius: "1rem",
+    spacing: "1rem",
+  },
+  elements: {
+    rootBox: "w-full",
+    cardBox: "w-full shadow-none",
+    card: "w-full border-0 bg-transparent p-0 shadow-none",
+    header: "mb-5 text-right",
+    headerTitle: "text-xl font-black tracking-tight text-white sm:text-2xl",
+    headerSubtitle: "mt-1.5 text-sm font-semibold leading-6 text-slate-400",
+    socialButtonsRoot: "gap-3",
+    socialButtonsBlockButton:
+      "min-h-12 rounded-2xl border border-white/15 bg-white/[0.06] text-white shadow-none transition hover:border-white/30 hover:bg-white/[0.1]",
+    socialButtonsBlockButtonText: "font-extrabold text-white",
+    socialButtonsProviderIcon: "size-5",
+    dividerRow: "my-5",
+    dividerLine: "bg-white/10",
+    dividerText: "px-3 text-xs font-bold text-slate-500",
+    form: "gap-4",
+    formFieldRow: "gap-2",
+    formFieldLabel: "mb-1.5 text-sm font-extrabold text-slate-200",
+    formFieldInput:
+      "min-h-12 rounded-2xl border border-white/15 bg-slate-950/70 px-4 text-right text-white shadow-inner outline-none transition placeholder:text-slate-500 focus:border-red-500/70 focus:ring-4 focus:ring-red-500/15",
+    formFieldInputShowPasswordButton: "text-slate-400 hover:text-white",
+    formFieldAction: "font-bold text-red-400 hover:text-red-300",
+    formFieldErrorText: "mt-1 text-xs font-bold text-red-300",
+    formButtonPrimary:
+      "min-h-12 rounded-2xl border border-red-400/25 bg-gradient-to-l from-red-700 via-[#e50914] to-red-600 text-sm font-black text-white shadow-[0_12px_30px_rgba(229,9,20,0.3)] transition hover:brightness-110 hover:shadow-[0_16px_38px_rgba(229,9,20,0.42)] active:scale-[0.99]",
+    formResendCodeLink: "font-extrabold text-red-400 hover:text-red-300",
+    otpCodeFieldInput:
+      "border-white/15 bg-slate-950/80 text-white focus:border-red-500 focus:ring-red-500/20",
+    identityPreview: "rounded-2xl border border-white/10 bg-white/[0.05]",
+    identityPreviewText: "text-white",
+    identityPreviewEditButton: "text-red-400 hover:text-red-300",
+    alternativeMethodsBlockButton:
+      "rounded-2xl border border-white/15 bg-white/[0.05] text-white hover:bg-white/[0.09]",
+    footer: "mt-5 bg-transparent",
+    footerAction: "justify-center gap-2",
+    footerActionText: "font-semibold text-slate-400",
+    footerActionLink: "font-black text-red-400 hover:text-red-300",
+    footerPages: "hidden",
+  },
+  captcha: { theme: "dark" as const },
+};
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
 }
 
 export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps) {
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
+  const [isOutsideTelegram, setIsOutsideTelegram] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isOutsideTelegram, setIsOutsideTelegram] = useState<boolean>(false);
-  const authProcessedRef = useRef<boolean>(false);
+  const authProcessedRef = useRef(false);
+  const browserPreparationRef = useRef<Promise<void> | null>(null);
 
-  // Email / Password Form States
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn();
-  const { isLoaded: isSignUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
-
-  // Official Telegram OpenID Connect Direct Authorization Link Trigger
-  const handleOidcTelegramAuth = () => {
-    const oidcUrl = "https://oauth.telegram.org/auth?client_id=8814857532&redirect_uri=https%3A%2F%2Fcinax.live%2Fapi%2Fauth%2Ftelegram%2Fcallback&response_type=code&scope=openid%20profile";
-    window.location.href = oidcUrl;
-  };
-
-  // GitHub Social Auth Trigger via Clerk
-  const handleGitHubAuth = async () => {
-    try {
-      if (mode === "sign-in" && isSignInLoaded && signIn) {
-        await signIn.authenticateWithRedirect({
-          strategy: "oauth_github",
-          redirectUrl: "/sign-in/sso-callback",
-          redirectUrlComplete: "/",
-        });
-      } else if (mode === "sign-up" && isSignUpLoaded && signUp) {
-        await signUp.authenticateWithRedirect({
-          strategy: "oauth_github",
-          redirectUrl: "/sign-up/sso-callback",
-          redirectUrlComplete: "/",
-        });
-      }
-    } catch (err: any) {
-      console.error("[GitHub Auth Error]:", err);
-      toast.error("فشل تسجيل الدخول عبر GitHub.");
-    }
-  };
-
-  // Authenticate user with server (Telegram App initData)
-  const processTelegramAuth = useCallback(
-    async (payload: { id_token?: string; initData?: string; telegramData?: any }) => {
-      if (authProcessedRef.current) return;
-      authProcessedRef.current = true;
-
-      setLoading(true);
-      setErrorMessage(null);
-
-      try {
-        const response = await fetch("/api/auth/telegram", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.error || "فشل تسجيل الدخول عبر تليجرام.");
-        }
-
-        toast.success(`أهلاً بك يا ${data.user?.name || ""}! 🍿`, { id: "tgAuth" });
-
-        // Redirect immediately to home page
-        window.location.replace("/home");
-      } catch (err: any) {
-        console.error("[Telegram Login Error]:", err);
-        setErrorMessage(err.message || "حدث خطأ أثناء الاتصال بالسيرفر.");
-        authProcessedRef.current = false;
-        setLoading(false);
-      }
-    },
-    []
-  );
-
-  // Main Detection Effect for Telegram Mini App
-  useEffect(() => {
-    const tg = typeof window !== "undefined" ? window.Telegram?.WebApp : null;
-
-    if (tg) {
-      try {
-        tg.ready();
-        tg.expand();
-      } catch (e) {}
-    }
-
-    let initData = tg?.initData || "";
-    let unsafeUser = tg?.initDataUnsafe?.user || null;
-
-    if (typeof window !== "undefined") {
-      if (!initData) {
-        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-        initData = hashParams.get("tgWebAppData") || "";
-      }
-      if (!initData) {
-        const searchParams = new URLSearchParams(window.location.search.replace(/^\?/, ""));
-        initData = searchParams.get("tgWebAppData") || "";
-      }
-    }
-
-    const isTelegramApp = Boolean(
-      (tg && (initData || unsafeUser)) ||
-      initData ||
-      unsafeUser ||
-      (typeof window !== "undefined" && (
-        window.location.hash.includes("tgWebAppData") ||
-        window.location.search.includes("tgWebAppData")
-      ))
-    );
-
-    if (isTelegramApp) {
-      processTelegramAuth({ initData, telegramData: unsafeUser });
-    } else {
-      setIsOutsideTelegram(true);
-      setLoading(false);
-    }
-  }, [processTelegramAuth]);
-
-  // Handle Email/Password Form Submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      toast.error("يرجى إدخال البريد الإلكتروني وكلمة المرور.");
-      return;
-    }
-
-    setIsSubmitting(true);
+  const processTelegramAuth = useCallback(async (payload: TelegramAuthPayload) => {
+    if (authProcessedRef.current) return;
+    authProcessedRef.current = true;
+    setLoading(true);
     setErrorMessage(null);
 
     try {
-      if (mode === "sign-in") {
-        if (!isSignInLoaded || !signIn) return;
-        const result = await signIn.create({
-          identifier: email,
-          password: password,
-        });
+      const response = await fetch("/api/auth/telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => null);
 
-        if (result.status === "complete") {
-          await setSignInActive({ session: result.createdSessionId });
-          toast.success("تم تسجيل الدخول بنجاح! 🍿");
-          window.location.replace("/home");
-        } else {
-          console.log("[Sign In Result]:", result);
-        }
-      } else {
-        if (!isSignUpLoaded || !signUp) return;
-        const result = await signUp.create({
-          emailAddress: email,
-          password: password,
-        });
-
-        if (result.status === "complete") {
-          await setSignUpActive({ session: result.createdSessionId });
-          toast.success("تم إنشاء الحساب بنجاح! 🍿");
-          window.location.replace("/home");
-        } else {
-          console.log("[Sign Up Result]:", result);
-        }
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || "فشل تسجيل الدخول عبر تليجرام.");
       }
-    } catch (err: any) {
-      console.error("[Email Auth Error]:", err);
-      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || "حدث خطأ أثناء المصادقة.";
-      setErrorMessage(msg);
-    } finally {
-      setIsSubmitting(false);
+
+      window.location.replace("/home?tgWebApp=true");
+    } catch (error) {
+      console.error("[Telegram Login Error]:", error);
+
+      try {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "same-origin",
+        });
+      } catch (logoutError) {
+        console.error("[Telegram Stale Session Clear Error]:", logoutError);
+      }
+
+      setErrorMessage(
+        getErrorMessage(error, "تعذر التحقق من حساب تليجرام الحالي. أعد فتح التطبيق من البوت.")
+      );
+      authProcessedRef.current = false;
+      setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    const tg = window.Telegram?.WebApp;
+
+    const showBrowserAuth = () => {
+      if (disposed) return;
+
+      setIsOutsideTelegram(true);
+      setLoading(false);
+
+      const callbackError = new URLSearchParams(window.location.search).get("error");
+      if (callbackError) {
+        setErrorMessage("لم يكتمل تسجيل الدخول عبر تليجرام. يمكنك المحاولة مجددًا.");
+      }
+    };
+
+    const prepareBrowserAuth = () => {
+      if (!browserPreparationRef.current) {
+        // A Telegram cookie must never override the Clerk account selected here.
+        browserPreparationRef.current = fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+        })
+          .then(() => undefined)
+          .catch((error) => {
+            console.error("[Telegram Session Cleanup Error]:", error);
+          });
+      }
+
+      void browserPreparationRef.current.finally(showBrowserAuth);
+    };
+
+    const detectTelegramAccount = () => {
+      try {
+        tg?.ready();
+        tg?.expand();
+      } catch (error) {
+        console.error("[Telegram WebApp Init Error]:", error);
+      }
+
+      let initData = tg?.initData || "";
+      const unsafeUser = tg?.initDataUnsafe?.user || null;
+
+      if (!initData) {
+        initData = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("tgWebAppData") || "";
+      }
+      if (!initData) {
+        initData = new URLSearchParams(window.location.search).get("tgWebAppData") || "";
+      }
+
+      const isTelegramApp = Boolean(initData || unsafeUser);
+
+      if (isTelegramApp) {
+        setIsOutsideTelegram(false);
+        void processTelegramAuth({ initData, telegramData: unsafeUser });
+        return;
+      }
+
+      prepareBrowserAuth();
+    };
+
+    const handleResume = () => detectTelegramAccount();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") detectTelegramAccount();
+    };
+
+    window.addEventListener("focus", handleResume);
+    window.addEventListener("pageshow", handleResume);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    try {
+      tg?.onEvent?.("activated", handleResume);
+    } catch (error) {
+      console.error("[Telegram Activated Listener Error]:", error);
+    }
+
+    detectTelegramAccount();
+
+    return () => {
+      disposed = true;
+      window.removeEventListener("focus", handleResume);
+      window.removeEventListener("pageshow", handleResume);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+
+      try {
+        tg?.offEvent?.("activated", handleResume);
+      } catch (error) {
+        console.error("[Telegram Activated Listener Cleanup Error]:", error);
+      }
+    };
+  }, [processTelegramAuth]);
+
+  const startTelegramOidc = () => {
+    window.location.assign("/api/auth/telegram/start");
   };
 
   return (
-    <div className="w-full max-w-[clamp(24rem,42vw,48rem)] transition-all duration-300 flex flex-col items-center justify-center my-auto px-2 sm:px-4 dir-rtl">
-      <div className="w-full border-2 border-white/30 shadow-[0_35px_100px_rgba(0,0,0,0.9)] bg-[#131b2e]/95 backdrop-blur-3xl rounded-[2.5rem] p-[clamp(1.5rem,3.5vw,3.25rem)] text-white relative flex flex-col items-center justify-center">
-        
-        {/* Header Logo */}
-        <div className="text-center mb-6 w-full">
-          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide mb-1.5">
-            ALEX <span className="text-[#e50914]">CINEMA</span>
-          </h2>
-          <p className="text-xs sm:text-sm font-bold text-gray-300">
-            منصة المشاهدة الجماعية والأفلام
-          </p>
-        </div>
+    <section className="relative w-full max-w-[34rem]" aria-labelledby="auth-card-title">
+      <div className="pointer-events-none absolute -inset-px rounded-[2rem] bg-gradient-to-b from-white/25 via-white/[0.04] to-red-500/20" />
+      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#080d18]/92 p-5 shadow-[0_32px_100px_rgba(0,0,0,0.72)] backdrop-blur-2xl sm:p-7">
+        <div className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full bg-red-600/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-28 -left-20 size-64 rounded-full bg-sky-500/10 blur-3xl" />
 
-        {/* Loading Spinner for Telegram App */}
-        {loading && (
-          <div className="w-full flex flex-col items-center gap-3 my-6 bg-red-950/40 p-6 rounded-2xl border border-red-500/30">
-            <div className="w-10 h-10 border-4 border-[#e50914] border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm font-black text-white">
-              جاري المصادقة والدخول التلقائي بحساب تليجرام...
+        <header className="relative mb-6 flex items-center justify-between gap-4 border-b border-white/10 pb-5">
+          <div className="text-right">
+            <p className="mb-1 text-[0.68rem] font-black uppercase tracking-[0.32em] text-red-400">
+              Secure Access
+            </p>
+            <h1 id="auth-card-title" className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+              {mode === "sign-in" ? "مرحبًا بعودتك" : "ابدأ رحلتك السينمائية"}
+            </h1>
+            <p className="mt-2 text-sm font-semibold leading-6 text-slate-400">
+              {mode === "sign-in"
+                ? "ادخل إلى قوائمك وغرف المشاهدة بأمان."
+                : "أنشئ حسابك واحفظ أفلامك وغرفك في مكان واحد."}
             </p>
           </div>
-        )}
+          <div className="hidden size-14 shrink-0 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-2xl text-red-400 shadow-[0_0_30px_rgba(229,9,20,0.18)] sm:flex">
+            <i className="fa-solid fa-clapperboard" aria-hidden="true" />
+          </div>
+        </header>
 
-        {/* Error Message */}
-        {errorMessage && (
-          <div className="w-full mb-4 text-center">
-            <p className="text-red-300 text-xs sm:text-sm bg-red-950/80 p-3 rounded-2xl border-2 border-red-500/50 leading-relaxed font-bold mb-2">
-              {errorMessage}
+        {loading && !isOutsideTelegram ? (
+          <div className="relative flex min-h-64 flex-col items-center justify-center gap-5 rounded-3xl border border-red-500/20 bg-red-950/15 p-8 text-center">
+            <div className="relative size-16">
+              <div className="absolute inset-0 rounded-full border border-red-400/20" />
+              <div className="absolute inset-1 animate-spin rounded-full border-[3px] border-red-500/20 border-t-red-500" />
+              <i className="fa-brands fa-telegram absolute inset-0 flex items-center justify-center text-xl text-sky-400" />
+            </div>
+            <div>
+              <p className="text-base font-black text-white">جاري مزامنة حساب تليجرام الحالي</p>
+              <p className="mt-2 text-xs font-semibold leading-6 text-slate-400">
+                نتحقق من بيانات التطبيق الموقعة ثم نحدّث الجلسة تلقائيًا.
+              </p>
+            </div>
+          </div>
+        ) : isOutsideTelegram ? (
+          <div className="relative">
+            {errorMessage && (
+              <div className="mb-4 flex items-start gap-3 rounded-2xl border border-red-400/25 bg-red-950/35 p-4 text-sm font-bold leading-6 text-red-100">
+                <i className="fa-solid fa-circle-exclamation mt-1 text-red-400" aria-hidden="true" />
+                <p>{errorMessage}</p>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={startTelegramOidc}
+              className="group flex min-h-13 w-full items-center justify-center gap-3 rounded-2xl border border-sky-400/25 bg-gradient-to-l from-sky-500/15 to-blue-500/10 px-5 py-3.5 text-sm font-black text-white shadow-[0_12px_30px_rgba(14,165,233,0.1)] transition hover:border-sky-300/45 hover:from-sky-500/25 hover:to-blue-500/20 active:scale-[0.99]"
+            >
+              <span className="flex size-9 items-center justify-center rounded-xl bg-sky-400/15 text-xl text-sky-300 transition group-hover:scale-105">
+                <i className="fa-brands fa-telegram" aria-hidden="true" />
+              </span>
+              <span>المتابعة مباشرة عبر تليجرام</span>
+            </button>
+
+            <div className="my-5 flex items-center gap-3" aria-hidden="true">
+              <span className="h-px flex-1 bg-white/10" />
+              <span className="text-[0.68rem] font-black tracking-wider text-slate-500">أو حساب المنصة</span>
+              <span className="h-px flex-1 bg-white/10" />
+            </div>
+
+            {mode === "sign-in" ? (
+              <SignIn
+                routing="path"
+                path="/sign-in"
+                signUpUrl="/sign-up"
+                forceRedirectUrl="/home"
+                appearance={clerkAppearance}
+              />
+            ) : (
+              <SignUp
+                routing="path"
+                path="/sign-up"
+                signInUrl="/sign-in"
+                forceRedirectUrl="/home"
+                appearance={clerkAppearance}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="relative flex min-h-64 flex-col items-center justify-center gap-4 rounded-3xl border border-red-400/25 bg-red-950/30 p-7 text-center">
+            <i className="fa-solid fa-triangle-exclamation text-3xl text-red-400" aria-hidden="true" />
+            <p className="text-sm font-bold leading-7 text-red-100">
+              {errorMessage || "تعذر التحقق من حساب تليجرام الحالي."}
             </p>
             <button
               type="button"
-              onClick={() => setErrorMessage(null)}
-              className="px-5 py-2 text-xs font-black bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+              onClick={() => window.location.reload()}
+              className="rounded-xl bg-[#e50914] px-6 py-3 text-sm font-black text-white transition hover:bg-red-700 active:scale-[0.98]"
             >
-              إغلاق
+              إعادة المحاولة
             </button>
           </div>
         )}
 
-        {/* Web Browser Auth Section */}
-        {isOutsideTelegram && !loading && (
-          <div className="w-full space-y-4">
-            
-            {/* Social Login Buttons Container */}
-            <div className="w-full flex flex-col gap-3">
-              
-              {/* Pure Official Telegram OIDC Button */}
-              <button
-                type="button"
-                id="telegram-oidc-login-btn"
-                onClick={handleOidcTelegramAuth}
-                className="w-full bg-[#161e33] hover:bg-[#1d2845] border-2 border-white/30 hover:border-blue-400 transition-all duration-300 text-white font-extrabold p-3.5 sm:p-4 rounded-2xl shadow-md flex items-center justify-center gap-3 active:scale-[0.98] cursor-pointer min-h-[52px] sm:min-h-[56px] text-sm sm:text-base group"
-              >
-                <i className="fa-brands fa-telegram text-[#24A1DE] text-2xl group-hover:scale-110 transition-transform"></i>
-                <span className="text-white font-black">تسجيل الدخول بـ Telegram</span>
-              </button>
-
-              {/* GitHub OAuth Button */}
-              <button
-                type="button"
-                onClick={handleGitHubAuth}
-                className="w-full bg-[#161e33] hover:bg-[#1d2845] border-2 border-white/30 hover:border-white transition-all duration-300 text-white font-extrabold p-3.5 sm:p-4 rounded-2xl shadow-md flex items-center justify-center gap-3 active:scale-[0.98] cursor-pointer min-h-[52px] sm:min-h-[56px] text-sm sm:text-base group"
-              >
-                <i className="fa-brands fa-github text-white text-2xl group-hover:scale-110 transition-transform"></i>
-                <span className="text-white font-black">المتابعة مع GitHub</span>
-              </button>
-
-            </div>
-
-            {/* Divider */}
-            <div className="flex items-center my-4">
-              <div className="flex-1 bg-white/20 h-[1.5px]"></div>
-              <span className="text-gray-300 font-extrabold text-xs sm:text-sm px-4">أو</span>
-              <div className="flex-1 bg-white/20 h-[1.5px]"></div>
-            </div>
-
-            {/* Email & Password Form */}
-            <form onSubmit={handleSubmit} className="w-full space-y-4 dir-rtl text-right">
-              <div>
-                <label className="text-gray-200 font-extrabold text-xs sm:text-sm mb-2 block">
-                  العنوان الإلكتروني
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="أدخل بريدك الإلكتروني هنا..."
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#161e33] border-2 border-white/30 focus:border-red-500 focus:ring-4 focus:ring-red-500/30 text-white placeholder:text-gray-400 font-bold rounded-2xl p-3.5 sm:p-4 transition-all text-sm sm:text-base shadow-inner min-h-[52px] sm:min-h-[56px] text-right"
-                />
-              </div>
-
-              <div>
-                <label className="text-gray-200 font-extrabold text-xs sm:text-sm mb-2 block">
-                  كلمة المرور
-                </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="أدخل كلمة المرور..."
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#161e33] border-2 border-white/30 focus:border-red-500 focus:ring-4 focus:ring-red-500/30 text-white placeholder:text-gray-400 font-bold rounded-2xl p-3.5 sm:p-4 transition-all text-sm sm:text-base shadow-inner min-h-[52px] sm:min-h-[56px] text-right"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-[#e50914] via-[#dc2626] to-[#b91c1c] hover:from-[#f87171] hover:to-[#dc2626] border-2 border-red-500/50 transition-all duration-300 text-white font-black shadow-[0_10px_35px_rgba(229,9,20,0.6)] hover:shadow-[0_12px_45px_rgba(229,9,20,0.85)] py-3.5 sm:py-4 rounded-2xl text-sm sm:text-base min-h-[52px] sm:min-h-[56px] active:scale-[0.98] cursor-pointer mt-3 flex items-center justify-center text-center disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                ) : mode === "sign-in" ? (
-                  "متابعة"
-                ) : (
-                  "إنشاء حساب"
-                )}
-              </button>
-            </form>
-
-          </div>
-        )}
-
-      </div>
-
-      {/* Footer Navigation Link */}
-      {isOutsideTelegram && (
-        <div className="mt-6 text-center z-20">
-          {mode === "sign-in" ? (
-            <Link 
-              href="/sign-up" 
-              className="text-sm sm:text-base font-medium text-gray-300 hover:text-white transition-colors inline-flex items-center justify-center gap-2 group cursor-pointer"
-            >
-              <span>ليس لديك حساب؟</span>
-              <span className="text-[#e50914] group-hover:text-white font-black relative py-0.5 transition-colors duration-300 after:content-[''] after:absolute after:bottom-0 after:right-0 after:w-0 after:h-[2px] after:bg-[#e50914] group-hover:after:w-full after:transition-all after:duration-300">
-                أنشئ حساباً الآن
-              </span>
-            </Link>
-          ) : (
-            <Link 
-              href="/sign-in" 
-              className="text-sm sm:text-base font-medium text-gray-300 hover:text-white transition-colors inline-flex items-center justify-center gap-2 group cursor-pointer"
-            >
-              <span>لديك حساب بالفعل؟</span>
-              <span className="text-[#e50914] group-hover:text-white font-black relative py-0.5 transition-colors duration-300 after:content-[''] after:absolute after:bottom-0 after:right-0 after:w-0 after:h-[2px] after:bg-[#e50914] group-hover:after:w-full after:transition-all after:duration-300">
-                سجل الدخول
-              </span>
-            </Link>
-          )}
+        <div className="relative mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-white/10 pt-4 text-[0.68rem] font-bold text-slate-500">
+          <span className="inline-flex items-center gap-1.5">
+            <i className="fa-solid fa-shield-halved text-emerald-400" aria-hidden="true" />
+            جلسة مشفرة
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <i className="fa-solid fa-key text-amber-400" aria-hidden="true" />
+            يدعم التحقق المتعدد
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <i className="fa-solid fa-user-lock text-sky-400" aria-hidden="true" />
+            خصوصية الحساب
+          </span>
         </div>
-      )}
-    </div>
+      </div>
+    </section>
   );
 }

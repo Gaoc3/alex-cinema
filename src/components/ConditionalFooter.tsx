@@ -5,7 +5,9 @@ import React from 'react';
 
 export default function ConditionalFooter() {
   const pathname = usePathname();
-  const isAuthPage = pathname?.startsWith('/sign-in') || pathname?.startsWith('/sign-up');
+  const isAuthPage = pathname?.startsWith('/sign-in')
+    || pathname?.startsWith('/sign-up')
+    || pathname?.startsWith('/tg-app');
 
   if (isAuthPage) {
     return null;

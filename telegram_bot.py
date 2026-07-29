@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from pathlib import Path
 import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import Application, CommandHandler, ContextTypes
@@ -21,10 +22,34 @@ logging.basicConfig(
 )
 logger = logging.getLogger("AleXCinemaBot")
 
+def load_project_env() -> None:
+    """Load server-side bot settings when PM2 starts outside the project directory."""
+    env_path = Path(__file__).resolve().with_name(".env")
+    if not env_path.is_file():
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+            value = value[1:-1]
+        if key:
+            os.environ.setdefault(key, value)
+
+load_project_env()
+
 # Dedicated Telegram WebApp Routes & Bot Config
-BOT_TOKEN = "8814857532:AAGE_ATYqwGOXbBSD-g6GHcvBCeSlxKZg1I"
-WEB_APP_URL = "https://cinax.live/tg-app"
-DIRECT_HOME_URL = "https://cinax.live/home"
+BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+if not BOT_TOKEN:
+    raise RuntimeError("TELEGRAM_BOT_TOKEN is required")
+
+WEB_APP_URL = os.environ.get("TELEGRAM_WEB_APP_URL", "https://cinax.live/tg-app")
+DIRECT_HOME_URL = os.environ.get("TELEGRAM_HOME_URL", "https://cinax.live/home")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send welcoming message with Telegram WebApp Button"""

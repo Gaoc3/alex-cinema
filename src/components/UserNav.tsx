@@ -37,9 +37,7 @@ export default function UserNav() {
     return (
       <div className="relative">
         <UserButton
-          afterSignOutUrl="/"
           appearance={{
-            layout: { unsafe_disableDevelopmentModeWarnings: true },
             elements: {
               userButtonAvatarBox: "!w-11 !h-11 sm:!w-13 sm:!h-13 border-2 border-white/25 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.8)] hover:scale-105 hover:border-red-500 hover:shadow-[0_0_25px_rgba(229,9,20,0.7)] transition-all duration-300 cursor-pointer overflow-hidden",
               userButtonTrigger: "!w-11 !h-11 sm:!w-13 sm:!h-13 rounded-full flex items-center justify-center focus:shadow-none focus:outline-none",
@@ -59,9 +57,12 @@ export default function UserNav() {
             },
             variables: {
               colorPrimary: '#e50914',
+              colorPrimaryForeground: '#ffffff',
               colorBackground: '#0b0f19',
-              colorText: '#ffffff',
-              colorTextSecondary: '#e5e7eb',
+              colorForeground: '#ffffff',
+              colorMutedForeground: '#e5e7eb',
+              colorInput: '#111827',
+              colorInputForeground: '#ffffff',
               fontFamily: 'var(--font-cairo)',
               borderRadius: '1rem',
             }
@@ -94,7 +95,15 @@ export default function UserNav() {
   }
 
   // Telegram User Avatar & Custom Profile Dropdown Menu
-  const isTelegramWebApp = typeof window !== 'undefined' && Boolean((window as any).Telegram?.WebApp?.initData);
+  let isTelegramWebApp = false;
+  if (typeof window !== 'undefined') {
+    try {
+      isTelegramWebApp = Boolean(window.Telegram?.WebApp?.initData)
+        || sessionStorage.getItem('isTgWebApp') === 'true';
+    } catch {
+      isTelegramWebApp = Boolean(window.Telegram?.WebApp?.initData);
+    }
+  }
 
   return (
     <div className="relative" ref={dropdownRef}>

@@ -43,3 +43,26 @@ next-env.d.ts
 testsprite_tests\tmp\config.json
 
 /generated/prisma
+
+# local agent/editor state
+/.agents/
+/.vscode/
+/scratch/
+
+# one-off diagnostics and deployment artifacts
+/*.py
+!/telegram_bot.py
+/*.log
+/*.txt
+!/requirements-bot.txt
+/*.html
+/*.conf
+/*.bak
+/*.new
+/*.test
+/*.db
+/*.tar.gz
+/test*.js
+/check*.js
+/decrypt*.js
+/poll*.js

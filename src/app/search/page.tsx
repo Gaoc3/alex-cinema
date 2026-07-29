@@ -414,7 +414,7 @@ function SearchPageContent() {
                 {movies.map((video, index) => (
                   <Link 
                     key={video.nb} 
-                    href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title)}`} 
+                    href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
                     className="group/card block relative snap-start"
                     style={{ animationDelay: `${index * 25}ms` }}
                   >
@@ -470,7 +470,7 @@ function SearchPageContent() {
                 {series.map((video, index) => (
                   <Link 
                     key={video.nb} 
-                    href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title)}`} 
+                    href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
                     className="group/card block relative snap-start"
                     style={{ animationDelay: `${index * 25}ms` }}
                   >

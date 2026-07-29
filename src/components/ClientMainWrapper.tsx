@@ -1,14 +1,20 @@
 "use client";
 
 import { usePathname } from 'next/navigation';
-import React from 'react';
+import type { ReactNode } from 'react';
 
-export default function ClientMainWrapper({ children }: { children: React.ReactNode }) {
+export default function ClientMainWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isAuthPage = pathname?.startsWith('/sign-in') || pathname?.startsWith('/sign-up');
+  const isAuthPage = pathname?.startsWith('/sign-in')
+    || pathname?.startsWith('/sign-up')
+    || pathname?.startsWith('/tg-app');
 
   return (
-    <main className={`flex-grow pt-16 sm:pt-20 xl:pt-0 ${isAuthPage ? '' : 'xl:pr-72'}`}>
+    <main
+      className={isAuthPage
+        ? 'flex-grow'
+        : 'flex-grow pt-16 sm:pt-20 xl:pt-0 xl:pr-72'}
+    >
       {children}
     </main>
   );

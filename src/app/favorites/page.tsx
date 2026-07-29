@@ -1,34 +1,14 @@
-import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
-import Link from "next/link";
-import Image from "next/image";
-import { getImageUrl } from "@/utils/imageHelper";
-import FavoriteButton from "@/components/FavoriteButton";
 import FavoritesList from "@/components/FavoritesList";
+import { getAuthUser } from "@/lib/getAuthUser";
 import { redirect } from "next/navigation";
 
 export const dynamic = 'force-dynamic';
 
 export default async function FavoritesPage() {
-  let userId: string | null = null;
-  
-  try {
-    const authObj = await auth();
-    userId = authObj?.userId || null;
-  } catch (e) {
-    console.error("Clerk auth() failed on favorites page during SSR", e);
-  }
-
-  if (!userId) {
+  const user = await getAuthUser();
+  if (!user) {
     redirect("/sign-in");
   }
-
-  const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
-  
-  const favorites = dbUser ? await prisma.favorite.findMany({
-    where: { userId: dbUser.id },
-    orderBy: { createdAt: 'desc' }
-  }) : [];
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 xl:px-8 pt-24 pb-12 relative z-10 min-h-screen" dir="rtl">

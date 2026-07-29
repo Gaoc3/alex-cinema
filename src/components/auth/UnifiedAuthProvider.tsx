@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
 
 interface UnifiedUser {
@@ -8,6 +8,8 @@ interface UnifiedUser {
   clerkId: string;
   name: string;
   imageUrl: string | null;
+  authProvider?: "telegram" | "clerk";
+  telegramId?: string | null;
 }
 
 interface UnifiedAuthContextType {
@@ -34,37 +36,50 @@ export function UnifiedAuthProvider({ children }: { children: React.ReactNode })
 
   const [tgUser, setTgUser] = useState<UnifiedUser | null>(null);
   const [isTgLoaded, setIsTgLoaded] = useState(false);
+  const fetchRequestIdRef = useRef(0);
 
   const fetchTgUser = useCallback(async () => {
+    const requestId = ++fetchRequestIdRef.current;
+
     try {
       const res = await fetch("/api/auth/me", { cache: "no-store" });
       const data = await res.json();
-      if (data?.authenticated && data?.user) {
+
+      if (requestId !== fetchRequestIdRef.current) return;
+
+      if (data?.authenticated && data?.user?.authProvider === "telegram") {
         setTgUser(data.user);
       } else {
         setTgUser(null);
       }
-    } catch (e) {
+    } catch {
+      if (requestId !== fetchRequestIdRef.current) return;
       setTgUser(null);
     } finally {
-      setIsTgLoaded(true);
+      if (requestId === fetchRequestIdRef.current) {
+        setIsTgLoaded(true);
+      }
     }
   }, []);
 
   useEffect(() => {
-    fetchTgUser();
+    const timeoutId = window.setTimeout(() => {
+      void fetchTgUser();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [fetchTgUser]);
 
   const signOut = useCallback(async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-    } catch (e) {}
+    } catch {}
 
     try {
       if (isClerkSignedIn) {
         await clerkSignOut();
       }
-    } catch (e) {}
+    } catch {}
 
     setTgUser(null);
     window.location.href = "/";

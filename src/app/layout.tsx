@@ -1,13 +1,8 @@
-import React, { Suspense } from "react";
+import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import "./globals.css";
-import Link from "next/link";
-import SearchBar from "@/components/SearchBar";
-import SidebarToggle from "@/components/SidebarToggle";
 import SecurityWrapper from "@/components/SecurityWrapper";
 import AILayoutEngine from "@/components/AILayoutEngine";
-import CinematicLogo from "@/components/CinematicLogo";
-import UserNav from "@/components/UserNav";
 import Script from "next/script";
 import { Toaster } from 'react-hot-toast';
 import ConditionalNavbar from "@/components/ConditionalNavbar";
@@ -19,7 +14,6 @@ import { UnifiedAuthProvider } from "@/components/auth/UnifiedAuthProvider";
 
 import { ClerkProvider } from '@clerk/nextjs'
 import { arSA } from '@clerk/localizations'
-import { dark } from '@clerk/themes'
 
 export const metadata: Metadata = {
   title: "ALEX CINEMA | اليكس سينما",
@@ -29,30 +23,26 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <ClerkProvider 
       localization={arSA}
+      afterSignOutUrl="/"
       appearance={{
-        baseTheme: dark,
-        layout: {
-          unsafe_disableDevelopmentModeWarnings: true,
-        },
+        theme: 'simple',
         variables: {
           colorPrimary: '#e50914',
+          colorPrimaryForeground: '#ffffff',
           colorBackground: '#0b0f19',
-          colorText: '#ffffff',
-          colorTextSecondary: '#e5e7eb',
+          colorForeground: '#ffffff',
+          colorMuted: '#111827',
+          colorMutedForeground: '#cbd5e1',
+          colorInput: '#111827',
+          colorInputForeground: '#ffffff',
+          colorBorder: 'rgba(255, 255, 255, 0.15)',
           fontFamily: 'Cairo, sans-serif',
           borderRadius: '1rem',
-        },
-        elements: {
-          footer: '!hidden',
-          footerAction: '!hidden',
-          devRow: '!hidden',
-          watermark: '!hidden',
-          userButtonPopoverFooter: '!hidden',
         }
       }}
     >

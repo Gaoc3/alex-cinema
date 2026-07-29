@@ -1,101 +1,248 @@
 "use client";
 
 import { useEffect } from "react";
+import { useUnifiedAuth } from "@/components/auth/UnifiedAuthProvider";
+
+function getTelegramUserId(
+  initData: string,
+  unsafeUser: TelegramWebAppUser | null | undefined,
+): string | null {
+  try {
+    const signedUser = new URLSearchParams(initData).get("user");
+    if (signedUser) {
+      const parsedUser = JSON.parse(signedUser);
+      if (parsedUser?.id !== undefined && parsedUser?.id !== null) {
+        return String(parsedUser.id);
+      }
+    }
+  } catch (error) {
+    console.error("[Telegram WebApp User Parse Error]:", error);
+  }
+
+  return unsafeUser?.id !== undefined && unsafeUser?.id !== null
+    ? String(unsafeUser.id)
+    : null;
+}
+
+function getAuthenticatedTelegramId(user: unknown): string | null {
+  if (!user || typeof user !== "object") return null;
+
+  const identity = user as Record<string, unknown>;
+  if (identity.telegramId !== undefined && identity.telegramId !== null) {
+    return String(identity.telegramId);
+  }
+
+  if (typeof identity.clerkId === "string" && identity.clerkId.startsWith("telegram_")) {
+    return identity.clerkId.slice("telegram_".length);
+  }
+
+  return null;
+}
 
 export default function TelegramAutoAuth() {
+  const { refetchUser } = useUnifiedAuth();
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const tg = (window as any).Telegram?.WebApp;
-    const isStoredTg = typeof window !== "undefined" && (
+    let disposed = false;
+    let syncInFlight = false;
+    let navigationPending = false;
+
+    const initialTg = window.Telegram?.WebApp;
+    const isStoredTg =
       sessionStorage.getItem("isTgWebApp") === "true" ||
       window.location.search.includes("tgWebApp") ||
-      Boolean(tg)
-    );
-    const isTgApp = Boolean(tg && (tg.initData || tg.initDataUnsafe?.user)) || isStoredTg;
+      Boolean(initialTg?.initData || initialTg?.initDataUnsafe?.user);
 
     if (isStoredTg) {
       document.body.classList.add("is-telegram-webapp");
       document.documentElement.classList.add("is-telegram-webapp");
       try {
         sessionStorage.setItem("isTgWebApp", "true");
-      } catch (e) {}
-    }
-
-    if (tg) {
-      try {
-        tg.ready();
-        tg.expand();
-
-        if (typeof tg.setHeaderColor === "function") {
-          tg.setHeaderColor("#050505");
-        }
-        if (typeof tg.setBackgroundColor === "function") {
-          tg.setBackgroundColor("#050505");
-        }
-        if (typeof tg.requestFullscreen === "function") {
-          tg.requestFullscreen();
-        }
-        if (typeof tg.disableVerticalSwipes === "function") {
-          tg.disableVerticalSwipes();
-        }
-        tg.isVerticalSwipesEnabled = false;
-
-        if (typeof tg.enableClosingConfirmation === "function") {
-          tg.enableClosingConfirmation();
-        }
-      } catch (e) {
-        console.error("[Telegram WebApp Init Error]:", e);
+      } catch (error) {
+        console.error("[Telegram WebApp Session Flag Error]:", error);
       }
     }
 
-    let initData = tg?.initData || "";
-    let unsafeUser = tg?.initDataUnsafe?.user || null;
+    if (initialTg && isStoredTg) {
+      try {
+        initialTg.ready();
+        initialTg.expand();
 
-    if (!initData) {
-      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-      initData = hashParams.get("tgWebAppData") || "";
-    }
-
-    if (!initData && !unsafeUser) {
-      return;
-    }
-
-    const currentTgUserId = unsafeUser?.id ? String(unsafeUser.id) : null;
-
-    // Check currently logged in session first to detect Telegram account switching in real-time
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((meData) => {
-        const loggedInTgId = meData?.user?.telegramId ? String(meData.user.telegramId) : null;
-
-        // If not logged in OR logged in under a different Telegram account (user switched TG account)
-        if (!meData?.success || (currentTgUserId && loggedInTgId !== currentTgUserId)) {
-          console.log("[Telegram Auth Account Switch/Login Triggered]", { currentTgUserId, loggedInTgId });
-
-          fetch("/api/auth/telegram", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              initData: initData || "",
-              telegramData: unsafeUser || null,
-            }),
-          })
-            .then((res) => res.json())
-            .then((data) => {
-              if (data?.success) {
-                console.log("[Telegram Silent Auth Success]:", data.user?.name);
-                // If user switched accounts, reload to update UI in real-time
-                if (loggedInTgId && loggedInTgId !== currentTgUserId) {
-                  window.location.reload();
-                }
-              }
-            })
-            .catch((e) => console.error("[Telegram Silent Auth Error]:", e));
+        if (initialTg.isVersionAtLeast?.("6.1") && initialTg.setHeaderColor) {
+          initialTg.setHeaderColor("#050505");
         }
-      })
-      .catch((e) => console.error("[Auth Me Check Error]:", e));
-  }, []);
+        if (initialTg.isVersionAtLeast?.("6.1") && initialTg.setBackgroundColor) {
+          initialTg.setBackgroundColor("#050505");
+        }
+        if (initialTg.isVersionAtLeast?.("8.0") && initialTg.requestFullscreen) {
+          initialTg.requestFullscreen();
+        }
+        if (initialTg.isVersionAtLeast?.("7.7") && initialTg.disableVerticalSwipes) {
+          initialTg.disableVerticalSwipes();
+          initialTg.isVerticalSwipesEnabled = false;
+        }
+
+        if (initialTg.isVersionAtLeast?.("6.2") && initialTg.enableClosingConfirmation) {
+          initialTg.enableClosingConfirmation();
+        }
+      } catch (error) {
+        console.error("[Telegram WebApp Init Error]:", error);
+      }
+    }
+
+    const ownsTelegramAuth =
+      window.location.pathname.startsWith("/tg-app") ||
+      window.location.pathname.startsWith("/sign-in") ||
+      window.location.pathname.startsWith("/sign-up");
+
+    // These pages authenticate and redirect explicitly, so avoid two competing writers.
+    if (ownsTelegramAuth) return;
+
+    const readLaunchPayload = () => {
+      const tg = window.Telegram?.WebApp;
+      let initData = tg?.initData || "";
+      const unsafeUser = tg?.initDataUnsafe?.user || null;
+
+      if (!initData) {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        initData = hashParams.get("tgWebAppData") || "";
+      }
+      if (!initData) {
+        const searchParams = new URLSearchParams(window.location.search.replace(/^\?/, ""));
+        initData = searchParams.get("tgWebAppData") || "";
+      }
+
+      return { initData, unsafeUser };
+    };
+
+    const syncTelegramAccount = async () => {
+      if (disposed || syncInFlight || navigationPending) return;
+
+      const { initData, unsafeUser } = readLaunchPayload();
+      if (!initData) return;
+
+      const currentTgUserId = getTelegramUserId(initData, unsafeUser);
+      let loggedInTgId: string | null = null;
+      let wasAuthenticated = false;
+
+      syncInFlight = true;
+
+      try {
+        const meResponse = await fetch("/api/auth/me", {
+          cache: "no-store",
+          credentials: "same-origin",
+        });
+        const meData = meResponse.ok
+          ? await meResponse.json()
+          : { authenticated: false, user: null };
+
+        wasAuthenticated = Boolean(meData?.authenticated);
+        loggedInTgId = getAuthenticatedTelegramId(meData?.user);
+
+        if (wasAuthenticated && currentTgUserId && loggedInTgId === currentTgUserId) {
+          await refetchUser();
+          return;
+        }
+
+        const authResponse = await fetch("/api/auth/telegram", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          cache: "no-store",
+          body: JSON.stringify({
+            initData,
+            telegramData: unsafeUser,
+          }),
+        });
+        const authData = await authResponse.json().catch(() => null);
+
+        if (!authResponse.ok || !authData?.success) {
+          throw new Error(authData?.error || "Telegram authentication failed.");
+        }
+
+        const authenticatedTgId = getAuthenticatedTelegramId(authData.user);
+        if (currentTgUserId && authenticatedTgId !== currentTgUserId) {
+          throw new Error("Telegram account identity mismatch.");
+        }
+
+        const accountChanged =
+          !wasAuthenticated ||
+          !loggedInTgId ||
+          !authenticatedTgId ||
+          loggedInTgId !== authenticatedTgId;
+
+        if (disposed) return;
+
+        if (accountChanged) {
+          navigationPending = true;
+          window.location.reload();
+          return;
+        }
+
+        await refetchUser();
+      } catch (error) {
+        console.error("[Telegram Account Sync Error]:", error);
+
+        const staleTelegramSession = Boolean(
+          loggedInTgId && currentTgUserId && loggedInTgId !== currentTgUserId
+        );
+
+        if (staleTelegramSession) {
+          try {
+            await fetch("/api/auth/logout", {
+              method: "POST",
+              credentials: "same-origin",
+            });
+          } catch (logoutError) {
+            console.error("[Telegram Stale Session Clear Error]:", logoutError);
+          }
+
+          if (!disposed) {
+            navigationPending = true;
+            window.location.replace("/sign-in?error=tg_account_sync");
+          }
+        }
+      } finally {
+        syncInFlight = false;
+      }
+    };
+
+    const handleResume = () => {
+      void syncTelegramAccount();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void syncTelegramAccount();
+      }
+    };
+
+    window.addEventListener("focus", handleResume);
+    window.addEventListener("pageshow", handleResume);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    try {
+      initialTg?.onEvent?.("activated", handleResume);
+    } catch (error) {
+      console.error("[Telegram Activated Listener Error]:", error);
+    }
+
+    void syncTelegramAccount();
+
+    return () => {
+      disposed = true;
+      window.removeEventListener("focus", handleResume);
+      window.removeEventListener("pageshow", handleResume);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+
+      try {
+        initialTg?.offEvent?.("activated", handleResume);
+      } catch (error) {
+        console.error("[Telegram Activated Listener Cleanup Error]:", error);
+      }
+    };
+  }, [refetchUser]);
 
   return null;
 }

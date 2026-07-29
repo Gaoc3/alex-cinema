@@ -1,5 +1,4 @@
 @import "tailwindcss";
-
 @theme {
   --color-alex-primary: #e50914;
   --color-alex-dark: #070a13;
@@ -594,18 +593,9 @@ video.alex-video-cue::-webkit-media-text-track-container {
   background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Hide Clerk branding footers and watermarks everywhere */
+/* Hide only Clerk branding surfaces; keep auth navigation and recovery links visible. */
 .cl-userButtonPopoverFooter,
-.cl-footer,
-.cl-footerAction,
-.cl-internal-b382ii,
-.cl-internal-157s8i1,
-.cl-internal-1dauvye,
-.cl-watermark,
-[class*="userButtonPopoverFooter"],
-[class*="footer"],
-[class*="watermark"],
-[class*="devRow"] {
+.cl-watermark {
   display: none !important;
   visibility: hidden !important;
   height: 0 !important;
@@ -659,13 +649,7 @@ video.alex-video-cue::-webkit-media-text-track-container {
 .cl-socialButtonsBadge,
 .cl-socialButtonsBlockButtonBadge,
 .cl-socialButtonsBadgeDefault,
-.cl-badge,
-.cl-providerIconButtonBadge,
-.cl-userButtonPopoverCard .cl-badge,
-[class*="socialButtonsBadge"],
-[class*="socialButtonsBlockButtonBadge"],
-[class*="providerIconButtonBadge"],
-[class*="badge"] {
+.cl-providerIconButtonBadge {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
@@ -696,102 +680,4 @@ button[data-provider="telegram"] {
   width: 0 !important;
   opacity: 0 !important;
   pointer-events: none !important;
-}
-
-/* Force GitHub social button background & text */
-.cl-socialButtonsBlockButton {
-  background-color: #161e33 !important;
-  background: #161e33 !important;
-  border: 2px solid rgba(255, 255, 255, 0.4) !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-  min-height: 58px !important;
-  border-radius: 1rem !important;
-}
-
-.cl-socialButtonsBlockButtonText {
-  color: #ffffff !important;
-  font-weight: 900 !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-}
-
-/* Force ONLY the GitHub SVG/image logo icon to 100% pure snow white */
-.cl-socialButtonsBlockButtonIcon,
-.cl-socialButtonsBlockButtonIcon img,
-.cl-socialButtonsBlockButtonIcon svg,
-.cl-socialButtonsBlockButtonIcon path,
-[class*="socialButtonsBlockButtonIcon"] img,
-[class*="socialButtonsBlockButtonIcon"] svg,
-[class*="socialButtonsBlockButtonIcon"] path,
-[class*="providerIcon"] img,
-[class*="providerIcon"] svg {
-  filter: brightness(0) invert(1) !important;
-  -webkit-filter: brightness(0) invert(1) !important;
-  fill: #ffffff !important;
-  color: #ffffff !important;
-  stroke: #ffffff !important;
-  opacity: 1 !important;
-}
-
-/* Force input field dark glass theme & Arabic right alignment */
-.cl-formFieldInput,
-[class*="formFieldInput"] {
-  background-color: #161e33 !important;
-  background: #161e33 !important;
-  border: 2px solid rgba(255, 255, 255, 0.3) !important;
-  color: #ffffff !important;
-  border-radius: 1rem !important;
-  text-align: right !important;
-  direction: rtl !important;
-  font-family: var(--font-cairo), sans-serif !important;
-  font-weight: 700 !important;
-  min-height: 58px !important;
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4) !important;
-  transition: all 0.3s ease !important;
-}
-
-.cl-formFieldInput:focus,
-[class*="formFieldInput"]:focus {
-  border-color: #e50914 !important;
-  box-shadow: 0 0 25px rgba(229, 9, 20, 0.4), inset 0 2px 8px rgba(0, 0, 0, 0.4) !important;
-  background-color: #1a243d !important;
-}
-
-.cl-formFieldInput::placeholder,
-[class*="formFieldInput"]::placeholder {
-  color: #9ca3af !important;
-  opacity: 0.75 !important;
-  text-align: right !important;
-  direction: rtl !important;
-}
-
-/* Force 100% mathematical centering of primary submit button text ("متابعة") */
-.cl-formButtonPrimary,
-[class*="formButtonPrimary"] {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
-  position: relative !important;
-}
-
-.cl-formButtonPrimary svg,
-.cl-formButtonPrimary img,
-.cl-formButtonPrimary i,
-.cl-formButtonPrimary [class*="icon"],
-.cl-formButtonPrimary [class*="arrow"],
-[class*="formButtonPrimary"] svg,
-[class*="formButtonPrimary"] img,
-[class*="formButtonPrimary"] i,
-[class*="formButtonPrimary"] [class*="icon"],
-[class*="formButtonPrimary"] [class*="arrow"] {
-  display: none !important;
-  visibility: hidden !important;
-  width: 0 !important;
-  height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
 }

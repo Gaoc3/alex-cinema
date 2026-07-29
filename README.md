@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AleX Cinema
 
-## Getting Started
+AleX Cinema is a real-time social streaming platform built with Next.js, React,
+TypeScript, Socket.io, Prisma/PostgreSQL, Clerk, and the Telegram Mini App SDK.
 
-First, run the development server:
+Production: https://cinax.live
+
+## Local development
 
 ```bash
+npm ci
+npx prisma generate
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copy `.env.example` to a local environment file and provide the required values.
+Never commit production credentials.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Authentication
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Clerk handles regular browser sign-in and sign-up.
+- Telegram Mini Apps authenticate with signed `initData`.
+- Browser-based Telegram login uses OIDC with state, nonce, and PKCE.
+- Telegram sessions are server-signed with `TELEGRAM_SESSION_SECRET`.
 
-## Learn More
+Required production variables are documented in `.env.example`.
 
-To learn more about Next.js, take a look at the following resources:
+## Runtime services
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `cinemana`: Next.js application on port 3000.
+- `alex-socket`: Socket.io room server on port 4000.
+- `alex-telegram-bot`: Telegram Mini App bot.
+- `alex-tunnel-watchdog`: Shabakaty reverse-tunnel health monitor.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Production deployment
 
-## Deploy on Vercel
+```bash
+git fetch origin
+git reset --hard origin/main
+npm ci
+npx prisma generate
+npm run build
+pm2 restart cinemana alex-socket alex-telegram-bot alex-tunnel-watchdog --update-env
+pm2 save
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Run the build before restarting services. Keep `.env`, `.env.production`, and
+other server-only configuration files outside Git.

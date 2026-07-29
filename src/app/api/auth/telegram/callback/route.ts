@@ -1,107 +1,124 @@
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createTelegramSessionToken } from "@/lib/getAuthUser";
+import { getRequiredTelegramEnv, verifyTelegramOidcIdToken } from "@/lib/telegramAuth";
+import {
+  createTelegramSessionToken,
+  TELEGRAM_SESSION_COOKIE,
+  TELEGRAM_SESSION_MAX_AGE_SECONDS,
+} from "@/lib/telegramSession";
+import {
+  parseTelegramOidcTransaction,
+  safeEqual,
+  TELEGRAM_OIDC_TRANSACTION_COOKIE,
+} from "@/lib/telegramOidc";
 
-const CLIENT_ID = process.env.TELEGRAM_CLIENT_ID || "8814857532";
-const CLIENT_SECRET = process.env.TELEGRAM_CLIENT_SECRET || "bCb3i_tAqvc7MHhU4OMs7q1Q2OCH0rYlzhX9b0rI8SYPMwvMn4K6ew";
-const REDIRECT_URI = "https://cinax.live/api/auth/telegram/callback";
-const BASE_URL = "https://cinax.live";
+export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+function getAppOrigin(request: Request): string {
   try {
-    const { searchParams } = new URL(req.url);
-    const code = searchParams.get("code");
-    const error = searchParams.get("error");
+    return new URL(process.env.APP_ORIGIN || request.url).origin;
+  } catch {
+    return new URL(request.url).origin;
+  }
+}
 
-    if (error) {
-      console.error("[Telegram OIDC Callback Error]:", error);
-      return NextResponse.redirect(`${BASE_URL}/sign-in?error=tg_cancelled`);
+function clearTransactionCookie(response: NextResponse): void {
+  response.cookies.set(TELEGRAM_OIDC_TRANSACTION_COOKIE, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/api/auth/telegram",
+    expires: new Date(0),
+  });
+}
+
+function redirectWithError(request: NextRequest, code: string): NextResponse {
+  const url = new URL("/sign-in", getAppOrigin(request));
+  url.searchParams.set("error", code);
+  const response = NextResponse.redirect(url);
+  response.headers.set("Cache-Control", "no-store");
+  clearTransactionCookie(response);
+  return response;
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const state = request.nextUrl.searchParams.get("state") || "";
+    const providerError = request.nextUrl.searchParams.get("error");
+    const transactionToken = request.cookies.get(TELEGRAM_OIDC_TRANSACTION_COOKIE)?.value;
+    const transaction = transactionToken
+      ? await parseTelegramOidcTransaction(transactionToken)
+      : null;
+
+    if (!transaction || !state || !safeEqual(state, transaction.state)) {
+      return redirectWithError(request, "tg_invalid_state");
     }
 
-    // Handle OIDC Code Exchange
-    if (code) {
-      console.log("[Telegram OIDC Callback] Exchanging code for tokens...");
-
-      const tokenResponse = await fetch("https://oauth.telegram.org/token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`,
-        },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          code: code,
-          redirect_uri: REDIRECT_URI,
-        }),
-      });
-
-      if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        console.error("[Telegram OIDC Token Exchange Failed]:", errorText);
-        return NextResponse.redirect(`${BASE_URL}/sign-in?error=token_failed`);
-      }
-
-      const tokenData = await tokenResponse.json();
-      const idToken = tokenData.id_token;
-
-      if (idToken) {
-        // Decode JWT id_token payload
-        const parts = idToken.split(".");
-        const payloadJson = Buffer.from(parts[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf-8");
-        const claims = JSON.parse(payloadJson);
-
-        if (!claims.iss || claims.iss !== "https://oauth.telegram.org") {
-          console.error("[Telegram OIDC Callback] Invalid issuer:", claims.iss);
-          return NextResponse.redirect(`${BASE_URL}/sign-in?error=invalid_token`);
-        }
-
-        if (!claims.aud || claims.aud.toString() !== CLIENT_ID) {
-          console.error("[Telegram OIDC Callback] Invalid audience:", claims.aud);
-          return NextResponse.redirect(`${BASE_URL}/sign-in?error=invalid_token`);
-        }
-
-        const now = Math.floor(Date.now() / 1000);
-        if (claims.exp && now > claims.exp) {
-          console.error("[Telegram OIDC Callback] Expired token");
-          return NextResponse.redirect(`${BASE_URL}/sign-in?error=invalid_token`);
-        }
-
-        const tgId = claims.id || claims.sub;
-        const name = `${claims.given_name || claims.name || ""} ${claims.family_name || ""}`.trim() || claims.preferred_username || `User ${tgId}`;
-        const avatarUrl = claims.picture || claims.photo_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${tgId}`;
-        const externalId = `telegram_${tgId}`;
-
-        // Upsert User in PostgreSQL
-        const dbUser = await prisma.user.upsert({
-          where: { clerkId: externalId },
-          update: { name, imageUrl: avatarUrl },
-          create: { clerkId: externalId, name, imageUrl: avatarUrl },
-        });
-
-        // Set Session Cookie
-        const sessionToken = createTelegramSessionToken({
-          clerkId: externalId,
-          name: dbUser.name,
-          imageUrl: dbUser.imageUrl,
-        });
-
-        const cookieStore = await cookies();
-        cookieStore.set("telegram_session", sessionToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          maxAge: 30 * 24 * 60 * 60,
-          path: "/",
-          sameSite: "lax",
-        });
-
-        return NextResponse.redirect(`${BASE_URL}/home`);
-      }
+    if (providerError) {
+      return redirectWithError(request, "tg_cancelled");
     }
 
-    return NextResponse.redirect(`${BASE_URL}/sign-in`);
-  } catch (error: any) {
-    console.error("[Telegram Callback Route Error]:", error);
-    return NextResponse.redirect(`${BASE_URL}/sign-in?error=server_error`);
+    const code = request.nextUrl.searchParams.get("code");
+    if (!code) return redirectWithError(request, "tg_missing_code");
+
+    const clientId = getRequiredTelegramEnv("TELEGRAM_CLIENT_ID");
+    const clientSecret = getRequiredTelegramEnv("TELEGRAM_CLIENT_SECRET");
+    const redirectUri = `${getAppOrigin(request)}/api/auth/telegram/callback`;
+    const basicCredentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+
+    const tokenResponse = await fetch("https://oauth.telegram.org/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${basicCredentials}`,
+      },
+      cache: "no-store",
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: redirectUri,
+        client_id: clientId,
+        code_verifier: transaction.codeVerifier,
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      return redirectWithError(request, "tg_token_exchange_failed");
+    }
+
+    const tokenData = (await tokenResponse.json()) as { id_token?: unknown };
+    if (typeof tokenData.id_token !== "string") {
+      return redirectWithError(request, "tg_missing_id_token");
+    }
+
+    const telegramUser = await verifyTelegramOidcIdToken(tokenData.id_token, transaction.nonce);
+    const clerkId = `telegram_${telegramUser.id}`;
+    const name = `${telegramUser.first_name} ${telegramUser.last_name}`.trim()
+      || telegramUser.username
+      || `User ${telegramUser.id}`;
+    const imageUrl = telegramUser.photo_url
+      || `https://api.dicebear.com/7.x/bottts/svg?seed=${telegramUser.id}`;
+
+    await prisma.user.upsert({
+      where: { clerkId },
+      update: { name, imageUrl },
+      create: { clerkId, name, imageUrl },
+    });
+
+    const sessionToken = await createTelegramSessionToken({ clerkId });
+    const response = NextResponse.redirect(new URL("/home", getAppOrigin(request)));
+    response.headers.set("Cache-Control", "no-store");
+    response.cookies.set(TELEGRAM_SESSION_COOKIE, sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: TELEGRAM_SESSION_MAX_AGE_SECONDS,
+    });
+    clearTransactionCookie(response);
+    return response;
+  } catch (error) {
+    console.error("[Telegram OIDC Callback Error]:", error);
+    return redirectWithError(request, "tg_server_error");
   }
 }

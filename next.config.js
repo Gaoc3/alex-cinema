@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: { ignoreDuringBuilds: true },
-  typescript: { ignoreBuildErrors: true },
   outputFileTracingRoot: __dirname,
   images: {
     remotePatterns: [
@@ -33,6 +31,16 @@ const nextConfig = {
   },
   async headers() {
     return [
+      {
+        // Telegram Login COOP header requirement (https://core.telegram.org/bots/telegram-login#22-cross-origin-opener-policy-coop-header-warning)
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
+          },
+        ],
+      },
       {
         // Cache images and tunnels heavily
         source: '/tunnel/:path*',

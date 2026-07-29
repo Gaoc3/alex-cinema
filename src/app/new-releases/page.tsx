@@ -53,7 +53,7 @@ export default async function NewReleasesPage({ searchParams }: PageProps) {
             {merged.map((video: VideoItem, index) => (
               <Link 
                 key={video.nb} 
-                href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title)}`} 
+                href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
                 className="group/card block relative snap-start animate-fade-in-up"
                 style={{ animationDelay: `${index * 15}ms` }}
               >

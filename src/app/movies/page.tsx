@@ -79,7 +79,7 @@ function MoviesContent() {
   const [loading, setLoading] = useState(true);
 
   // Dropdown states for custom selectors
-  const [openDropdown, setOpenDropdown] = useState<'sort' | 'rating' | 'year' | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<'category' | 'sort' | 'rating' | 'year' | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on outside click and disable scroll restoration
@@ -231,7 +231,7 @@ function MoviesContent() {
             
             <div>
               <Link
-                href={`/watch/${featuredMovie.nb}?title=${encodeURIComponent(featuredMovie.ar_title || featuredMovie.en_title)}`}
+                href={`/watch/${featuredMovie.nb}?title=${encodeURIComponent(featuredMovie.ar_title || featuredMovie.en_title || '')}`}
                 className="inline-flex items-center justify-center bg-[#E50914] hover:bg-[#b8070f] text-white font-black text-[10px] md:text-sm px-4 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl shadow-lg transition-all active:scale-[0.97]"
               >
                 <i className="fa-solid fa-play ml-1.5 md:ml-2 text-[8px] md:text-xs"></i>
@@ -415,7 +415,7 @@ function MoviesContent() {
                 {movies.map((video, index) => (
                   <Link 
                     key={video.nb} 
-                    href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title)}`} 
+                    href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
                     className="group/card block relative snap-start animate-fade-in-up active:scale-95 transition-transform duration-200"
                     style={{ animationDelay: `${index * 15}ms` }}
                   >

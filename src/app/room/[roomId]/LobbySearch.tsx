@@ -145,8 +145,8 @@ export default function LobbySearch({ roomId }: LobbySearchProps) {
       const { updateRoomVideo } = await import('@/app/actions/room.actions');
       const res = await updateRoomVideo(roomId, {
         movieId: item.nb,
-        movieTitle: item.ar_title || item.en_title,
-        moviePoster: item.img
+        movieTitle: item.ar_title || item.en_title || '',
+        moviePoster: item.img || ''
       });
       if (res.success) {
         toast.success(`تم اختيار ${item.ar_title || item.en_title} للروم! 🎬`);

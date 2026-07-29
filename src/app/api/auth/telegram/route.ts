@@ -1,205 +1,101 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { createTelegramSessionToken } from "@/lib/getAuthUser";
-import crypto from "node:crypto";
+import { verifyTelegramWebAppData } from "@/lib/telegramAuth";
+import {
+  createTelegramSessionToken,
+  TELEGRAM_SESSION_COOKIE,
+  TELEGRAM_SESSION_MAX_AGE_SECONDS,
+} from "@/lib/telegramSession";
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8814857532:AAGE_ATYqwGOXbBSD-g6GHcvBCeSlxKZg1I";
-const CLIENT_SECRET = process.env.TELEGRAM_CLIENT_SECRET || "bCb3i_tAqvc7MHhU4OMs7q1Q2OCH0rYlzhX9b0rI8SYPMwvMn4K6ew";
-const CLIENT_ID = "8814857532";
+export const dynamic = "force-dynamic";
 
-/**
- * 1. Verify Telegram OIDC id_token (JWT)
- * (https://core.telegram.org/bots/telegram-login#5-validating-id-tokens)
- */
-async function verifyTelegramIdToken(idToken: string): Promise<{ isValid: boolean; user: any }> {
-  try {
-    const parts = idToken.split(".");
-    if (parts.length !== 3) return { isValid: false, user: null };
+const noStoreHeaders = { "Cache-Control": "private, no-store, max-age=0" };
 
-    // 1. Fetch Telegram JWKS for signature verification
-    const jwksRes = await fetch("https://oauth.telegram.org/jwks");
-    const jwks = await jwksRes.json();
-
-    const header = JSON.parse(Buffer.from(parts[0].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf-8"));
-    const jwk = jwks.keys.find((k: any) => k.kid === header.kid);
-    if (!jwk) {
-      console.error("[TELEGRAM OIDC] JWK not found for kid:", header.kid);
-      return { isValid: false, user: null };
-    }
-
-    // 2. Verify Signature
-    const key = crypto.createPublicKey({ key: jwk, format: "jwk" });
-    const verify = crypto.createVerify("SHA256");
-    verify.update(parts[0] + "." + parts[1]);
-    const signature = Buffer.from(parts[2].replace(/-/g, "+").replace(/_/g, "/"), "base64");
-    if (!verify.verify(key, signature)) {
-      console.error("[TELEGRAM OIDC] Invalid signature");
-      return { isValid: false, user: null };
-    }
-
-    const payloadJson = Buffer.from(parts[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf-8");
-    const claims = JSON.parse(payloadJson);
-
-    // Verify mandatory claims according to specification
-    if (!claims.iss || claims.iss !== "https://oauth.telegram.org") {
-      console.error("[TELEGRAM OIDC] Invalid issuer:", claims.iss);
-      return { isValid: false, user: null };
-    }
-
-    if (!claims.aud || claims.aud.toString() !== CLIENT_ID) {
-      console.error("[TELEGRAM OIDC] Invalid audience:", claims.aud);
-      return { isValid: false, user: null };
-    }
-
-    const now = Math.floor(Date.now() / 1000);
-    if (claims.exp && now > claims.exp) {
-      console.error("[TELEGRAM OIDC] Expired token:", claims.exp);
-      return { isValid: false, user: null };
-    }
-
-    const user = {
-      id: claims.id || claims.sub,
-      first_name: claims.given_name || claims.name || "",
-      last_name: claims.family_name || "",
-      username: claims.preferred_username || "",
-      photo_url: claims.picture || claims.photo_url || "",
-    };
-
-    return { isValid: true, user };
-  } catch (e) {
-    console.error("[TELEGRAM OIDC] ID Token validation exception:", e);
-    return { isValid: false, user: null };
-  }
+function errorResponse(message: string, status: number): NextResponse {
+  return NextResponse.json({ success: false, error: message }, {
+    status,
+    headers: noStoreHeaders,
+  });
 }
 
-
-
-/**
- * 3. Verify Telegram WebApp initData payload
- * (https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app)
- */
-function verifyTelegramWebAppData(initData: string, botToken: string): { isValid: boolean; user: any } {
+export async function POST(request: Request) {
   try {
-    const urlParams = new URLSearchParams(initData);
-    const hash = urlParams.get("hash");
-    if (!hash) return { isValid: false, user: null };
-
-    urlParams.delete("hash");
-
-    const params: string[] = [];
-    for (const [key, value] of urlParams.entries()) {
-      params.push(`${key}=${value}`);
-    }
-    params.sort();
-    const dataCheckString = params.join("\n");
-
-    const secretKey = crypto.createHmac("sha256", "WebAppData").update(botToken).digest();
-    const calculatedHash = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
-
-    if (calculatedHash !== hash) {
-      return { isValid: false, user: null };
+    const expectedOrigin = new URL(process.env.APP_ORIGIN || request.url).origin;
+    const requestOrigin = request.headers.get("origin");
+    if (!requestOrigin || requestOrigin !== expectedOrigin) {
+      return errorResponse("مصدر طلب تسجيل الدخول غير مسموح.", 403);
     }
 
-    let user: any = null;
-    const userJson = urlParams.get("user");
-    if (userJson) {
-      try {
-        user = JSON.parse(userJson);
-      } catch (e) {}
+    const contentType = request.headers.get("content-type")
+      ?.split(";", 1)[0]
+      .trim()
+      .toLowerCase();
+    if (contentType !== "application/json") {
+      return errorResponse("نوع محتوى طلب تسجيل الدخول غير مدعوم.", 415);
     }
 
-    return { isValid: true, user };
-  } catch (e) {
-    return { isValid: false, user: null };
-  }
-}
-
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { id_token, initData, telegramData } = body;
-
-    let tgUser: any = null;
-
-    // A. OIDC id_token authentication
-    if (typeof id_token === "string" && id_token.length > 0) {
-      const { isValid, user } = await verifyTelegramIdToken(id_token);
-      if (isValid && user) {
-        tgUser = user;
-      }
+    const contentLength = Number(request.headers.get("content-length") || 0);
+    if (contentLength > 20_000) {
+      return errorResponse("بيانات تسجيل الدخول أكبر من الحد المسموح.", 413);
     }
 
-    // B. WebApp initData authentication
-    if (!tgUser && typeof initData === "string" && initData.length > 0) {
-      const { isValid, user } = verifyTelegramWebAppData(initData, BOT_TOKEN);
-      if (isValid && user) {
-        tgUser = user;
-      }
+    const rawBody = await request.text();
+    if (rawBody.length > 20_000) {
+      return errorResponse("بيانات تسجيل الدخول أكبر من الحد المسموح.", 413);
     }
 
-    // C. Additional Telegram id_token in telegramData
-    if (!tgUser && telegramData && typeof telegramData === "object") {
-      if (telegramData.id_token) {
-        const { isValid, user } = await verifyTelegramIdToken(telegramData.id_token);
-        if (isValid && user) {
-          tgUser = user;
-        }
-      }
+    let body: { initData?: unknown };
+    try {
+      body = JSON.parse(rawBody) as { initData?: unknown };
+    } catch {
+      return errorResponse("صيغة طلب تسجيل الدخول غير صالحة.", 400);
     }
 
-    if (!tgUser || !tgUser.id) {
-      return NextResponse.json({ error: "بيانات تسجيل الدخول عبر تليجرام غير صالحة." }, { status: 400 });
+    if (typeof body.initData !== "string") {
+      return errorResponse("بيانات تسجيل الدخول عبر تليجرام غير صالحة.", 400);
     }
 
-    const externalId = `telegram_${tgUser.id}`;
-    const name = `${tgUser.first_name || ""} ${tgUser.last_name || ""}`.trim() || tgUser.username || `User ${tgUser.id}`;
-    const avatarUrl = tgUser.photo_url || tgUser.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${tgUser.id}`;
+    const telegramUser = verifyTelegramWebAppData(body.initData);
+    if (!telegramUser) {
+      return errorResponse("تعذر التحقق من جلسة تليجرام الحالية. أعد فتح التطبيق من البوت.", 401);
+    }
 
-    // Upsert User in PostgreSQL Database (Prisma)
+    const clerkId = `telegram_${telegramUser.id}`;
+    const name = `${telegramUser.first_name} ${telegramUser.last_name}`.trim()
+      || telegramUser.username
+      || `User ${telegramUser.id}`;
+    const imageUrl = telegramUser.photo_url
+      || `https://api.dicebear.com/7.x/bottts/svg?seed=${telegramUser.id}`;
+
     const dbUser = await prisma.user.upsert({
-      where: { clerkId: externalId },
-      update: {
-        name: name,
-        imageUrl: avatarUrl,
-      },
-      create: {
-        clerkId: externalId,
-        name: name,
-        imageUrl: avatarUrl,
-      },
+      where: { clerkId },
+      update: { name, imageUrl },
+      create: { clerkId, name, imageUrl },
     });
 
-    // Issue Secure Session Cookie
-    const sessionToken = createTelegramSessionToken({
-      clerkId: externalId,
-      name: name,
-      imageUrl: avatarUrl,
-    });
-
-    const cookieStore = await cookies();
-    cookieStore.set("telegram_session", sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 30 * 24 * 60 * 60,
-      path: "/",
-      sameSite: "lax",
-    });
-
-    return NextResponse.json({
+    const sessionToken = await createTelegramSessionToken({ clerkId });
+    const response = NextResponse.json({
       success: true,
       user: {
         id: dbUser.id,
         clerkId: dbUser.clerkId,
         name: dbUser.name,
         imageUrl: dbUser.imageUrl,
+        authProvider: "telegram",
+        telegramId: telegramUser.id,
       },
-    });
+    }, { headers: noStoreHeaders });
 
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "حدث خطأ أثناء معالجة تسجيل الدخول." },
-      { status: 500 }
-    );
+    response.cookies.set(TELEGRAM_SESSION_COOKIE, sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: TELEGRAM_SESSION_MAX_AGE_SECONDS,
+    });
+    return response;
+  } catch (error) {
+    console.error("[Telegram Mini App Auth Error]:", error);
+    return errorResponse("حدث خطأ أثناء معالجة تسجيل الدخول عبر تليجرام.", 500);
   }
 }
