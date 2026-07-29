@@ -56,22 +56,30 @@ const clerkAppearance = {
     spacing: "1rem",
   },
   elements: {
-    rootBox: "w-full",
-    cardBox: "w-full shadow-none",
-    card: "w-full border-0 bg-transparent p-0 shadow-none",
-    header: "mb-3 text-right",
+    rootBox: { width: "100%" },
+    cardBox: { width: "100%", boxShadow: "none" },
+    card: {
+      width: "100%",
+      padding: 0,
+      gap: "0.75rem",
+      border: 0,
+      background: "transparent",
+      boxShadow: "none",
+    },
+    header: { marginBottom: "0.25rem", gap: "0.25rem", textAlign: "right" as const },
     headerTitle: "text-xl font-black tracking-tight text-white sm:text-2xl",
-    headerSubtitle: "mt-1 text-sm font-semibold leading-5 text-slate-400",
-    socialButtonsRoot: "gap-2",
+    headerSubtitle: { display: "none" as const },
+    main: { gap: "0.875rem" },
+    socialButtonsRoot: { gap: "0.5rem" },
     socialButtonsBlockButton:
       "min-h-12 rounded-2xl border border-white/15 bg-white/[0.06] text-white shadow-none transition hover:border-white/30 hover:bg-white/[0.1]",
     socialButtonsBlockButtonText: "font-extrabold text-white",
     socialButtonsProviderIcon: "size-5",
-    dividerRow: "my-3.5",
+    dividerRow: { margin: "0.75rem 0" },
     dividerLine: "bg-white/10",
     dividerText: "px-3 text-xs font-bold text-slate-500",
-    form: { gap: "1rem" },
-    formFieldRow: "gap-2",
+    form: { gap: "0.75rem" },
+    formFieldRow: { gap: "0.5rem" },
     formFieldLabel: "mb-1.5 text-sm font-extrabold text-slate-200",
     formFieldInput:
       "min-h-12 rounded-2xl border border-white/15 bg-slate-950/70 px-4 text-left text-white shadow-inner outline-none transition [direction:ltr] placeholder:text-slate-500 focus:border-red-500/70 focus:ring-4 focus:ring-red-500/15",
@@ -88,12 +96,13 @@ const clerkAppearance = {
     identityPreviewEditButton: "text-red-400 hover:text-red-300",
     alternativeMethodsBlockButton:
       "rounded-2xl border border-white/15 bg-white/[0.05] text-white hover:bg-white/[0.09]",
-    footer: { marginTop: "0.75rem", background: "transparent" },
-    footerAction: "justify-center gap-2",
+    footer: { marginTop: "0.75rem", paddingTop: 0, background: "transparent" },
+    footerAction: { minHeight: "auto", padding: 0, gap: "0.35rem", justifyContent: "center" },
     footerActionText: "font-semibold text-slate-400",
     footerActionLink: "font-black text-red-400 hover:text-red-300",
     footerPages: { display: "none" as const },
     footerItem: { display: "none" as const },
+    lastAuthenticationStrategyBadge: { display: "none" as const },
   },
   captcha: { theme: "dark" as const },
 };
@@ -253,11 +262,11 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
 
   return (
     <section
-      className="relative w-full max-w-[31rem]"
+      className="relative w-full max-w-[29rem]"
       aria-label={mode === "sign-in" ? "تسجيل الدخول إلى أليكس سينما" : "إنشاء حساب أليكس سينما"}
     >
       <div className="pointer-events-none absolute -inset-px rounded-[2rem] bg-gradient-to-b from-white/25 via-white/[0.04] to-red-500/20" />
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#080d18]/92 p-4 shadow-[0_32px_100px_rgba(0,0,0,0.72)] backdrop-blur-2xl sm:p-6">
+      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#080d18]/95 p-4 shadow-[0_28px_80px_rgba(0,0,0,0.68)] backdrop-blur-2xl sm:p-5">
         <div className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full bg-red-600/15 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-28 -left-20 size-64 rounded-full bg-sky-500/10 blur-3xl" />
 
@@ -270,8 +279,12 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
               <p dir="ltr" className="font-en text-[0.65rem] font-black tracking-[0.24em] text-red-400">
                 ALEX CINEMA
               </p>
-              <p className="mt-1 truncate text-sm font-extrabold text-slate-200">
-                {isTelegramContext ? "مزامنة الحساب النشط" : "بوابة حسابك الآمنة"}
+              <p className="mt-1 truncate text-base font-black text-white">
+                {isTelegramContext
+                  ? "مزامنة حساب تليجرام"
+                  : mode === "sign-in"
+                    ? "تسجيل الدخول"
+                    : "إنشاء حساب جديد"}
               </p>
             </div>
           </div>
@@ -323,12 +336,12 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
               <span className="flex size-9 items-center justify-center rounded-xl bg-sky-400/15 text-xl text-sky-300 transition group-hover:scale-105">
                 <i className="fa-brands fa-telegram" aria-hidden="true" />
               </span>
-              <span>المتابعة مباشرة عبر تليجرام</span>
+              <span>الدخول عبر تليجرام</span>
             </button>
 
             <div className="my-4 flex items-center gap-3" aria-hidden="true">
               <span className="h-px flex-1 bg-white/10" />
-              <span className="text-[0.68rem] font-black tracking-wider text-slate-500">أو حساب المنصة</span>
+              <span className="text-[0.68rem] font-black tracking-wider text-slate-400">أو استخدم حساب المنصة</span>
               <span className="h-px flex-1 bg-white/10" />
             </div>
 
@@ -366,19 +379,9 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
           </div>
         )}
 
-        <div className="relative mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 border-t border-white/10 pt-3 text-[0.68rem] font-bold text-slate-400">
-          <span className="inline-flex items-center gap-1.5">
-            <i className="fa-solid fa-shield-halved text-emerald-400" aria-hidden="true" />
-            جلسة مشفرة
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <i className="fa-solid fa-key text-amber-400" aria-hidden="true" />
-            يدعم التحقق المتعدد
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <i className="fa-solid fa-user-lock text-sky-400" aria-hidden="true" />
-            خصوصية الحساب
-          </span>
+        <div className="relative mt-4 flex items-center justify-center gap-2 border-t border-white/10 pt-3 text-[0.68rem] font-bold text-slate-400">
+          <i className="fa-solid fa-shield-halved text-emerald-400" aria-hidden="true" />
+          <span>دخول محمي وتبديل آمن بين الحسابات</span>
         </div>
       </div>
     </section>

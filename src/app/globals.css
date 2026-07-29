@@ -653,6 +653,7 @@ video.alex-video-cue::-webkit-media-text-track-container {
 .cl-socialButtonsBadge,
 .cl-socialButtonsBlockButtonBadge,
 .cl-socialButtonsBadgeDefault,
+.cl-lastAuthenticationStrategyBadge,
 .cl-providerIconButtonBadge {
   display: none !important;
   visibility: hidden !important;
