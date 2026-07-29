@@ -22,6 +22,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger("AleXCinemaBot")
 
+# python-telegram-bot uses HTTPX internally. Its INFO logs include the full Bot API
+# URL, which contains the bot token, so keep transport logging at warning level.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+
 def load_project_env() -> None:
     """Load server-side bot settings when PM2 starts outside the project directory."""
     env_path = Path(__file__).resolve().with_name(".env")
