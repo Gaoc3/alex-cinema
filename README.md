@@ -13,6 +13,12 @@ npx prisma generate
 npm run dev
 ```
 
+The Telegram bot dependencies can be installed independently with:
+
+```bash
+python3 -m pip install -r requirements-bot.txt
+```
+
 Copy `.env.example` to a local environment file and provide the required values.
 Never commit production credentials.
 
@@ -46,3 +52,17 @@ pm2 save
 
 Run the build before restarting services. Keep `.env`, `.env.production`, and
 other server-only configuration files outside Git.
+
+The production Nginx server must proxy Socket.io before the general Next.js
+location so real-time rooms and chat can reach `alex-socket`:
+
+```nginx
+location /socket.io/ {
+    proxy_pass http://127.0.0.1:4000;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_read_timeout 86400s;
+}
+```
