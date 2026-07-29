@@ -1,28 +1,35 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useSyncExternalStore } from 'react';
 import dynamic from 'next/dynamic';
 
 const AlexPlayer = dynamic(() => import('./AlexPlayer'), { ssr: false });
 const AlexPlayerMobile = dynamic(() => import('./AlexPlayerMobile'), { ssr: false });
 
-interface PlayerWrapperProps {
-  videoData: any;
-  onNextEpisode?: () => void;
-  roomHook?: any;
-}
+type PlayerWrapperProps = React.ComponentProps<typeof AlexPlayer>;
 
-export default function PlayerWrapper(props: PlayerWrapperProps) {
-  const [isMobile, setIsMobile] = useState<boolean | null>(null);
+let cachedMobileClassification: boolean | null = null;
 
-  useEffect(() => {
-    // Pick one implementation for the lifetime of this mount. Switching player
-    // components during a resize/orientation change destroys playback state.
+const subscribeToDeviceClassification = () => () => {};
+const getServerDeviceClassification = () => null;
+const getClientDeviceClassification = () => {
+  if (cachedMobileClassification === null) {
     const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
     const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-    setIsMobile((isMobileUA || isTouch || hasCoarsePointer) && window.innerWidth < 1024);
-  }, []);
+    cachedMobileClassification = (isMobileUA || isTouch || hasCoarsePointer) && window.innerWidth < 1024;
+  }
+  return cachedMobileClassification;
+};
+
+export default function PlayerWrapper(props: PlayerWrapperProps) {
+  // Keep the classification stable for the page lifetime. Swapping player
+  // implementations during rotation/resizing would destroy playback state.
+  const isMobile = useSyncExternalStore(
+    subscribeToDeviceClassification,
+    getClientDeviceClassification,
+    getServerDeviceClassification,
+  );
 
   if (isMobile === null) {
     // FIXED: Pulse Skeleton matching exactly the player's shape to prevent CLS

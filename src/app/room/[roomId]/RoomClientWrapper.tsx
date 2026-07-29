@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import RoomPlayerUI from '@/components/watch/RoomPlayerUI';
+import type { RoomVideoData } from '@/components/watch/PlayerSection';
+import type { SeriesEpisode, SeriesSeason } from '@/components/watch/SeriesNavigator';
 import { useRouter } from 'next/navigation';
 import { useWatchRoom } from '@/hooks/useWatchRoom';
 import LobbySearch from './LobbySearch';
@@ -15,18 +17,22 @@ import ConfirmModal from '@/components/ConfirmModal';
 
 interface RoomClientWrapperProps {
   roomId: string;
-  roomData: any;
+  roomData: {
+    hostId: string;
+    title?: string | null;
+    isPrivate?: boolean;
+    host?: { name?: string | null } | null;
+  };
   currentUserId: string | null;
   isHostUser: boolean;
-  video: any;
-  seasons: any[];
-  episodes: any[];
+  video: RoomVideoData | null;
+  seasons: SeriesSeason[];
+  episodes: SeriesEpisode[];
 }
 
 export default function RoomClientWrapper({ 
   roomId, 
   roomData, 
-  currentUserId, 
   isHostUser: isHostUserProp, 
   video, 
   seasons, 
@@ -48,9 +54,10 @@ export default function RoomClientWrapper({
 
   // Auto-open sidebar on desktop screens
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-      setIsSidebarOpen(true);
-    }
+    const frame = window.requestAnimationFrame(() => {
+      if (window.innerWidth >= 1024) setIsSidebarOpen(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   // Call the watch room hook unconditionally with auto-bound username

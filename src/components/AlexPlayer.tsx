@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
+import type { WatchRoomHook } from '@/hooks/useWatchRoom';
 
 interface Stream {
   name: string;
@@ -29,6 +30,14 @@ interface SkippingDurations {
   end: string[];
 }
 
+type TextCueWithContent = TextTrackCue & { text?: string };
+type LockableScreenOrientation = ScreenOrientation & {
+  lock?: (orientation: string) => Promise<void>;
+  unlock?: () => void;
+};
+
+const getCueText = (cue: TextTrackCue) => (cue as TextCueWithContent).text || '';
+
 interface AlexPlayerProps {
   videoData: {
     trailer?: string;
@@ -44,8 +53,10 @@ interface AlexPlayerProps {
     enTranslationFilePath?: string | null;
   };
   onNextEpisode?: () => void;
-  roomHook?: any;
+  roomHook?: WatchRoomHook;
 }
+
+const EMPTY_STREAMS: Stream[] = [];
 
 function extractYouTubeId(url: string): string | null {
   if (!url) return null;
@@ -55,7 +66,7 @@ function extractYouTubeId(url: string): string | null {
 
 export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexPlayerProps) {
   const youtubeId = extractYouTubeId(videoData.trailer || '');
-  const streams = videoData.streams || [];
+  const streams = videoData.streams || EMPTY_STREAMS;
   const translations = videoData.translations || [];
 
   const isHost = roomHook?.isHost;
@@ -102,32 +113,6 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     localStorage.setItem('alex_family_mode', String(isFamilyMode));
   }, [isFamilyMode]);
 
-  // SYNC LOGIC
-  const lastSyncTimeRef = useRef(0);
-  useEffect(() => {
-    if (!videoRef.current || !roomState || isHost || !roomHook) return;
-    
-    // Guest logic: we receive roomState from the host
-    const video = videoRef.current;
-    
-    // Check if we need to force seek (if difference is > 2 seconds)
-    const elapsed = roomState.playing
-      ? Math.max(0, (Date.now() - (roomState.receivedAt || Date.now())) / 1000)
-      : 0;
-    const targetTime = Math.max(0, roomState.time + elapsed);
-    const diff = Math.abs(video.currentTime - targetTime);
-    if (diff > 2) {
-      video.currentTime = targetTime;
-    }
-
-    // Check play/pause state
-    if (roomState.playing && video.paused) {
-      video.play().catch(e => console.log('Autoplay prevented', e));
-    } else if (!roomState.playing && !video.paused) {
-      video.pause();
-    }
-  }, [roomState, isHost, roomHook]);
-
   // Loading spinner state (with 1s delayed resolution)
   const [isWaiting, setIsWaiting] = useState(false);
   const waitingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -145,9 +130,12 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const [settingsView, setSettingsView] = useState<'main' | 'subtitles' | 'quality' | 'speed'>('main');
 
   useEffect(() => {
-    if (activeDropdown !== 'settings') {
-      setSettingsView('main');
-    }
+    if (activeDropdown === 'settings') return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setSettingsView('main');
+    });
+    return () => { cancelled = true; };
   }, [activeDropdown]);
 
   // Mobile detection
@@ -196,8 +184,6 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     localStorage.setItem('alex_show_subtitle_bg', String(showSubtitleBg));
   }, [showSubtitleBg]);
 
-  const lastSubtitleText = useRef<string | null>(null);
-
   // Subtitle custom font state with localstorage persistence
   const [selectedFont, setSelectedFont] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -232,6 +218,32 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSyncTimeRef = useRef(0);
+  const shouldResumePlaybackRef = useRef(!isPaused);
+
+  useEffect(() => {
+    shouldResumePlaybackRef.current = !isPaused;
+  }, [isPaused]);
+
+  // Keep a guest synchronized with the host after all media refs exist.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !roomState || isHost || !roomHook) return;
+
+    const elapsed = roomState.playing
+      ? Math.max(0, (Date.now() - (roomState.receivedAt || Date.now())) / 1000)
+      : 0;
+    const targetTime = Math.max(0, roomState.time + elapsed);
+    if (Math.abs(video.currentTime - targetTime) > 2) {
+      video.currentTime = targetTime;
+    }
+
+    if (roomState.playing && video.paused) {
+      video.play().catch(error => console.log('Autoplay prevented', error));
+    } else if (!roomState.playing && !video.paused) {
+      video.pause();
+    }
+  }, [roomState, isHost, roomHook]);
 
   // Pixel-level adaptation (Ambient Light Glow)
   useEffect(() => {
@@ -253,7 +265,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       if (video.readyState >= 2) {
         try {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        } catch (e) {
+        } catch {
           // Ignore cross-origin canvas errors if they happen
         }
       }
@@ -271,7 +283,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       if (video.readyState >= 2) {
         try {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        } catch (e) {}
+        } catch {}
       }
     };
 
@@ -297,13 +309,6 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   // Parse direct streams on initialization or data change
   useEffect(() => {
-    setShowStreamError(false);
-    setYoutubeFallback(false);
-    setRetryCount(0);
-    setLastErrorEvent(null);
-    setIsPaused(true);
-    setCurrentTime(0);
-
     let initialDuration = 0;
     if (videoData.duration) {
       const parsed = parseFloat(String(videoData.duration));
@@ -311,19 +316,34 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         initialDuration = parsed;
       }
     }
-    setDuration(initialDuration);
-
+    let initialStreamUrl: string | null;
+    let initialResolution: string;
     if (streams.length > 0) {
       const preferred = streams.find(s => s.resolution && s.resolution.toLowerCase().includes('1080')) 
                      || streams.find(s => s.resolution && s.resolution.toLowerCase().includes('720')) 
                      || streams[0];
-      setCurrentStreamUrl(toProxyUrl(preferred.videoUrl));
-      setSelectedResolution(preferred.resolution);
+      initialStreamUrl = toProxyUrl(preferred.videoUrl);
+      initialResolution = preferred.resolution;
     } else {
-      setCurrentStreamUrl(toProxyUrl(videoData.stream_url));
-      setSelectedResolution('');
+      initialStreamUrl = toProxyUrl(videoData.stream_url);
+      initialResolution = '';
     }
-  }, [videoData]);
+
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setShowStreamError(false);
+      setYoutubeFallback(false);
+      setRetryCount(0);
+      setLastErrorEvent(null);
+      setIsPaused(true);
+      setCurrentTime(0);
+      setDuration(initialDuration);
+      setCurrentStreamUrl(initialStreamUrl);
+      setSelectedResolution(initialResolution);
+    });
+    return () => { cancelled = true; };
+  }, [videoData, streams]);
 
   // HLS stream logic
   useEffect(() => {
@@ -354,7 +374,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         hls.loadSource(currentStreamUrl);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          if (!isPaused) {
+          if (shouldResumePlaybackRef.current) {
             video.play().catch(() => {});
           }
         });
@@ -395,7 +415,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         hls.destroy();
       }
     };
-  }, [currentStreamUrl]);
+  }, [currentStreamUrl, youtubeId]);
 
   // Sync volume and mute states
   useEffect(() => {
@@ -412,7 +432,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     if (video) {
       const effectiveRate = roomHook ? 1 : playbackRate;
       video.playbackRate = effectiveRate;
-      if (roomHook && playbackRate !== 1) setPlaybackRate(1);
+      if (roomHook && playbackRate !== 1) queueMicrotask(() => setPlaybackRate(1));
     }
   }, [playbackRate, currentStreamUrl, roomHook]);
 
@@ -432,12 +452,12 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           // Extract cue text
           if (track.activeCues && track.activeCues.length > 0) {
             newActiveText = Array.from(track.activeCues)
-              .map((c: any) => c.text).join('\n');
+              .map(getCueText).join('\n');
           } else if (track.cues && track.cues.length > 0) {
             const ct = video.currentTime;
             newActiveText = Array.from(track.cues)
-              .filter((c: any) => ct >= c.startTime && ct <= c.endTime)
-              .map((c: any) => c.text).join('\n');
+              .filter(cue => ct >= cue.startTime && ct <= cue.endTime)
+              .map(getCueText).join('\n');
           }
         } else {
           track.mode = 'disabled';
@@ -483,20 +503,18 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   // Subtitle styles are now applied via CSS Variables on the video element in globals.css
 
   // Control bar auto-hide logic
-  const handleMouseMove = () => {
-    setShowControls(true);
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    
-    if (!isPaused) {
-      controlsTimeoutRef.current = setTimeout(() => {
-        setShowControls(false);
-        setActiveDropdown(null);
-      }, 3000);
-    }
-  };
-
   useEffect(() => {
     const container = containerRef.current;
+    const handleMouseMove = () => {
+      setShowControls(true);
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+      if (!isPaused) {
+        controlsTimeoutRef.current = setTimeout(() => {
+          setShowControls(false);
+          setActiveDropdown(null);
+        }, 3000);
+      }
+    };
     if (container) {
       container.addEventListener('mousemove', handleMouseMove);
       container.addEventListener('touchstart', handleMouseMove);
@@ -561,7 +579,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       return;
     }
 
-    const now = Date.now();
+    const now = e.timeStamp;
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const isTouch = e.pointerType === 'touch';
@@ -637,10 +655,6 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     }
     
     if (touchStartRef.current && e.changedTouches.length === 1) {
-      const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
-      const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
-      const dt = Date.now() - touchStartRef.current.time;
-      
       // Swipe detection removed
       touchStartRef.current = null;
     }
@@ -695,7 +709,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         setCurrentStreamUrl((prev) => {
           if (!prev || prev !== failedUrl) return prev;
           // Clean up old retry params to prevent infinite query string growth
-          let cleanUrl = prev.replace(/(&|\?)_retry=\d+_\d+/g, '');
+          const cleanUrl = prev.replace(/(&|\?)_retry=\d+_\d+/g, '');
           const separator = cleanUrl.includes('?') ? '&' : '?';
           return `${cleanUrl}${separator}_retry=${nextRetry}_${Date.now()}`;
         });
@@ -730,7 +744,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       if (isHost && roomHook) {
         const now = Date.now();
         if (now - lastSyncTimeRef.current > 1000) {
-          sendSyncUpdate(video.currentTime, !video.paused);
+          sendSyncUpdate?.(video.currentTime, !video.paused);
           lastSyncTimeRef.current = now;
         }
       }
@@ -816,9 +830,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           setIsFullscreen(true);
           
           // Try to lock orientation to landscape on mobile
-          if (screen.orientation && (screen.orientation as any).lock) {
+          const orientation = screen.orientation as LockableScreenOrientation | undefined;
+          if (orientation?.lock) {
             try {
-              await (screen.orientation as any).lock('landscape');
+              await orientation.lock('landscape');
             } catch (err) {
               console.warn('Orientation lock failed:', err);
             }
@@ -841,8 +856,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           setIsFullscreen(false);
           
           // Unlock orientation
-          if (screen.orientation && (screen.orientation as any).unlock) {
-            (screen.orientation as any).unlock();
+          const orientation = screen.orientation as LockableScreenOrientation | undefined;
+          if (orientation?.unlock) {
+            orientation.unlock();
           }
         } catch (err) {
           console.error("Exit fullscreen failed:", err);
@@ -959,7 +975,21 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       switch (e.key) {
         case ' ':
           e.preventDefault();
-          togglePlay();
+          if (roomHook && !isHost) {
+            if (roomState?.playing) {
+              const elapsed = Math.max(0, (Date.now() - (roomState.receivedAt || Date.now())) / 1000);
+              video.currentTime = Math.max(0, roomState.time + elapsed);
+              video.play().catch(() => setIsPaused(true));
+            } else {
+              video.pause();
+            }
+          } else if (video.paused) {
+            video.play().catch(() => {});
+            setIsPaused(false);
+          } else {
+            video.pause();
+            setIsPaused(true);
+          }
           break;
         case 'ArrowLeft':
           if (roomHook && !isHost) break;
@@ -992,7 +1022,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [youtubeFallback, volume, isMuted, roomHook, isHost]);
+  }, [youtubeFallback, volume, isMuted, roomHook, isHost, roomState]);
 
   // Sync fullscreen state change (e.g. Esc button pressed)
   useEffect(() => {
@@ -1329,14 +1359,14 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               setIsWaiting(false);
               setIsPaused(false);
               if (isHost && roomHook && videoRef.current) {
-                sendSyncUpdate(videoRef.current.currentTime, true);
+                sendSyncUpdate?.(videoRef.current.currentTime, true);
                 lastSyncTimeRef.current = Date.now();
               }
             }}
             onPause={() => {
               setIsPaused(true);
               if (isHost && roomHook && videoRef.current) {
-                sendSyncUpdate(videoRef.current.currentTime, false);
+                sendSyncUpdate?.(videoRef.current.currentTime, false);
                 lastSyncTimeRef.current = Date.now();
               }
             }}
@@ -1357,7 +1387,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               }
               setIsWaiting(false);
               if (isHost && roomHook && videoRef.current) {
-                sendSyncUpdate(videoRef.current.currentTime, !videoRef.current.paused);
+                sendSyncUpdate?.(videoRef.current.currentTime, !videoRef.current.paused);
                 lastSyncTimeRef.current = Date.now();
               }
             }}
@@ -1423,7 +1453,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         )}
 
         {/* Big Pulsing Center Play Button */}
-        {isPaused && (videoRef.current ? videoRef.current.paused : true) && !isWaiting && (
+        {isPaused && !isWaiting && (
           <button 
             onClick={(e) => { e.stopPropagation(); togglePlay(); }}
             className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 md:w-24 md:h-24 rounded-full bg-alex-primary/95 text-white flex items-center justify-center shadow-[0_0_30px_rgba(229,9,20,0.6)] md:shadow-[0_0_45px_rgba(229,9,20,0.6)] hover:scale-110 transition-all duration-300 z-20 cursor-pointer outline-none focus:outline-none ring-0 animate-fade-in-up"

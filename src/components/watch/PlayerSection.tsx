@@ -1,15 +1,64 @@
 import React, { useMemo } from 'react';
 import PlayerWrapper from '../PlayerWrapper';
+import type { WatchRoomHook } from '@/hooks/useWatchRoom';
+
+export interface PlayerStream {
+  name: string;
+  resolution: string;
+  container: string;
+  videoUrl?: string | null;
+}
+
+export interface PlayerTranslation {
+  id: number;
+  name: string;
+  type: string;
+  extention: string;
+  file: string;
+}
+
+export interface IntroSkipping {
+  start: string;
+  end: string;
+  control_level: string;
+}
+
+export interface SkippingDurations {
+  start: string[];
+  end: string[];
+}
+
+export interface RoomVideoData {
+  nb?: string;
+  id?: string | number;
+  kind?: string;
+  trailer?: string;
+  stream_url?: string | null;
+  img?: string;
+  ar_title?: string;
+  streams?: PlayerStream[];
+  translations?: PlayerTranslation[];
+  introSkipping?: IntroSkipping[];
+  skippingDurations?: SkippingDurations | null;
+  duration?: string | number | null;
+  Duration?: string | number | null;
+  arTranslationFilePath?: string | null;
+  enTranslationFilePath?: string | null;
+}
+
+export interface EpisodeDetails extends RoomVideoData {
+  episodeNummer?: string;
+}
 
 interface PlayerSectionProps {
   isLoadingStreams: boolean;
   isSeries: boolean;
-  activeEpisodeDetails: any;
-  video: any;
+  activeEpisodeDetails: EpisodeDetails | null;
+  video: RoomVideoData;
   displayTitle: string;
   hasNextEpisode: boolean;
   playNextEpisode: () => void;
-  roomHook?: any;
+  roomHook?: WatchRoomHook;
 }
 
 const toProxyUrl = (url: string | undefined | null) => {
@@ -32,12 +81,12 @@ export default function PlayerSection({
       ? {
           nb: activeEpisodeDetails.nb || activeEpisodeDetails.id || `${video.nb || video.id}_${activeEpisodeDetails.episodeNummer}`,
           trailer: video.trailer,
-          stream_url: activeEpisodeDetails.streams?.length > 0
-            ? toProxyUrl(activeEpisodeDetails.streams[0].videoUrl)
+          stream_url: (activeEpisodeDetails.streams?.length ?? 0) > 0
+            ? toProxyUrl(activeEpisodeDetails.streams?.[0]?.videoUrl)
             : toProxyUrl(activeEpisodeDetails.stream_url),
           img: toProxyUrl(video.img),
           ar_title: displayTitle,
-          streams: activeEpisodeDetails.streams?.map((stream: any) => ({ ...stream, videoUrl: toProxyUrl(stream.videoUrl) })) || [],
+          streams: activeEpisodeDetails.streams?.map((stream) => ({ ...stream, videoUrl: toProxyUrl(stream.videoUrl) })) || [],
           translations: activeEpisodeDetails.translations || [],
           introSkipping: activeEpisodeDetails.introSkipping || [],
           skippingDurations: activeEpisodeDetails.skippingDurations || null,
@@ -48,12 +97,12 @@ export default function PlayerSection({
       : {
           nb: video.nb || video.id,
           trailer: video.trailer,
-          stream_url: video.streams?.length > 0
-            ? toProxyUrl(video.streams[0].videoUrl)
+          stream_url: (video.streams?.length ?? 0) > 0
+            ? toProxyUrl(video.streams?.[0]?.videoUrl)
             : toProxyUrl(video.stream_url),
           img: toProxyUrl(video.img),
           ar_title: displayTitle,
-          streams: video.streams?.map((stream: any) => ({ ...stream, videoUrl: toProxyUrl(stream.videoUrl) })) || [],
+          streams: video.streams?.map((stream) => ({ ...stream, videoUrl: toProxyUrl(stream.videoUrl) })) || [],
           translations: video.translations || [],
           introSkipping: video.introSkipping || [],
           skippingDurations: video.skippingDurations || null,

@@ -13,6 +13,9 @@ interface SearchResult {
   year: string;
   stars: string;
   img?: string;
+  imgObjUrl?: string;
+  imgMediumThumb?: string;
+  imgThumb?: string;
   kind?: string;
 }
 
@@ -56,13 +59,7 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
-    if (query.trim().length < 2) {
-      setResults([]);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
+    if (query.trim().length < 2) return;
 
     const controller = new AbortController();
     const { signal } = controller;
@@ -75,7 +72,7 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
           queriesToTry.push(mappedEn);
         }
 
-        let combinedResults: SearchResult[] = [];
+        const combinedResults: SearchResult[] = [];
 
         for (const qTerm of queriesToTry) {
           const queryEncoded = encodeURIComponent(qTerm);
@@ -89,13 +86,13 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
 
           if (resMovies.ok) {
             const encrypted_data = await resMovies.json();
-            const data = decryptData(encrypted_data.payload);
-            moviesList = Array.isArray(data) ? data : [];
+            const data: unknown = decryptData(encrypted_data.payload);
+            moviesList = Array.isArray(data) ? data as SearchResult[] : [];
           }
           if (resSeries.ok) {
             const encrypted_data = await resSeries.json();
-            const data = decryptData(encrypted_data.payload);
-            seriesList = Array.isArray(data) ? data : [];
+            const data: unknown = decryptData(encrypted_data.payload);
+            seriesList = Array.isArray(data) ? data as SearchResult[] : [];
           }
 
           combinedResults.push(...moviesList, ...seriesList);
@@ -126,8 +123,8 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
         if (!signal.aborted) {
           setResults(sorted.slice(0, 18));
         }
-      } catch (e: any) {
-        if (e.name === 'AbortError') return;
+      } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'AbortError') return;
         setResults([]);
       } finally {
         if (!signal.aborted) setIsLoading(false);
@@ -139,6 +136,16 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
       controller.abort();
     };
   }, [query]);
+
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+    if (value.trim().length < 2) {
+      setResults([]);
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+  };
 
   const handleSelectVideo = async (item: SearchResult) => {
     setIsLoading(true);
@@ -181,7 +188,7 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
         <input 
           type="text" 
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => handleQueryChange(e.target.value)}
           placeholder="ابحث عن أي فيلم أو مسلسل لاختياره فوراً..." 
           className="w-full bg-[#111625]/90 backdrop-blur-xl border border-white/20 rounded-2xl pr-12 pl-4 py-4 text-white text-base focus:outline-none focus:border-[#E50914] focus:bg-[#161c2e] transition-all shadow-[0_4px_20px_rgba(0,0,0,0.5)] placeholder-gray-400 font-bold"
         />
@@ -202,7 +209,7 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
             >
               <div className="relative aspect-[2/3] w-full bg-gray-900">
                 <img 
-                  src={getVideoImageUrl(item as any, 'poster')} 
+                  src={getVideoImageUrl(item, 'poster')}
                   alt={item.ar_title}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
@@ -239,7 +246,7 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
       {query.trim().length >= 2 && results.length === 0 && !isLoading && (
         <div className="text-center text-gray-400 py-10 bg-white/5 rounded-2xl border border-white/5">
           <i className="fa-solid fa-search text-3xl mb-2 opacity-40 text-red-500"></i>
-          <p className="text-xs font-bold">لم يتم العثور على نتائج لـ "{query}"</p>
+          <p className="text-xs font-bold">لم يتم العثور على نتائج لـ «{query}»</p>
         </div>
       )}
     </div>

@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { decryptData } from '@/utils/cryptoHelper';
 import WatchLayout from './watch/WatchLayout';
 import { useUnifiedAuth } from './auth/UnifiedAuthProvider';
 import { useAuth } from '@clerk/nextjs';
 import toast from 'react-hot-toast';
+import type { WatchRoomHook } from '@/hooks/useWatchRoom';
 
 interface Stream {
   name: string;
@@ -30,6 +31,23 @@ interface Season {
   season: string;
 }
 
+interface VideoData {
+  nb: string | number;
+  kind?: string;
+  Likes?: string | number;
+  DisLikes?: string | number;
+  streams?: Stream[];
+  ar_title: string;
+  en_title?: string;
+  ar_content?: string;
+  img?: string | null;
+  [key: string]: unknown;
+}
+
+interface EpisodeDetails extends Record<string, unknown> {
+  streams: Stream[];
+}
+
 const compareEpisodes = (a: Episode, b: Episode) => {
   const seasonDifference = (parseInt(a.season) || 0) - (parseInt(b.season) || 0);
   if (seasonDifference !== 0) return seasonDifference;
@@ -37,10 +55,10 @@ const compareEpisodes = (a: Episode, b: Episode) => {
 };
 
 interface WatchContainerProps {
-  video: any;
+  video: VideoData;
   episodes: Episode[];
   seasons: Season[];
-  roomHook?: any;
+  roomHook?: WatchRoomHook;
 }
 
 export default function WatchContainer({ video, seasons, episodes, roomHook }: WatchContainerProps) {
@@ -49,10 +67,9 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
   // For series, active episode state. Default to first episode of first season.
   const [activeEpisode, setActiveEpisode] = useState<Episode | null>(null);
   const [currentSeason, setCurrentSeason] = useState<string>('');
-  const [episodeStreams, setEpisodeStreams] = useState<Stream[]>([]);
-  const [activeEpisodeDetails, setActiveEpisodeDetails] = useState<any>(null);
+  const [activeEpisodeDetails, setActiveEpisodeDetails] = useState<EpisodeDetails | null>(null);
   const [isLoadingStreams, setIsLoadingStreams] = useState(false);
-  const [favoriteList, setFavoriteList] = useState<string[]>([]);
+  const favoriteList: string[] = [];
   const [isFavorite, setIsFavorite] = useState(false);
   const episodeRequestControllerRef = useRef<AbortController | null>(null);
   const episodeRequestIdRef = useRef(0);
@@ -64,15 +81,18 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
 
   // Initialize Likes/Dislikes and User Vote from localStorage
   useEffect(() => {
-    setLikes(parseInt(video.Likes || '0'));
-    setDislikes(parseInt(video.DisLikes || '0'));
-    
-    if (typeof window !== 'undefined') {
-      const savedVote = localStorage.getItem(`alex_vote_${video.nb}`);
-      if (savedVote === 'like' || savedVote === 'dislike') {
-        setUserVote(savedVote);
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setLikes(parseInt(String(video.Likes || '0')));
+      setDislikes(parseInt(String(video.DisLikes || '0')));
+
+      if (typeof window !== 'undefined') {
+        const savedVote = localStorage.getItem(`alex_vote_${video.nb}`);
+        setUserVote(savedVote === 'like' || savedVote === 'dislike' ? savedVote : null);
       }
-    }
+    });
+    return () => { cancelled = true; };
   }, [video.nb, video.Likes, video.DisLikes]);
 
   const handleVote = (type: 'like' | 'dislike') => {
@@ -186,29 +206,7 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
     }
   };
 
-  // Set default season and episode on load
-  useEffect(() => {
-    if (isSeries && episodes.length > 0) {
-      const sortedEpisodes = [...episodes].sort(compareEpisodes);
-      
-      const firstEp = sortedEpisodes[0];
-      setActiveEpisode(firstEp);
-      setCurrentSeason(firstEp.season || '1');
-    }
-  }, [isSeries, episodes]);
-
-  // Fetch streams and details when active episode changes (for series)
-  useEffect(() => {
-    if (isSeries && activeEpisode) {
-      fetchEpisodeDetails(activeEpisode.nb);
-    } else {
-      // For movie, use initial streams and details passed in video
-      setEpisodeStreams(video.streams || []);
-      setActiveEpisodeDetails(null);
-    }
-  }, [activeEpisode, isSeries, video]);
-
-  const fetchEpisodeDetails = async (episodeId: string) => {
+  const fetchEpisodeDetails = useCallback(async (episodeId: string) => {
     episodeRequestControllerRef.current?.abort();
     const controller = new AbortController();
     const requestId = ++episodeRequestIdRef.current;
@@ -220,34 +218,69 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
         fetch(`/api/proxy?endpoint=transcoddedFiles/id/${encodeURIComponent(episodeId)}`, { signal: controller.signal })
       ]);
 
-      let info: any = {};
-      let streams: any[] = [];
+      let info: Record<string, unknown> = {};
+      let streams: Stream[] = [];
 
       if (infoRes.ok) {
-        info = decryptData((await infoRes.json()).payload);
+        const body = await infoRes.json() as { payload?: unknown };
+        if (typeof body.payload === 'string') {
+          const decryptedInfo: unknown = decryptData(body.payload);
+          if (decryptedInfo && typeof decryptedInfo === 'object' && !Array.isArray(decryptedInfo)) {
+            info = decryptedInfo as Record<string, unknown>;
+          }
+        }
       }
       if (streamsRes.ok) {
-        streams = decryptData((await streamsRes.json()).payload);
+        const body = await streamsRes.json() as { payload?: unknown };
+        if (typeof body.payload === 'string') {
+          const decryptedStreams: unknown = decryptData(body.payload);
+          streams = Array.isArray(decryptedStreams) ? decryptedStreams as Stream[] : [];
+        }
       }
 
-      const combined = {
+      const combined: EpisodeDetails = {
         ...info,
-        streams: Array.isArray(streams) ? streams : []
+        streams,
       };
 
       if (requestId === episodeRequestIdRef.current) {
         setActiveEpisodeDetails(combined);
-        setEpisodeStreams(combined.streams);
       }
     } catch (e) {
       if (controller.signal.aborted) return;
       console.error("Failed to fetch episode details:", e);
       setActiveEpisodeDetails(null);
-      setEpisodeStreams([]);
     } finally {
       if (requestId === episodeRequestIdRef.current) setIsLoadingStreams(false);
     }
-  };
+  }, []);
+
+  // Set default season and episode on load.
+  useEffect(() => {
+    if (!isSeries || episodes.length === 0) return;
+    const firstEpisode = [...episodes].sort(compareEpisodes)[0];
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setActiveEpisode(firstEpisode);
+      setCurrentSeason(firstEpisode.season || '1');
+    });
+    return () => { cancelled = true; };
+  }, [isSeries, episodes]);
+
+  // Fetch streams and details when active episode changes (for series).
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      if (isSeries && activeEpisode) {
+        void fetchEpisodeDetails(activeEpisode.nb);
+      } else {
+        setActiveEpisodeDetails(null);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [activeEpisode, fetchEpisodeDetails, isSeries, video.streams]);
 
   useEffect(() => () => episodeRequestControllerRef.current?.abort(), []);
 
@@ -284,11 +317,11 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
 
   const displayEnTitle = isSeries && activeEpisode
     ? `${video.en_title || video.ar_title} - Episode ${activeEpisode.episodeNummer}`
-    : video.en_title;
+    : (video.en_title || video.ar_title);
 
   const displayContent = isSeries && activeEpisode && activeEpisode.ar_content
     ? activeEpisode.ar_content
-    : video.ar_content;
+    : (video.ar_content || '');
 
   return (
     <WatchLayout 

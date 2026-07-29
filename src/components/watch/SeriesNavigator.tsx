@@ -1,14 +1,30 @@
 import React, { useEffect, useRef } from 'react';
 import { getImageUrl } from '@/utils/imageHelper';
 
+export interface SeriesSeason {
+  season: string;
+}
+
+export interface SeriesEpisode {
+  nb: string;
+  episodeNummer: string;
+  season: string;
+  duration?: string;
+  ar_title?: string;
+  en_title?: string;
+  publishDate?: string;
+  stars?: string;
+  ar_content?: string;
+}
+
 interface SeriesNavigatorProps {
-  seasons: any[];
-  episodes: any[];
+  seasons: SeriesSeason[];
+  episodes: SeriesEpisode[];
   currentSeason: string;
   setCurrentSeason: (season: string) => void;
-  activeEpisode: any;
-  setActiveEpisode: (ep: any) => void;
-  seasonEpisodes: any[];
+  activeEpisode: SeriesEpisode | null;
+  setActiveEpisode: (episode: SeriesEpisode) => void;
+  seasonEpisodes: SeriesEpisode[];
   videoTitle: string;
   videoImg: string;
   canSelectEpisodes?: boolean;

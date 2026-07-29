@@ -27,7 +27,7 @@ interface ChatSendResult {
   error?: string;
 }
 
-interface WatchRoomHook {
+export interface WatchRoomHook {
   isHost: boolean;
   roomState: RoomState | null;
   members: RoomMember[];
