@@ -686,3 +686,22 @@ button[data-provider="telegram"] {
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+/* Keep the remaining GitHub provider visually clear against the auth card. */
+.cl-socialButtonsBlockButton__github {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, rgba(51, 65, 85, 0.94), rgba(30, 41, 59, 0.98)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3) !important;
+}
+
+.cl-socialButtonsBlockButton__github:hover {
+  background: linear-gradient(135deg, rgba(71, 85, 105, 0.98), rgba(40, 53, 73, 1)) !important;
+  border-color: rgba(255, 255, 255, 0.48) !important;
+  transform: translateY(-1px);
+}
+
+.cl-socialButtonsBlockButtonText__github {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}

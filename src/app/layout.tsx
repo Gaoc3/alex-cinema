@@ -27,7 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider 
-      localization={arSA}
+      localization={{
+        ...arSA,
+        socialButtonsBlockButton: "الدخول عبر {{provider|titleize}}",
+      }}
       afterSignOutUrl="/"
       appearance={{
         theme: 'simple',

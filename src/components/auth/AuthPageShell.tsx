@@ -15,11 +15,11 @@ const features = [
 
 export default function AuthPageShell({ mode, children }: AuthPageShellProps) {
   return (
-    <div className="auth-page-shell relative flex min-h-[100svh] w-full flex-col overflow-x-hidden bg-[#020408] px-3 py-4 text-white sm:px-6 sm:py-6 lg:px-10 lg:py-8">
+    <div className="auth-page-shell relative flex min-h-[100svh] w-full flex-col overflow-x-hidden bg-[#07111f] px-3 py-4 text-white sm:px-6 sm:py-6 lg:px-10 lg:py-8">
       <InteractiveCinematicBg />
 
-      <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_78%_18%,rgba(229,9,20,0.15),transparent_32%),radial-gradient(circle_at_15%_78%,rgba(14,165,233,0.1),transparent_30%)]" />
-      <div className="pointer-events-none fixed inset-0 z-[1] bg-[linear-gradient(120deg,rgba(2,4,8,0.2),rgba(2,4,8,0.78))]" />
+      <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_78%_18%,rgba(229,9,20,0.2),transparent_34%),radial-gradient(circle_at_15%_78%,rgba(14,165,233,0.16),transparent_34%),radial-gradient(circle_at_50%_48%,rgba(59,130,246,0.08),transparent_42%)]" />
+      <div className="pointer-events-none fixed inset-0 z-[1] bg-[linear-gradient(120deg,rgba(3,8,18,0.04),rgba(3,8,18,0.48))]" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-[92rem] flex-1 flex-col">
         <header className="flex items-center justify-between gap-2 py-1 sm:gap-4 lg:py-2">
@@ -55,7 +55,7 @@ export default function AuthPageShell({ mode, children }: AuthPageShellProps) {
                 في حساب واحد آمن.
               </span>
             </h2>
-            <p className="mt-5 max-w-lg text-base font-semibold leading-8 text-slate-400">
+            <p className="mt-5 max-w-lg text-base font-semibold leading-8 text-slate-300">
               {mode === "sign-in"
                 ? "ارجع إلى أفلامك المفضلة وغرفك النشطة، وتابع المشاهدة من حيث توقفت."
                 : "أنشئ حسابك خلال لحظات وابدأ مشاركة الأفلام والمسلسلات مع من تحب."}
@@ -65,14 +65,14 @@ export default function AuthPageShell({ mode, children }: AuthPageShellProps) {
               {features.map((feature) => (
                 <div
                   key={feature.title}
-                  className="group flex items-center gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4 backdrop-blur-sm transition hover:border-white/15 hover:bg-white/[0.045]"
+                  className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.045] p-4 backdrop-blur-sm transition hover:border-white/20 hover:bg-white/[0.075]"
                 >
                   <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-red-400 transition group-hover:border-red-400/25 group-hover:bg-red-500/10">
                     <i className={`fa-solid ${feature.icon}`} aria-hidden="true" />
                   </span>
                   <span>
                     <strong className="block text-sm font-black text-slate-100">{feature.title}</strong>
-                    <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">
+                    <span className="mt-1 block text-xs font-semibold leading-5 text-slate-400">
                       {feature.description}
                     </span>
                   </span>

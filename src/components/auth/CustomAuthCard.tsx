@@ -44,9 +44,9 @@ const clerkAppearance = {
     colorNeutral: "#e2e8f0",
     colorForeground: "#f8fafc",
     colorMuted: "#111827",
-    colorMutedForeground: "#94a3b8",
+    colorMutedForeground: "#cbd5e1",
     colorBackground: "transparent",
-    colorInput: "rgba(15, 23, 42, 0.82)",
+    colorInput: "rgba(20, 35, 58, 0.96)",
     colorInputForeground: "#ffffff",
     colorRing: "rgba(229, 9, 20, 0.42)",
     colorBorder: "rgba(255, 255, 255, 0.16)",
@@ -71,18 +71,33 @@ const clerkAppearance = {
     headerSubtitle: { display: "none" as const },
     main: { gap: "0.875rem" },
     socialButtonsRoot: { gap: "0.5rem" },
-    socialButtonsBlockButton:
-      "min-h-12 rounded-2xl border border-white/15 bg-white/[0.06] text-white shadow-none transition hover:border-white/30 hover:bg-white/[0.1]",
-    socialButtonsBlockButtonText: "font-extrabold text-white",
+    socialButtonsBlockButton: {
+      minHeight: "3rem",
+      border: "1px solid rgba(255, 255, 255, 0.28)",
+      borderRadius: "1rem",
+      background: "linear-gradient(135deg, rgba(51, 65, 85, 0.92), rgba(30, 41, 59, 0.96))",
+      color: "#ffffff",
+      boxShadow: "0 10px 28px rgba(0, 0, 0, 0.3)",
+    },
+    socialButtonsBlockButtonText: { color: "#ffffff", fontWeight: 800 },
     socialButtonsProviderIcon: "size-5",
     dividerRow: { margin: "0.75rem 0" },
-    dividerLine: "bg-white/10",
-    dividerText: "px-3 text-xs font-bold text-slate-500",
+    dividerLine: { background: "rgba(255, 255, 255, 0.14)" },
+    dividerText: { padding: "0 0.75rem", color: "#cbd5e1", fontSize: "0.75rem", fontWeight: 700 },
     form: { gap: "0.75rem" },
     formFieldRow: { gap: "0.5rem" },
     formFieldLabel: "mb-1.5 text-sm font-extrabold text-slate-200",
-    formFieldInput:
-      "min-h-12 rounded-2xl border border-white/15 bg-slate-950/70 px-4 text-left text-white shadow-inner outline-none transition [direction:ltr] placeholder:text-slate-500 focus:border-red-500/70 focus:ring-4 focus:ring-red-500/15",
+    formFieldInput: {
+      minHeight: "3rem",
+      padding: "0 1rem",
+      direction: "ltr" as const,
+      textAlign: "left" as const,
+      border: "1px solid rgba(148, 163, 184, 0.28)",
+      borderRadius: "1rem",
+      background: "rgba(20, 35, 58, 0.96)",
+      color: "#ffffff",
+      boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.04)",
+    },
     formFieldInputShowPasswordButton: "text-slate-400 hover:text-white",
     formFieldAction: "font-bold text-red-400 hover:text-red-300",
     formFieldErrorText: "mt-1 text-xs font-bold text-red-300",
@@ -98,7 +113,7 @@ const clerkAppearance = {
       "rounded-2xl border border-white/15 bg-white/[0.05] text-white hover:bg-white/[0.09]",
     footer: { marginTop: "0.75rem", paddingTop: 0, background: "transparent" },
     footerAction: { minHeight: "auto", padding: 0, gap: "0.35rem", justifyContent: "center" },
-    footerActionText: "font-semibold text-slate-400",
+    footerActionText: { color: "#cbd5e1", fontWeight: 600 },
     footerActionLink: "font-black text-red-400 hover:text-red-300",
     footerPages: { display: "none" as const },
     footerItem: { display: "none" as const },
@@ -182,19 +197,33 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
 
     const prepareBrowserAuth = () => {
       if (!browserPreparationRef.current) {
-        // A Telegram cookie must never override the Clerk account selected here.
-        browserPreparationRef.current = fetchWithTimeout("/api/auth/logout", {
-          method: "POST",
+        const sessionCheck = fetchWithTimeout("/api/auth/me", {
           credentials: "same-origin",
           cache: "no-store",
-        }, 4_000)
-          .then(() => undefined)
-          .catch((error) => {
-            console.error("[Telegram Session Cleanup Error]:", error);
-          });
-      }
+        }, 6_000)
+          .then(async (response) => {
+            if (!response.ok) {
+              showBrowserAuth();
+              return;
+            }
 
-      void browserPreparationRef.current.finally(showBrowserAuth);
+            const data = await response.json().catch(() => null);
+            if (data?.authenticated) {
+              window.location.replace("/home");
+              return;
+            }
+
+            showBrowserAuth();
+          })
+          .catch((error) => {
+            console.error("[Existing Session Check Error]:", error);
+            showBrowserAuth();
+          });
+
+        browserPreparationRef.current = sessionCheck.finally(() => {
+          browserPreparationRef.current = null;
+        });
+      }
     };
 
     const detectTelegramAccount = () => {
@@ -266,7 +295,7 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
       aria-label={mode === "sign-in" ? "تسجيل الدخول إلى أليكس سينما" : "إنشاء حساب أليكس سينما"}
     >
       <div className="pointer-events-none absolute -inset-px rounded-[2rem] bg-gradient-to-b from-white/25 via-white/[0.04] to-red-500/20" />
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#080d18]/95 p-4 shadow-[0_28px_80px_rgba(0,0,0,0.68)] backdrop-blur-2xl sm:p-5">
+      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-[#0b1727]/96 p-4 shadow-[0_28px_80px_rgba(0,0,0,0.58)] backdrop-blur-2xl sm:p-5">
         <div className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full bg-red-600/15 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-28 -left-20 size-64 rounded-full bg-sky-500/10 blur-3xl" />
 
@@ -331,7 +360,7 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
             <button
               type="button"
               onClick={startTelegramOidc}
-              className="group flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl border border-sky-400/25 bg-gradient-to-l from-sky-500/15 to-blue-500/10 px-4 py-3 text-sm font-black text-white shadow-[0_12px_30px_rgba(14,165,233,0.1)] transition hover:border-sky-300/45 hover:from-sky-500/25 hover:to-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 active:scale-[0.99]"
+              className="group flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl border border-sky-300/35 bg-gradient-to-l from-sky-500/25 to-blue-500/20 px-4 py-3 text-sm font-black text-white shadow-[0_12px_30px_rgba(14,165,233,0.16)] transition hover:border-sky-200/55 hover:from-sky-500/35 hover:to-blue-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 active:scale-[0.99]"
             >
               <span className="flex size-9 items-center justify-center rounded-xl bg-sky-400/15 text-xl text-sky-300 transition group-hover:scale-105">
                 <i className="fa-brands fa-telegram" aria-hidden="true" />

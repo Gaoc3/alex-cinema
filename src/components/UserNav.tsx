@@ -6,6 +6,7 @@ import { useUnifiedAuth } from "@/components/auth/UnifiedAuthProvider";
 import FavoritesList from "./FavoritesList";
 import MyRoomsList from "./profile/MyRoomsList";
 import Link from "next/link";
+import Image from "next/image";
 
 const HeartIcon = () => <i className="fa-solid fa-heart text-pink-500"></i>;
 const FireIcon = () => <i className="fa-solid fa-fire text-purple-400"></i>;
@@ -97,12 +98,9 @@ export default function UserNav() {
   // Telegram User Avatar & Custom Profile Dropdown Menu
   let isTelegramWebApp = false;
   if (typeof window !== 'undefined') {
-    try {
-      isTelegramWebApp = Boolean(window.Telegram?.WebApp?.initData)
-        || sessionStorage.getItem('isTgWebApp') === 'true';
-    } catch {
-      isTelegramWebApp = Boolean(window.Telegram?.WebApp?.initData);
-    }
+    // Only a live, signed Telegram launch may hide sign-out. A stored flag can
+    // outlive the WebView and must not affect the regular website.
+    isTelegramWebApp = Boolean(window.Telegram?.WebApp?.initData);
   }
 
   return (
@@ -112,9 +110,13 @@ export default function UserNav() {
         className="w-11 h-11 sm:w-13 sm:h-13 border-2 border-white/25 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.8)] hover:scale-105 hover:border-red-500 hover:shadow-[0_0_25px_rgba(229,9,20,0.7)] transition-all duration-300 cursor-pointer overflow-hidden flex items-center justify-center bg-[#0b0f19]"
         title={user.name}
       >
-        <img
+        <Image
           src={user.imageUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`}
           alt={user.name}
+          width={52}
+          height={52}
+          sizes="(max-width: 639px) 44px, 52px"
+          unoptimized
           className="w-full h-full object-cover rounded-full"
         />
       </button>
@@ -123,9 +125,13 @@ export default function UserNav() {
       {dropdownOpen && (
         <div className="absolute left-0 top-full mt-3 w-64 bg-[#06070a]/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] text-white p-3.5 z-[100] animate-in fade-in zoom-in-95 duration-200">
           <div className="flex items-center gap-3 p-2 pb-3 border-b border-white/10 mb-2">
-            <img
+            <Image
               src={user.imageUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`}
               alt={user.name}
+              width={40}
+              height={40}
+              sizes="40px"
+              unoptimized
               className="w-10 h-10 rounded-full object-cover border border-white/20"
             />
             <div className="flex flex-col min-w-0">

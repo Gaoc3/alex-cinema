@@ -118,7 +118,7 @@ export default function InteractiveCinematicBg() {
 
     const render = () => {
       // 1. Pure Crisp Deep Space Black Background (ZERO Blur / ZERO Artifact Blobs)
-      ctx.fillStyle = "#020408";
+      ctx.fillStyle = "#07111f";
       ctx.fillRect(0, 0, width, height);
 
       // 2. Render Micro Starfield with Crisp 4-Point Cross Spikes
@@ -217,7 +217,7 @@ export default function InteractiveCinematicBg() {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden select-none bg-[#020408]">
+    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden select-none bg-[#07111f]">
       {/* Pure Crisp Deep Space Canvas Layer */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
     </div>
