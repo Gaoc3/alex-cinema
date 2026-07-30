@@ -179,7 +179,8 @@ export default function RoomSidebar({
       <section
         className={`fixed inset-x-0 bottom-0 z-[120] flex h-[min(86svh,46rem)] min-h-0 w-full flex-col overflow-hidden rounded-t-[1.75rem] border border-white/10 bg-[#0b101a] shadow-[0_-20px_60px_rgba(0,0,0,0.55)] transition-transform duration-300 ease-out lg:sticky lg:top-4 lg:z-10 lg:h-[calc(100svh-6.25rem)] lg:min-h-[34rem] lg:max-h-[54rem] lg:translate-y-0 lg:rounded-2xl lg:shadow-2xl ${isOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'}`}
         aria-label="لوحة الغرفة"
-        aria-hidden={!isOpen ? undefined : false}
+        aria-hidden={!isOpen}
+        inert={!isOpen ? true : undefined}
       >
         <div className="mx-auto mt-2 h-1 w-11 rounded-full bg-white/20 lg:hidden" aria-hidden="true" />
 

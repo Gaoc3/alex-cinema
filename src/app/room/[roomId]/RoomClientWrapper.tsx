@@ -280,7 +280,7 @@ export default function RoomClientWrapper({
             )}
           </section>
 
-          <aside className="min-w-0 lg:row-start-1" dir="rtl">
+          <aside className="min-w-0" dir="rtl">
             <RoomSidebar
               roomId={roomId}
               initialPrivacy={roomData.isPrivate ?? false}
@@ -300,7 +300,7 @@ export default function RoomClientWrapper({
       <button
         type="button"
         onClick={() => setIsSidebarOpen(true)}
-        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] z-[90] flex min-h-12 cursor-pointer items-center gap-2 rounded-full bg-[#e50914] px-4 text-sm font-extrabold text-white shadow-[0_10px_35px_rgba(229,9,20,0.45)] transition hover:bg-red-700 active:scale-95 lg:hidden"
+        className={`fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] z-[90] flex min-h-12 cursor-pointer items-center gap-2 rounded-full bg-[#e50914] px-4 text-sm font-extrabold text-white shadow-[0_10px_35px_rgba(229,9,20,0.45)] transition hover:bg-red-700 active:scale-95 lg:hidden ${isSidebarOpen ? 'pointer-events-none translate-y-2 opacity-0' : 'opacity-100'}`}
         aria-label="فتح دردشة الغرفة"
       >
         <i className="fa-solid fa-comments" aria-hidden="true" />
