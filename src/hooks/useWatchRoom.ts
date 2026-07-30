@@ -8,6 +8,8 @@ interface RoomState {
   receivedAt?: number;
 }
 
+export type RoomConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'offline';
+
 export interface RoomMember {
   id: string;
   name: string;
@@ -16,28 +18,43 @@ export interface RoomMember {
 
 export interface ChatMessage {
   id: string;
+  senderId: string | null;
   sender: string;
   text: string;
   createdAt: string;
   isHost?: boolean;
+  canDelete?: boolean;
+  isDeleted: boolean;
+  deletedAt: string | null;
+  replyTo: {
+    id: string;
+    sender: string;
+    text: string;
+    isDeleted: boolean;
+  } | null;
 }
 
 interface ChatSendResult {
   ok: boolean;
   error?: string;
+  messageId?: string;
+  deletedAt?: string;
 }
 
 export interface WatchRoomHook {
+  connectionState: RoomConnectionState;
   isHost: boolean;
   roomState: RoomState | null;
   members: RoomMember[];
   messages: ChatMessage[];
+  isChatHistoryLoaded: boolean;
   sendSyncUpdate: (time: number, playing: boolean) => void;
   changeVideo: (newVideoId: string, kind?: string, season?: string, episode?: string) => Promise<ChatSendResult>;
   changeEpisode: (episodeId: string, season?: string, episode?: string) => Promise<ChatSendResult>;
   kickUser: (targetSocketId: string) => void;
   closeRoom: () => Promise<void>;
-  sendChatMessage: (text: string) => Promise<ChatSendResult>;
+  sendChatMessage: (text: string, replyToId?: string) => Promise<ChatSendResult>;
+  deleteChatMessage: (messageId: string) => Promise<ChatSendResult>;
   remoteVideoId: string | null;
   remoteEpisodeId: string | null;
   isKicked: boolean;
@@ -48,7 +65,18 @@ export interface WatchRoomHook {
 function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]) {
   const byId = new Map<string, ChatMessage>();
   for (const message of [...current, ...incoming]) {
-    if (message?.id) byId.set(message.id, message);
+    if (!message?.id) continue;
+    const previous = byId.get(message.id);
+    const isDeleted = Boolean(previous?.isDeleted || message.isDeleted);
+    byId.set(message.id, {
+      ...previous,
+      ...message,
+      senderId: message.senderId ?? previous?.senderId ?? null,
+      isDeleted,
+      deletedAt: message.deletedAt ?? previous?.deletedAt ?? null,
+      replyTo: message.replyTo ?? previous?.replyTo ?? null,
+      text: isDeleted ? '' : message.text,
+    });
   }
   return Array.from(byId.values())
     .sort((a, b) => {
@@ -58,6 +86,43 @@ function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]) {
         : a.id.localeCompare(b.id);
     })
     .slice(-100);
+}
+
+function tombstoneMessage(
+  messages: ChatMessage[],
+  messageId: string,
+  deletedAt: string,
+) {
+  return messages.map((message) => {
+    const isDeletedMessage = message.id === messageId;
+    const repliesToDeletedMessage = message.replyTo?.id === messageId;
+    if (!isDeletedMessage && !repliesToDeletedMessage) return message;
+
+    return {
+      ...message,
+      ...(isDeletedMessage ? { text: '', isDeleted: true, deletedAt } : {}),
+      ...(repliesToDeletedMessage && message.replyTo
+        ? {
+            replyTo: {
+              ...message.replyTo,
+              text: '',
+              isDeleted: true,
+            },
+          }
+        : {}),
+    };
+  });
+}
+
+function applyKnownTombstones(
+  messages: ChatMessage[],
+  tombstones: Map<string, string>,
+) {
+  let updatedMessages = messages;
+  for (const [messageId, deletedAt] of tombstones) {
+    updatedMessages = tombstoneMessage(updatedMessages, messageId, deletedAt);
+  }
+  return updatedMessages;
 }
 
 function emitWithAcknowledgement(
@@ -90,11 +155,13 @@ export function useWatchRoom(
   username: string,
 ): WatchRoomHook {
   const [isHost, setIsHost] = useState(initIsHost);
+  const [connectionState, setConnectionState] = useState<RoomConnectionState>('connecting');
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [members, setMembers] = useState<RoomMember[]>(() => (
     username ? [{ id: 'self', name: username, isHost: initIsHost }] : []
   ));
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isChatHistoryLoaded, setIsChatHistoryLoaded] = useState(false);
   const [remoteVideoId, setRemoteVideoId] = useState<string | null>(null);
   const [remoteEpisodeId, setRemoteEpisodeId] = useState<string | null>(null);
   const [isKicked, setIsKicked] = useState(false);
@@ -102,6 +169,7 @@ export function useWatchRoom(
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
+  const deletedMessageTombstonesRef = useRef(new Map<string, string>());
   const identityRef = useRef({ username, initIsHost });
 
   useEffect(() => {
@@ -125,10 +193,13 @@ export function useWatchRoom(
       transports: ['websocket', 'polling'],
     });
     socketRef.current = newSocket;
+    deletedMessageTombstonesRef.current.clear();
     queueMicrotask(() => {
       if (!cancelled) {
         setMessages([]);
+        setIsChatHistoryLoaded(false);
         setConnectionError(null);
+        setConnectionState('connecting');
       }
     });
 
@@ -148,6 +219,7 @@ export function useWatchRoom(
     const connectWithFreshToken = async () => {
       if (refreshingToken || cancelled) return;
       refreshingToken = true;
+      setConnectionState((current) => current === 'reconnecting' ? current : 'connecting');
       try {
         const token = await fetchToken();
         if (cancelled) return;
@@ -155,6 +227,7 @@ export function useWatchRoom(
         newSocket.connect();
       } catch (error) {
         if (!cancelled) {
+          setConnectionState('offline');
           setConnectionError(error instanceof Error ? error.message : 'تعذر الاتصال بالغرفة');
         }
       } finally {
@@ -163,6 +236,7 @@ export function useWatchRoom(
     };
 
     newSocket.on('connect', () => {
+      setConnectionState('connecting');
       authRefreshAttempts = 0;
       if (authRetryTimer !== null) {
         window.clearTimeout(authRetryTimer);
@@ -175,7 +249,12 @@ export function useWatchRoom(
         isHost: identityRef.current.initIsHost,
       }]);
       newSocket.emit('join_room', { roomId }, (result: ChatSendResult) => {
-        if (result?.ok) return;
+        if (result?.ok) {
+          setConnectionState('connected');
+          setConnectionError(null);
+          return;
+        }
+        setConnectionState('offline');
         setConnectionError(result?.error || 'تعذر دخول الغرفة');
         newSocket.disconnect();
       });
@@ -184,8 +263,10 @@ export function useWatchRoom(
     newSocket.on('connect_error', (error) => {
       const message = error?.message || 'تعذر الاتصال بالغرفة';
       if (message === 'AUTH_EXPIRED') {
+        setConnectionState('reconnecting');
         newSocket.disconnect();
         if (authRefreshAttempts >= 3) {
+          setConnectionState('offline');
           setConnectionError('انتهت جلسة الاتصال، أعد تحميل الصفحة للمحاولة من جديد');
           return;
         }
@@ -200,9 +281,11 @@ export function useWatchRoom(
       }
       if (message === 'AUTH_INVALID' || message === 'AUTH_REQUIRED') {
         newSocket.disconnect();
+        setConnectionState('offline');
         setConnectionError('تعذر التحقق من جلسة الغرفة، أعد تحميل الصفحة');
         return;
       }
+      setConnectionState('reconnecting');
       setConnectionError(message);
     });
 
@@ -225,11 +308,32 @@ export function useWatchRoom(
     });
 
     newSocket.on('chat_history', (history: ChatMessage[]) => {
-      if (Array.isArray(history)) setMessages((current) => mergeMessages(current, history));
+      if (Array.isArray(history)) {
+        setMessages((current) => applyKnownTombstones(
+          mergeMessages(current, history),
+          deletedMessageTombstonesRef.current,
+        ));
+      }
+      setIsChatHistoryLoaded(true);
     });
 
     newSocket.on('chat_message', (message: ChatMessage) => {
-      if (message?.id) setMessages((current) => mergeMessages(current, [message]));
+      if (message?.id) {
+        setMessages((current) => applyKnownTombstones(
+          mergeMessages(current, [message]),
+          deletedMessageTombstonesRef.current,
+        ));
+      }
+    });
+
+    newSocket.on('chat_message_deleted', (data: { messageId?: string; deletedAt?: string }) => {
+      const messageId = data?.messageId;
+      if (typeof messageId !== 'string') return;
+      const deletedAt = typeof data.deletedAt === 'string'
+        ? data.deletedAt
+        : new Date().toISOString();
+      deletedMessageTombstonesRef.current.set(messageId, deletedAt);
+      setMessages((current) => tombstoneMessage(current, messageId, deletedAt));
     });
 
     newSocket.on('host_left', () => {
@@ -247,18 +351,27 @@ export function useWatchRoom(
 
     newSocket.on('kicked', () => {
       terminalDisconnect = true;
+      setConnectionState('offline');
       setIsKicked(true);
       newSocket.disconnect();
     });
 
     newSocket.on('room_deleted', () => {
       terminalDisconnect = true;
+      setConnectionState('offline');
       setIsRoomClosed(true);
       setConnectionError('تم إغلاق هذه الغرفة');
       newSocket.disconnect();
     });
 
     newSocket.on('disconnect', (reason) => {
+      if (!cancelled && !terminalDisconnect) {
+        setConnectionState(
+          reason === 'io client disconnect' || reason === 'io server disconnect'
+            ? 'offline'
+            : 'reconnecting',
+        );
+      }
       if (!cancelled && !terminalDisconnect && reason === 'io server disconnect') {
         setConnectionError('أغلق الخادم اتصال الغرفة، أعد تحميل الصفحة للمحاولة مجدداً');
       }
@@ -281,7 +394,10 @@ export function useWatchRoom(
     }
   }, [isHost]);
 
-  const sendChatMessage = useCallback(async (rawText: string): Promise<ChatSendResult> => {
+  const sendChatMessage = useCallback(async (
+    rawText: string,
+    replyToId?: string,
+  ): Promise<ChatSendResult> => {
     const activeSocket = socketRef.current;
     const text = rawText.trim();
     if (!activeSocket?.connected) return { ok: false, error: 'الاتصال بالغرفة غير جاهز' };
@@ -299,12 +415,44 @@ export function useWatchRoom(
 
       activeSocket.emit('chat_send', {
         text,
-        clientNonce: crypto.randomUUID(),
+        clientMessageId: crypto.randomUUID(),
+        ...(replyToId ? { replyToId } : {}),
       }, (result: ChatSendResult) => {
         if (settled) return;
         settled = true;
         window.clearTimeout(timeout);
         resolve(result?.ok ? { ok: true } : { ok: false, error: result?.error || 'تعذر إرسال الرسالة' });
+      });
+    });
+  }, []);
+
+  const deleteChatMessage = useCallback(async (messageId: string): Promise<ChatSendResult> => {
+    const activeSocket = socketRef.current;
+    if (!activeSocket?.connected) return { ok: false, error: 'الاتصال بالغرفة غير جاهز' };
+    if (!messageId) return { ok: false, error: 'تعذر حذف الرسالة' };
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const timeout = window.setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          resolve({ ok: false, error: 'انتهت مهلة حذف الرسالة' });
+        }
+      }, 8_000);
+
+      activeSocket.emit('chat_delete', { messageId }, (result: ChatSendResult) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeout);
+        if (result?.ok) {
+          const deletedAt = result.deletedAt || new Date().toISOString();
+          const deletedMessageId = result.messageId || messageId;
+          deletedMessageTombstonesRef.current.set(deletedMessageId, deletedAt);
+          setMessages((current) => tombstoneMessage(current, deletedMessageId, deletedAt));
+          resolve({ ok: true });
+          return;
+        }
+        resolve({ ok: false, error: result?.error || 'تعذر حذف الرسالة' });
       });
     });
   }, []);
@@ -354,16 +502,19 @@ export function useWatchRoom(
   }, [isHost]);
 
   return {
+    connectionState,
     isHost,
     roomState,
     members,
     messages,
+    isChatHistoryLoaded,
     sendSyncUpdate,
     changeVideo,
     changeEpisode,
     kickUser,
     closeRoom,
     sendChatMessage,
+    deleteChatMessage,
     remoteVideoId,
     remoteEpisodeId,
     isKicked,

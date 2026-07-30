@@ -105,8 +105,9 @@ export default function SeriesNavigator({
                 return (
                   <button
                     key={s.season}
+                    type="button"
                     onClick={() => setCurrentSeason(s.season)}
-                    className={`px-4 py-1.5 rounded-xl text-xs font-black transition-all duration-300 whitespace-nowrap cursor-pointer ${
+                    className={`min-h-11 cursor-pointer whitespace-nowrap rounded-xl px-4 py-1.5 text-xs font-black transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
                       isSelected
                         ? 'bg-gradient-to-r from-red-600 to-rose-700 text-white shadow-[0_2px_12px_rgba(229,9,20,0.4)] border border-white/20 scale-[1.02]'
                         : 'text-gray-400 hover:text-white bg-transparent hover:bg-white/5'
@@ -123,21 +124,28 @@ export default function SeriesNavigator({
         {/* ------------------------------------------------------------- */}
         {/* MOBILE VIEW (SM:HIDDEN): Vertical Episodes List Layout         */}
         {/* ------------------------------------------------------------- */}
-        <div key={`mobile-${currentSeason}`} className="flex flex-col gap-3 sm:hidden w-full">
-          {seasonEpisodes.map((ep) => {
-            const isActiveEp = activeEpisode?.nb === ep.nb;
-            return (
-              <div
+        <details key={`mobile-${currentSeason}`} className="group w-full rounded-2xl border border-white/10 bg-white/[0.025] sm:hidden">
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm font-extrabold text-white marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-400">
+            <span className="flex min-w-0 items-center gap-2">
+              <i className="fa-solid fa-list-ol shrink-0 text-red-400" aria-hidden="true" />
+              <span className="truncate">حلقات الموسم {currentSeason}</span>
+              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-slate-300">{seasonEpisodes.length}</span>
+            </span>
+            <i className="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+
+          <div className="custom-scrollbar max-h-[min(52svh,32rem)] space-y-3 overflow-y-auto border-t border-white/10 p-3">
+            {seasonEpisodes.map((ep) => {
+              const isActiveEp = activeEpisode?.nb === ep.nb;
+              return (
+              <button
                 key={ep.nb}
+                type="button"
                 data-active={isActiveEp ? "true" : "false"}
-                onClick={() => canSelectEpisodes && setActiveEpisode(ep)}
-                onKeyDown={(event) => {
-                  if (canSelectEpisodes && (event.key === 'Enter' || event.key === ' ')) setActiveEpisode(ep);
-                }}
-                role="button"
-                tabIndex={canSelectEpisodes ? 0 : -1}
-                aria-disabled={!canSelectEpisodes}
-                className={`flex items-center gap-3.5 p-3 rounded-2xl border transition-all duration-300 ${canSelectEpisodes ? 'cursor-pointer' : 'cursor-default opacity-85'} ${
+                onClick={() => setActiveEpisode(ep)}
+                disabled={!canSelectEpisodes}
+                aria-pressed={isActiveEp}
+                className={`flex w-full items-center gap-3.5 rounded-2xl border p-3 text-right transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-65 ${canSelectEpisodes ? 'cursor-pointer' : 'cursor-default'} ${
                   isActiveEp
                     ? 'bg-red-950/30 border-red-500/60 shadow-[0_4px_20px_rgba(229,9,20,0.25)]'
                     : 'bg-white/[0.03] border-white/10 hover:border-white/20 active:scale-[0.98]'
@@ -179,20 +187,21 @@ export default function SeriesNavigator({
                   </p>
 
                   <div className="flex items-center gap-2">
-                    <button disabled={!canSelectEpisodes} className={`px-3 py-1 rounded-lg text-[10px] font-black flex items-center gap-1.5 transition-all ${
+                    <span className={`flex min-h-8 items-center gap-1.5 rounded-lg px-3 py-1 text-[10px] font-black transition-all ${
                       isActiveEp 
                         ? 'bg-red-600 text-white shadow-md' 
                         : 'bg-white/10 text-gray-300 hover:text-white'
                     }`}>
                       <i className="fa-solid fa-circle-play text-[9px]"></i>
                       <span>{isActiveEp ? 'شغّال الآن' : 'تشغيل الحلقة'}</span>
-                    </button>
+                    </span>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              </button>
+              );
+            })}
+          </div>
+        </details>
 
         {/* ------------------------------------------------------------- */}
         {/* DESKTOP & TABLET VIEW (HIDDEN SM:FLEX): Horizontal Carousel   */}

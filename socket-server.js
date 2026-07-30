@@ -18,8 +18,10 @@ const MAX_MESSAGE_LENGTH = 1000;
 const MAX_MESSAGE_BYTES = 4096;
 const CHAT_WINDOW_MS = 60_000;
 const CHAT_LIMIT_PER_WINDOW = 30;
+const CHAT_DELETE_LIMIT_PER_WINDOW = 20;
 const MAX_CONNECTIONS_PER_IDENTITY = 5;
 const IP_CHAT_LIMIT_PER_WINDOW = 120;
+const IP_CHAT_DELETE_LIMIT_PER_WINDOW = 80;
 const MAX_CONNECTIONS_PER_IP = 50;
 const MAX_MEMBERS_PER_ROOM = 200;
 const MESSAGE_RETENTION_DAYS = 90;
@@ -29,6 +31,7 @@ const MESSAGE_PRUNE_INTERVAL = 25;
 const prisma = new PrismaClient();
 const rooms = new Map();
 const chatRateLimits = new Map();
+const chatDeleteRateLimits = new Map();
 const roomMessageCounts = new Map();
 const presenceUpdates = new Map();
 let roomAuditTimer = null;
@@ -75,15 +78,32 @@ function getMembersArray(room) {
   return room ? Array.from(room.members.values()) : [];
 }
 
-function toChatMessage(message, hostUserId) {
+function toISOString(value) {
+  if (!value) return null;
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+
+function toChatMessage(message, hostUserId, canDelete = false) {
+  const isDeleted = Boolean(message.deletedAt);
+  const replyIsDeleted = Boolean(message.replyTo?.deletedAt);
   return {
     id: message.id,
+    senderId: message.senderId || null,
     sender: message.senderName,
-    text: message.text,
-    createdAt: message.createdAt instanceof Date
-      ? message.createdAt.toISOString()
-      : new Date(message.createdAt).toISOString(),
+    text: isDeleted ? '' : message.text,
+    createdAt: toISOString(message.createdAt),
     isHost: Boolean(message.senderId && message.senderId === hostUserId),
+    canDelete,
+    isDeleted,
+    deletedAt: toISOString(message.deletedAt),
+    replyTo: message.replyTo
+      ? {
+        id: message.replyTo.id,
+        sender: message.replyTo.senderName,
+        text: replyIsDeleted ? '' : message.replyTo.text,
+        isDeleted: replyIsDeleted,
+      }
+      : null,
   };
 }
 
@@ -109,6 +129,22 @@ function canSendChat(socket) {
   };
   return consume(socket.data.rateLimitKey, CHAT_LIMIT_PER_WINDOW)
     && consume(socket.data.ipRateLimitKey, IP_CHAT_LIMIT_PER_WINDOW);
+}
+
+function canDeleteChat(socket) {
+  const now = Date.now();
+  const consume = (key, limit) => {
+    const recent = (chatDeleteRateLimits.get(key) || []).filter((time) => now - time < CHAT_WINDOW_MS);
+    if (recent.length >= limit) {
+      chatDeleteRateLimits.set(key, recent);
+      return false;
+    }
+    recent.push(now);
+    chatDeleteRateLimits.set(key, recent);
+    return true;
+  };
+  return consume(socket.data.rateLimitKey, CHAT_DELETE_LIMIT_PER_WINDOW)
+    && consume(socket.data.ipRateLimitKey, IP_CHAT_DELETE_LIMIT_PER_WINDOW);
 }
 
 function getClientAddress(socket) {
@@ -189,6 +225,25 @@ function isRoomHost(socket, room) {
   return Boolean(socket.data.userId && socket.data.userId === room.hostUserId);
 }
 
+function canDeleteChatMessage(socket, room, message) {
+  if (isRoomHost(socket, room)) return true;
+  return Boolean(
+    (socket.data.userId && message.senderId === socket.data.userId)
+    || (socket.data.senderIdentity && message.senderIdentity === socket.data.senderIdentity),
+  );
+}
+
+function emitChatMessageToRoom(room, message) {
+  for (const socketId of room.members.keys()) {
+    const roomSocket = io.sockets.sockets.get(socketId);
+    if (!roomSocket) continue;
+    roomSocket.emit(
+      'chat_message',
+      toChatMessage(message, room.hostUserId, canDeleteChatMessage(roomSocket, room, message)),
+    );
+  }
+}
+
 function safeAck(callback, payload) {
   if (typeof callback === 'function') callback(payload);
 }
@@ -247,6 +302,7 @@ async function start() {
       if (!user && !subject.startsWith('guest:')) return next(new Error('AUTH_INVALID'));
       const identity = user?.id ? `user:${user.id}` : subject;
       const clientAddress = getClientAddress(socket);
+      socket.data.senderIdentity = identity;
       socket.data.rateLimitKey = `${room.id}:${identity}`;
       socket.data.ipRateLimitKey = `${room.id}:ip:${clientAddress}`;
       return next();
@@ -367,8 +423,15 @@ async function start() {
           where: { roomId },
           orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
           take: 50,
+          include: {
+            replyTo: {
+              select: { id: true, senderName: true, text: true, deletedAt: true },
+            },
+          },
         });
-        socket.emit('chat_history', history.reverse().map((message) => toChatMessage(message, room.hostUserId)));
+        socket.emit('chat_history', history.reverse().map((message) => (
+          toChatMessage(message, room.hostUserId, canDeleteChatMessage(socket, room, message))
+        )));
         io.to(roomId).emit('room_members', getMembersArray(room));
         safeAck(callback, { ok: true });
       } catch (error) {
@@ -386,13 +449,18 @@ async function start() {
         }
 
         const text = cleanText(payload && payload.text);
-        const clientNonce = payload && payload.clientNonce;
+        const clientMessageId = payload && (payload.clientMessageId || payload.clientNonce);
+        const replyToId = payload && payload.replyToId;
         if (!text || text.length > MAX_MESSAGE_LENGTH || Buffer.byteLength(text, 'utf8') > MAX_MESSAGE_BYTES) {
           safeAck(callback, { ok: false, error: 'الرسالة فارغة أو طويلة جداً' });
           return;
         }
-        if (typeof clientNonce !== 'string' || !UUID_PATTERN.test(clientNonce)) {
+        if (typeof clientMessageId !== 'string' || !UUID_PATTERN.test(clientMessageId)) {
           safeAck(callback, { ok: false, error: 'تعذر إرسال الرسالة' });
+          return;
+        }
+        if (replyToId != null && (typeof replyToId !== 'string' || !UUID_PATTERN.test(replyToId))) {
+          safeAck(callback, { ok: false, error: 'الرسالة المشار إليها غير صالحة' });
           return;
         }
         if (!canSendChat(socket)) {
@@ -402,19 +470,53 @@ async function start() {
 
         let savedMessage;
         try {
-          savedMessage = await prisma.roomMessage.create({
-            data: {
-              roomId,
-              senderId: socket.data.userId,
-              senderName: socket.data.name,
-              text,
-              clientNonce,
-            },
+          savedMessage = await prisma.$transaction(async (transaction) => {
+            if (replyToId) {
+              const replyTargets = await transaction.$queryRaw`
+                SELECT "id"
+                FROM "RoomMessage"
+                WHERE "id" = ${replyToId}
+                  AND "roomId" = ${roomId}
+                  AND "deletedAt" IS NULL
+                FOR SHARE
+              `;
+              if (!Array.isArray(replyTargets) || replyTargets.length !== 1) {
+                const error = new Error('Invalid reply target');
+                error.code = 'INVALID_REPLY_TARGET';
+                throw error;
+              }
+            }
+
+            return transaction.roomMessage.create({
+              data: {
+                roomId,
+                senderId: socket.data.userId,
+                senderIdentity: socket.data.senderIdentity,
+                senderName: socket.data.name,
+                text,
+                clientNonce: clientMessageId,
+                replyToId: replyToId || null,
+              },
+              include: {
+                replyTo: {
+                  select: { id: true, senderName: true, text: true, deletedAt: true },
+                },
+              },
+            });
           });
         } catch (error) {
+          if (error && error.code === 'INVALID_REPLY_TARGET') {
+            safeAck(callback, { ok: false, error: 'الرسالة المشار إليها غير موجودة' });
+            return;
+          }
           if (error && error.code === 'P2002') {
             savedMessage = await prisma.roomMessage.findUnique({
-              where: { roomId_clientNonce: { roomId, clientNonce } },
+              where: { roomId_clientNonce: { roomId, clientNonce: clientMessageId } },
+              include: {
+                replyTo: {
+                  select: { id: true, senderName: true, text: true, deletedAt: true },
+                },
+              },
             });
           } else {
             throw error;
@@ -423,8 +525,8 @@ async function start() {
 
         if (!savedMessage) throw new Error('Message persistence failed');
         const publicMessage = toChatMessage(savedMessage, room.hostUserId);
-        io.to(roomId).emit('chat_message', publicMessage);
-        safeAck(callback, { ok: true, id: publicMessage.id });
+        emitChatMessageToRoom(room, savedMessage);
+        safeAck(callback, { ok: true, id: publicMessage.id, clientMessageId });
 
         const savedCount = (roomMessageCounts.get(roomId) || 0) + 1;
         roomMessageCounts.set(roomId, savedCount);
@@ -434,6 +536,74 @@ async function start() {
       } catch (error) {
         console.error('chat_send failed:', error);
         safeAck(callback, { ok: false, error: 'تعذر حفظ الرسالة' });
+      }
+    });
+
+    socket.on('chat_delete', async (payload, callback) => {
+      try {
+        const room = rooms.get(roomId);
+        const messageId = payload && payload.messageId;
+        if (!room || !socket.data.joinedRoom) {
+          safeAck(callback, { ok: false, error: 'يجب دخول الغرفة أولاً' });
+          return;
+        }
+        if (typeof messageId !== 'string' || !UUID_PATTERN.test(messageId)) {
+          safeAck(callback, { ok: false, error: 'تعذر حذف الرسالة' });
+          return;
+        }
+        if (!canDeleteChat(socket)) {
+          safeAck(callback, { ok: false, error: 'طلبات حذف كثيرة، انتظر قليلاً' });
+          return;
+        }
+
+        const message = await prisma.roomMessage.findFirst({
+          where: { id: messageId, roomId },
+          select: { senderId: true, senderIdentity: true, deletedAt: true },
+        });
+        if (!message) {
+          safeAck(callback, { ok: false, error: 'الرسالة غير موجودة' });
+          return;
+        }
+
+        if (!canDeleteChatMessage(socket, room, message)) {
+          safeAck(callback, { ok: false, error: 'غير مصرح' });
+          return;
+        }
+
+        if (message.deletedAt) {
+          safeAck(callback, {
+            ok: true,
+            messageId,
+            deletedAt: toISOString(message.deletedAt),
+          });
+          return;
+        }
+
+        const deletedAt = new Date();
+        const deleteResult = await prisma.roomMessage.updateMany({
+          where: { id: messageId, roomId, deletedAt: null },
+          data: { deletedAt },
+        });
+        if (deleteResult.count !== 1) {
+          const current = await prisma.roomMessage.findFirst({
+            where: { id: messageId, roomId },
+            select: { deletedAt: true },
+          });
+          if (!current?.deletedAt) throw new Error('Message deletion failed');
+          safeAck(callback, {
+            ok: true,
+            messageId,
+            deletedAt: toISOString(current.deletedAt),
+          });
+          return;
+        }
+
+        const publicDeletedAt = deletedAt.toISOString();
+        io.to(roomId).emit('chat_message_deleted', { messageId, deletedAt: publicDeletedAt });
+        safeAck(callback, { ok: true, messageId, deletedAt: publicDeletedAt });
+      } catch (error) {
+        console.error('chat_delete failed:', error);
+        safeAck(callback, { ok: false, error: 'تعذر حذف الرسالة' });
       }
     });
 
@@ -592,6 +762,11 @@ async function start() {
       const recent = timestamps.filter((timestamp) => timestamp >= cutoff);
       if (recent.length === 0) chatRateLimits.delete(key);
       else chatRateLimits.set(key, recent);
+    }
+    for (const [key, timestamps] of chatDeleteRateLimits) {
+      const recent = timestamps.filter((timestamp) => timestamp >= cutoff);
+      if (recent.length === 0) chatDeleteRateLimits.delete(key);
+      else chatDeleteRateLimits.set(key, recent);
     }
   }, CHAT_WINDOW_MS);
   rateLimitCleanupTimer.unref?.();

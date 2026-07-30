@@ -47,18 +47,24 @@ model Room {
 }
 
 model RoomMessage {
-  id          String   @id @default(uuid())
-  roomId      String
-  senderId    String?
-  senderName  String   @db.VarChar(120)
-  text        String   @db.VarChar(1000)
-  clientNonce String   @db.Uuid
-  createdAt   DateTime @default(now()) @db.Timestamptz(3)
-  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  sender      User?    @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  id             String        @id @default(uuid())
+  roomId         String
+  senderId       String?
+  senderIdentity String?       @db.VarChar(180)
+  senderName     String        @db.VarChar(120)
+  text           String        @db.VarChar(1000)
+  clientNonce    String        @db.Uuid
+  replyToId      String?
+  deletedAt      DateTime?     @db.Timestamptz(3)
+  createdAt      DateTime      @default(now()) @db.Timestamptz(3)
+  room           Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender         User?         @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  replyTo        RoomMessage?  @relation("RoomMessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies        RoomMessage[] @relation("RoomMessageReplies")
 
   @@unique([roomId, clientNonce])
   @@index([roomId, createdAt])
+  @@index([roomId, replyToId])
   @@index([createdAt])
 }
 

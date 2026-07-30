@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import toast from 'react-hot-toast';
@@ -9,7 +9,7 @@ import type { RoomVideoData } from '@/components/watch/PlayerSection';
 import type { SeriesEpisode, SeriesSeason } from '@/components/watch/SeriesNavigator';
 import { useWatchRoom } from '@/hooks/useWatchRoom';
 import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
-import RoomSidebar from '@/components/watch/RoomSidebar';
+import RoomSidebar, { type RoomTab } from '@/components/watch/RoomSidebar';
 import { getVideoImageUrl } from '@/utils/imageHelper';
 import LobbySearch from './LobbySearch';
 
@@ -64,6 +64,7 @@ function RoomStateScreen({
 export default function RoomClientWrapper({
   roomId,
   roomData,
+  currentUserId,
   isHostUser: isHostUserProp,
   video,
   seasons,
@@ -71,23 +72,27 @@ export default function RoomClientWrapper({
 }: RoomClientWrapperProps) {
   const { user, isLoaded } = useUser();
   const { user: unifiedUser } = useUnifiedAuth();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeRoomTab, setActiveRoomTab] = useState<RoomTab>('chat');
+  const sidebarPanelRef = useRef<HTMLElement>(null);
   const router = useRouter();
 
-  const initialIsHostUser = Boolean(isHostUserProp || unifiedUser?.id === roomData.hostId);
+  const initialIsHostUser = Boolean(
+    isHostUserProp
+    || currentUserId === roomData.hostId
+    || unifiedUser?.id === roomData.hostId,
+  );
   const username = user
     ? (user.fullName || user.firstName || user.username || 'مشاهد')
     : (unifiedUser?.name || (initialIsHostUser && roomData.host?.name ? roomData.host.name : `ضيف ${roomId.slice(0, 4)}`));
 
-  useEffect(() => {
-    const syncSidebar = () => setIsSidebarOpen(window.innerWidth >= 1024);
-    syncSidebar();
-    window.addEventListener('resize', syncSidebar);
-    return () => window.removeEventListener('resize', syncSidebar);
-  }, []);
-
   const roomHook = useWatchRoom(roomId, initialIsHostUser, username);
   const isHostUser = roomHook.isHost;
+  const connectionMeta = {
+    connecting: { label: 'جارٍ الاتصال', color: 'bg-amber-400' },
+    connected: { label: 'مباشر', color: 'bg-emerald-400' },
+    reconnecting: { label: 'إعادة اتصال', color: 'bg-amber-400 motion-safe:animate-pulse' },
+    offline: { label: 'غير متصل', color: 'bg-red-500' },
+  }[roomHook.connectionState];
 
   useEffect(() => {
     const currentVideoId = video?.nb || video?.id || null;
@@ -115,6 +120,14 @@ export default function RoomClientWrapper({
       if (error instanceof DOMException && error.name === 'AbortError') return;
       toast.error('تعذر مشاركة الرابط');
     }
+  };
+
+  const showMembersPanel = () => {
+    setActiveRoomTab('members');
+    if (!window.matchMedia('(max-width: 1023px)').matches) return;
+    window.requestAnimationFrame(() => {
+      sidebarPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   };
 
   if (!isLoaded) {
@@ -154,7 +167,7 @@ export default function RoomClientWrapper({
   const memberCount = Math.max(roomHook.members.length, 1);
 
   return (
-    <div className="relative min-h-[100svh] overflow-x-hidden bg-[#070a11] text-white" dir="rtl">
+    <div className="relative min-h-[100svh] overflow-x-clip bg-[#070a11] text-white" dir="rtl">
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         {bgImage && (
           <div
@@ -191,9 +204,9 @@ export default function RoomClientWrapper({
               )}
             </div>
             <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
-              <span className="inline-flex items-center gap-1.5 text-emerald-300">
-                <span className="size-1.5 rounded-full bg-emerald-400" />
-                مباشر
+              <span className="inline-flex items-center gap-1.5 text-slate-300" aria-live="polite">
+                <span className={`size-1.5 rounded-full ${connectionMeta.color}`} />
+                {connectionMeta.label}
               </span>
               <span className="truncate font-mono" dir="ltr">{roomId.slice(0, 12)}</span>
             </div>
@@ -201,7 +214,7 @@ export default function RoomClientWrapper({
 
           <button
             type="button"
-            onClick={() => setIsSidebarOpen(true)}
+            onClick={showMembersPanel}
             className="flex min-h-11 shrink-0 cursor-pointer items-center rounded-xl border border-white/10 bg-white/[0.05] px-2.5 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
             aria-label={`عرض أعضاء الغرفة، العدد ${memberCount}`}
           >
@@ -226,10 +239,10 @@ export default function RoomClientWrapper({
           </button>
         </header>
 
-        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]" dir="ltr">
+        <div className="grid min-h-0 flex-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]" dir="ltr">
           <section className="min-w-0" dir="rtl">
             {!video ? (
-              <div className="flex min-h-[min(68svh,42rem)] items-center justify-center rounded-2xl border border-white/10 bg-[#0b101a]/90 p-5 shadow-2xl sm:p-9">
+              <div className="flex min-h-[min(46svh,26rem)] items-center justify-center rounded-2xl border border-white/10 bg-[#0b101a]/90 p-5 shadow-2xl sm:min-h-[min(56svh,34rem)] sm:p-9 lg:min-h-[min(68svh,42rem)]">
                 <div className="w-full max-w-3xl text-center">
                   <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-2xl text-red-400">
                     <i className="fa-solid fa-film" aria-hidden="true" />
@@ -280,33 +293,27 @@ export default function RoomClientWrapper({
             )}
           </section>
 
-          <aside className="min-w-0" dir="rtl">
+          <aside ref={sidebarPanelRef} className="min-w-0 scroll-mt-4 lg:sticky lg:top-4 lg:self-start" dir="rtl">
             <RoomSidebar
               roomId={roomId}
               initialPrivacy={roomData.isPrivate ?? false}
               members={roomHook.members}
               messages={roomHook.messages}
+              connectionState={roomHook.connectionState}
+              isChatHistoryLoaded={roomHook.isChatHistoryLoaded}
               sendChatMessage={roomHook.sendChatMessage}
+              deleteChatMessage={roomHook.deleteChatMessage}
+              currentUserId={currentUserId}
               isHost={isHostUser}
               kickUser={roomHook.kickUser}
               closeRoom={roomHook.closeRoom}
-              isOpen={isSidebarOpen}
-              setIsOpen={setIsSidebarOpen}
+              activeTab={activeRoomTab}
+              onActiveTabChange={setActiveRoomTab}
+              onLeaveRoom={() => router.push('/rooms')}
             />
           </aside>
         </div>
       </div>
-
-      <button
-        type="button"
-        onClick={() => setIsSidebarOpen(true)}
-        className={`fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] z-[90] flex min-h-12 cursor-pointer items-center gap-2 rounded-full bg-[#e50914] px-4 text-sm font-extrabold text-white shadow-[0_10px_35px_rgba(229,9,20,0.45)] transition hover:bg-red-700 active:scale-95 lg:hidden ${isSidebarOpen ? 'pointer-events-none translate-y-2 opacity-0' : 'opacity-100'}`}
-        aria-label="فتح دردشة الغرفة"
-      >
-        <i className="fa-solid fa-comments" aria-hidden="true" />
-        <span>الدردشة</span>
-        {roomHook.messages.length > 0 && <span className="size-2 rounded-full bg-white" aria-hidden="true" />}
-      </button>
     </div>
   );
 }
