@@ -3,6 +3,7 @@
 import { SignIn, SignUp } from "@clerk/nextjs";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getTelegramLaunchPayload } from "@/lib/telegramWebAppClient";
 
 interface CustomAuthCardProps {
   mode?: "sign-in" | "sign-up";
@@ -19,12 +20,17 @@ async function fetchWithTimeout(
   timeoutMs: number,
 ): Promise<Response> {
   const controller = new AbortController();
+  const upstreamSignal = init.signal;
+  const abortFromUpstream = () => controller.abort(upstreamSignal?.reason);
+  if (upstreamSignal?.aborted) abortFromUpstream();
+  else upstreamSignal?.addEventListener("abort", abortFromUpstream, { once: true });
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     return await fetch(input, { ...init, signal: controller.signal });
   } finally {
     window.clearTimeout(timeoutId);
+    upstreamSignal?.removeEventListener("abort", abortFromUpstream);
   }
 }
 
@@ -145,6 +151,8 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
   const [isTelegramContext, setIsTelegramContext] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const authProcessedRef = useRef(false);
+  const telegramAuthControllerRef = useRef<AbortController | null>(null);
+  const browserPreparationControllerRef = useRef<AbortController | null>(null);
   const browserPreparationRef = useRef<Promise<void> | null>(null);
 
   const processTelegramAuth = useCallback(async (payload: TelegramAuthPayload) => {
@@ -154,6 +162,9 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
     setIsOutsideTelegram(false);
     setLoading(true);
     setErrorMessage(null);
+    const operationController = new AbortController();
+    telegramAuthControllerRef.current?.abort();
+    telegramAuthControllerRef.current = operationController;
 
     try {
       const response = await fetchWithTimeout("/api/auth/telegram", {
@@ -161,6 +172,7 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
         cache: "no-store",
+        signal: operationController.signal,
         body: JSON.stringify(payload),
       }, 15_000);
       const data = await response.json().catch(() => null);
@@ -171,22 +183,18 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
 
       window.location.replace("/home?tgWebApp=true");
     } catch (error) {
+      if (operationController.signal.aborted) return;
       console.error("[Telegram Login Error]:", error);
-
-      try {
-        await fetchWithTimeout("/api/auth/logout", {
-          method: "POST",
-          credentials: "same-origin",
-        }, 4_000);
-      } catch (logoutError) {
-        console.error("[Telegram Stale Session Clear Error]:", logoutError);
-      }
 
       setErrorMessage(
         getErrorMessage(error, "تعذر التحقق من حساب تليجرام الحالي. أعد فتح التطبيق من البوت.")
       );
       authProcessedRef.current = false;
       setLoading(false);
+    } finally {
+      if (telegramAuthControllerRef.current === operationController) {
+        telegramAuthControllerRef.current = null;
+      }
     }
   }, []);
 
@@ -209,11 +217,16 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
 
     const prepareBrowserAuth = () => {
       if (!browserPreparationRef.current) {
+        const operationController = new AbortController();
+        browserPreparationControllerRef.current?.abort();
+        browserPreparationControllerRef.current = operationController;
         const sessionCheck = fetchWithTimeout("/api/auth/me", {
           credentials: "same-origin",
           cache: "no-store",
+          signal: operationController.signal,
         }, 6_000)
           .then(async (response) => {
+            if (disposed) return;
             if (!response.ok) {
               showBrowserAuth();
               return;
@@ -233,6 +246,9 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
           });
 
         browserPreparationRef.current = sessionCheck.finally(() => {
+          if (browserPreparationControllerRef.current === operationController) {
+            browserPreparationControllerRef.current = null;
+          }
           browserPreparationRef.current = null;
         });
       }
@@ -246,15 +262,7 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
         console.error("[Telegram WebApp Init Error]:", error);
       }
 
-      let initData = tg?.initData || "";
-      const unsafeUser = tg?.initDataUnsafe?.user || null;
-
-      if (!initData) {
-        initData = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("tgWebAppData") || "";
-      }
-      if (!initData) {
-        initData = new URLSearchParams(window.location.search).get("tgWebAppData") || "";
-      }
+      const { initData, unsafeUser } = getTelegramLaunchPayload();
 
       const isTelegramApp = Boolean(initData || unsafeUser);
 
@@ -285,6 +293,10 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
 
     return () => {
       disposed = true;
+      telegramAuthControllerRef.current?.abort();
+      telegramAuthControllerRef.current = null;
+      browserPreparationControllerRef.current?.abort();
+      browserPreparationControllerRef.current = null;
       window.removeEventListener("focus", handleResume);
       window.removeEventListener("pageshow", handleResume);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -306,36 +318,12 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
       className="relative min-w-0 w-full max-w-[29rem] px-px"
       aria-label={mode === "sign-in" ? "تسجيل الدخول إلى أليكس سينما" : "إنشاء حساب أليكس سينما"}
     >
-      <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-gradient-to-b from-white/25 via-white/[0.04] to-red-500/20" />
-      <div className="relative isolate rounded-[1.75rem] border border-white/15 bg-[#0b1727]/96 p-4 shadow-[0_28px_80px_rgba(0,0,0,0.58)] backdrop-blur-2xl sm:p-5">
+      <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-gradient-to-b from-white/30 via-white/[0.06] to-red-500/22" />
+      <div className="relative isolate rounded-[1.75rem] border border-white/20 bg-[#102139]/96 p-4 shadow-[0_28px_80px_rgba(0,0,0,0.5)] backdrop-blur-2xl sm:p-6">
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]">
           <div className="absolute -right-24 -top-24 size-64 rounded-full bg-red-600/15 blur-3xl" />
           <div className="absolute -bottom-28 -left-20 size-64 rounded-full bg-sky-500/10 blur-3xl" />
         </div>
-
-        <header className="relative mb-4 flex items-center justify-between gap-3 border-b border-white/10 pb-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-lg text-red-400 shadow-[0_0_30px_rgba(229,9,20,0.18)]">
-              <i className="fa-solid fa-clapperboard" aria-hidden="true" />
-            </span>
-            <div className="min-w-0 text-right">
-              <p dir="ltr" className="font-en text-[0.65rem] font-black tracking-[0.24em] text-red-400">
-                ALEX CINEMA
-              </p>
-              <p className="mt-1 truncate text-base font-black text-white">
-                {isTelegramContext
-                  ? "مزامنة حساب تليجرام"
-                  : mode === "sign-in"
-                    ? "حساب أليكس سينما"
-                    : "إنشاء حساب جديد"}
-              </p>
-            </div>
-          </div>
-          <span className="hidden items-center gap-1.5 rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-1 text-[0.62rem] font-black text-emerald-300 min-[360px]:inline-flex">
-            <i className="fa-solid fa-lock text-[0.58rem]" aria-hidden="true" />
-            دخول آمن
-          </span>
-        </header>
 
         {loading && !isOutsideTelegram ? (
           <div
@@ -353,12 +341,7 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
             </div>
             <div>
               <p className="text-sm font-black text-white sm:text-base">
-                {isTelegramContext ? "جاري مزامنة حساب تليجرام الحالي" : "جاري تجهيز تسجيل الدخول"}
-              </p>
-              <p className="mt-1.5 text-xs font-semibold leading-5 text-slate-400">
-                {isTelegramContext
-                  ? "نتحقق من بيانات التطبيق الموقعة ونحدّث الجلسة تلقائيًا."
-                  : "لحظات ونجهز لك خيارات الدخول الآمنة."}
+                {isTelegramContext ? "جاري ربط حساب تليجرام" : "جاري تجهيز صفحة الدخول"}
               </p>
             </div>
           </div>
@@ -384,7 +367,7 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
 
             <div className="my-4 flex items-center gap-3" aria-hidden="true">
               <span className="h-px flex-1 bg-white/10" />
-              <span className="text-[0.68rem] font-black tracking-wider text-slate-400">أو استخدم حساب المنصة</span>
+              <span className="text-[0.72rem] font-black tracking-wider text-slate-300">أو</span>
               <span className="h-px flex-1 bg-white/10" />
             </div>
 
@@ -406,13 +389,10 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
               />
             )}
 
-            <div className="mt-4 flex min-w-0 flex-col items-stretch gap-3 rounded-2xl border border-white/12 bg-white/[0.045] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] min-[440px]:flex-row min-[440px]:items-center min-[440px]:justify-between">
+            <div className="mt-4 flex min-w-0 flex-col items-stretch gap-3 rounded-2xl border border-white/15 bg-white/[0.065] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] min-[440px]:flex-row min-[440px]:items-center min-[440px]:justify-between">
               <div className="min-w-0 text-center min-[440px]:text-right">
                 <p className="text-sm font-black text-slate-100 min-[440px]:whitespace-nowrap">
                   {mode === "sign-in" ? "ليس لديك حساب بعد؟" : "لديك حساب بالفعل؟"}
-                </p>
-                <p className="mt-1 text-[0.68rem] font-semibold leading-5 text-slate-400">
-                  {mode === "sign-in" ? "ابدأ حسابك خلال لحظات." : "ارجع إلى حسابك بأمان."}
                 </p>
               </div>
               <Link
@@ -440,10 +420,6 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
           </div>
         )}
 
-        <div className="relative mt-4 flex items-center justify-center gap-2 border-t border-white/10 pt-3 text-[0.68rem] font-bold text-slate-400">
-          <i className="fa-solid fa-shield-halved text-emerald-400" aria-hidden="true" />
-          <span>دخول محمي وتبديل آمن بين الحسابات</span>
-        </div>
       </div>
     </section>
   );

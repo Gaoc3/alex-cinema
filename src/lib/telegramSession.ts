@@ -6,11 +6,16 @@ export const TELEGRAM_SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 const SESSION_ISSUER = "alex-cinema";
 const SESSION_AUDIENCE = "telegram-session";
 const TELEGRAM_SUBJECT_PATTERN = /^telegram_[1-9]\d*$/;
+const FORBIDDEN_SESSION_SECRETS = new Set([
+  "replace_with_a_long_random_server_only_secret",
+  "change_me",
+  "changeme",
+]);
 
 function getSessionKey(): Uint8Array {
   const secret = process.env.TELEGRAM_SESSION_SECRET;
 
-  if (!secret || secret.length < 32) {
+  if (!secret || secret.length < 32 || FORBIDDEN_SESSION_SECRETS.has(secret.toLowerCase())) {
     throw new Error("TELEGRAM_SESSION_SECRET must be a server-only secret of at least 32 characters.");
   }
 
@@ -37,8 +42,10 @@ export async function createTelegramSessionToken(payload: { clerkId: string }): 
 }
 
 export async function parseTelegramSessionToken(token: string): Promise<{ clerkId: string } | null> {
+  const sessionKey = getSessionKey();
+
   try {
-    const { payload } = await jwtVerify(token, getSessionKey(), {
+    const { payload } = await jwtVerify(token, sessionKey, {
       algorithms: ["HS256"],
       issuer: SESSION_ISSUER,
       audience: SESSION_AUDIENCE,

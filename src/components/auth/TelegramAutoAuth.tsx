@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useUnifiedAuth } from "@/components/auth/UnifiedAuthProvider";
+import { getTelegramLaunchPayload } from "@/lib/telegramWebAppClient";
 
 async function fetchWithTimeout(
   input: RequestInfo | URL,
@@ -10,12 +11,17 @@ async function fetchWithTimeout(
   timeoutMs: number,
 ): Promise<Response> {
   const controller = new AbortController();
+  const upstreamSignal = init.signal;
+  const abortFromUpstream = () => controller.abort(upstreamSignal?.reason);
+  if (upstreamSignal?.aborted) abortFromUpstream();
+  else upstreamSignal?.addEventListener("abort", abortFromUpstream, { once: true });
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     return await fetch(input, { ...init, signal: controller.signal });
   } finally {
     window.clearTimeout(timeoutId);
+    upstreamSignal?.removeEventListener("abort", abortFromUpstream);
   }
 }
 
@@ -65,6 +71,7 @@ export default function TelegramAutoAuth() {
     let disposed = false;
     let syncInFlight = false;
     let navigationPending = false;
+    const operationController = new AbortController();
 
     const initialTg = window.Telegram?.WebApp;
     const isImmersiveRoute =
@@ -132,20 +139,7 @@ export default function TelegramAutoAuth() {
     if (ownsTelegramAuth) return;
 
     const readLaunchPayload = () => {
-      const tg = window.Telegram?.WebApp;
-      let initData = tg?.initData || "";
-      const unsafeUser = tg?.initDataUnsafe?.user || null;
-
-      if (!initData) {
-        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-        initData = hashParams.get("tgWebAppData") || "";
-      }
-      if (!initData) {
-        const searchParams = new URLSearchParams(window.location.search.replace(/^\?/, ""));
-        initData = searchParams.get("tgWebAppData") || "";
-      }
-
-      return { initData, unsafeUser };
+      return getTelegramLaunchPayload();
     };
 
     const syncTelegramAccount = async () => {
@@ -165,6 +159,7 @@ export default function TelegramAutoAuth() {
           const meResponse = await fetchWithTimeout("/api/auth/me", {
             cache: "no-store",
             credentials: "same-origin",
+            signal: operationController.signal,
           }, 6_000);
           const meData = meResponse.ok
             ? await meResponse.json()
@@ -186,6 +181,7 @@ export default function TelegramAutoAuth() {
           headers: { "Content-Type": "application/json" },
           credentials: "same-origin",
           cache: "no-store",
+          signal: operationController.signal,
           body: JSON.stringify({
             initData,
             telegramData: unsafeUser,
@@ -218,27 +214,10 @@ export default function TelegramAutoAuth() {
 
         await refetchUser();
       } catch (error) {
+        if (disposed || operationController.signal.aborted) return;
         console.error("[Telegram Account Sync Error]:", error);
-
-        const staleTelegramSession = Boolean(
-          loggedInTgId && currentTgUserId && loggedInTgId !== currentTgUserId
-        );
-
-        if (staleTelegramSession) {
-          try {
-            await fetchWithTimeout("/api/auth/logout", {
-              method: "POST",
-              credentials: "same-origin",
-            }, 4_000);
-          } catch (logoutError) {
-            console.error("[Telegram Stale Session Clear Error]:", logoutError);
-          }
-
-          if (!disposed) {
-            navigationPending = true;
-            window.location.replace("/sign-in?error=tg_account_sync");
-          }
-        }
+        navigationPending = true;
+        window.location.replace("/tg-app?sync=retry");
       } finally {
         syncInFlight = false;
       }
@@ -267,6 +246,7 @@ export default function TelegramAutoAuth() {
 
     return () => {
       disposed = true;
+      operationController.abort();
       window.removeEventListener("focus", handleResume);
       window.removeEventListener("pageshow", handleResume);
       document.removeEventListener("visibilitychange", handleVisibilityChange);

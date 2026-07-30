@@ -17,68 +17,63 @@ export interface AuthUserInfo {
 
 export async function getAuthUser(): Promise<AuthUserInfo | null> {
   // 1. Try Telegram Cookie First
-  try {
-    const cookieStore = await cookies();
-    const tgCookie = cookieStore.get(TELEGRAM_SESSION_COOKIE)?.value;
-    if (tgCookie) {
-      const parsed = await parseTelegramSessionToken(tgCookie);
-      if (parsed?.clerkId) {
-        const dbUser = await prisma.user.findUnique({
-          where: { clerkId: parsed.clerkId },
-        });
-
-        if (dbUser) {
-          return {
-            id: dbUser.id,
-            clerkId: dbUser.clerkId,
-            name: dbUser.name || "Telegram User",
-            imageUrl: dbUser.imageUrl,
-          };
-        }
-      }
-    }
-  } catch (e) {
-    console.error("[getAuthUser] Telegram Cookie Auth Error:", e);
-  }
-
-  // 2. Try Clerk Auth
-  try {
-    const authObj = await auth();
-    if (authObj && authObj.userId) {
-      let dbUser = await prisma.user.findUnique({
-        where: { clerkId: authObj.userId },
+  const cookieStore = await cookies();
+  const tgCookie = cookieStore.get(TELEGRAM_SESSION_COOKIE)?.value;
+  if (tgCookie) {
+    const parsed = await parseTelegramSessionToken(tgCookie);
+    if (parsed?.clerkId) {
+      const dbUser = await prisma.user.findUnique({
+        where: { clerkId: parsed.clerkId },
       });
-
-      if (!dbUser) {
-        const user = await currentUser();
-        if (user) {
-          const name = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "User";
-          dbUser = await prisma.user.upsert({
-            where: { clerkId: authObj.userId },
-            create: {
-              clerkId: authObj.userId,
-              name,
-              imageUrl: user.imageUrl,
-            },
-            update: {
-              name,
-              imageUrl: user.imageUrl,
-            },
-          });
-        }
-      }
 
       if (dbUser) {
         return {
           id: dbUser.id,
           clerkId: dbUser.clerkId,
-          name: dbUser.name || "User",
+          name: dbUser.name || "Telegram User",
           imageUrl: dbUser.imageUrl,
         };
       }
+
+      throw new Error("Telegram session references a missing user.");
     }
-  } catch (e) {
-    console.error("[getAuthUser] Clerk Auth Error:", e);
+  }
+
+  // 2. Try Clerk Auth. Infrastructure failures intentionally propagate so a
+  // caller never mistakes an unknown identity for an anonymous session.
+  const authObj = await auth();
+  if (authObj && authObj.userId) {
+    let dbUser = await prisma.user.findUnique({
+      where: { clerkId: authObj.userId },
+    });
+
+    if (!dbUser) {
+      const user = await currentUser();
+      if (user) {
+        const name = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "User";
+        dbUser = await prisma.user.upsert({
+          where: { clerkId: authObj.userId },
+          create: {
+            clerkId: authObj.userId,
+            name,
+            imageUrl: user.imageUrl,
+          },
+          update: {
+            name,
+            imageUrl: user.imageUrl,
+          },
+        });
+      }
+    }
+
+    if (dbUser) {
+      return {
+        id: dbUser.id,
+        clerkId: dbUser.clerkId,
+        name: dbUser.name || "User",
+        imageUrl: dbUser.imageUrl,
+      };
+    }
   }
 
   return null;

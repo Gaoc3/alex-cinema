@@ -7,6 +7,7 @@ import FavoritesList from "./FavoritesList";
 import MyRoomsList from "./profile/MyRoomsList";
 import Link from "next/link";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 const HeartIcon = () => <i className="fa-solid fa-heart text-pink-500"></i>;
 const FireIcon = () => <i className="fa-solid fa-fire text-purple-400"></i>;
@@ -17,6 +18,7 @@ export default function UserNav() {
   const { user, isLoaded, isTelegramUser, signOut } = useUnifiedAuth();
   const { isSignedIn: isClerkSignedIn } = useUser();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [activeModal, setActiveModal] = useState<"favorites" | "my-rooms" | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -176,11 +178,22 @@ export default function UserNav() {
 
             {!isTelegramWebApp && (
               <button
-                onClick={signOut}
-                className="flex items-center gap-3 w-full text-right px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all mt-2 border-t border-white/10 pt-2.5 cursor-pointer"
+                type="button"
+                disabled={isSigningOut}
+                onClick={async () => {
+                  if (isSigningOut) return;
+                  setIsSigningOut(true);
+                  try {
+                    await signOut();
+                  } catch (error) {
+                    setIsSigningOut(false);
+                    toast.error(error instanceof Error ? error.message : "تعذر تسجيل الخروج.");
+                  }
+                }}
+                className="flex items-center gap-3 w-full text-right px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all mt-2 border-t border-white/10 pt-2.5 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <LogOutIcon />
-                <span>تسجيل الخروج</span>
+                <span>{isSigningOut ? "جاري تسجيل الخروج..." : "تسجيل الخروج"}</span>
               </button>
             )}
           </div>

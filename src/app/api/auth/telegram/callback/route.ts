@@ -73,6 +73,7 @@ export async function GET(request: NextRequest) {
         Authorization: `Basic ${basicCredentials}`,
       },
       cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
       body: new URLSearchParams({
         grant_type: "authorization_code",
         code,

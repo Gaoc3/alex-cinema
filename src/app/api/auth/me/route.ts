@@ -36,8 +36,8 @@ export async function GET() {
   } catch (error) {
     console.error('[API /api/auth/me Error]:', error);
     return NextResponse.json(
-      { authenticated: false, user: null },
-      { headers: noStoreHeaders }
+      { authenticated: false, user: null, error: 'تعذر التحقق من الجلسة.' },
+      { status: 503, headers: noStoreHeaders }
     );
   }
 }

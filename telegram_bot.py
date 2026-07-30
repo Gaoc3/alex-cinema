@@ -2,33 +2,44 @@ import logging
 import os
 import sys
 from pathlib import Path
-import requests
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
-from telegram.ext import Application, CommandHandler, ContextTypes
+from urllib.parse import urlparse
 
-# UTF-8 Encoding Fix for Windows Console & Linux Terminals
+from telegram import (
+    BotCommand,
+    BotCommandScopeAllPrivateChats,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    MenuButtonDefault,
+    MenuButtonWebApp,
+    Update,
+    WebAppInfo,
+)
+from telegram.ext import Application, CommandHandler, ContextTypes, filters
+
+
 if sys.platform.startswith("win"):
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
 
-# Configure Logging with Timestamps and File Output
 logging.basicConfig(
     format="%(asctime)s - [%(levelname)s] - %(name)s - %(message)s",
     level=logging.INFO,
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler("/root/.pm2/logs/telegram_bot_custom.log", encoding="utf-8", mode="a")
-    ]
+    handlers=[logging.StreamHandler(sys.stdout)],
 )
 logger = logging.getLogger("AleXCinemaBot")
+BOT_ENV_KEYS = {
+    "TELEGRAM_BOT_TOKEN",
+    "TELEGRAM_WEB_APP_URL",
+    "TELEGRAM_HOME_URL",
+}
 
-# python-telegram-bot uses HTTPX internally. Its INFO logs include the full Bot API
-# URL, which contains the bot token, so keep transport logging at warning level.
+# HTTP transport logs can contain the Bot API URL, which includes the bot token.
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
+
 def load_project_env() -> None:
-    """Load server-side bot settings when PM2 starts outside the project directory."""
+    """Load the project environment when PM2 starts from another directory."""
     env_path = Path(__file__).resolve().with_name(".env")
     if not env_path.is_file():
         return
@@ -40,91 +51,171 @@ def load_project_env() -> None:
 
         key, value = line.split("=", 1)
         key = key.strip()
+        if key not in BOT_ENV_KEYS:
+            continue
         value = value.strip()
         if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
             value = value[1:-1]
         if key:
             os.environ.setdefault(key, value)
 
+
+def require_https_url(env_name: str, default: str) -> str:
+    value = os.environ.get(env_name, default).strip()
+    parsed = urlparse(value)
+    if parsed.scheme != "https" or not parsed.netloc:
+        raise RuntimeError(f"{env_name} must be a valid HTTPS URL")
+    return value
+
+
 load_project_env()
 
-# Dedicated Telegram WebApp Routes & Bot Config
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 if not BOT_TOKEN:
     raise RuntimeError("TELEGRAM_BOT_TOKEN is required")
 
-WEB_APP_URL = os.environ.get("TELEGRAM_WEB_APP_URL", "https://cinax.live/tg-app")
-DIRECT_HOME_URL = os.environ.get("TELEGRAM_HOME_URL", "https://cinax.live/home")
+WEB_APP_URL = require_https_url("TELEGRAM_WEB_APP_URL", "https://cinax.live/tg-app")
+DIRECT_HOME_URL = require_https_url("TELEGRAM_HOME_URL", "https://cinax.live/home")
+
+
+def web_app_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    text="🎬 فتح أليكس سينما",
+                    web_app=WebAppInfo(url=WEB_APP_URL),
+                )
+            ],
+            [InlineKeyboardButton(text="🌐 فتح الموقع", url=DIRECT_HOME_URL)],
+        ]
+    )
+
+
+async def send_web_app(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    message = update.effective_message
+    if message is None:
+        return
+
+    user = update.effective_user
+    first_name = user.first_name.strip() if user and user.first_name else "بك"
+    logger.info("WebApp requested")
+
+    # Remove the old per-chat override created by previous bot versions so the
+    # globally configured WebApp menu button becomes effective.
+    if update.effective_chat:
+        try:
+            await context.bot.set_chat_menu_button(
+                chat_id=update.effective_chat.id,
+                menu_button=MenuButtonDefault(),
+            )
+        except Exception as error:
+            logger.warning("Could not reset legacy chat menu: %s", type(error).__name__)
+
+    await message.reply_text(
+        f"أهلًا {first_name} 👋\nافتح المنصة من الزر أدناه.",
+        reply_markup=web_app_keyboard(),
+    )
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send welcoming message with Telegram WebApp Button"""
-    user = update.effective_user
-    first_name = user.first_name if user else "مستخدم"
-    user_id = user.id if user else "Unknown"
-    
-    logger.info(f"Received /start command from User ID: {user_id} ({first_name})")
-    
-    welcome_text = (
-        f"أهلاً بك يا {first_name} في منصة **AleX Cinema**! 🎬🍿\n\n"
-        f"اضغط على الزر أدناه لفتح المنصة والتسجيل التلقائي المباشر بحساب تليجرام الخاص بك."
+    await send_web_app(update, context)
+
+
+async def app_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await send_web_app(update, context)
+
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    del context
+    message = update.effective_message
+    if message is None:
+        return
+
+    await message.reply_text(
+        "افتح المنصة من الزر أدناه.\nإذا بدّلت حساب تليجرام، أغلق الويب آب وافتحه من الحساب الجديد.",
+        reply_markup=web_app_keyboard(),
     )
 
-    keyboard = [
-        [
-            InlineKeyboardButton(
-                text="🎬 فتح منصة AleX Cinema (دخول مباشر)",
-                web_app=WebAppInfo(url=WEB_APP_URL),
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text="🌐 التوجه للموقع بالمتصفح",
-                url=DIRECT_HOME_URL,
-            )
-        ],
+
+async def configure_bot(application: Application) -> None:
+    """Configure Telegram's command list and persistent WebApp menu button."""
+    commands = [
+        BotCommand("start", "فتح أليكس سينما"),
+        BotCommand("app", "فتح المنصة"),
+        BotCommand("help", "مساعدة"),
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
 
-    # Force update chat menu button for this user
-    try:
-        chat_id = update.effective_chat.id if update.effective_chat else None
-        if chat_id:
-            res = requests.post(
-                f"https://api.telegram.org/bot{BOT_TOKEN}/setChatMenuButton",
-                json={
-                    "chat_id": chat_id,
-                    "menu_button": {
-                        "type": "web_app",
-                        "text": "🎬 AleX Cinema",
-                        "web_app": {"url": WEB_APP_URL}
-                    }
-                },
-                timeout=10
+    settings = [
+        (
+            "default command cleanup",
+            lambda: application.bot.delete_my_commands(),
+        ),
+        (
+            "commands",
+            lambda: application.bot.set_my_commands(
+                commands,
+                scope=BotCommandScopeAllPrivateChats(),
+            ),
+        ),
+        (
+            "menu",
+            lambda: application.bot.set_chat_menu_button(
+                menu_button=MenuButtonWebApp(
+                    text="فتح المنصة",
+                    web_app=WebAppInfo(url=WEB_APP_URL),
+                )
+            ),
+        ),
+        (
+            "short description",
+            lambda: application.bot.set_my_short_description(
+                "شاهد أليكس سينما من داخل تليجرام."
+            ),
+        ),
+        (
+            "description",
+            lambda: application.bot.set_my_description(
+                "افتح منصة أليكس سينما وسجّل الدخول تلقائيًا بحساب تليجرام الحالي."
+            ),
+        ),
+    ]
+
+    configured = 0
+    for setting_name, apply_setting in settings:
+        try:
+            await apply_setting()
+            configured += 1
+        except Exception as error:
+            logger.warning(
+                "Optional bot %s configuration failed: %s",
+                setting_name,
+                type(error).__name__,
             )
-            logger.info(f"setChatMenuButton response for {chat_id}: {res.status_code}")
-    except Exception as e:
-        logger.error(f"Error setting chat menu button for user {user_id}: {e}")
 
-    await update.message.reply_text(
-        welcome_text,
-        reply_markup=reply_markup,
-        parse_mode="Markdown"
-    )
+    logger.info("Configured %s/%s optional bot settings", configured, len(settings))
+
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Log Errors caused by Updates."""
-    logger.error(f"Update '{update}' caused error '{context.error}'", exc_info=context.error)
+    del update
+    error = context.error
+    exc_info = (type(error), error, error.__traceback__) if error else None
+    logger.error("Unhandled bot update error: %s", error, exc_info=exc_info)
+
 
 def main() -> None:
-    """Start the bot."""
-    logger.info("Starting AleX Cinema Telegram WebApp Bot...")
-    app = Application.builder().token(BOT_TOKEN).build()
+    logger.info("Starting AleX Cinema Telegram WebApp bot")
+    app = Application.builder().token(BOT_TOKEN).post_init(configure_bot).build()
 
-    app.add_handler(CommandHandler("start", start))
+    private_chats = filters.ChatType.PRIVATE
+    app.add_handler(CommandHandler("start", start, filters=private_chats))
+    app.add_handler(CommandHandler("app", app_command, filters=private_chats))
+    app.add_handler(CommandHandler("help", help_command, filters=private_chats))
     app.add_error_handler(error_handler)
 
-    logger.info("Bot is listening for events & updates...")
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    logger.info("Bot is listening for messages")
+    app.run_polling(allowed_updates=["message"])
+
 
 if __name__ == "__main__":
     main()

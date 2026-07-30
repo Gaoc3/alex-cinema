@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyTelegramWebAppData } from "@/lib/telegramAuth";
 import {
   createTelegramSessionToken,
+  parseTelegramSessionToken,
   TELEGRAM_SESSION_COOKIE,
   TELEGRAM_SESSION_MAX_AGE_SECONDS,
 } from "@/lib/telegramSession";
@@ -11,14 +12,28 @@ export const dynamic = "force-dynamic";
 
 const noStoreHeaders = { "Cache-Control": "private, no-store, max-age=0" };
 
-function errorResponse(message: string, status: number): NextResponse {
-  return NextResponse.json({ success: false, error: message }, {
-    status,
-    headers: noStoreHeaders,
+function clearTelegramSessionCookie(response: NextResponse): void {
+  response.cookies.set(TELEGRAM_SESSION_COOKIE, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    expires: new Date(0),
   });
 }
 
-export async function POST(request: Request) {
+function errorResponse(message: string, status: number, clearSession = false): NextResponse {
+  const response = NextResponse.json({ success: false, error: message }, {
+    status,
+    headers: noStoreHeaders,
+  });
+  if (clearSession) clearTelegramSessionCookie(response);
+  return response;
+}
+
+export async function POST(request: NextRequest) {
+  let verifiedAccountChanged = false;
+
   try {
     const expectedOrigin = new URL(process.env.APP_ORIGIN || request.url).origin;
     const requestOrigin = request.headers.get("origin");
@@ -61,6 +76,14 @@ export async function POST(request: Request) {
     }
 
     const clerkId = `telegram_${telegramUser.id}`;
+    const currentSessionToken = request.cookies.get(TELEGRAM_SESSION_COOKIE)?.value;
+    if (currentSessionToken) {
+      const currentSession = await parseTelegramSessionToken(currentSessionToken);
+      verifiedAccountChanged = Boolean(
+        currentSession?.clerkId && currentSession.clerkId !== clerkId,
+      );
+    }
+
     const name = `${telegramUser.first_name} ${telegramUser.last_name}`.trim()
       || telegramUser.username
       || `User ${telegramUser.id}`;
@@ -96,6 +119,10 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     console.error("[Telegram Mini App Auth Error]:", error);
-    return errorResponse("حدث خطأ أثناء معالجة تسجيل الدخول عبر تليجرام.", 500);
+    return errorResponse(
+      "حدث خطأ أثناء معالجة تسجيل الدخول عبر تليجرام.",
+      500,
+      verifiedAccountChanged,
+    );
   }
 }

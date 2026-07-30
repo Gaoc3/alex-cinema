@@ -1,120 +1,159 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getTelegramLaunchPayload } from "@/lib/telegramWebAppClient";
+
+const TELEGRAM_BOT_URL =
+  process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/AleXCinemaBot?start=webapp";
 
 export default function TgAppPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const authenticationInFlightRef = useRef(false);
+  const authenticationControllerRef = useRef<AbortController | null>(null);
+  const disposedRef = useRef(false);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const authenticateCurrentTelegramAccount = useCallback(async () => {
+    if (authenticationInFlightRef.current || disposedRef.current) return;
 
-    let disposed = false;
+    const { initData } = getTelegramLaunchPayload();
+    if (!initData) {
+      setErrorMessage("افتح التطبيق من بوت أليكس سينما داخل تليجرام.");
+      return;
+    }
 
-    // Set persistent session flag for Telegram WebApp safe area styling
+    authenticationInFlightRef.current = true;
+    setErrorMessage(null);
+
     try {
       sessionStorage.setItem("isTgWebApp", "true");
       document.body.classList.add("is-telegram-webapp");
       document.documentElement.classList.add("is-telegram-webapp");
-    } catch {}
 
-    const tg = window.Telegram?.WebApp;
-    if (tg) {
+      const controller = new AbortController();
+      authenticationControllerRef.current = controller;
+      const timeoutId = window.setTimeout(() => controller.abort(), 15_000);
+      let response: Response;
+
       try {
-        tg.ready();
-        tg.expand();
-        if (tg.isVersionAtLeast?.("6.1")) {
-          tg.setHeaderColor?.("#050505");
-          tg.setBackgroundColor?.("#050505");
-        }
-      } catch {}
-    }
-
-    let initData = tg?.initData || "";
-    const unsafeUser = tg?.initDataUnsafe?.user || null;
-
-    if (!initData) {
-      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-      initData = hashParams.get("tgWebAppData") || "";
-    }
-    if (!initData) {
-      const searchParams = new URLSearchParams(window.location.search.replace(/^\?/, ""));
-      initData = searchParams.get("tgWebAppData") || "";
-    }
-
-    const authenticateCurrentTelegramAccount = async () => {
-      try {
-        const response = await fetch("/api/auth/telegram", {
+        response = await fetch("/api/auth/telegram", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "same-origin",
           cache: "no-store",
-          body: JSON.stringify({
-            initData,
-            telegramData: unsafeUser,
-          }),
+          signal: controller.signal,
+          body: JSON.stringify({ initData }),
         });
-        const data = await response.json().catch(() => null);
-
-        if (!response.ok || !data?.success) {
-          throw new Error(data?.error || "Telegram authentication failed.");
-        }
-
-        if (!disposed) {
-          window.location.replace("/home?tgWebApp=true");
-        }
-      } catch (error) {
-        console.error("[TgApp Direct Auth Error]:", error);
-
-        // Never continue with the previous Telegram account after a failed switch.
-        try {
-          await fetch("/api/auth/logout", {
-            method: "POST",
-            credentials: "same-origin",
-          });
-        } catch (logoutError) {
-          console.error("[TgApp Stale Session Clear Error]:", logoutError);
-        }
-
-        if (!disposed) {
-          setErrorMessage("تعذر التحقق من حساب تليجرام الحالي. يرجى إعادة فتح التطبيق من البوت.");
-        }
+      } finally {
+        window.clearTimeout(timeoutId);
       }
-    };
 
-    void authenticateCurrentTelegramAccount();
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || "تعذر تسجيل الدخول عبر تليجرام.");
+      }
 
-    return () => {
-      disposed = true;
-    };
+      if (!disposedRef.current) {
+        window.location.replace("/home?tgWebApp=true");
+      }
+    } catch (error) {
+      console.error("[TgApp Direct Auth Error]:", error);
+
+      if (!disposedRef.current) {
+        const timedOut = error instanceof DOMException && error.name === "AbortError";
+        setErrorMessage(
+          timedOut
+            ? "استغرق الاتصال وقتًا طويلًا. حاول مجددًا."
+            : "تعذر ربط حساب تليجرام الحالي. أعد فتح التطبيق من البوت.",
+        );
+      }
+    } finally {
+      authenticationControllerRef.current = null;
+      authenticationInFlightRef.current = false;
+    }
   }, []);
 
+  useEffect(() => {
+    disposedRef.current = false;
+    const tg = window.Telegram?.WebApp;
+
+    try {
+      tg?.ready();
+      tg?.expand();
+      if (tg?.isVersionAtLeast?.("6.1")) {
+        tg.setHeaderColor?.("#07111f");
+        tg.setBackgroundColor?.("#07111f");
+      }
+      if (tg?.isVersionAtLeast?.("7.10")) {
+        tg.setBottomBarColor?.("#07111f");
+      }
+    } catch (error) {
+      console.error("[TgApp Init Error]:", error);
+    }
+
+    const handleResume = () => {
+      void authenticateCurrentTelegramAccount();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") handleResume();
+    };
+
+    window.addEventListener("focus", handleResume);
+    window.addEventListener("pageshow", handleResume);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    tg?.onEvent?.("activated", handleResume);
+
+    const initialSyncId = window.setTimeout(handleResume, 0);
+
+    return () => {
+      disposedRef.current = true;
+      authenticationControllerRef.current?.abort();
+      authenticationControllerRef.current = null;
+      window.clearTimeout(initialSyncId);
+      window.removeEventListener("focus", handleResume);
+      window.removeEventListener("pageshow", handleResume);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      tg?.offEvent?.("activated", handleResume);
+    };
+  }, [authenticateCurrentTelegramAccount]);
+
   return (
-    <div className="w-full min-h-screen bg-[#0b0f19] text-white flex flex-col items-center justify-center p-4 dir-rtl">
-      <div className="flex flex-col items-center gap-4 bg-[#131b2e] border-2 border-white/20 p-8 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-center max-w-sm w-full">
-        <h2 className="text-2xl font-black text-white tracking-wide">
-          ALEX <span className="text-[#e50914]">CINEMA</span>
-        </h2>
+    <main
+      dir="rtl"
+      className="flex min-h-[100svh] w-full items-center justify-center bg-[#07111f] p-4 pt-[max(1rem,env(safe-area-inset-top))] text-white"
+    >
+      <section className="flex w-full max-w-sm flex-col items-center gap-5 rounded-3xl border border-white/15 bg-[#102139]/95 p-6 text-center shadow-[0_24px_70px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:p-8">
+        <h1 dir="ltr" className="font-en text-xl font-black tracking-[0.12em] text-white sm:text-2xl">
+          ALEX <span className="text-[#f21b26]">CINEMA</span>
+        </h1>
+
         {errorMessage ? (
           <>
-            <i className="fa-solid fa-triangle-exclamation text-3xl text-red-400"></i>
-            <p className="text-sm font-bold text-red-200 leading-7">{errorMessage}</p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="w-full rounded-xl bg-[#e50914] px-4 py-3 text-sm font-black text-white transition hover:bg-red-700 active:scale-[0.98]"
-            >
-              إعادة المحاولة
-            </button>
+            <i className="fa-solid fa-circle-exclamation text-3xl text-red-400" aria-hidden="true" />
+            <p className="text-sm font-bold leading-7 text-red-100">{errorMessage}</p>
+            <div className="grid w-full gap-3">
+              <button
+                type="button"
+                onClick={() => void authenticateCurrentTelegramAccount()}
+                className="w-full rounded-xl bg-[#e50914] px-4 py-3 text-sm font-black text-white transition hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 active:scale-[0.98]"
+              >
+                إعادة المحاولة
+              </button>
+              <Link
+                href={TELEGRAM_BOT_URL}
+                className="w-full rounded-xl border border-white/15 bg-white/[0.07] px-4 py-3 text-sm font-black text-slate-100 transition hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+              >
+                فتح البوت
+              </Link>
+            </div>
           </>
         ) : (
           <>
-            <div className="w-10 h-10 border-4 border-[#e50914] border-t-transparent rounded-full animate-spin my-2"></div>
-            <p className="text-sm font-bold text-gray-200">
-              جاري فتح المنصة وحفظ معلومات الحساب...
-            </p>
+            <div className="size-11 animate-spin rounded-full border-4 border-red-500/25 border-t-[#e50914] motion-reduce:animate-none" />
+            <p className="text-sm font-bold text-slate-100">جاري فتح المنصة...</p>
           </>
         )}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

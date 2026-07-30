@@ -50,6 +50,8 @@ testsprite_tests\tmp\config.json
 /scratch/
 
 # one-off diagnostics and deployment artifacts
+__pycache__/
+*.py[cod]
 /*.py
 !/telegram_bot.py
 /*.log

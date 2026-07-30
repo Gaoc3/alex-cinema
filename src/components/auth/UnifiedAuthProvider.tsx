@@ -36,6 +36,8 @@ interface UnifiedAuthContextType {
   refetchUser: () => Promise<void>;
 }
 
+type TelegramSessionState = "loading" | "authenticated" | "anonymous" | "error";
+
 const UnifiedAuthContext = createContext<UnifiedAuthContextType>({
   user: null,
   isSignedIn: false,
@@ -50,8 +52,10 @@ export function UnifiedAuthProvider({ children }: { children: React.ReactNode })
   const { signOut: clerkSignOut } = useClerk();
 
   const [tgUser, setTgUser] = useState<UnifiedUser | null>(null);
-  const [isTgLoaded, setIsTgLoaded] = useState(false);
+  const [tgSessionState, setTgSessionState] = useState<TelegramSessionState>("loading");
+  const [tgRetryVersion, setTgRetryVersion] = useState(0);
   const fetchRequestIdRef = useRef(0);
+  const retryCountRef = useRef(0);
 
   const fetchTgUser = useCallback(async () => {
     const requestId = ++fetchRequestIdRef.current;
@@ -65,16 +69,19 @@ export function UnifiedAuthProvider({ children }: { children: React.ReactNode })
 
       if (data?.authenticated && data?.user?.authProvider === "telegram") {
         setTgUser(data.user);
+        setTgSessionState("authenticated");
       } else {
         setTgUser(null);
+        setTgSessionState("anonymous");
       }
+      retryCountRef.current = 0;
     } catch {
       if (requestId !== fetchRequestIdRef.current) return;
-      setTgUser(null);
-    } finally {
-      if (requestId === fetchRequestIdRef.current) {
-        setIsTgLoaded(true);
-      }
+      // Keep the last confirmed Telegram identity and never fall back to a
+      // different provider while the server-side identity is unknown.
+      setTgSessionState("error");
+      retryCountRef.current += 1;
+      setTgRetryVersion((version) => version + 1);
     }
   }, []);
 
@@ -86,25 +93,46 @@ export function UnifiedAuthProvider({ children }: { children: React.ReactNode })
     return () => window.clearTimeout(timeoutId);
   }, [fetchTgUser]);
 
-  const signOut = useCallback(async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch {}
+  useEffect(() => {
+    if (tgSessionState !== "error") return;
 
-    try {
-      if (isClerkSignedIn) {
+    const retryDelay = Math.min(30_000, 1_000 * (2 ** Math.min(retryCountRef.current - 1, 5)));
+    const retryId = window.setTimeout(() => {
+      void fetchTgUser();
+    }, retryDelay);
+
+    return () => window.clearTimeout(retryId);
+  }, [fetchTgUser, tgRetryVersion, tgSessionState]);
+
+  const signOut = useCallback(async () => {
+    const logoutResponse = await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    if (!logoutResponse.ok) {
+      throw new Error("تعذر تسجيل الخروج. حاول مجددًا.");
+    }
+
+    if (isClerkSignedIn) {
+      try {
         await clerkSignOut();
+      } catch {
+        await fetchTgUser();
+        throw new Error("تعذر إنهاء جلسة الحساب. حاول مجددًا.");
       }
-    } catch {}
+    }
 
     setTgUser(null);
+    setTgSessionState("anonymous");
     window.location.href = "/";
-  }, [isClerkSignedIn, clerkSignOut]);
+  }, [isClerkSignedIn, clerkSignOut, fetchTgUser]);
 
-  // Derived state: User is signed in if Telegram cookie is valid OR Clerk is signed in
+  // Clerk is only eligible after the server has confirmed that no Telegram
+  // session is active. This keeps client and API identity selection aligned.
   const activeUser: UnifiedUser | null = tgUser
     ? tgUser
-    : isClerkSignedIn && clerkUser
+    : tgSessionState === "anonymous" && isClerkSignedIn && clerkUser
     ? {
         id: clerkUser.id,
         clerkId: clerkUser.id,
@@ -114,7 +142,7 @@ export function UnifiedAuthProvider({ children }: { children: React.ReactNode })
     : null;
 
   const isSignedIn = Boolean(activeUser);
-  const isLoaded = isTgLoaded && isClerkLoaded;
+  const isLoaded = (tgSessionState === "authenticated" || tgSessionState === "anonymous") && isClerkLoaded;
   const isTelegramUser = Boolean(tgUser);
 
   return (
