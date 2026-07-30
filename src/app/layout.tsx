@@ -11,6 +11,7 @@ import ClientMainWrapper from "@/components/ClientMainWrapper";
 import ConditionalFooter from "@/components/ConditionalFooter";
 import TelegramAutoAuth from "@/components/auth/TelegramAutoAuth";
 import { UnifiedAuthProvider } from "@/components/auth/UnifiedAuthProvider";
+import ImageRecovery from "@/components/ImageRecovery";
 
 import { ClerkProvider } from '@clerk/nextjs'
 import { arSA } from '@clerk/localizations'
@@ -61,6 +62,7 @@ export default function RootLayout({
       <body className="antialiased min-h-screen font-sans bg-black" suppressHydrationWarning>
         <UnifiedAuthProvider>
           <TelegramAutoAuth />
+          <ImageRecovery />
           <Toaster 
             position="top-center" 
             reverseOrder={false}
