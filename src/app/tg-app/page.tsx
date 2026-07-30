@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getTelegramLaunchPayload } from "@/lib/telegramWebAppClient";
 
 const TELEGRAM_BOT_URL =
-  process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/AleXCinemaBot?start=webapp";
+  process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/outhcinax_bot?start=webapp";
 
 export default function TgAppPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
