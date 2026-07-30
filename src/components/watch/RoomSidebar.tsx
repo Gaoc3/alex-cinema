@@ -274,6 +274,7 @@ export default function RoomSidebar({
       if (result.ok) {
         setInputText('');
         setReplyingTo(null);
+        onActiveTabChange('chat');
         window.requestAnimationFrame(() => scrollToLatest('smooth'));
       } else {
         toast.error(result.error || 'تعذر إرسال الرسالة');
@@ -515,7 +516,7 @@ export default function RoomSidebar({
             role="region"
             aria-label="الدردشة"
           >
-            <div className="relative min-h-0 flex-1">
+            <div className="relative min-h-0 flex-1 overflow-hidden bg-[#090e17]">
               <div
                 ref={chatScrollRef}
                 onScroll={handleChatScroll}
@@ -523,7 +524,8 @@ export default function RoomSidebar({
                 aria-label="رسائل الغرفة"
                 aria-live="polite"
                 aria-relevant="additions text"
-                className="custom-scrollbar absolute inset-0 overflow-y-auto px-3 py-3 sm:px-4"
+                aria-hidden={activeTab !== 'chat'}
+                className={`custom-scrollbar absolute inset-0 overflow-y-auto px-3 py-3 sm:px-4 ${activeTab === 'chat' ? 'visible' : 'invisible pointer-events-none'}`}
               >
                 {!isChatHistoryLoaded ? (
                   <div className="flex h-full min-h-48 flex-col items-center justify-center gap-3 px-6 text-center" role="status">
@@ -680,7 +682,7 @@ export default function RoomSidebar({
                 )}
               </div>
 
-              {(!isNearBottom || unreadCount > 0) && (
+              {activeTab === 'chat' && (!isNearBottom || unreadCount > 0) && (
                 <button
                   type="button"
                   onClick={() => scrollToLatest('smooth')}
@@ -691,11 +693,202 @@ export default function RoomSidebar({
                   {unreadCount ? `${unreadCount} جديدة` : 'أحدث الرسائل'}
                 </button>
               )}
+
+              {activeTab === 'members' && (
+                <section
+                  id="room-panel-members"
+                  className="absolute inset-0 flex min-h-0 flex-col overflow-hidden bg-[#0b111c]"
+                  role="region"
+                  aria-label="المشاركون الآن"
+                >
+                  <header className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-white/[0.08] px-4">
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-black text-white">المشاركون الآن</h3>
+                      <p className="mt-0.5 text-[10px] text-slate-500">أعضاء جلسة المشاهدة المتصلون</p>
+                    </div>
+                    <span className="shrink-0 rounded-full border border-emerald-400/15 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300">
+                      {Math.max(members.length, 1)} متصل
+                    </span>
+                  </header>
+
+                  <div className="custom-scrollbar min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto overscroll-contain px-3 py-3 [scrollbar-gutter:stable] sm:px-4">
+                    {members.length === 0 ? (
+                      <div className="flex h-full min-h-36 flex-col items-center justify-center px-6 text-center">
+                        <span className="mb-3 flex size-11 items-center justify-center rounded-2xl bg-white/[0.05] text-slate-400">
+                          <i className="fa-solid fa-user-clock" aria-hidden="true" />
+                        </span>
+                        <p className="text-xs font-bold text-slate-300">جارٍ تحديث قائمة الأعضاء...</p>
+                      </div>
+                    ) : (
+                      [...hosts, ...viewers].map((member) => (
+                        <div key={member.id} className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.04] p-2.5">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <span className="relative flex size-11 shrink-0 items-center justify-center">
+                              <UserAvatar
+                                imageUrl={member.avatarUrl}
+                                name={member.name}
+                                className={`size-10 text-xs ring-offset-2 ring-offset-[#111824] ${member.isHost ? 'ring-2 ring-amber-400/70' : ''}`}
+                              />
+                              {member.isHost && (
+                                <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-amber-300 text-[8px] text-amber-950 ring-2 ring-[#111824]">
+                                  <i className="fa-solid fa-crown" aria-hidden="true" />
+                                </span>
+                              )}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-bold text-slate-100">{member.name}</p>
+                              <p className="mt-0.5 text-[10px] text-slate-500">{member.isHost ? 'المضيف' : 'مشاهد'}</p>
+                            </div>
+                          </div>
+                          {isHost && !member.isHost && (
+                            <button
+                              type="button"
+                              onClick={() => setKickMemberTarget(member)}
+                              className="min-h-11 shrink-0 cursor-pointer rounded-xl px-3 text-xs font-bold text-red-300 transition hover:bg-red-500/10 hover:text-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                            >
+                              إخراج
+                            </button>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
+              )}
+
+              {activeTab === 'settings' && (
+                <section
+                  id="room-panel-settings"
+                  className="absolute inset-0 flex min-h-0 flex-col overflow-hidden bg-[#0b111c]"
+                  role="region"
+                  aria-label="إعدادات الغرفة"
+                >
+                  <header className="flex min-h-14 shrink-0 items-center border-b border-white/[0.08] px-4">
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-black text-white">إعدادات الغرفة</h3>
+                      <p className="mt-0.5 text-[10px] text-slate-500">تفضيلات الجلسة وإدارتها</p>
+                    </div>
+                  </header>
+
+                  <div className="custom-scrollbar min-h-0 flex-1 space-y-2.5 overflow-x-hidden overflow-y-auto overscroll-contain px-3 py-3 [scrollbar-gutter:stable] sm:px-4">
+                    <button
+                      type="button"
+                      onClick={() => void copyInviteLink()}
+                      className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 text-right transition hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-bold text-white">دعوة الأصدقاء</span>
+                        <span className="mt-1 block text-[11px] text-slate-400">نسخ رابط الغرفة</span>
+                      </span>
+                      <i className="fa-solid fa-link shrink-0 text-red-400" aria-hidden="true" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => void copyRoomId()}
+                      className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 text-right transition hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-bold text-white">معرّف الغرفة</span>
+                        <span className="mt-1 block truncate font-mono text-[11px] text-slate-400" dir="ltr">{roomId}</span>
+                      </span>
+                      <i className="fa-regular fa-copy shrink-0 text-red-400" aria-hidden="true" />
+                    </button>
+
+                    <div className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 py-2.5">
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-white">دردشة مدمجة</p>
+                        <p className="mt-1 text-[11px] leading-5 text-slate-400">تقليل المسافات بين الرسائل</p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={compactChat}
+                        onClick={() => setCompactChat((value) => !value)}
+                        className={`relative h-11 w-14 shrink-0 cursor-pointer rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${compactChat ? 'bg-red-600' : 'bg-slate-700'}`}
+                      >
+                        <span className={`absolute top-2.5 size-6 rounded-full bg-white shadow transition-transform ${compactChat ? 'right-1.5' : 'right-6'}`} />
+                        <span className="sr-only">تبديل كثافة الدردشة</span>
+                      </button>
+                    </div>
+
+                    <div className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 py-2.5">
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-white">صوت إشعارات الدردشة</p>
+                        <p className="mt-1 text-[11px] leading-5 text-slate-400">تنبيه صوتي للرسائل الجديدة</p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={notificationSound}
+                        onClick={() => {
+                          setNotificationSound((value) => {
+                            if (!value) {
+                              const context = getAudioContext();
+                              if (context?.state === 'suspended') void context.resume();
+                            }
+                            return !value;
+                          });
+                        }}
+                        className={`relative h-11 w-14 shrink-0 cursor-pointer rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${notificationSound ? 'bg-red-600' : 'bg-slate-700'}`}
+                      >
+                        <span className={`absolute top-2.5 size-6 rounded-full bg-white shadow transition-transform ${notificationSound ? 'right-1.5' : 'right-6'}`} />
+                        <span className="sr-only">تبديل صوت إشعارات الدردشة</span>
+                      </button>
+                    </div>
+
+                    <div className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 py-2.5">
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-white">غرفة خاصة</p>
+                        <p className="mt-1 text-[11px] leading-5 text-slate-400">إخفاؤها من قائمة الغرف العامة</p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        onClick={handleTogglePrivacy}
+                        disabled={!isHost || isToggling}
+                        aria-checked={isPrivate}
+                        aria-label="تبديل خصوصية الغرفة"
+                        className={`relative h-11 w-14 shrink-0 cursor-pointer rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-45 ${isPrivate ? 'bg-red-600' : 'bg-slate-700'}`}
+                      >
+                        <span className={`absolute top-2.5 size-6 rounded-full bg-white shadow transition-transform ${isPrivate ? 'right-1.5' : 'right-6'}`} />
+                      </button>
+                    </div>
+
+                    {!isHost && (
+                      <p className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4 text-xs leading-6 text-slate-400">
+                        إعدادات الخصوصية وإدارة المشاركين متاحة للمضيف فقط.
+                      </p>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={onLeaveRoom}
+                      className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-sm font-extrabold text-slate-200 transition hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                    >
+                      <i className="fa-solid fa-arrow-right-from-bracket" aria-hidden="true" />
+                      مغادرة الغرفة
+                    </button>
+
+                    {isHost && (
+                      <button
+                        type="button"
+                        onClick={() => setShowCloseRoomModal(true)}
+                        disabled={isClosingRoom}
+                        className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-red-500/25 bg-red-500/10 px-4 text-sm font-extrabold text-red-300 transition hover:border-red-500/40 hover:bg-red-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <i className="fa-solid fa-trash-can" aria-hidden="true" />
+                        {isClosingRoom ? 'جارٍ الإغلاق...' : 'إغلاق الغرفة'}
+                      </button>
+                    )}
+                  </div>
+                </section>
+              )}
             </div>
 
             <form
               onSubmit={handleSendMessage}
-              className="border-t border-white/10 bg-[#0d131f] p-3"
+              className="shrink-0 border-t border-white/10 bg-[#0d131f] px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
             >
               {activeReplyTarget && (
                 <div className="mb-2 flex min-h-11 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] pr-3">
@@ -743,178 +936,6 @@ export default function RoomSidebar({
             </form>
           </div>
 
-        {activeTab === 'members' && (
-          <div
-            id="room-panel-members"
-            className={`custom-scrollbar absolute inset-x-2 z-30 max-h-[48%] overflow-y-auto rounded-2xl border border-white/15 bg-[#151c29]/[0.98] p-3 shadow-2xl backdrop-blur-xl sm:p-4 ${activeReplyTarget ? 'bottom-[8.75rem]' : 'bottom-[5.25rem]'}`}
-            role="region"
-            aria-label="المشاركون الآن"
-          >
-            <div className="mb-5 flex min-h-11 items-center justify-between">
-              <h3 className="text-sm font-black text-white">المشاركون الآن</h3>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300">
-                  {Math.max(members.length, 1)} متصل
-                </span>
-                <button type="button" onClick={() => onActiveTabChange('chat')} className="flex size-11 items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white" aria-label="إغلاق لوحة الأعضاء">
-                  <i className="fa-solid fa-xmark" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              {[...hosts, ...viewers].map((member) => (
-                <div key={member.id} className="flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.04] p-2.5">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="relative shrink-0">
-                      <UserAvatar imageUrl={member.avatarUrl} name={member.name} className={`size-9 text-xs ${member.isHost ? 'ring-2 ring-amber-400/70' : ''}`} />
-                      {member.isHost && <i className="fa-solid fa-crown absolute -top-1 -right-1 text-[9px] text-amber-200" aria-hidden="true" />}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-bold text-slate-100">{member.name}</p>
-                      <p className="mt-0.5 text-[10px] text-slate-500">{member.isHost ? 'المضيف' : 'مشاهد'}</p>
-                    </div>
-                  </div>
-                  {isHost && !member.isHost && (
-                    <button
-                      type="button"
-                      onClick={() => setKickMemberTarget(member)}
-                      className="min-h-11 shrink-0 cursor-pointer rounded-xl px-3 text-xs font-bold text-red-300 transition hover:bg-red-500/10 hover:text-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                    >
-                      إخراج
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'settings' && (
-          <div
-            id="room-panel-settings"
-            className={`custom-scrollbar absolute inset-x-2 z-30 max-h-[52%] space-y-3 overflow-y-auto rounded-2xl border border-white/15 bg-[#151c29]/[0.98] p-3 shadow-2xl backdrop-blur-xl sm:p-4 ${activeReplyTarget ? 'bottom-[8.75rem]' : 'bottom-[5.25rem]'}`}
-            role="region"
-            aria-label="إعدادات الغرفة"
-          >
-            <div className="flex min-h-11 items-center justify-between">
-              <h3 className="text-sm font-black text-white">إعدادات الغرفة</h3>
-              <button type="button" onClick={() => onActiveTabChange('chat')} className="flex size-11 items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white" aria-label="إغلاق لوحة الإعدادات">
-                <i className="fa-solid fa-xmark" aria-hidden="true" />
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={() => void copyInviteLink()}
-              className="flex min-h-14 w-full cursor-pointer items-center justify-between rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 text-right transition hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-            >
-              <span>
-                <span className="block text-sm font-bold text-white">دعوة الأصدقاء</span>
-                <span className="mt-1 block text-[11px] text-slate-400">نسخ رابط الغرفة</span>
-              </span>
-              <i className="fa-solid fa-link text-red-400" aria-hidden="true" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => void copyRoomId()}
-              className="flex min-h-14 w-full cursor-pointer items-center justify-between rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 text-right transition hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-            >
-              <span className="min-w-0">
-                <span className="block text-sm font-bold text-white">معرّف الغرفة</span>
-                <span className="mt-1 block truncate font-mono text-[11px] text-slate-400" dir="ltr">{roomId}</span>
-              </span>
-              <i className="fa-regular fa-copy mr-3 shrink-0 text-red-400" aria-hidden="true" />
-            </button>
-
-            <div className="flex min-h-16 items-center justify-between gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 py-2.5">
-              <div>
-                <p className="text-sm font-bold text-white">دردشة مدمجة</p>
-                <p className="mt-1 text-[11px] leading-5 text-slate-400">تقليل المسافات بين الرسائل</p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={compactChat}
-                onClick={() => setCompactChat((value) => !value)}
-                className={`relative h-11 w-14 shrink-0 cursor-pointer rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${compactChat ? 'bg-red-600' : 'bg-slate-700'}`}
-              >
-                <span className={`absolute top-2.5 size-6 rounded-full bg-white shadow transition-transform ${compactChat ? 'right-1.5' : 'right-6'}`} />
-                <span className="sr-only">تبديل كثافة الدردشة</span>
-              </button>
-            </div>
-
-            <div className="flex min-h-16 items-center justify-between gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 py-2.5">
-              <div>
-                <p className="text-sm font-bold text-white">صوت إشعارات الدردشة</p>
-                <p className="mt-1 text-[11px] leading-5 text-slate-400">تنبيه صوتي للرسائل الجديدة</p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={notificationSound}
-                onClick={() => {
-                  setNotificationSound((value) => {
-                    if (!value) {
-                      const context = getAudioContext();
-                      if (context?.state === 'suspended') void context.resume();
-                    }
-                    return !value;
-                  });
-                }}
-                className={`relative h-11 w-14 shrink-0 cursor-pointer rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${notificationSound ? 'bg-red-600' : 'bg-slate-700'}`}
-              >
-                <span className={`absolute top-2.5 size-6 rounded-full bg-white shadow transition-transform ${notificationSound ? 'right-1.5' : 'right-6'}`} />
-                <span className="sr-only">تبديل صوت إشعارات الدردشة</span>
-              </button>
-            </div>
-
-            <div className="flex min-h-16 items-center justify-between gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 py-2.5">
-              <div>
-                <p className="text-sm font-bold text-white">غرفة خاصة</p>
-                <p className="mt-1 text-[11px] leading-5 text-slate-400">إخفاؤها من قائمة الغرف العامة</p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                onClick={handleTogglePrivacy}
-                disabled={!isHost || isToggling}
-                aria-checked={isPrivate}
-                aria-label="تبديل خصوصية الغرفة"
-                className={`relative h-11 w-14 shrink-0 cursor-pointer rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-45 ${isPrivate ? 'bg-red-600' : 'bg-slate-700'}`}
-              >
-                <span className={`absolute top-2.5 size-6 rounded-full bg-white shadow transition-transform ${isPrivate ? 'right-1.5' : 'right-6'}`} />
-              </button>
-            </div>
-
-            {!isHost && (
-              <p className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4 text-xs leading-6 text-slate-400">
-                إعدادات الخصوصية وإدارة المشاركين متاحة للمضيف فقط.
-              </p>
-            )}
-
-            <button
-              type="button"
-              onClick={onLeaveRoom}
-              className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-sm font-extrabold text-slate-200 transition hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-            >
-              <i className="fa-solid fa-arrow-right-from-bracket" aria-hidden="true" />
-              مغادرة الغرفة
-            </button>
-
-            {isHost && (
-              <button
-                type="button"
-                onClick={() => setShowCloseRoomModal(true)}
-                disabled={isClosingRoom}
-                className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-red-500/25 bg-red-500/10 px-4 text-sm font-extrabold text-red-300 transition hover:border-red-500/40 hover:bg-red-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <i className="fa-solid fa-trash-can" aria-hidden="true" />
-                {isClosingRoom ? 'جارٍ الإغلاق...' : 'إغلاق الغرفة'}
-              </button>
-            )}
-          </div>
-        )}
       </section>
     </>
   );

@@ -16,10 +16,34 @@ function getAppOrigin(request: Request): string {
   }
 }
 
+function getRequestHost(request: Request): string {
+  const forwardedHost = request.headers.get("x-forwarded-host")
+    ?.split(",", 1)[0]
+    .trim();
+
+  return (forwardedHost || request.headers.get("host") || new URL(request.url).host)
+    .toLowerCase();
+}
+
 export async function GET(request: Request) {
   try {
-    const clientId = getRequiredTelegramEnv("TELEGRAM_CLIENT_ID");
     const appOrigin = getAppOrigin(request);
+    const canonicalHost = new URL(appOrigin).host.toLowerCase();
+
+    // A host-only transaction cookie created on www.cinax.live is not sent when
+    // Telegram redirects back to the canonical cinax.live callback. Canonicalize
+    // before creating the OIDC transaction so the cookie and callback always use
+    // the same host, including a user's very first authorization attempt.
+    if (getRequestHost(request) !== canonicalHost) {
+      const response = NextResponse.redirect(
+        new URL("/api/auth/telegram/start", appOrigin),
+        307,
+      );
+      response.headers.set("Cache-Control", "no-store");
+      return response;
+    }
+
+    const clientId = getRequiredTelegramEnv("TELEGRAM_CLIENT_ID");
     const redirectUri = `${appOrigin}/api/auth/telegram/callback`;
     const transaction = await createTelegramOidcTransaction();
 
