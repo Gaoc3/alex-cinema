@@ -3,6 +3,15 @@
  * NO encryption keys, NO shabakaty domains — just simple URL construction.
  */
 
+// Bump when a previously cached proxy failure must be invalidated in browsers/CDNs.
+const IMAGE_CACHE_VERSION = '20260730-1';
+
+function withImageCacheVersion(url: string): string {
+  if (!url || (!url.startsWith('/api/img') && !url.startsWith('/tunnel/'))) return url;
+  if (/[?&]iv=/.test(url)) return url;
+  return `${url}${url.includes('?') ? '&' : '?'}iv=${IMAGE_CACHE_VERSION}`;
+}
+
 /**
  * Returns a proxy image URL for the given image field.
  * - If the field is already a proxied URL (/api/...), returns it as-is.
@@ -15,12 +24,14 @@ export function getImageUrl(
 ): string {
   if (!imgField) return '';
   // Already a proxied/rewritten URL from sanitized server data
-  if (imgField.startsWith('/api/') || imgField.startsWith('/tunnel/')) return imgField;
+  if (imgField.startsWith('/api/') || imgField.startsWith('/tunnel/')) {
+    return withImageCacheVersion(imgField);
+  }
   if (imgField.startsWith('http')) {
-      return `/api/img?type=${type}&file=${encodeURIComponent(imgField.split('/').pop() || imgField)}`;
+      return withImageCacheVersion(`/api/img?type=${type}&file=${encodeURIComponent(imgField.split('/').pop() || imgField)}`);
   }
   // Plain filename — construct the simple proxy URL
-  return `/api/img?type=${type}&file=${encodeURIComponent(imgField)}`;
+  return withImageCacheVersion(`/api/img?type=${type}&file=${encodeURIComponent(imgField)}`);
 }
 
 /**
@@ -33,7 +44,7 @@ export function getVideoImageUrl(
 ): string {
   // imgObjUrl is already sanitized by the server to /api/img?ref=...
   if (video.imgObjUrl && (video.imgObjUrl.startsWith('/api/') || video.imgObjUrl.startsWith('/tunnel/'))) {
-    return video.imgObjUrl;
+    return withImageCacheVersion(video.imgObjUrl);
   }
   
   // For grid posters, prefer lightweight thumbnails to save bandwidth
