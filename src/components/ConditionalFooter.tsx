@@ -7,7 +7,8 @@ export default function ConditionalFooter() {
   const pathname = usePathname();
   const isAuthPage = pathname?.startsWith('/sign-in')
     || pathname?.startsWith('/sign-up')
-    || pathname?.startsWith('/tg-app');
+    || pathname?.startsWith('/tg-app')
+    || pathname?.startsWith('/room/');
 
   if (isAuthPage) {
     return null;

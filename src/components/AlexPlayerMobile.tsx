@@ -3,6 +3,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import type { WatchRoomHook } from '@/hooks/useWatchRoom';
+import {
+  findActiveIntroOrOutro,
+  findActiveParentalSkip,
+  isParentSkippingEnabled,
+} from './playerSkipRanges';
+import type {
+  IntroSkipRange,
+  ParentalSkippingDurations,
+  ParentSkippingFlag,
+  SkipSegmentKind,
+} from './playerSkipRanges';
 
 interface Stream {
   name: string;
@@ -17,17 +28,6 @@ interface Translation {
   type: string; // 'ar', 'en'
   extention: string; // 'srt', 'vtt'
   file: string;
-}
-
-interface IntroSkipping {
-  start: string;
-  end: string;
-  control_level: string;
-}
-
-interface SkippingDurations {
-  start: string[];
-  end: string[];
 }
 
 type TextCueWithContent = TextTrackCue & { text?: string };
@@ -46,8 +46,9 @@ interface AlexPlayerProps {
     ar_title?: string;
     streams?: Stream[];
     translations?: Translation[];
-    introSkipping?: IntroSkipping[];
-    skippingDurations?: SkippingDurations | null;
+    introSkipping?: IntroSkipRange[];
+    skippingDurations?: ParentalSkippingDurations | null;
+    parent_skipping?: ParentSkippingFlag;
     duration?: string | number | null;
     arTranslationFilePath?: string | null;
     enTranslationFilePath?: string | null;
@@ -95,8 +96,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('ar'); // Default to Arabic subtitles if available
-  const [showIntroSkip, setShowIntroSkip] = useState(false);
-  const [showOutroSkip, setShowOutroSkip] = useState(false);
+  const [activeSkipKind, setActiveSkipKind] = useState<SkipSegmentKind | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
 
@@ -338,6 +338,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       setLastErrorEvent(null);
       setIsPaused(true);
       setCurrentTime(0);
+      setActiveSkipKind(null);
       setDuration(initialDuration);
       setCurrentStreamUrl(initialStreamUrl);
       setSelectedResolution(initialResolution);
@@ -688,34 +689,52 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     }
   };
 
-  // Skip Intro Range Action
-  const handleSkipIntro = () => {
-    if (roomHook && !isHost) return;
+  const getActiveSkipSegment = () => {
     const video = videoRef.current;
-    if (video && videoData.introSkipping) {
-      const time = video.currentTime;
-      const intro = videoData.introSkipping.find(
-        range => time >= parseFloat(range.start) && time < parseFloat(range.end)
-      );
-      if (intro) {
-        video.currentTime = parseFloat(intro.end) + 0.1;
-        setShowIntroSkip(false);
-      }
-    }
+    if (!video) return null;
+    const mediaDuration = Number.isFinite(video.duration) && video.duration > 0
+      ? video.duration
+      : duration;
+    return findActiveIntroOrOutro(
+      videoData.introSkipping,
+      video.currentTime,
+      mediaDuration,
+    );
   };
 
-  // Skip Outro Range Action (Auto-play Next Episode or Seek to end)
+  const seekPastSkipSegment = (kind: SkipSegmentKind) => {
+    if (roomHook && !isHost) return false;
+    const video = videoRef.current;
+    const segment = getActiveSkipSegment();
+    if (!video || !segment || segment.kind !== kind) return false;
+
+    const mediaDuration = Number.isFinite(video.duration) && video.duration > 0
+      ? video.duration
+      : duration;
+    const targetTime = mediaDuration > 0
+      ? Math.min(segment.end + 0.1, mediaDuration)
+      : segment.end + 0.1;
+    video.currentTime = targetTime;
+    setCurrentTime(targetTime);
+    setActiveSkipKind(null);
+    return true;
+  };
+
+  const handleSkipIntro = () => {
+    seekPastSkipSegment('intro');
+  };
+
   const handleSkipOutro = () => {
     if (roomHook && !isHost) return;
+    const segment = getActiveSkipSegment();
+    if (!segment || segment.kind !== 'outro') return;
+
+    setActiveSkipKind(null);
     if (onNextEpisode) {
       onNextEpisode();
-    } else {
-      const video = videoRef.current;
-      if (video) {
-        const targetSeek = duration || video.duration;
-        video.currentTime = targetSeek;
-      }
+      return;
     }
+    seekPastSkipSegment('outro');
   };
 
   // Handle stream error, fallback to youtube
@@ -776,35 +795,39 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         }
       }
 
-      // 1. Check Skip Intro Ranges
-      const intro = videoData.introSkipping?.find(
-        range => video.currentTime >= parseFloat(range.start) && video.currentTime < parseFloat(range.end)
+      // The API exposes parental scene ranges separately from intro/outro ranges.
+      if (
+        isFamilyMode
+        && (!roomHook || isHost)
+        && isParentSkippingEnabled(videoData.parent_skipping)
+      ) {
+        const mediaDuration = Number.isFinite(video.duration) && video.duration > 0
+          ? video.duration
+          : duration;
+        const parentalRange = findActiveParentalSkip(
+          videoData.skippingDurations,
+          video.currentTime,
+          mediaDuration,
+        );
+        if (parentalRange) {
+          const targetTime = mediaDuration > 0
+            ? Math.min(parentalRange.end + 0.1, mediaDuration)
+            : parentalRange.end + 0.1;
+          video.currentTime = targetTime;
+          setCurrentTime(targetTime);
+          setActiveSkipKind(null);
+          return;
+        }
+      }
+
+      const activeSegment = findActiveIntroOrOutro(
+        videoData.introSkipping,
+        video.currentTime,
+        Number.isFinite(video.duration) && video.duration > 0 ? video.duration : duration,
       );
-      setShowIntroSkip(!!intro);
-
-      // 2. Check Skip Outro / Next Episode timings
-      if (videoData.skippingDurations && videoData.skippingDurations.start && videoData.skippingDurations.start.length > 0) {
-        const lastIdx = videoData.skippingDurations.start.length - 1;
-        const outroStart = parseFloat(videoData.skippingDurations.start[lastIdx]);
-        if (!isNaN(outroStart)) {
-          setShowOutroSkip(video.currentTime >= outroStart);
-        } else {
-          setShowOutroSkip(false);
-        }
-      } else {
-        setShowOutroSkip(false);
-      }
-
-      // 3. Family Mode Skip Logic (Explicit scene skip)
-      if (isFamilyMode && (!roomHook || isHost) && videoData?.skippingDurations) {
-        const { start, end } = videoData.skippingDurations;
-        for (let i = 0; i < start.length; i++) {
-          if (video.currentTime >= parseFloat(start[i]) && video.currentTime < parseFloat(end[i])) {
-            video.currentTime = parseFloat(end[i]) + 0.1;
-            return;
-          }
-        }
-      }
+      setActiveSkipKind((currentKind) => (
+        currentKind === activeSegment?.kind ? currentKind : activeSegment?.kind ?? null
+      ));
     }
   };
 
@@ -816,10 +839,12 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         const parsed = parseFloat(String(videoData.duration));
         if (!isNaN(parsed) && parsed > 0) {
           setDuration(parsed);
+          handleTimeUpdate();
           return;
         }
       }
       setDuration(video.duration);
+      handleTimeUpdate();
     }
   };
 
@@ -1405,6 +1430,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 sendSyncUpdate?.(videoRef.current.currentTime, !videoRef.current.paused);
                 lastSyncTimeRef.current = Date.now();
               }
+              handleTimeUpdate();
             }}
             onPlaying={() => {
               if (waitingTimeoutRef.current) {
@@ -1471,9 +1497,12 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         {isPaused && !isWaiting && (
           <button 
             onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 md:w-24 md:h-24 rounded-full bg-alex-primary/95 text-white flex items-center justify-center shadow-[0_0_30px_rgba(229,9,20,0.6)] md:shadow-[0_0_45px_rgba(229,9,20,0.6)] hover:scale-110 transition-all duration-300 z-20 cursor-pointer outline-none focus:outline-none ring-0 animate-fade-in-up"
+            aria-label="استئناف تشغيل الفيديو"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-alex-primary/95 text-white shadow-[0_0_30px_rgba(229,9,20,0.6)] hover:scale-105 active:scale-95 transition-all duration-300 z-20 cursor-pointer outline-none focus:outline-none ring-0"
           >
-            <i className="fa-solid fa-play ml-1 md:mr-1.5 text-2xl md:text-4xl"></i>
+            <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center">
+              <i className="fa-solid fa-play text-2xl"></i>
+            </span>
           </button>
         )}
 
@@ -1485,25 +1514,24 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           </h3>
         </div>
 
-        {/* OVERLAY ACTIONS (Skip Intro / Skip Outro) */}
-        {showIntroSkip && (!roomHook || isHost) && (
-          <button
-            onClick={handleSkipIntro}
-            className="absolute bottom-24 right-6 flex items-center justify-center gap-2.5 bg-black/60 backdrop-blur-md hover:bg-black/80 text-white font-black text-sm md:text-base px-5 py-2.5 rounded-xl border border-white/20 hover:border-white/40 hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.5)] z-40 transition-all duration-300 cursor-pointer outline-none focus:outline-none ring-0 leading-none"
+        {/* Skipping action stays above the controls on the viewer's left. */}
+        {activeSkipKind && (!roomHook || isHost) && (
+          <div
+            className="absolute left-3 sm:left-6 bottom-[calc(env(safe-area-inset-bottom)_+_5.75rem)] md:bottom-[calc(env(safe-area-inset-bottom)_+_7rem)] z-40 flex max-w-[calc(100%_-_1.5rem)] items-center"
+            dir="rtl"
           >
-            <i className="fa-solid fa-forward-step text-xs text-gray-300 leading-none"></i>
-            <span className="leading-none">تخطي المقدمة</span>
-          </button>
-        )}
-
-        {showOutroSkip && (!roomHook || isHost) && (
-          <button
-            onClick={handleSkipOutro}
-            className="absolute bottom-24 right-6 flex items-center justify-center gap-2.5 bg-black/60 backdrop-blur-md hover:bg-black/80 text-white font-black text-sm md:text-base px-5 py-2.5 rounded-xl border border-white/20 hover:border-white/40 hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.5)] z-40 transition-all duration-300 cursor-pointer outline-none focus:outline-none ring-0 leading-none"
-          >
-            <i className="fa-solid fa-forward text-xs text-gray-300 leading-none"></i>
-            <span className="leading-none">{onNextEpisode ? 'الحلقة التالية' : 'تخطي النهاية'}</span>
-          </button>
+            <button
+              onClick={activeSkipKind === 'intro' ? handleSkipIntro : handleSkipOutro}
+              className="flex items-center justify-center gap-2 bg-black/70 backdrop-blur-md hover:bg-black/85 text-white font-black text-xs md:text-sm px-3.5 md:px-5 py-2 md:py-2.5 rounded-xl border border-white/20 hover:border-white/40 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 cursor-pointer outline-none focus:outline-none ring-0 leading-none whitespace-nowrap"
+            >
+              <i aria-hidden="true" className={`fa-solid ${activeSkipKind === 'intro' ? 'fa-forward-step' : 'fa-forward'} text-xs text-gray-300 leading-none`}></i>
+              <span className="leading-none">
+                {activeSkipKind === 'intro'
+                  ? 'تخطي المقدمة'
+                  : onNextEpisode ? 'الحلقة التالية' : 'تخطي الخاتمة'}
+              </span>
+            </button>
+          </div>
         )}
 
         {/* SETTINGS MENU (BOUNDED BOX) - باستخدام النسب المئوية */}

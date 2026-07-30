@@ -1,6 +1,11 @@
 import React, { useMemo } from 'react';
 import PlayerWrapper from '../PlayerWrapper';
 import type { WatchRoomHook } from '@/hooks/useWatchRoom';
+import type {
+  IntroSkipRange,
+  ParentalSkippingDurations,
+  ParentSkippingFlag,
+} from '../playerSkipRanges';
 
 export interface PlayerStream {
   name: string;
@@ -17,16 +22,8 @@ export interface PlayerTranslation {
   file: string;
 }
 
-export interface IntroSkipping {
-  start: string;
-  end: string;
-  control_level: string;
-}
-
-export interface SkippingDurations {
-  start: string[];
-  end: string[];
-}
+export type IntroSkipping = IntroSkipRange;
+export type SkippingDurations = ParentalSkippingDurations;
 
 export interface RoomVideoData {
   nb?: string;
@@ -40,6 +37,7 @@ export interface RoomVideoData {
   translations?: PlayerTranslation[];
   introSkipping?: IntroSkipping[];
   skippingDurations?: SkippingDurations | null;
+  parent_skipping?: ParentSkippingFlag;
   duration?: string | number | null;
   Duration?: string | number | null;
   arTranslationFilePath?: string | null;
@@ -90,6 +88,7 @@ export default function PlayerSection({
           translations: activeEpisodeDetails.translations || [],
           introSkipping: activeEpisodeDetails.introSkipping || [],
           skippingDurations: activeEpisodeDetails.skippingDurations || null,
+          parent_skipping: activeEpisodeDetails.parent_skipping,
           duration: activeEpisodeDetails.duration || activeEpisodeDetails.Duration || null,
           arTranslationFilePath: toProxyUrl(activeEpisodeDetails.arTranslationFilePath || ''),
           enTranslationFilePath: toProxyUrl(activeEpisodeDetails.enTranslationFilePath || ''),
@@ -106,6 +105,7 @@ export default function PlayerSection({
           translations: video.translations || [],
           introSkipping: video.introSkipping || [],
           skippingDurations: video.skippingDurations || null,
+          parent_skipping: video.parent_skipping,
           duration: video.duration || video.Duration || null,
           arTranslationFilePath: toProxyUrl(video.arTranslationFilePath || ''),
           enTranslationFilePath: toProxyUrl(video.enTranslationFilePath || ''),

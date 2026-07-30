@@ -68,3 +68,6 @@ __pycache__/
 /check*.js
 /decrypt*.js
 /poll*.js
+
+# clerk configuration (can include secrets)
+/.clerk/

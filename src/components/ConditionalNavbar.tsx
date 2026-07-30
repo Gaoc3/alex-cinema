@@ -14,7 +14,8 @@ export default function ConditionalNavbar() {
   const { isSignedIn, isLoaded } = useUnifiedAuth();
   const isAuthPage = pathname?.startsWith('/sign-in')
     || pathname?.startsWith('/sign-up')
-    || pathname?.startsWith('/tg-app');
+    || pathname?.startsWith('/tg-app')
+    || pathname?.startsWith('/room/');
 
   if (isAuthPage) return null;
 

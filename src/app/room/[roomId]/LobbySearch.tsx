@@ -77,8 +77,8 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
         for (const qTerm of queriesToTry) {
           const queryEncoded = encodeURIComponent(qTerm);
           const [resMovies, resSeries] = await Promise.all([
-            fetch(`/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,2026&type=movies`, { signal }),
-            fetch(`/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,2026&type=series`, { signal })
+            fetch(`/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,${new Date().getFullYear()}&type=movies`, { signal }),
+            fetch(`/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,${new Date().getFullYear()}&type=series`, { signal })
           ]);
 
           let moviesList: SearchResult[] = [];
@@ -95,7 +95,10 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
             seriesList = Array.isArray(data) ? data as SearchResult[] : [];
           }
 
-          combinedResults.push(...moviesList, ...seriesList);
+          combinedResults.push(
+            ...moviesList.map((item) => ({ ...item, kind: item.kind || '1' })),
+            ...seriesList.map((item) => ({ ...item, kind: item.kind || '2' })),
+          );
         }
 
         const unique = Array.from(new Map(combinedResults.map(item => [item.nb, item])).values());
@@ -139,6 +142,7 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
 
   const handleQueryChange = (value: string) => {
     setQuery(value);
+    setResults([]);
     if (value.trim().length < 2) {
       setResults([]);
       setIsLoading(false);
@@ -180,32 +184,35 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto mt-4 text-right" dir="rtl">
-      <div className="relative mb-6">
-        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-          <i className="fa-solid fa-[#E50914] fa-search text-red-500 text-lg"></i>
+    <div className="mx-auto w-full max-w-5xl text-right" dir="rtl">
+      <div className="relative mb-4">
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+          <i className="fa-solid fa-search text-sm text-red-400" aria-hidden="true" />
         </div>
         <input 
           type="text" 
           value={query}
           onChange={(e) => handleQueryChange(e.target.value)}
-          placeholder="ابحث عن أي فيلم أو مسلسل لاختياره فوراً..." 
-          className="w-full bg-[#111625]/90 backdrop-blur-xl border border-white/20 rounded-2xl pr-12 pl-4 py-4 text-white text-base focus:outline-none focus:border-[#E50914] focus:bg-[#161c2e] transition-all shadow-[0_4px_20px_rgba(0,0,0,0.5)] placeholder-gray-400 font-bold"
+          placeholder="ابحث عن فيلم أو مسلسل..."
+          aria-label="البحث عن محتوى للغرفة"
+          className="min-h-12 w-full rounded-xl border border-white/10 bg-white/[0.055] py-3 pl-12 pr-11 text-sm font-bold text-white outline-none transition placeholder:text-slate-500 focus:border-red-500/60 focus:ring-2 focus:ring-red-500/10"
         />
         {isLoading && (
           <div className="absolute inset-y-0 left-0 flex items-center pl-4">
-            <div className="w-5 h-5 border-2 border-[#E50914] border-t-transparent rounded-full animate-spin"></div>
+            <div className="size-4 animate-spin rounded-full border-2 border-red-500 border-t-transparent" role="status" aria-label="جارٍ البحث" />
           </div>
         )}
       </div>
 
       {results.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 text-right max-h-[480px] overflow-y-auto p-1 custom-scrollbar">
-          {results.map((item, idx) => (
-            <div 
-              key={`${item.nb}-${idx}`}
-              onClick={() => handleSelectVideo(item)}
-              className="bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden cursor-pointer hover:border-[#E50914] hover:bg-white/10 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(229,9,20,0.3)]"
+        <div className="custom-scrollbar grid max-h-[min(58svh,32rem)] grid-cols-2 gap-3 overflow-y-auto p-1 text-right sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+          {results.map((item) => (
+            <button
+              type="button"
+              key={item.nb}
+              onClick={() => void handleSelectVideo(item)}
+              className="group min-w-0 cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-right transition hover:-translate-y-0.5 hover:border-red-500/60 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+              aria-label={`اختيار ${item.ar_title || item.en_title}`}
             >
               <div className="relative aspect-[2/3] w-full bg-gray-900">
                 <img 
@@ -216,7 +223,7 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                 <div className="absolute bottom-2 right-2 left-2 flex justify-between items-end">
-                  <div className="bg-[#E50914] text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase">
+                  <div className="rounded-md bg-[#e50914] px-2 py-0.5 text-[9px] font-black text-white">
                     {item.kind === '2' ? 'مسلسل' : 'فيلم'}
                   </div>
                   {item.stars && (
@@ -227,26 +234,26 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
                   )}
                 </div>
                 
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
-                  <div className="px-3 py-1.5 rounded-full bg-[#E50914] text-white font-black text-xs flex items-center gap-1.5 shadow-lg transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/55 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                  <div className="flex min-h-10 items-center gap-1.5 rounded-full bg-[#e50914] px-3 text-xs font-black text-white shadow-lg transition-transform duration-300">
                     <i className="fa-solid fa-play text-[10px]"></i>
                     <span>اختر الآن</span>
                   </div>
                 </div>
               </div>
-              <div className="p-3 text-right">
-                <h4 className="text-white text-xs font-black truncate leading-tight" title={item.ar_title}>{item.ar_title}</h4>
-                <p className="text-gray-400 text-[10px] truncate mt-1 font-en" dir="ltr">{item.year || item.en_title}</p>
+              <div className="p-2.5 text-right">
+                <h4 className="truncate text-xs font-black leading-5 text-white" title={item.ar_title}>{item.ar_title}</h4>
+                <p className="mt-0.5 truncate text-[10px] text-slate-400" dir="ltr">{item.year || item.en_title}</p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       )}
 
       {query.trim().length >= 2 && results.length === 0 && !isLoading && (
-        <div className="text-center text-gray-400 py-10 bg-white/5 rounded-2xl border border-white/5">
-          <i className="fa-solid fa-search text-3xl mb-2 opacity-40 text-red-500"></i>
-          <p className="text-xs font-bold">لم يتم العثور على نتائج لـ «{query}»</p>
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] py-8 text-center text-slate-400">
+          <i className="fa-solid fa-search mb-2 text-xl text-slate-500" aria-hidden="true" />
+          <p className="text-xs font-bold">لا توجد نتائج لـ «{query}»</p>
         </div>
       )}
     </div>

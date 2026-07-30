@@ -25,12 +25,16 @@ export default async function RoomPage({
   const roomRes = await getRoom(resolvedParams.roomId);
   if (!roomRes.success || !roomRes.room) {
     return (
-      <div className="flex-grow flex items-center justify-center min-h-[60vh]">
-        <div className="text-center p-12 bg-red-900/10 border border-red-500/20 rounded-3xl backdrop-blur-md">
-          <i className="fa-solid fa-ghost text-6xl text-red-500/80 mb-6 drop-shadow-lg"></i>
-          <h1 className="text-3xl font-black text-white mb-2">الروم غير موجود</h1>
-          <p className="text-gray-400 mb-8">عذراً، هذا الروم غير موجود في قاعدة البيانات أو تم حذفه.</p>
-          <Link href="/" className="btn-primary px-8 py-3.5 rounded-xl text-white font-bold inline-block">العودة للرئيسية</Link>
+      <div className="flex min-h-[100svh] items-center justify-center bg-[#070a11] p-4 text-white">
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0d121d] p-7 text-center shadow-2xl sm:p-10">
+          <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-2xl text-red-400">
+            <i className="fa-solid fa-ghost" aria-hidden="true" />
+          </div>
+          <h1 className="mb-2 text-2xl font-black">الغرفة غير موجودة</h1>
+          <p className="mb-7 text-sm leading-7 text-slate-300">ربما انتهت جلسة المشاهدة أو حُذفت الغرفة.</p>
+          <Link href="/rooms" className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl bg-[#e50914] px-6 py-3 text-sm font-extrabold text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300">
+            عرض الغرف النشطة
+          </Link>
         </div>
       </div>
     );

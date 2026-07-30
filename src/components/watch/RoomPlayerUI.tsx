@@ -159,8 +159,8 @@ function RoomPlayerContent({ video, seasons, episodes, roomHook }: RoomPlayerUIP
     : video.ar_title || '';
 
   return (
-    <div className="flex flex-col w-full bg-black/40 backdrop-blur-2xl rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10 relative">
-      <div className="w-full relative">
+    <div className="relative flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
+      <div className="relative w-full min-w-0">
         <PlayerSection
           isLoadingStreams={isLoadingStreams}
           isSeries={isSeries}
@@ -174,7 +174,7 @@ function RoomPlayerContent({ video, seasons, episodes, roomHook }: RoomPlayerUIP
       </div>
 
       {isSeries && episodes.length > 0 && (
-        <div className="pt-6 pb-4 px-2 sm:px-6">
+        <div className="border-t border-white/10 bg-[#0b101a] px-2 pb-4 pt-5 sm:px-5">
           <SeriesNavigator
             seasons={seasons}
             episodes={episodes}

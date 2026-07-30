@@ -1,19 +1,17 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import toast from 'react-hot-toast';
 import RoomPlayerUI from '@/components/watch/RoomPlayerUI';
 import type { RoomVideoData } from '@/components/watch/PlayerSection';
 import type { SeriesEpisode, SeriesSeason } from '@/components/watch/SeriesNavigator';
-import { useRouter } from 'next/navigation';
 import { useWatchRoom } from '@/hooks/useWatchRoom';
-import LobbySearch from './LobbySearch';
+import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
 import RoomSidebar from '@/components/watch/RoomSidebar';
 import { getVideoImageUrl } from '@/utils/imageHelper';
-import { useUser } from '@clerk/nextjs';
-import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
-import toast from 'react-hot-toast';
-
-import ConfirmModal from '@/components/ConfirmModal';
+import LobbySearch from './LobbySearch';
 
 interface RoomClientWrapperProps {
   roomId: string;
@@ -30,57 +28,67 @@ interface RoomClientWrapperProps {
   episodes: SeriesEpisode[];
 }
 
-export default function RoomClientWrapper({ 
-  roomId, 
-  roomData, 
-  isHostUser: isHostUserProp, 
-  video, 
-  seasons, 
-  episodes 
+function RoomStateScreen({
+  icon,
+  title,
+  description,
+  actionLabel,
+  onAction,
+}: {
+  icon: string;
+  title: string;
+  description: string;
+  actionLabel: string;
+  onAction: () => void;
+}) {
+  return (
+    <div className="flex min-h-[100svh] items-center justify-center bg-[#070a11] p-4 text-white">
+      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0d121d] p-7 text-center shadow-2xl sm:p-10">
+        <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-2xl text-red-400">
+          <i className={icon} aria-hidden="true" />
+        </div>
+        <h1 className="mb-2 text-2xl font-black">{title}</h1>
+        <p className="mb-7 text-sm leading-7 text-slate-300">{description}</p>
+        <button
+          type="button"
+          onClick={onAction}
+          className="min-h-11 cursor-pointer rounded-xl bg-[#e50914] px-6 py-3 text-sm font-extrabold text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+        >
+          {actionLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function RoomClientWrapper({
+  roomId,
+  roomData,
+  isHostUser: isHostUserProp,
+  video,
+  seasons,
+  episodes,
 }: RoomClientWrapperProps) {
   const { user, isLoaded } = useUser();
   const { user: unifiedUser } = useUnifiedAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const router = useRouter();
 
-  // Dynamic host evaluation using server prop + client unified auth session
   const initialIsHostUser = Boolean(isHostUserProp || unifiedUser?.id === roomData.hostId);
-
-  // Auto-resolve username from Clerk user session automatically without any modal prompt!
-  const username = user 
+  const username = user
     ? (user.fullName || user.firstName || user.username || 'مشاهد')
     : (unifiedUser?.name || (initialIsHostUser && roomData.host?.name ? roomData.host.name : `ضيف ${roomId.slice(0, 4)}`));
 
-  // Auto-open sidebar on desktop screens
   useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      if (window.innerWidth >= 1024) setIsSidebarOpen(true);
-    });
-    return () => window.cancelAnimationFrame(frame);
+    const syncSidebar = () => setIsSidebarOpen(window.innerWidth >= 1024);
+    syncSidebar();
+    window.addEventListener('resize', syncSidebar);
+    return () => window.removeEventListener('resize', syncSidebar);
   }, []);
 
-  // Call the watch room hook unconditionally with auto-bound username
   const roomHook = useWatchRoom(roomId, initialIsHostUser, username);
   const isHostUser = roomHook.isHost;
 
-  const handleConfirmDelete = async () => {
-    setShowDeleteConfirm(false);
-    try {
-      const { deleteRoom } = await import('@/app/actions/room.actions');
-      const res = await deleteRoom(roomId);
-      if (res.success) {
-        await roomHook.closeRoom();
-        toast.success('تم حذف الغرفة نهائياً 🗑️');
-        window.location.href = '/rooms';
-      } else {
-        toast.error(res.error || 'حدث خطأ أثناء حذف الغرفة');
-      }
-    } catch {
-      toast.error('فشل حذف الغرفة');
-    }
-  };
-  
   useEffect(() => {
     const currentVideoId = video?.nb || video?.id || null;
     if (roomHook.remoteVideoId && roomHook.remoteVideoId !== currentVideoId) {
@@ -94,232 +102,211 @@ export default function RoomClientWrapper({
     }
   }, [roomHook.connectionError, roomId]);
 
+  const handleShareRoom = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share && window.matchMedia('(max-width: 1023px)').matches) {
+        await navigator.share({ title: roomData.title || 'غرفة أليكس سينما', url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast.success('تم نسخ رابط الغرفة');
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      toast.error('تعذر مشاركة الرابط');
+    }
+  };
+
   if (!isLoaded) {
     return (
-      <div className="flex-grow flex items-center justify-center min-h-[70vh]">
-        <div className="w-12 h-12 border-4 border-[#e50914] border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex min-h-[100svh] items-center justify-center bg-[#070a11]" role="status" aria-label="جارٍ تحميل الغرفة">
+        <div className="size-11 animate-spin rounded-full border-4 border-red-500 border-t-transparent" />
       </div>
     );
   }
 
   if (roomHook.isKicked) {
     return (
-      <div className="flex-grow flex items-center justify-center min-h-[60vh] p-4">
-        <div className="text-center p-10 bg-[#0c101c] border border-red-500/30 rounded-3xl max-w-md w-full shadow-2xl">
-          <i className="fa-solid fa-ban text-6xl text-[#e50914] mb-4"></i>
-          <h1 className="text-2xl font-black text-white mb-2">تم طردك من الغرفة</h1>
-          <p className="text-gray-400 text-sm mb-6">لقد قام المضيف بطردك من هذه الغرفة.</p>
-          <button 
-            onClick={() => router.push('/movies')} 
-            className="px-6 py-2.5 bg-[#e50914] hover:bg-[#b91c1c] text-white font-extrabold rounded-xl transition-all shadow-[0_4px_15px_rgba(229,9,20,0.5)] cursor-pointer"
-          >
-            تصفح المحتوى
-          </button>
-        </div>
-      </div>
+      <RoomStateScreen
+        icon="fa-solid fa-ban"
+        title="تم إخراجك من الغرفة"
+        description="أنهى المضيف مشاركتك في جلسة المشاهدة الحالية."
+        actionLabel="تصفح المحتوى"
+        onAction={() => router.push('/movies')}
+      />
     );
   }
 
   if (roomHook.isRoomClosed) {
     return (
-      <div className="flex-grow flex items-center justify-center min-h-[60vh] p-4">
-        <div className="text-center p-10 bg-[#0c101c] border border-white/15 rounded-3xl max-w-md w-full shadow-2xl">
-          <i className="fa-solid fa-door-closed text-6xl text-[#e50914] mb-4"></i>
-          <h1 className="text-2xl font-black text-white mb-2">تم إغلاق الغرفة</h1>
-          <p className="text-gray-300 text-sm mb-6">أنهى المضيف جلسة المشاهدة لهذه الغرفة.</p>
-          <button
-            onClick={() => router.push('/rooms')}
-            className="px-6 py-2.5 bg-[#e50914] hover:bg-[#b91c1c] text-white font-extrabold rounded-xl transition-all shadow-[0_4px_15px_rgba(229,9,20,0.5)]"
-          >
-            تصفح الغرف النشطة
-          </button>
-        </div>
-      </div>
+      <RoomStateScreen
+        icon="fa-solid fa-door-closed"
+        title="انتهت جلسة المشاهدة"
+        description="أغلق المضيف هذه الغرفة. يمكنك الانضمام إلى جلسة أخرى من صفحة الغرف."
+        actionLabel="عرض الغرف النشطة"
+        onAction={() => router.push('/rooms')}
+      />
     );
   }
 
   const bgImage = video ? getVideoImageUrl(video) : null;
+  const visibleMembers = roomHook.members.slice(0, 3);
+  const memberCount = Math.max(roomHook.members.length, 1);
 
   return (
-    <div className="w-full min-h-[calc(100vh-80px)] relative bg-[#050505] overflow-hidden">
-      {/* Ambient Dynamic Background */}
-      {bgImage ? (
-        <div 
-          className="absolute inset-0 z-0 opacity-[0.15] blur-[100px] scale-110"
-          style={{ backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-        ></div>
-      ) : (
-        <div className="absolute inset-0 z-0 opacity-20 blur-[100px] bg-gradient-to-br from-red-950 via-[#050505] to-slate-950"></div>
-      )}
-      
-      {/* Content wrapper */}
-      <div className="relative z-10 w-full h-full pt-28 sm:pt-36 lg:pt-40 xl:pt-44">
-      
-      {/* Room Header Overlay */}
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-8 mb-6 flex flex-wrap items-center justify-between gap-3 sm:gap-4 bg-black/40 border border-white/10 p-4 rounded-2xl relative z-20 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#e50914] flex items-center justify-center text-white shadow-[0_0_20px_rgba(229,9,20,0.5)]">
-            <i className="fa-solid fa-users text-lg"></i>
-          </div>
-          <div>
-            <h2 className="text-white font-bold">{roomData.title || 'غرفة المشاهدة الجماعية'}</h2>
-            <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-gray-400 text-xs font-en tracking-wider truncate max-w-[160px] sm:max-w-none">{roomId}</p>
-              <button 
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    navigator.clipboard.writeText(window.location.href);
-                    toast.success('تم نسخ رابط الغرفة بنجاح! 📋');
-                  }
-                }}
-                className="bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 hover:text-white px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer"
-                title="نسخ رابط الغرفة"
-              >
-                <i className="fa-solid fa-copy text-[9px] text-[#E50914]"></i>
-                <span>نسخ الرابط</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Member Avatars Stack */}
-        <div 
-          className="flex items-center -space-x-2 space-x-reverse cursor-pointer hover:scale-105 transition-transform" 
-          onClick={() => setIsSidebarOpen(true)}
-          title="عرض قائمة الأعضاء"
-        >
-          {roomHook.members.slice(0, 5).map(m => (
-            <div key={m.id} className="w-9 h-9 rounded-full border-2 border-[#0b0f19] bg-gradient-to-tr from-red-600 to-slate-800 flex items-center justify-center text-white text-xs font-bold relative group shadow-md">
-              {m.name?.[0]?.toUpperCase() || 'U'}
-              {m.isHost && <i className="fa-solid fa-crown absolute -top-2 -right-1 text-[9px] text-yellow-400 drop-shadow"></i>}
-            </div>
-          ))}
-          {roomHook.members.length > 5 && (
-            <div className="w-9 h-9 rounded-full border-2 border-[#0b0f19] bg-gray-800 flex items-center justify-center text-white text-xs font-bold shadow-md">
-              +{roomHook.members.length - 5}
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {isHostUser ? (
-            <>
-              <span className="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-2">
-                <i className="fa-solid fa-crown text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.8)]"></i> أنت المضيف
-              </span>
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="bg-red-600/20 hover:bg-red-600 border border-red-500/40 text-red-300 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
-                title="حذف وإغلاق الغرفة"
-              >
-                <i className="fa-solid fa-trash-can text-[10px]"></i>
-                <span className="inline-block font-bold">حذف الغرفة 🗑️</span>
-              </button>
-            </>
-          ) : (
-            <span className="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-2">
-              <i className="fa-solid fa-user"></i> مشاهد
-            </span>
-          )}
-        </div>
+    <div className="relative min-h-[100svh] overflow-x-hidden bg-[#070a11] text-white" dir="rtl">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+        {bgImage && (
+          <div
+            className="absolute inset-x-0 top-0 h-[55svh] bg-cover bg-center opacity-[0.09] blur-3xl"
+            style={{ backgroundImage: `linear-gradient(to bottom, transparent, #070a11), url(${bgImage})` }}
+          />
+        )}
+        <div className="absolute -right-32 top-20 size-80 rounded-full bg-red-700/10 blur-[110px]" />
+        <div className="absolute -left-32 bottom-10 size-96 rounded-full bg-blue-700/10 blur-[130px]" />
       </div>
 
-      <div className="flex w-full max-w-screen-2xl mx-auto px-4 sm:px-8 gap-0 lg:gap-2 pb-10 items-start">
-        
-        {/* Sidebar Panel */}
-        <RoomSidebar 
-          roomId={roomId}
-          initialPrivacy={roomData?.isPrivate ?? false}
-          members={roomHook.members} 
-          messages={roomHook.messages}
-          sendChatMessage={roomHook.sendChatMessage}
-          isHost={isHostUser} 
-          kickUser={roomHook.kickUser} 
-          closeRoom={roomHook.closeRoom}
-          isOpen={isSidebarOpen}
-          setIsOpen={setIsSidebarOpen}
-        />
-        
-        {/* Main Video/Lobby Container */}
-        <div className="flex-1 min-w-0 transition-all duration-300 w-full relative">
-          {!video ? (
-            <div className="w-full relative z-20 mt-4">
-              <div className="bg-[#0b0f19] border border-white/10 rounded-3xl p-8 md:p-12 text-center shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-600 via-red-500 to-rose-700"></div>
-                
-                <div className="w-20 h-20 rounded-full bg-red-950/40 border border-red-500/30 flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(229,9,20,0.3)]">
-                  <i className="fa-solid fa-film text-3xl text-red-500"></i>
-                </div>
-                
-                <h3 className="text-2xl md:text-3xl font-black text-white mb-4">الغرفة جاهزة!</h3>
-                
-                {isHostUser ? (
-                  <>
-                    <p className="text-gray-300 mb-8 max-w-lg mx-auto text-sm sm:text-base leading-relaxed">
-                      أنت المضيف لهذه الغرفة. ابحث عن أي فيلم أو مسلسل في مكتبة الموقع لاختياره والبدء فوراً:
-                    </p>
-                    <LobbySearch roomId={roomId} onVideoSelected={roomHook.changeVideo} />
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-4">
-                    <p className="text-gray-300 mb-6 text-base sm:text-lg">في انتظار المضيف لاختيار الفيلم أو المسلسل...</p>
-                    <div className="flex gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-600 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-3 h-3 rounded-full bg-red-600 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-3 h-3 rounded-full bg-red-600 animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col w-full pb-10">
-              <RoomPlayerUI 
-                video={video} 
-                seasons={seasons} 
-                episodes={episodes}
-                roomHook={roomHook}
-              />
-              
-              {isHostUser && (
-                <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 mt-8 shadow-[0_0_30px_rgba(0,0,0,0.5)] relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-red-600 to-rose-700"></div>
-                  <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                    <i className="fa-solid fa-film text-red-500"></i>
-                    تغيير الفيلم أو المسلسل
-                  </h3>
-                  <LobbySearch roomId={roomId} onVideoSelected={roomHook.changeVideo} />
-                </div>
+      <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-[1920px] flex-col px-3 pb-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 lg:px-6">
+        <header className="mb-3 flex min-h-14 items-center gap-2 rounded-2xl border border-white/10 bg-[#0b101a]/95 p-2 shadow-xl sm:mb-4 sm:p-2.5">
+          <button
+            type="button"
+            onClick={() => router.push('/rooms')}
+            className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-slate-200 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            aria-label="العودة إلى الغرف"
+            title="العودة إلى الغرف"
+          >
+            <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+          </button>
+
+          <div className="min-w-0 flex-1 px-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <h1 className="truncate text-sm font-black text-white sm:text-base">
+                {roomData.title || 'غرفة المشاهدة'}
+              </h1>
+              {roomData.isPrivate && (
+                <span className="shrink-0 rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-200">
+                  <i className="fa-solid fa-lock ml-1" aria-hidden="true" />
+                  خاصة
+                </span>
               )}
             </div>
-          )}
+            <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
+              <span className="inline-flex items-center gap-1.5 text-emerald-300">
+                <span className="size-1.5 rounded-full bg-emerald-400" />
+                مباشر
+              </span>
+              <span className="truncate font-mono" dir="ltr">{roomId.slice(0, 12)}</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(true)}
+            className="flex min-h-11 shrink-0 cursor-pointer items-center rounded-xl border border-white/10 bg-white/[0.05] px-2.5 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            aria-label={`عرض أعضاء الغرفة، العدد ${memberCount}`}
+          >
+            <span className="flex -space-x-2 space-x-reverse" aria-hidden="true">
+              {visibleMembers.map((member) => (
+                <span key={member.id} className="flex size-7 items-center justify-center rounded-full border-2 border-[#0b101a] bg-gradient-to-br from-red-500 to-slate-700 text-[10px] font-black">
+                  {member.name?.[0]?.toUpperCase() || 'U'}
+                </span>
+              ))}
+            </span>
+            <span className="mr-2 text-xs font-bold text-slate-200">{memberCount}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleShareRoom}
+            className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-[#e50914] text-white shadow-[0_8px_24px_rgba(229,9,20,0.25)] transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+            aria-label="مشاركة رابط الغرفة"
+            title="مشاركة الغرفة"
+          >
+            <i className="fa-solid fa-share-nodes" aria-hidden="true" />
+          </button>
+        </header>
+
+        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]" dir="ltr">
+          <section className="min-w-0" dir="rtl">
+            {!video ? (
+              <div className="flex min-h-[min(68svh,42rem)] items-center justify-center rounded-2xl border border-white/10 bg-[#0b101a]/90 p-5 shadow-2xl sm:p-9">
+                <div className="w-full max-w-3xl text-center">
+                  <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-2xl text-red-400">
+                    <i className="fa-solid fa-film" aria-hidden="true" />
+                  </div>
+                  <h2 className="mb-2 text-2xl font-black sm:text-3xl">
+                    {isHostUser ? 'اختر ما ستشاهدونه' : 'بانتظار اختيار المحتوى'}
+                  </h2>
+                  <p className="mx-auto mb-7 max-w-xl text-sm leading-7 text-slate-300">
+                    {isHostUser
+                      ? 'ابحث عن فيلم أو مسلسل، وسيظهر لجميع المشاركين فور اختياره.'
+                      : 'سيبدأ العرض تلقائياً عندما يختار المضيف الفيلم أو الحلقة.'}
+                  </p>
+                  {isHostUser ? (
+                    <LobbySearch roomId={roomId} onVideoSelected={roomHook.changeVideo} />
+                  ) : (
+                    <div className="flex justify-center gap-2" role="status" aria-label="بانتظار المضيف">
+                      {[0, 150, 300].map((delay) => (
+                        <span key={delay} className="size-2.5 animate-bounce rounded-full bg-red-500" style={{ animationDelay: `${delay}ms` }} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex min-w-0 flex-col gap-4">
+                <RoomPlayerUI
+                  video={video}
+                  seasons={seasons}
+                  episodes={episodes}
+                  roomHook={roomHook}
+                />
+
+                {isHostUser && (
+                  <details className="group rounded-2xl border border-white/10 bg-[#0b101a]/90 shadow-lg">
+                    <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm font-extrabold marker:content-none sm:px-5">
+                      <span className="flex items-center gap-2.5">
+                        <i className="fa-solid fa-clapperboard text-red-400" aria-hidden="true" />
+                        تغيير الفيلم أو الحلقة
+                      </span>
+                      <i className="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
+                    </summary>
+                    <div className="border-t border-white/10 p-4 sm:p-5">
+                      <LobbySearch roomId={roomId} onVideoSelected={roomHook.changeVideo} />
+                    </div>
+                  </details>
+                )}
+              </div>
+            )}
+          </section>
+
+          <aside className="min-w-0 lg:row-start-1" dir="rtl">
+            <RoomSidebar
+              roomId={roomId}
+              initialPrivacy={roomData.isPrivate ?? false}
+              members={roomHook.members}
+              messages={roomHook.messages}
+              sendChatMessage={roomHook.sendChatMessage}
+              isHost={isHostUser}
+              kickUser={roomHook.kickUser}
+              closeRoom={roomHook.closeRoom}
+              isOpen={isSidebarOpen}
+              setIsOpen={setIsSidebarOpen}
+            />
+          </aside>
         </div>
       </div>
-      {/* Mobile Floating Chat FAB */}
-      <button 
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="lg:hidden fixed bottom-6 left-6 z-50 bg-[#E50914] hover:bg-[#b8070f] text-white p-3.5 rounded-full shadow-[0_4px_25px_rgba(229,9,20,0.7)] border border-white/20 flex items-center justify-center gap-2 font-black text-xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
-        title="فتح المحادثة والأعضاء"
-      >
-        <i className="fa-solid fa-comments text-lg"></i>
-        <span className="hidden sm:inline font-bold">دردشة الغرفة</span>
-        {roomHook.messages.length > 0 && (
-          <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse"></span>
-        )}
-      </button>
 
-      {/* Delete Room Custom Confirmation Modal */}
-      <ConfirmModal
-        isOpen={showDeleteConfirm}
-        title="إغلاق وحذف الغرفة نهائياً 🗑️"
-        message="هل أنت متأكد من إغلاق وحذف هذه الغرفة نهائياً؟ سيتم طرد جميع الحضور المباشرين فوراً."
-        confirmText="حذف الغرفة الآن"
-        cancelText="التراجع"
-        isDangerous={true}
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setShowDeleteConfirm(false)}
-      />
-      </div>
+      <button
+        type="button"
+        onClick={() => setIsSidebarOpen(true)}
+        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] z-[90] flex min-h-12 cursor-pointer items-center gap-2 rounded-full bg-[#e50914] px-4 text-sm font-extrabold text-white shadow-[0_10px_35px_rgba(229,9,20,0.45)] transition hover:bg-red-700 active:scale-95 lg:hidden"
+        aria-label="فتح دردشة الغرفة"
+      >
+        <i className="fa-solid fa-comments" aria-hidden="true" />
+        <span>الدردشة</span>
+        {roomHook.messages.length > 0 && <span className="size-2 rounded-full bg-white" aria-hidden="true" />}
+      </button>
     </div>
   );
 }
