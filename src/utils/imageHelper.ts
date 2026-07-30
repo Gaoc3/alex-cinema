@@ -42,17 +42,18 @@ export function getVideoImageUrl(
   video: { img?: string; imgObjUrl?: string; imgMediumThumb?: string; imgThumb?: string },
   type: 'poster' | 'cover' | 'backdrop' = 'poster'
 ): string {
+  // Grid cards must prefer the dedicated thumbnails. Some full poster PNGs are
+  // multiple megabytes while the corresponding medium thumbnail is ~30 KB.
+  if (type === 'poster') {
+    const thumbnail = video.imgMediumThumb || video.imgThumb;
+    if (thumbnail) return getImageUrl(thumbnail, type);
+  }
+
   // imgObjUrl is already sanitized by the server to /api/img?ref=...
   if (video.imgObjUrl && (video.imgObjUrl.startsWith('/api/') || video.imgObjUrl.startsWith('/tunnel/'))) {
     return withImageCacheVersion(video.imgObjUrl);
   }
-  
-  // For grid posters, prefer lightweight thumbnails to save bandwidth
-  if (type === 'poster') {
-    const img = video.imgMediumThumb || video.imgThumb || video.img;
-    return getImageUrl(img, type);
-  }
-  
+
   // For covers (like HeroCarousel), prefer high-res
   const img = video.img || video.imgMediumThumb || video.imgThumb;
   return getImageUrl(img, type);
