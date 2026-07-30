@@ -14,10 +14,17 @@ const subscribeToDeviceClassification = () => () => {};
 const getServerDeviceClassification = () => null;
 const getClientDeviceClassification = () => {
   if (cachedMobileClassification === null) {
-    const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    const maxTouchPoints = navigator.maxTouchPoints || 0;
+    const isTouch = ('ontouchstart' in window) || maxTouchPoints > 0;
     const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-    cachedMobileClassification = (isMobileUA || isTouch || hasCoarsePointer) && window.innerWidth < 1024;
+    const isIPadOS = /iPad/i.test(navigator.userAgent)
+      || (/Macintosh/i.test(navigator.userAgent) && maxTouchPoints > 1);
+    const hasCoarsePointer = window.matchMedia('(any-pointer: coarse)').matches;
+    const isTouchTablet = isTouch && hasCoarsePointer && maxTouchPoints > 1 && window.innerWidth <= 1366;
+
+    // Keep iPhone/iPad and touch tablets on the gesture-aware player even in
+    // landscape. The result stays cached so rotating never replaces the player.
+    cachedMobileClassification = isMobileUA || isIPadOS || isTouchTablet;
   }
   return cachedMobileClassification;
 };

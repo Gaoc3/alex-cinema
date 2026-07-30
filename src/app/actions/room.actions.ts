@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { syncUser } from './user.actions';
+import { validateRoomTitle } from '@/lib/roomTitle';
 
 const MAX_ROOMS_PER_USER = 25;
 const INACTIVE_ROOM_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -14,6 +15,9 @@ export async function createRoom(data: {
   isPrivate?: boolean;
 }) {
   try {
+    const titleResult = validateRoomTitle(data.title);
+    if (titleResult.error) return { success: false, error: titleResult.error };
+
     const userSync = await syncUser();
     if (!userSync.success || !userSync.user) {
       return { success: false, error: userSync.error || 'يجب تسجيل الدخول لإنشاء روم' };
@@ -36,7 +40,7 @@ export async function createRoom(data: {
 
       return tx.room.create({
         data: {
-          title: data.title.trim().slice(0, 100) || 'روم مشاهدة جماعية',
+          title: titleResult.title,
           movieId: data.movieId?.trim().slice(0, 128),
           movieTitle: data.movieTitle?.trim().slice(0, 200),
           moviePoster: data.moviePoster?.trim().slice(0, 2048),

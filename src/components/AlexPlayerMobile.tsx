@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import type { WatchRoomHook } from '@/hooks/useWatchRoom';
 import {
@@ -14,6 +14,7 @@ import type {
   ParentSkippingFlag,
   SkipSegmentKind,
 } from './playerSkipRanges';
+import { usePlayerZoom } from '@/hooks/usePlayerZoom';
 
 interface Stream {
   name: string;
@@ -98,6 +99,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const [selectedLanguage, setSelectedLanguage] = useState<string>('ar'); // Default to Arabic subtitles if available
   const [activeSkipKind, setActiveSkipKind] = useState<SkipSegmentKind | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isInlineFullscreen, setIsInlineFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
 
   // مراجع لحفظ حالة الفيديو الدقيقة عند تغيير الجودة لتجنب الرجوع للصفر
@@ -153,10 +155,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   // Gesture State
   const [showSeekAnimation, setShowSeekAnimation] = useState<'forward' | 'backward' | null>(null);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastTapRef = useRef<{time: number}>({time: 0});
-  const touchStartRef = useRef<{x: number, y: number, time: number} | null>(null);
-  const initialPinchDistance = useRef<number | null>(null);
-  const [isZoomed, setIsZoomed] = useState(false);
+  const lastTapRef = useRef<{ time: number; x: number; y: number }>({ time: 0, x: 0, y: 0 });
 
   // Subtitle custom sizing state with localstorage persistence
   const [subtitleSize, setSubtitleSize] = useState<number>(() => {
@@ -221,12 +220,69 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const {
+    isZoomed,
+    showZoomIndicator,
+    shouldSuppressTap,
+    toggleZoom,
+    videoZoomStyle,
+    zoomPercent,
+  } = usePlayerZoom({
+    containerRef,
+    videoRef,
+    isFullscreen,
+    resetKey: `${videoData.stream_url || ''}:${videoData.ar_title || ''}:${isFullscreen}`,
+    surfaceKey: currentStreamUrl,
+    onPinchStart: () => {
+      if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+      lastTapRef.current = { time: 0, x: 0, y: 0 };
+      setActiveDropdown(null);
+      setShowControls(true);
+    },
+    onPinchEnd: () => {
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+      if (!videoRef.current?.paused) {
+        controlsTimeoutRef.current = setTimeout(() => {
+          setShowControls(false);
+          setActiveDropdown(null);
+        }, 3000);
+      }
+    },
+  });
   const lastSyncTimeRef = useRef(0);
   const shouldResumePlaybackRef = useRef(!isPaused);
 
   useEffect(() => {
     shouldResumePlaybackRef.current = !isPaused;
   }, [isPaused]);
+
+  useLayoutEffect(() => {
+    if (!isInlineFullscreen) return;
+    const container = containerRef.current;
+    const originalParent = container?.parentNode;
+    if (!container || !originalParent) return;
+
+    const placeholder = document.createComment('alex-player-inline-fullscreen');
+    originalParent.insertBefore(placeholder, container);
+    document.body.appendChild(container);
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousRootOverscroll = document.documentElement.style.overscrollBehavior;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overscrollBehavior = 'none';
+    document.documentElement.classList.add('alex-player-inline-fullscreen');
+
+    return () => {
+      if (placeholder.parentNode) {
+        placeholder.parentNode.insertBefore(container, placeholder);
+        placeholder.parentNode.removeChild(placeholder);
+      }
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overscrollBehavior = previousRootOverscroll;
+      document.documentElement.classList.remove('alex-player-inline-fullscreen');
+    };
+  }, [isInlineFullscreen]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -581,20 +637,28 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   // المنطق الذكي للمسات المتتابعة على الشاشة
   const handleVideoPointerUp = (e: React.PointerEvent<HTMLVideoElement>) => {
+    if (shouldSuppressTap()) {
+      if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+      lastTapRef.current = { time: 0, x: 0, y: 0 };
+      return;
+    }
+
     if (activeDropdown !== null) {
       setActiveDropdown(null);
       return;
     }
 
     const now = e.timeStamp;
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = containerRef.current?.getBoundingClientRect() ?? e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const isTouch = e.pointerType === 'touch';
+    const lastTap = lastTapRef.current;
+    const isNearbyTap = Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 64;
 
-    if (now - lastTapRef.current.time < 300) {
+    if (now - lastTap.time < 300 && isNearbyTap) {
       // ضغطة مزدوجة (Double tap)
       if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
-      lastTapRef.current = { time: 0 };
+      lastTapRef.current = { time: 0, x: 0, y: 0 };
       
       if (clickX < rect.width * 0.35) {
         handleSeekBackward(10);
@@ -605,7 +669,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       }
     } else {
       // ضغطة واحدة (Single tap)
-      lastTapRef.current = { time: now };
+      lastTapRef.current = { time: now, x: e.clientX, y: e.clientY };
       if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
       
       if (isTouch) {
@@ -635,7 +699,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               }
             }
           });
-        }, 250);
+        }, 320);
       } else {
         // الكمبيوتر: النقر يوقف ويشغل الفيديو مباشرة
         togglePlay();
@@ -643,50 +707,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     }
   };
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (e.touches.length === 1) {
-      touchStartRef.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-        time: Date.now()
-      };
-    } else if (e.touches.length === 2) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      initialPinchDistance.current = dist;
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (e.touches.length === 2) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      
-      if (initialPinchDistance.current !== null) {
-        const delta = dist - initialPinchDistance.current;
-        if (delta > 40 && !isZoomed) {
-          setIsZoomed(true); // Pinch out to zoom
-          initialPinchDistance.current = dist;
-        } else if (delta < -40 && isZoomed) {
-          setIsZoomed(false); // Pinch in to fit
-          initialPinchDistance.current = dist;
-        }
-      }
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (e.touches.length < 2) {
-      initialPinchDistance.current = null;
-    }
-    
-    if (touchStartRef.current && e.changedTouches.length === 1) {
-      touchStartRef.current = null;
-    }
+  const handleVideoPointerCancel = () => {
+    if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+    lastTapRef.current = { time: 0, x: 0, y: 0 };
   };
 
   const getActiveSkipSegment = () => {
@@ -849,10 +872,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   };
 
   // Fullscreen helper
-  const toggleFullscreen = async () => {
+  const toggleFullscreen = useCallback(async () => {
     const container = containerRef.current;
     const video = videoRef.current as (HTMLVideoElement & {
-      webkitEnterFullscreen?: () => void;
       webkitExitFullscreen?: () => void;
       webkitDisplayingFullscreen?: boolean;
     }) | null;
@@ -863,56 +885,67 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     const webkitContainer = container as (HTMLDivElement & {
       webkitRequestFullscreen?: () => Promise<void> | void;
     }) | null;
-    if (container) {
-      if (!document.fullscreenElement && !webkitDocument.webkitFullscreenElement && !video?.webkitDisplayingFullscreen) {
-        try {
-          if (container.requestFullscreen) {
-            await container.requestFullscreen();
-          } else if (webkitContainer?.webkitRequestFullscreen) {
-            await webkitContainer.webkitRequestFullscreen();
-          } else if (video?.webkitEnterFullscreen) {
-            video.webkitEnterFullscreen();
-          } else {
-            return;
-          }
-          setIsFullscreen(true);
-          
-          const orientation = screen.orientation as LockableScreenOrientation | undefined;
-          if (orientation?.lock) {
-            try {
-              await orientation.lock('landscape');
-            } catch (err) {
-              console.warn('Orientation lock failed:', err);
-            }
-          }
-        } catch (err) {
-          console.error("Fullscreen failed:", err);
-          setIsFullscreen(false);
+    if (!container) return;
+
+    const fullscreenElement = document.fullscreenElement || webkitDocument.webkitFullscreenElement;
+    const ownsFullscreenElement = Boolean(
+      fullscreenElement
+      && (fullscreenElement === container || container.contains(fullscreenElement))
+    );
+    const isNativeVideoFullscreen = Boolean(video?.webkitDisplayingFullscreen);
+    const isCurrentlyFullscreen = isInlineFullscreen || ownsFullscreenElement || isNativeVideoFullscreen;
+    const orientation = screen.orientation as LockableScreenOrientation | undefined;
+
+    if (!isCurrentlyFullscreen) {
+      let enteredElementFullscreen = false;
+      try {
+        if (container.requestFullscreen) {
+          await container.requestFullscreen();
+          enteredElementFullscreen = true;
+        } else if (webkitContainer?.webkitRequestFullscreen) {
+          await webkitContainer.webkitRequestFullscreen();
+          enteredElementFullscreen = true;
         }
-      } else {
+      } catch {
+        // iPhone commonly rejects element fullscreen. The inline fallback below
+        // keeps custom controls and pinch zoom available instead of switching
+        // to Apple's isolated native video UI.
+      }
+
+      setIsInlineFullscreen(!enteredElementFullscreen);
+      setIsFullscreen(true);
+      setShowControls(true);
+
+      if (orientation?.lock) {
         try {
-          if (document.exitFullscreen) {
-            await document.exitFullscreen();
-          } else if (webkitDocument.webkitExitFullscreen) {
-            await webkitDocument.webkitExitFullscreen();
-          } else if (video?.webkitDisplayingFullscreen && video.webkitExitFullscreen) {
-            video.webkitExitFullscreen();
-          } else {
-            return;
-          }
-          setIsFullscreen(false);
-          
-          const orientation = screen.orientation as LockableScreenOrientation | undefined;
-          if (orientation?.unlock) {
-            orientation.unlock();
-          }
-        } catch (err) {
-          console.error("Exit fullscreen failed:", err);
-          setIsFullscreen(false);
+          await orientation.lock('landscape');
+        } catch {
+          // Orientation locking is optional on iOS/iPadOS and some WebViews.
         }
       }
+      return;
     }
-  };
+
+    try {
+      if (isInlineFullscreen) {
+        setIsInlineFullscreen(false);
+      } else if (isNativeVideoFullscreen && video?.webkitExitFullscreen) {
+        video.webkitExitFullscreen();
+      } else if (ownsFullscreenElement && document.exitFullscreen) {
+        await document.exitFullscreen();
+      } else if (ownsFullscreenElement && webkitDocument.webkitExitFullscreen) {
+        await webkitDocument.webkitExitFullscreen();
+      }
+    } finally {
+      setIsFullscreen(false);
+      setShowControls(true);
+      orientation?.unlock?.();
+    }
+  }, [isInlineFullscreen]);
+  const toggleFullscreenRef = useRef(toggleFullscreen);
+  useEffect(() => {
+    toggleFullscreenRef.current = toggleFullscreen;
+  }, [toggleFullscreen]);
 
   // Format seconds to HH:MM:SS or MM:SS
   const formatTime = (seconds: number) => {
@@ -933,6 +966,12 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   // Quality Switching
   const handleQualityChange = (stream: Stream) => {
     const video = videoRef.current;
+    const nextStreamUrl = toProxyUrl(stream.videoUrl);
+    if (!video || !nextStreamUrl || nextStreamUrl === currentStreamUrl || stream.resolution === selectedResolution) {
+      setActiveDropdown(null);
+      return;
+    }
+
     if (video) {
       isSwitchingQuality.current = true;
       switchState.current = {
@@ -941,7 +980,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       };
 
       setSelectedResolution(stream.resolution);
-      setCurrentStreamUrl(toProxyUrl(stream.videoUrl));
+      setCurrentStreamUrl(nextStreamUrl);
       setActiveDropdown(null);
     }
   };
@@ -989,6 +1028,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   const vttTranslations = getVttTracks();
   const getSubtitlesProxyUrl = (url: string) => url;
+  const skipActionVisible = Boolean(
+    activeSkipKind && (!roomHook || isHost) && activeDropdown !== 'settings'
+  );
 
   // Keyboard Shortcuts Handler
   useEffect(() => {
@@ -1048,7 +1090,13 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         case 'f':
         case 'F':
           e.preventDefault();
-          toggleFullscreen();
+          toggleFullscreenRef.current();
+          break;
+        case 'Escape':
+          if (isInlineFullscreen) {
+            e.preventDefault();
+            toggleFullscreenRef.current();
+          }
           break;
         default:
           break;
@@ -1057,14 +1105,30 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [youtubeFallback, volume, isMuted, roomHook, isHost, roomState]);
+  }, [youtubeFallback, volume, isMuted, roomHook, isHost, roomState, isInlineFullscreen]);
 
   // Sync fullscreen state change
   useEffect(() => {
     const handleFullscreenChange = () => {
       const webkitDocument = document as Document & { webkitFullscreenElement?: Element };
       const webkitVideo = videoRef.current as (HTMLVideoElement & { webkitDisplayingFullscreen?: boolean }) | null;
-      setIsFullscreen(Boolean(document.fullscreenElement || webkitDocument.webkitFullscreenElement || webkitVideo?.webkitDisplayingFullscreen));
+      const fullscreenElement = document.fullscreenElement || webkitDocument.webkitFullscreenElement;
+      const container = containerRef.current;
+      const ownsFullscreenElement = Boolean(
+        fullscreenElement
+        && container
+        && (fullscreenElement === container || container.contains(fullscreenElement))
+      );
+      const nextFullscreen = isInlineFullscreen
+        || ownsFullscreenElement
+        || Boolean(webkitVideo?.webkitDisplayingFullscreen);
+
+      setIsFullscreen(nextFullscreen);
+      if (!nextFullscreen) {
+        setIsInlineFullscreen(false);
+        const orientation = screen.orientation as LockableScreenOrientation | undefined;
+        orientation?.unlock?.();
+      }
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
@@ -1077,7 +1141,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       video?.removeEventListener('webkitbeginfullscreen', handleFullscreenChange);
       video?.removeEventListener('webkitendfullscreen', handleFullscreenChange);
     };
-  }, [currentStreamUrl, youtubeFallback]);
+  }, [currentStreamUrl, isInlineFullscreen, youtubeFallback]);
 
   const sortedStreams = [...streams].sort((a, b) => {
     const resA = parseInt(a.resolution) || 0;
@@ -1321,16 +1385,13 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         ref={containerRef}
         tabIndex={0}
         aria-label="مشغل الفيديو"
-        className={`relative select-none group/player touch-manipulation transition-all duration-300 min-h-[200px] ${
+        className={`relative select-none group/player transition-all duration-300 min-h-[200px] ${
           isFullscreen 
-            ? 'fixed inset-0 w-screen h-screen z-[9999] rounded-none border-none bg-black' 
+            ? 'fixed inset-0 w-screen h-[100dvh] z-[9999] rounded-none border-none bg-black'
             : 'w-full rounded-3xl shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 bg-black/90 aspect-video'
         }`}
         style={{ aspectRatio: isFullscreen ? 'auto' : 16/9 }}
         dir="ltr"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         {/* Inner wrapper for rounded corners and overflow clipping to not affect dropdowns */}
         <div className={`absolute inset-0 w-full h-full pointer-events-none ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
@@ -1381,8 +1442,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           `}</style>
           <video
             ref={videoRef}
-            className={`w-full h-full cursor-pointer transition-all duration-300 ${isZoomed ? 'object-cover' : 'object-contain'}`}
+            className="h-full w-full cursor-pointer object-contain"
+            style={videoZoomStyle}
             onPointerUp={handleVideoPointerUp}
+            onPointerCancel={handleVideoPointerCancel}
             onTimeUpdate={() => {
               // منع تحديث التوقيت للصفر أثناء تبديل الجودة
               if (isSwitchingQuality.current) return;
@@ -1463,19 +1526,37 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           </div>
         )}
 
+        {showZoomIndicator && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-[calc(env(safe-area-inset-top,0px)+3.25rem)] z-50 -translate-x-1/2 rounded-full border border-white/15 bg-black/75 px-3 py-1.5 text-xs font-black text-white shadow-[0_8px_28px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+            dir="ltr"
+          >
+            <span className="flex items-center gap-2">
+              <i className={`fa-solid ${isZoomed ? 'fa-magnifying-glass-plus' : 'fa-compress'} text-[11px] text-red-300`}></i>
+              {zoomPercent}%
+            </span>
+          </div>
+        )}
+
         {/* Custom React Subtitle Overlay (100% Real-time styling) */}
         {currentSubtitle && (
           <div 
             className="absolute left-0 w-full text-center pointer-events-none flex flex-col items-center justify-end z-20 transition-all duration-300"
             style={{ 
-               bottom: isZoomed || isFullscreen ? (showControls ? '10vh' : '24px') : (showControls ? '80px' : '24px'),
-               padding: '0 5%'
+               bottom: showControls
+                 ? 'calc(env(safe-area-inset-bottom, 0px) + 5.25rem)'
+                 : 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
+               paddingLeft: '5%',
+               paddingRight: skipActionVisible
+                 ? 'calc(env(safe-area-inset-right, 0px) + clamp(9rem, 38vw, 12rem))'
+                 : '5%'
             }}
           >
             {currentSubtitle.split('\n').map((line, idx) => (
               <span 
                 key={idx} 
-                className="inline-block"
+                className="inline-block max-w-full"
                 style={{
                   fontSize: `${(subtitleSize / 100) * (isMobile ? 16 : 24)}px`,
                   fontFamily: `'${selectedFont}', 'Outfit', sans-serif`,
@@ -1514,15 +1595,22 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           </h3>
         </div>
 
-        {/* Skipping action stays above the controls on the viewer's left. */}
-        {activeSkipKind && (!roomHook || isHost) && (
+        {/* Skip action: physical right edge, clear of controls and device safe areas. */}
+        {skipActionVisible && activeSkipKind && (
           <div
-            className="absolute left-3 sm:left-6 bottom-[calc(env(safe-area-inset-bottom)_+_5.75rem)] md:bottom-[calc(env(safe-area-inset-bottom)_+_7rem)] z-40 flex max-w-[calc(100%_-_1.5rem)] items-center"
-            dir="rtl"
+            className="pointer-events-none absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)_+_5.75rem)] z-40 flex items-center justify-end md:bottom-[calc(env(safe-area-inset-bottom,0px)_+_7rem)]"
+            style={{
+              paddingLeft: 'max(clamp(0.75rem, 2vw, 1.5rem), env(safe-area-inset-left, 0px))',
+              paddingRight: 'max(clamp(0.75rem, 2vw, 1.5rem), env(safe-area-inset-right, 0px))',
+            }}
+            dir="ltr"
           >
             <button
+              type="button"
               onClick={activeSkipKind === 'intro' ? handleSkipIntro : handleSkipOutro}
-              className="flex items-center justify-center gap-2 bg-black/70 backdrop-blur-md hover:bg-black/85 text-white font-black text-xs md:text-sm px-3.5 md:px-5 py-2 md:py-2.5 rounded-xl border border-white/20 hover:border-white/40 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 cursor-pointer outline-none focus:outline-none ring-0 leading-none whitespace-nowrap"
+              aria-label={activeSkipKind === 'intro' ? 'تخطي المقدمة' : onNextEpisode ? 'الانتقال إلى الحلقة التالية' : 'تخطي الخاتمة'}
+              dir="rtl"
+              className="pointer-events-auto flex min-h-11 max-w-full origin-right touch-manipulation items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-white/20 bg-black/75 px-3.5 py-2.5 text-xs font-black leading-none text-white shadow-[0_4px_20px_rgba(0,0,0,0.5)] backdrop-blur-md transition-all duration-300 hover:border-white/40 hover:bg-black/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 focus-visible:ring-offset-2 focus-visible:ring-offset-black/70 active:scale-95 md:px-5 md:text-sm cursor-pointer"
             >
               <i aria-hidden="true" className={`fa-solid ${activeSkipKind === 'intro' ? 'fa-forward-step' : 'fa-forward'} text-xs text-gray-300 leading-none`}></i>
               <span className="leading-none">
@@ -1551,7 +1639,14 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         )}
 
         {/* BOTTOM CUSTOM CONTROL BAR */}
-        <div aria-hidden={!(showControls || isPaused)} className={`absolute bottom-0 inset-x-0 ${isFullscreen ? '' : 'rounded-b-3xl'} p-2 pt-6 pb-[calc(env(safe-area-inset-bottom)+4px)] sm:px-6 md:pb-8 md:pt-12 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-1.5 md:gap-3 transition-all duration-300 transform z-30 ${showControls || isPaused ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+        <div
+          aria-hidden={!(showControls || isPaused)}
+          className={`absolute bottom-0 inset-x-0 ${isFullscreen ? '' : 'rounded-b-3xl'} p-2 pt-6 pb-[calc(env(safe-area-inset-bottom)+4px)] md:pb-8 md:pt-12 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-1.5 md:gap-3 transition-all duration-300 transform z-30 ${showControls || isPaused ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+          style={{
+            paddingLeft: 'max(clamp(0.5rem, 2vw, 1.5rem), env(safe-area-inset-left, 0px))',
+            paddingRight: 'max(clamp(0.5rem, 2vw, 1.5rem), env(safe-area-inset-right, 0px))',
+          }}
+        >
           
           {/* Custom Timeline Progress Slider */}
           <div className="flex items-center gap-2 md:gap-4 w-full">
@@ -1627,6 +1722,24 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
             {/* Right Controls */}
             <div className="flex items-center justify-end gap-1 md:gap-4 flex-nowrap">
+
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleZoom();
+                }}
+                aria-label={isZoomed ? 'إعادة الفيديو إلى الحجم الملائم' : 'تكبير الفيديو لملء الإطار'}
+                aria-pressed={isZoomed}
+                title={isZoomed ? 'ملاءمة الفيديو' : 'تكبير الفيديو'}
+                className={`flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 ${
+                  isZoomed
+                    ? 'border-red-400/45 bg-red-500/20 text-red-200'
+                    : 'border-white/10 bg-white/5 text-white hover:border-white/25 hover:bg-white/10'
+                }`}
+              >
+                <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-magnifying-glass-plus'} text-base`}></i>
+              </button>
               
               {/* Settings Menu Toggle Button */}
               <div className="static md:relative">

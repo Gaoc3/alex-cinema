@@ -2,10 +2,32 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getTelegramLaunchPayload } from "@/lib/telegramWebAppClient";
+import {
+  configureTelegramWebApp,
+  getTelegramLaunchPayload,
+  markTelegramWebAppContext,
+} from "@/lib/telegramWebAppClient";
 
 const TELEGRAM_BOT_URL =
-  process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/outhcinax_bot?start=webapp";
+  process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/outhcinax_bot?startapp=webapp";
+
+async function waitForTelegramInitData(signal: AbortSignal): Promise<string> {
+  for (let attempt = 0; attempt < 24; attempt += 1) {
+    const { initData } = getTelegramLaunchPayload();
+    if (initData) return initData;
+    if (signal.aborted) return "";
+
+    await new Promise<void>((resolve) => {
+      const timeoutId = window.setTimeout(resolve, 125);
+      signal.addEventListener("abort", () => {
+        window.clearTimeout(timeoutId);
+        resolve();
+      }, { once: true });
+    });
+  }
+
+  return "";
+}
 
 export default function TgAppPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -15,22 +37,31 @@ export default function TgAppPage() {
 
   const authenticateCurrentTelegramAccount = useCallback(async () => {
     if (authenticationInFlightRef.current || disposedRef.current) return;
+    authenticationInFlightRef.current = true;
 
-    const { initData } = getTelegramLaunchPayload();
+    const launchController = new AbortController();
+    authenticationControllerRef.current?.abort();
+    authenticationControllerRef.current = launchController;
+    const initData = await waitForTelegramInitData(launchController.signal);
+    if (disposedRef.current || launchController.signal.aborted) {
+      authenticationInFlightRef.current = false;
+      return;
+    }
     if (!initData) {
+      authenticationControllerRef.current = null;
+      authenticationInFlightRef.current = false;
       setErrorMessage("افتح التطبيق من بوت أليكس سينما داخل تليجرام.");
       return;
     }
 
-    authenticationInFlightRef.current = true;
     setErrorMessage(null);
 
     try {
-      sessionStorage.setItem("isTgWebApp", "true");
-      document.body.classList.add("is-telegram-webapp");
-      document.documentElement.classList.add("is-telegram-webapp");
+      markTelegramWebAppContext();
+      configureTelegramWebApp();
 
       const controller = new AbortController();
+      launchController.signal.addEventListener("abort", () => controller.abort(), { once: true });
       authenticationControllerRef.current = controller;
       const timeoutId = window.setTimeout(() => controller.abort(), 15_000);
       let response: Response;
@@ -77,19 +108,7 @@ export default function TgAppPage() {
     disposedRef.current = false;
     const tg = window.Telegram?.WebApp;
 
-    try {
-      tg?.ready();
-      tg?.expand();
-      if (tg?.isVersionAtLeast?.("6.1")) {
-        tg.setHeaderColor?.("#07111f");
-        tg.setBackgroundColor?.("#07111f");
-      }
-      if (tg?.isVersionAtLeast?.("7.10")) {
-        tg.setBottomBarColor?.("#07111f");
-      }
-    } catch (error) {
-      console.error("[TgApp Init Error]:", error);
-    }
+    configureTelegramWebApp();
 
     const handleResume = () => {
       void authenticateCurrentTelegramAccount();
@@ -97,11 +116,15 @@ export default function TgAppPage() {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") handleResume();
     };
+    const handleViewportChange = () => configureTelegramWebApp();
 
     window.addEventListener("focus", handleResume);
     window.addEventListener("pageshow", handleResume);
+    window.addEventListener("resize", handleViewportChange, { passive: true });
+    window.addEventListener("orientationchange", handleViewportChange, { passive: true });
     document.addEventListener("visibilitychange", handleVisibilityChange);
     tg?.onEvent?.("activated", handleResume);
+    tg?.onEvent?.("viewportChanged", handleViewportChange);
 
     const initialSyncId = window.setTimeout(handleResume, 0);
 
@@ -112,15 +135,18 @@ export default function TgAppPage() {
       window.clearTimeout(initialSyncId);
       window.removeEventListener("focus", handleResume);
       window.removeEventListener("pageshow", handleResume);
+      window.removeEventListener("resize", handleViewportChange);
+      window.removeEventListener("orientationchange", handleViewportChange);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       tg?.offEvent?.("activated", handleResume);
+      tg?.offEvent?.("viewportChanged", handleViewportChange);
     };
   }, [authenticateCurrentTelegramAccount]);
 
   return (
     <main
       dir="rtl"
-      className="flex min-h-[100svh] w-full items-center justify-center bg-[#07111f] p-4 pt-[max(1rem,env(safe-area-inset-top))] text-white"
+      className="flex min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#07111f] p-4 pt-[max(1rem,env(safe-area-inset-top))] text-white"
     >
       <section className="flex w-full max-w-sm flex-col items-center gap-5 rounded-3xl border border-white/15 bg-[#102139]/95 p-6 text-center shadow-[0_24px_70px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:p-8">
         <h1 dir="ltr" className="font-en text-xl font-black tracking-[0.12em] text-white sm:text-2xl">

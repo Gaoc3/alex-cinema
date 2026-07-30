@@ -12,6 +12,7 @@ import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
 import RoomSidebar, { type RoomTab } from '@/components/watch/RoomSidebar';
 import { getVideoImageUrl } from '@/utils/imageHelper';
 import LobbySearch from './LobbySearch';
+import UserAvatar from '@/components/UserAvatar';
 
 interface RoomClientWrapperProps {
   roomId: string;
@@ -19,7 +20,7 @@ interface RoomClientWrapperProps {
     hostId: string;
     title?: string | null;
     isPrivate?: boolean;
-    host?: { name?: string | null } | null;
+    host?: { name?: string | null; imageUrl?: string | null } | null;
   };
   currentUserId: string | null;
   isHostUser: boolean;
@@ -81,11 +82,12 @@ export default function RoomClientWrapper({
     || currentUserId === roomData.hostId
     || unifiedUser?.id === roomData.hostId,
   );
-  const username = user
-    ? (user.fullName || user.firstName || user.username || 'مشاهد')
-    : (unifiedUser?.name || (initialIsHostUser && roomData.host?.name ? roomData.host.name : `ضيف ${roomId.slice(0, 4)}`));
+  const username = unifiedUser?.name
+    || (user ? (user.fullName || user.firstName || user.username || 'مشاهد') : null)
+    || (initialIsHostUser && roomData.host?.name ? roomData.host.name : `ضيف ${roomId.slice(0, 4)}`);
+  const currentAvatarUrl = unifiedUser?.imageUrl || user?.imageUrl || null;
 
-  const roomHook = useWatchRoom(roomId, initialIsHostUser, username);
+  const roomHook = useWatchRoom(roomId, initialIsHostUser, username, currentAvatarUrl);
   const isHostUser = roomHook.isHost;
   const connectionMeta = {
     connecting: { label: 'جارٍ الاتصال', color: 'bg-amber-400' },
@@ -180,7 +182,7 @@ export default function RoomClientWrapper({
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-[1920px] flex-col px-3 pb-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 lg:px-6">
-        <header className="mb-3 flex min-h-14 items-center gap-2 rounded-2xl border border-white/10 bg-[#0b101a]/95 p-2 shadow-xl sm:mb-4 sm:p-2.5">
+        <header className="mb-3 flex min-h-14 items-center gap-2 overflow-hidden rounded-2xl border border-white/10 bg-[#0b101a]/95 p-2 shadow-xl sm:mb-4 sm:p-2.5">
           <button
             type="button"
             onClick={() => router.push('/rooms')}
@@ -193,7 +195,7 @@ export default function RoomClientWrapper({
 
           <div className="min-w-0 flex-1 px-1">
             <div className="flex min-w-0 items-center gap-2">
-              <h1 className="truncate text-sm font-black text-white sm:text-base">
+              <h1 className="truncate text-base font-black text-white sm:text-lg">
                 {roomData.title || 'غرفة المشاهدة'}
               </h1>
               {roomData.isPrivate && (
@@ -203,12 +205,17 @@ export default function RoomClientWrapper({
                 </span>
               )}
             </div>
-            <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
-              <span className="inline-flex items-center gap-1.5 text-slate-300" aria-live="polite">
-                <span className={`size-1.5 rounded-full ${connectionMeta.color}`} />
-                {connectionMeta.label}
+            <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden text-[11px] text-slate-400">
+              <span className="inline-flex min-w-0 flex-1 items-center gap-1.5 text-slate-300">
+                <UserAvatar imageUrl={roomData.host?.imageUrl} name={roomData.host?.name} className="size-5 border border-white/15 text-[8px]" />
+                <span className="max-w-24 truncate">المضيف: {roomData.host?.name || 'مستخدم أليكس'}</span>
               </span>
-              <span className="truncate font-mono" dir="ltr">{roomId.slice(0, 12)}</span>
+              <span className="h-3 w-px shrink-0 bg-white/10" aria-hidden="true" />
+              <span className="inline-flex shrink-0 items-center gap-1.5 text-slate-300" aria-live="polite">
+                <span className={`size-1.5 rounded-full ${connectionMeta.color}`} />
+                <span className="hidden min-[380px]:inline">{connectionMeta.label}</span>
+              </span>
+              <span className="hidden truncate font-mono sm:inline" dir="ltr">{roomId.slice(0, 12)}</span>
             </div>
           </div>
 
@@ -218,14 +225,13 @@ export default function RoomClientWrapper({
             className="flex min-h-11 shrink-0 cursor-pointer items-center rounded-xl border border-white/10 bg-white/[0.05] px-2.5 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
             aria-label={`عرض أعضاء الغرفة، العدد ${memberCount}`}
           >
-            <span className="flex -space-x-2 space-x-reverse" aria-hidden="true">
+            <i className="fa-solid fa-users text-slate-300 min-[430px]:hidden" aria-hidden="true" />
+            <span className="hidden -space-x-2 space-x-reverse min-[430px]:flex" aria-hidden="true">
               {visibleMembers.map((member) => (
-                <span key={member.id} className="flex size-7 items-center justify-center rounded-full border-2 border-[#0b101a] bg-gradient-to-br from-red-500 to-slate-700 text-[10px] font-black">
-                  {member.name?.[0]?.toUpperCase() || 'U'}
-                </span>
+                <UserAvatar key={member.id} imageUrl={member.avatarUrl} name={member.name} className="size-7 border-2 border-[#0b101a] text-[10px]" />
               ))}
             </span>
-            <span className="mr-2 text-xs font-bold text-slate-200">{memberCount}</span>
+            <span className="mr-1.5 text-xs font-bold text-slate-200 min-[430px]:mr-2">{memberCount}</span>
           </button>
 
           <button

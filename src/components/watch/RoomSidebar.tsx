@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import ConfirmModal from '@/components/ConfirmModal';
 import type { ChatMessage, RoomConnectionState, RoomMember } from '@/hooks/useWatchRoom';
+import UserAvatar from '@/components/UserAvatar';
 
 export type RoomTab = 'chat' | 'members' | 'settings';
 
@@ -472,7 +473,7 @@ export default function RoomSidebar({
       />
 
       <section
-        className="flex h-[clamp(26rem,60dvh,38rem)] min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0b101a] shadow-2xl lg:h-[calc(100dvh-6.25rem)] lg:min-h-[34rem] lg:max-h-[54rem]"
+        className="relative flex h-[clamp(26rem,60dvh,38rem)] min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0b101a] shadow-2xl lg:h-[calc(100dvh-6.25rem)] lg:min-h-[34rem] lg:max-h-[54rem]"
         aria-label="لوحة الغرفة"
       >
         <header className="flex min-h-14 items-center justify-between gap-3 border-b border-white/10 px-4">
@@ -488,15 +489,12 @@ export default function RoomSidebar({
           </span>
         </header>
 
-        <div className="grid grid-cols-3 gap-1 border-b border-white/10 bg-black/15 p-2" role="tablist" aria-label="أقسام الغرفة">
+        <div className="grid grid-cols-3 gap-1 border-b border-white/10 bg-black/15 p-2" role="toolbar" aria-label="أدوات الغرفة">
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              id={`room-tab-${tab.id}`}
               type="button"
-              role="tab"
-              aria-controls={`room-panel-${tab.id}`}
-              aria-selected={activeTab === tab.id}
+              aria-pressed={activeTab === tab.id}
               onClick={() => onActiveTabChange(tab.id)}
               className={`flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2 text-[11px] font-extrabold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${activeTab === tab.id ? 'bg-white/10 text-white shadow-sm' : 'text-slate-400 hover:bg-white/[0.05] hover:text-white'}`}
             >
@@ -511,12 +509,11 @@ export default function RoomSidebar({
           ))}
         </div>
 
-        {activeTab === 'chat' && (
-          <div
+        <div
             id="room-panel-chat"
             className="flex min-h-0 flex-1 flex-col"
-            role="tabpanel"
-            aria-labelledby="room-tab-chat"
+            role="region"
+            aria-label="الدردشة"
           >
             <div className="relative min-h-0 flex-1">
               <div
@@ -557,9 +554,7 @@ export default function RoomSidebar({
                         >
                           <div className="mb-1 flex min-h-11 items-center justify-between gap-2 px-1">
                             <div className="flex min-w-0 items-center gap-2">
-                              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-red-500/80 to-slate-700 text-[10px] font-black text-white">
-                                {message.sender?.[0]?.toUpperCase() || 'U'}
-                              </span>
+                              <UserAvatar imageUrl={message.avatarUrl} name={message.sender} className="size-7 text-[10px]" />
                               <span className="truncate text-xs font-bold text-slate-200">{message.sender}</span>
                               {message.isHost && (
                                 <span className="shrink-0 rounded-full bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-bold text-amber-300">
@@ -747,28 +742,32 @@ export default function RoomSidebar({
               </div>
             </form>
           </div>
-        )}
 
         {activeTab === 'members' && (
           <div
             id="room-panel-members"
-            className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-3 sm:p-4"
-            role="tabpanel"
-            aria-labelledby="room-tab-members"
+            className={`custom-scrollbar absolute inset-x-2 z-30 max-h-[48%] overflow-y-auto rounded-2xl border border-white/15 bg-[#151c29]/[0.98] p-3 shadow-2xl backdrop-blur-xl sm:p-4 ${activeReplyTarget ? 'bottom-[8.75rem]' : 'bottom-[5.25rem]'}`}
+            role="region"
+            aria-label="المشاركون الآن"
           >
             <div className="mb-5 flex min-h-11 items-center justify-between">
               <h3 className="text-sm font-black text-white">المشاركون الآن</h3>
-              <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300">
-                {Math.max(members.length, 1)} متصل
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300">
+                  {Math.max(members.length, 1)} متصل
+                </span>
+                <button type="button" onClick={() => onActiveTabChange('chat')} className="flex size-11 items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white" aria-label="إغلاق لوحة الأعضاء">
+                  <i className="fa-solid fa-xmark" aria-hidden="true" />
+                </button>
+              </div>
             </div>
 
             <div className="space-y-2">
               {[...hosts, ...viewers].map((member) => (
                 <div key={member.id} className="flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.04] p-2.5">
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className={`relative flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-black text-white ${member.isHost ? 'bg-gradient-to-br from-amber-400 to-orange-600' : 'bg-gradient-to-br from-red-500/80 to-slate-700'}`}>
-                      {member.name?.[0]?.toUpperCase() || 'U'}
+                    <span className="relative shrink-0">
+                      <UserAvatar imageUrl={member.avatarUrl} name={member.name} className={`size-9 text-xs ${member.isHost ? 'ring-2 ring-amber-400/70' : ''}`} />
                       {member.isHost && <i className="fa-solid fa-crown absolute -top-1 -right-1 text-[9px] text-amber-200" aria-hidden="true" />}
                     </span>
                     <div className="min-w-0">
@@ -794,10 +793,16 @@ export default function RoomSidebar({
         {activeTab === 'settings' && (
           <div
             id="room-panel-settings"
-            className="custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto p-3 sm:p-4"
-            role="tabpanel"
-            aria-labelledby="room-tab-settings"
+            className={`custom-scrollbar absolute inset-x-2 z-30 max-h-[52%] space-y-3 overflow-y-auto rounded-2xl border border-white/15 bg-[#151c29]/[0.98] p-3 shadow-2xl backdrop-blur-xl sm:p-4 ${activeReplyTarget ? 'bottom-[8.75rem]' : 'bottom-[5.25rem]'}`}
+            role="region"
+            aria-label="إعدادات الغرفة"
           >
+            <div className="flex min-h-11 items-center justify-between">
+              <h3 className="text-sm font-black text-white">إعدادات الغرفة</h3>
+              <button type="button" onClick={() => onActiveTabChange('chat')} className="flex size-11 items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white" aria-label="إغلاق لوحة الإعدادات">
+                <i className="fa-solid fa-xmark" aria-hidden="true" />
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => void copyInviteLink()}

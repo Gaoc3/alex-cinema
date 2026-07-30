@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthUser } from '@/lib/getAuthUser';
+import { validateRoomTitle } from '@/lib/roomTitle';
 
 const MAX_ROOMS_PER_USER = 25;
 const INACTIVE_ROOM_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -18,7 +19,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'بيانات الغرفة غير صالحة' }, { status: 400 });
     }
 
-    const title = typeof body.title === 'string' ? body.title.trim().slice(0, 100) : '';
+    const titleResult = validateRoomTitle(body.title);
+    if (titleResult.error) {
+      return NextResponse.json({ success: false, error: titleResult.error }, { status: 400 });
+    }
     const movieTitle = typeof body.movieTitle === 'string' ? body.movieTitle.trim().slice(0, 200) : null;
     const moviePoster = typeof body.moviePoster === 'string' ? body.moviePoster.trim().slice(0, 2048) : null;
     const isPrivate = body.isPrivate === true;
@@ -40,7 +44,7 @@ export async function POST(req: NextRequest) {
 
       return tx.room.create({
         data: {
-          title: title || 'روم مشاهدة جماعية',
+          title: titleResult.title,
           movieTitle,
           moviePoster,
           isPrivate,

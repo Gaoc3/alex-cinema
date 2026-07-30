@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { decryptData } from '@/utils/cryptoHelper';
 import { getVideoImageUrl } from '@/utils/imageHelper';
+import { dedupeMediaById, getMediaSearchQueryVariants, rankMediaResults } from '@/lib/mediaSearch';
 import toast from 'react-hot-toast';
 
 interface SearchResult {
@@ -24,29 +26,24 @@ interface LobbySearchProps {
   onVideoSelected?: (videoId: string, kind?: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
-const ARABIC_EN_MAP: Record<string, string> = {
-  'باتمان': 'batman',
-  'سبايدرمان': 'spider-man',
-  'سوبرمان': 'superman',
-  'انتقام': 'avengers',
-  'المنتقمون': 'avengers',
-  'هاري بوتر': 'harry potter',
-  'جوكر': 'joker',
-  'تيتانيك': 'titanic',
-  'ماتريكس': 'matrix',
-  'ترانسفورمرز': 'transformers',
-  'توب غان': 'top gun',
-  'فاست': 'fast',
-  'افاتار': 'avatar',
-  'أفاتار': 'avatar'
-};
+const allYearsRange = `1900,${new Date().getFullYear()}`;
 
-function getEnglishSearchQuery(arQuery: string): string {
-  const q = arQuery.trim().toLowerCase();
-  for (const [ar, en] of Object.entries(ARABIC_EN_MAP)) {
-    if (q.includes(ar)) return en;
-  }
-  return q;
+function LobbyPoster({ item }: { item: SearchResult }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const poster = getVideoImageUrl(item, 'poster');
+  const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.ar_title || item.en_title || '?')}`;
+
+  return (
+    <Image
+      src={!imgFailed && poster ? poster : fallback}
+      alt={item.ar_title || item.en_title || 'ملصق المحتوى'}
+      fill
+      sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
+      unoptimized
+      className="absolute inset-0 block h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      onError={() => setImgFailed(true)}
+    />
+  );
 }
 
 export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProps) {
@@ -66,19 +63,15 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
 
     debounceTimer.current = setTimeout(async () => {
       try {
-        const queriesToTry = [query];
-        const mappedEn = getEnglishSearchQuery(query);
-        if (mappedEn !== query.trim().toLowerCase()) {
-          queriesToTry.push(mappedEn);
-        }
+        const queriesToTry = getMediaSearchQueryVariants(query);
 
         const combinedResults: SearchResult[] = [];
 
         for (const qTerm of queriesToTry) {
           const queryEncoded = encodeURIComponent(qTerm);
           const [resMovies, resSeries] = await Promise.all([
-            fetch(`/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,${new Date().getFullYear()}&type=movies`, { signal }),
-            fetch(`/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,${new Date().getFullYear()}&type=series`, { signal })
+            fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=${allYearsRange}&type=movies`, { signal }),
+            fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=${allYearsRange}&type=series`, { signal })
           ]);
 
           let moviesList: SearchResult[] = [];
@@ -101,27 +94,7 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
           );
         }
 
-        const unique = Array.from(new Map(combinedResults.map(item => [item.nb, item])).values());
-        const queryClean = query.trim().toLowerCase();
-
-        const sorted = unique.sort((a, b) => {
-          const titleA = (a.en_title || a.ar_title || '').trim().toLowerCase();
-          const titleB = (b.en_title || b.ar_title || '').trim().toLowerCase();
-
-          const exactA = titleA === queryClean;
-          const exactB = titleB === queryClean;
-          if (exactA && !exactB) return -1;
-          if (!exactA && exactB) return 1;
-
-          const startsA = titleA.startsWith(queryClean);
-          const startsB = titleB.startsWith(queryClean);
-          if (startsA && !startsB) return -1;
-          if (!startsA && startsB) return 1;
-
-          const starsA = parseFloat(a.stars) || 0;
-          const starsB = parseFloat(b.stars) || 0;
-          return starsB - starsA;
-        });
+        const sorted = rankMediaResults(dedupeMediaById(combinedResults), query);
 
         if (!signal.aborted) {
           setResults(sorted.slice(0, 18));
@@ -215,12 +188,7 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
               aria-label={`اختيار ${item.ar_title || item.en_title}`}
             >
               <div className="relative aspect-[2/3] w-full bg-gray-900">
-                <img 
-                  src={getVideoImageUrl(item, 'poster')}
-                  alt={item.ar_title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
+                <LobbyPoster item={item} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                 <div className="absolute bottom-2 right-2 left-2 flex justify-between items-end">
                   <div className="rounded-md bg-[#e50914] px-2 py-0.5 text-[9px] font-black text-white">

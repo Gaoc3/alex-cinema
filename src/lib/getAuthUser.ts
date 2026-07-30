@@ -47,10 +47,10 @@ export async function getAuthUser(): Promise<AuthUserInfo | null> {
       where: { clerkId: authObj.userId },
     });
 
-    if (!dbUser) {
-      const user = await currentUser();
-      if (user) {
-        const name = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "User";
+    const user = await currentUser();
+    if (user) {
+      const name = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "User";
+      if (!dbUser || dbUser.name !== name || dbUser.imageUrl !== user.imageUrl) {
         dbUser = await prisma.user.upsert({
           where: { clerkId: authObj.userId },
           create: {

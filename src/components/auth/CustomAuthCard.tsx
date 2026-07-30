@@ -3,7 +3,11 @@
 import { SignIn, SignUp } from "@clerk/nextjs";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getTelegramLaunchPayload } from "@/lib/telegramWebAppClient";
+import {
+  configureTelegramWebApp,
+  getTelegramLaunchPayload,
+  isTelegramWebAppContext,
+} from "@/lib/telegramWebAppClient";
 
 interface CustomAuthCardProps {
   mode?: "sign-in" | "sign-up";
@@ -77,8 +81,8 @@ const clerkAppearance = {
       boxSizing: "border-box" as const,
       boxShadow: "none",
     },
-    header: { marginBottom: "0.25rem", gap: "0.25rem", textAlign: "right" as const },
-    headerTitle: "text-xl font-black tracking-tight text-white sm:text-2xl",
+    header: { display: "none" as const },
+    headerTitle: { display: "none" as const },
     headerSubtitle: { display: "none" as const },
     main: { width: "100%", minWidth: 0, maxWidth: "100%", gap: "0.875rem", overflow: "visible" },
     socialButtonsRoot: { width: "100%", minWidth: 0, maxWidth: "100%", gap: "0.5rem", padding: "0 1px" },
@@ -154,6 +158,8 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
   const telegramAuthControllerRef = useRef<AbortController | null>(null);
   const browserPreparationControllerRef = useRef<AbortController | null>(null);
   const browserPreparationRef = useRef<Promise<void> | null>(null);
+  const telegramDetectionTimerRef = useRef<number | null>(null);
+  const telegramDetectionAttemptsRef = useRef(0);
 
   const processTelegramAuth = useCallback(async (payload: TelegramAuthPayload) => {
     if (authProcessedRef.current) return;
@@ -255,19 +261,36 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
     };
 
     const detectTelegramAccount = () => {
-      try {
-        tg?.ready();
-        tg?.expand();
-      } catch (error) {
-        console.error("[Telegram WebApp Init Error]:", error);
-      }
+      configureTelegramWebApp();
 
       const { initData, unsafeUser } = getTelegramLaunchPayload();
 
       const isTelegramApp = Boolean(initData || unsafeUser);
 
       if (isTelegramApp) {
+        telegramDetectionAttemptsRef.current = 0;
         void processTelegramAuth({ initData, telegramData: unsafeUser });
+        return;
+      }
+
+      // The SDK can appear a few frames before Telegram injects initData.
+      // Never expose an external OAuth surface during that gap.
+      if (isTelegramWebAppContext()) {
+        setIsTelegramContext(true);
+        setIsOutsideTelegram(false);
+
+        if (telegramDetectionAttemptsRef.current < 20) {
+          setLoading(true);
+          telegramDetectionAttemptsRef.current += 1;
+          if (telegramDetectionTimerRef.current !== null) {
+            window.clearTimeout(telegramDetectionTimerRef.current);
+          }
+          telegramDetectionTimerRef.current = window.setTimeout(detectTelegramAccount, 150);
+          return;
+        }
+
+        setLoading(false);
+        setErrorMessage("تعذر قراءة حساب تليجرام الحالي. أغلق الويب آب وافتحه من البوت مجددًا.");
         return;
       }
 
@@ -297,6 +320,10 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
       telegramAuthControllerRef.current = null;
       browserPreparationControllerRef.current?.abort();
       browserPreparationControllerRef.current = null;
+      if (telegramDetectionTimerRef.current !== null) {
+        window.clearTimeout(telegramDetectionTimerRef.current);
+        telegramDetectionTimerRef.current = null;
+      }
       window.removeEventListener("focus", handleResume);
       window.removeEventListener("pageshow", handleResume);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -310,6 +337,13 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
   }, [processTelegramAuth]);
 
   const startTelegramOidc = () => {
+    if (isTelegramWebAppContext()) {
+      setIsOutsideTelegram(false);
+      setIsTelegramContext(true);
+      setLoading(false);
+      setErrorMessage("تسجيل الدخول داخل تليجرام يتم تلقائيًا. أعد فتح الويب آب من البوت.");
+      return;
+    }
     window.location.assign("/api/auth/telegram/start");
   };
 
@@ -369,6 +403,12 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
               <span className="h-px flex-1 bg-white/10" />
               <span className="text-[0.72rem] font-black tracking-wider text-slate-300">أو</span>
               <span className="h-px flex-1 bg-white/10" />
+            </div>
+
+            <div className="mb-4 text-right">
+              <h2 className="text-xl font-black tracking-tight text-white sm:text-2xl">
+                {mode === "sign-in" ? "تسجيل الدخول" : "إنشاء حساب"}
+              </h2>
             </div>
 
             {mode === "sign-in" ? (

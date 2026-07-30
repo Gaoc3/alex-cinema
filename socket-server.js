@@ -83,6 +83,16 @@ function toISOString(value) {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }
 
+function cleanAvatarUrl(value) {
+  if (typeof value !== 'string' || value.length > 2048) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 function toChatMessage(message, hostUserId, canDelete = false) {
   const isDeleted = Boolean(message.deletedAt);
   const replyIsDeleted = Boolean(message.replyTo?.deletedAt);
@@ -90,6 +100,7 @@ function toChatMessage(message, hostUserId, canDelete = false) {
     id: message.id,
     senderId: message.senderId || null,
     sender: message.senderName,
+    avatarUrl: cleanAvatarUrl(message.sender?.imageUrl),
     text: isDeleted ? '' : message.text,
     createdAt: toISOString(message.createdAt),
     isHost: Boolean(message.senderId && message.senderId === hostUserId),
@@ -287,7 +298,7 @@ async function start() {
           },
         }),
         userId
-          ? prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true } })
+          ? prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, imageUrl: true } })
           : Promise.resolve(null),
       ]);
 
@@ -297,6 +308,7 @@ async function start() {
       socket.data.roomId = room.id;
       socket.data.userId = user?.id || null;
       socket.data.name = cleanText(user?.name || payload.name).slice(0, 120) || 'مشاهد';
+      socket.data.imageUrl = cleanAvatarUrl(user?.imageUrl);
       socket.data.roomRecord = room;
       const subject = typeof payload.sub === 'string' ? payload.sub.slice(0, 180) : '';
       if (!user && !subject.startsWith('guest:')) return next(new Error('AUTH_INVALID'));
@@ -398,6 +410,7 @@ async function start() {
         room.members.set(socket.id, {
           id: socket.id,
           name: socket.data.name,
+          avatarUrl: socket.data.imageUrl,
           isHost,
         });
 
@@ -424,6 +437,9 @@ async function start() {
           orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
           take: 50,
           include: {
+            sender: {
+              select: { imageUrl: true },
+            },
             replyTo: {
               select: { id: true, senderName: true, text: true, deletedAt: true },
             },
@@ -498,6 +514,9 @@ async function start() {
                 replyToId: replyToId || null,
               },
               include: {
+                sender: {
+                  select: { imageUrl: true },
+                },
                 replyTo: {
                   select: { id: true, senderName: true, text: true, deletedAt: true },
                 },
@@ -513,6 +532,9 @@ async function start() {
             savedMessage = await prisma.roomMessage.findUnique({
               where: { roomId_clientNonce: { roomId, clientNonce: clientMessageId } },
               include: {
+                sender: {
+                  select: { imageUrl: true },
+                },
                 replyTo: {
                   select: { id: true, senderName: true, text: true, deletedAt: true },
                 },

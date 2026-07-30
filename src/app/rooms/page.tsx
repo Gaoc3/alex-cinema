@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getImageUrl } from '@/utils/imageHelper';
 import Image from 'next/image';
 import CreateRoomButton from '@/components/CreateRoomButton';
+import UserAvatar from '@/components/UserAvatar';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -131,21 +132,11 @@ export default async function RoomsPage() {
 
                     <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-3">
                       <div className="flex min-w-0 items-center gap-2">
-                        {room.host?.imageUrl ? (
-                          <Image
-                            src={room.host.imageUrl}
-                            alt=""
-                            width={28}
-                            height={28}
-                            sizes="28px"
-                            unoptimized
-                            className="size-7 shrink-0 rounded-full border border-white/20 object-cover"
-                          />
-                        ) : (
-                          <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10">
-                            <i className="fa-solid fa-user text-[0.62rem] text-slate-400" aria-hidden="true" />
-                          </span>
-                        )}
+                        <UserAvatar
+                          imageUrl={room.host?.imageUrl}
+                          name={room.host?.name}
+                          className="size-7 border border-white/20"
+                        />
                         <span className="truncate text-xs font-bold text-slate-300">
                           بواسطة {room.host?.name || 'مستخدم أليكس'}
                         </span>

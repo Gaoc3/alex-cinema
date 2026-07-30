@@ -1,6 +1,7 @@
 'use client';
 import { decryptData } from '@/utils/cryptoHelper';
 import { getVideoImageUrl } from '@/utils/imageHelper';
+import { dedupeMediaById, getMediaSearchQueryVariants, rankMediaResults } from '@/lib/mediaSearch';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -14,6 +15,27 @@ interface SearchResult {
   stars: string;
   img?: string;
   kind?: string;
+}
+
+const allYearsRange = `1900,${new Date().getFullYear()}`;
+
+function SearchResultPoster({ item }: { item: SearchResult }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const poster = getVideoImageUrl(item, 'poster');
+  const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.ar_title || item.en_title || '?')}`;
+
+  return (
+    <Image
+      src={!imgFailed && poster ? poster : fallback}
+      alt={item.ar_title || item.en_title || 'ملصق المحتوى'}
+      width={64}
+      height={96}
+      sizes="64px"
+      unoptimized
+      onError={() => setImgFailed(true)}
+      className="w-full h-full object-cover movie-card-img transition-transform duration-500 group-hover/item:scale-110"
+    />
+  );
 }
 
 export default function SearchBar() {
@@ -53,46 +75,27 @@ export default function SearchBar() {
 
     debounceTimer.current = setTimeout(async () => {
       try {
-        const queryEncoded = encodeURIComponent(query);
-        const [resMovies, resSeries] = await Promise.all([
-          fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,2026&type=movies`, { signal }),
-          fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=1900,2026&type=series`, { signal })
-        ]);
+        const variants = getMediaSearchQueryVariants(query);
+        const responses = await Promise.all(
+          variants.flatMap((variant) => {
+            const queryEncoded = encodeURIComponent(variant);
+            return [
+              fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=${allYearsRange}&type=movies`, { signal }),
+              fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=${allYearsRange}&type=series`, { signal }),
+            ];
+          }),
+        );
 
-        let moviesList: SearchResult[] = [];
-        let seriesList: SearchResult[] = [];
+        const lists = await Promise.all(responses.map(async (response, index) => {
+          if (!response.ok) return [];
+          const encrypted = await response.json();
+          if (!encrypted?.payload) return [];
+          const data = decryptData<SearchResult[]>(encrypted.payload);
+          const fallbackKind = index % 2 === 0 ? '1' : '2';
+          return Array.isArray(data) ? data.map((item) => ({ ...item, kind: item.kind || fallbackKind })) : [];
+        }));
 
-        if (resMovies.ok) {
-          const encrypted_data = await resMovies.json();
-          const data = decryptData<SearchResult[]>(encrypted_data.payload);
-          moviesList = Array.isArray(data) ? data : [];
-        }
-        if (resSeries.ok) {
-          const encrypted_data = await resSeries.json();
-          const data = decryptData<SearchResult[]>(encrypted_data.payload);
-          seriesList = Array.isArray(data) ? data : [];
-        }
-
-        const combined = [...moviesList, ...seriesList];
-        const queryClean = query.trim().toLowerCase();
-        const sorted = combined.sort((a, b) => {
-          const titleA = (a.en_title || a.ar_title || '').trim().toLowerCase();
-          const titleB = (b.en_title || b.ar_title || '').trim().toLowerCase();
-
-          const exactA = titleA === queryClean;
-          const exactB = titleB === queryClean;
-          if (exactA && !exactB) return -1;
-          if (!exactA && exactB) return 1;
-
-          const startsA = titleA.startsWith(queryClean);
-          const startsB = titleB.startsWith(queryClean);
-          if (startsA && !startsB) return -1;
-          if (!startsA && startsB) return 1;
-
-          const starsA = parseFloat(a.stars) || 0;
-          const starsB = parseFloat(b.stars) || 0;
-          return starsB - starsA;
-        });
+        const sorted = rankMediaResults(dedupeMediaById(lists.flat()), query);
 
         if (!signal.aborted) {
           setResults(sorted.slice(0, 8));
@@ -229,15 +232,7 @@ export default function SearchBar() {
 
                     <div className="flex items-center gap-4 flex-grow min-w-0">
                       <div className="w-16 h-24 rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-md relative movie-card-img-wrapper group-hover/item:border-alex-primary/30 transition-colors duration-300">
-                        <Image
-                          src={item.img ? getVideoImageUrl(item, 'poster') : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.ar_title)}`}
-                          alt={item.ar_title}
-                          width={64}
-                          height={96}
-                          sizes="64px"
-                          unoptimized
-                          className="w-full h-full object-cover movie-card-img transition-transform duration-500 group-hover/item:scale-110"
-                        />
+                        <SearchResultPoster item={item} />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity duration-300"></div>
                       </div>
 

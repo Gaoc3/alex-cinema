@@ -13,6 +13,7 @@ export type RoomConnectionState = 'connecting' | 'connected' | 'reconnecting' | 
 export interface RoomMember {
   id: string;
   name: string;
+  avatarUrl: string | null;
   isHost: boolean;
 }
 
@@ -20,6 +21,7 @@ export interface ChatMessage {
   id: string;
   senderId: string | null;
   sender: string;
+  avatarUrl: string | null;
   text: string;
   createdAt: string;
   isHost?: boolean;
@@ -153,12 +155,13 @@ export function useWatchRoom(
   roomId: string,
   initIsHost: boolean,
   username: string,
+  avatarUrl: string | null = null,
 ): WatchRoomHook {
   const [isHost, setIsHost] = useState(initIsHost);
   const [connectionState, setConnectionState] = useState<RoomConnectionState>('connecting');
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [members, setMembers] = useState<RoomMember[]>(() => (
-    username ? [{ id: 'self', name: username, isHost: initIsHost }] : []
+    username ? [{ id: 'self', name: username, avatarUrl, isHost: initIsHost }] : []
   ));
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isChatHistoryLoaded, setIsChatHistoryLoaded] = useState(false);
@@ -170,11 +173,11 @@ export function useWatchRoom(
 
   const socketRef = useRef<Socket | null>(null);
   const deletedMessageTombstonesRef = useRef(new Map<string, string>());
-  const identityRef = useRef({ username, initIsHost });
+  const identityRef = useRef({ username, avatarUrl, initIsHost });
 
   useEffect(() => {
-    identityRef.current = { username, initIsHost };
-  }, [username, initIsHost]);
+    identityRef.current = { username, avatarUrl, initIsHost };
+  }, [username, avatarUrl, initIsHost]);
 
   useEffect(() => {
     if (!roomId) return;
@@ -246,6 +249,7 @@ export function useWatchRoom(
       setMembers([{
         id: newSocket.id || 'self',
         name: identityRef.current.username || 'مشاهد',
+        avatarUrl: identityRef.current.avatarUrl,
         isHost: identityRef.current.initIsHost,
       }]);
       newSocket.emit('join_room', { roomId }, (result: ChatSendResult) => {

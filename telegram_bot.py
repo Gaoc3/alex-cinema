@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import asyncio
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -40,24 +41,28 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 def load_project_env() -> None:
     """Load the project environment when PM2 starts from another directory."""
-    env_path = Path(__file__).resolve().with_name(".env")
-    if not env_path.is_file():
-        return
-
-    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
+    project_dir = Path(__file__).resolve().parent
+    for env_name in (".env.production", ".env"):
+        env_path = project_dir / env_name
+        if not env_path.is_file():
             continue
 
-        key, value = line.split("=", 1)
-        key = key.strip()
-        if key not in BOT_ENV_KEYS:
-            continue
-        value = value.strip()
-        if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
-            value = value[1:-1]
-        if key:
-            os.environ.setdefault(key, value)
+        for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+
+            key, value = line.split("=", 1)
+            key = key.strip()
+            if key not in BOT_ENV_KEYS:
+                continue
+            value = value.strip()
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+                value = value[1:-1]
+            if key:
+                # Explicit PM2 values remain authoritative; production env is
+                # the first file fallback and local .env is the last one.
+                os.environ.setdefault(key, value)
 
 
 def require_https_url(env_name: str, default: str) -> str:
@@ -183,15 +188,20 @@ async def configure_bot(application: Application) -> None:
 
     configured = 0
     for setting_name, apply_setting in settings:
-        try:
-            await apply_setting()
-            configured += 1
-        except Exception as error:
-            logger.warning(
-                "Optional bot %s configuration failed: %s",
-                setting_name,
-                type(error).__name__,
-            )
+        for attempt in range(1, 4):
+            try:
+                await apply_setting()
+                configured += 1
+                break
+            except Exception as error:
+                if attempt == 3:
+                    logger.warning(
+                        "Optional bot %s configuration failed after retries: %s",
+                        setting_name,
+                        type(error).__name__,
+                    )
+                else:
+                    await asyncio.sleep(attempt)
 
     logger.info("Configured %s/%s optional bot settings", configured, len(settings))
 

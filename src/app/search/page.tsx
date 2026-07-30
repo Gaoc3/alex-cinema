@@ -1,10 +1,12 @@
 'use client';
 import { getVideoImageUrl } from '@/utils/imageHelper';
 import { decryptData } from '@/utils/cryptoHelper';
+import { dedupeMediaById, getMediaSearchQueryVariants, rankMediaResults } from '@/lib/mediaSearch';
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Pagination from '@/components/Pagination';
 import CardSkeleton from '@/components/skeleton/CardSkeleton';
 
@@ -39,38 +41,32 @@ const GENRES = [
 ];
 
 const currentYear = new Date().getFullYear();
+const allYearsRange = `1900,${currentYear}`;
 
 const YEARS = [
-  { value: `1900,${currentYear}`, label: 'كل السنوات' },
+  { value: allYearsRange, label: 'كل السنوات' },
   { value: `2020,${currentYear}`, label: `2020 - ${currentYear}` },
   { value: '2010,2019', label: '2010 - 2019' },
   { value: '2000,2009', label: '2000 - 2009' },
   { value: '1900,1999', label: 'قبل 2000' }
 ];
 
-const ARABIC_EN_MAP: Record<string, string> = {
-  'باتمان': 'batman',
-  'سبايدرمان': 'spider-man',
-  'سوبرمان': 'superman',
-  'انتقام': 'avengers',
-  'المنتقمون': 'avengers',
-  'هاري بوتر': 'harry potter',
-  'جوكر': 'joker',
-  'تيتانيك': 'titanic',
-  'ماتريكس': 'matrix',
-  'ترانسفورمرز': 'transformers',
-  'توب غان': 'top gun',
-  'فاست': 'fast',
-  'افاتار': 'avatar',
-  'أفاتار': 'avatar'
-};
+function SearchPoster({ video }: { video: VideoItem }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const poster = getVideoImageUrl(video, 'poster');
+  const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(video.ar_title || video.en_title || '?')}`;
 
-function getEnglishSearchQuery(arQuery: string): string {
-  const q = arQuery.trim().toLowerCase();
-  for (const [ar, en] of Object.entries(ARABIC_EN_MAP)) {
-    if (q.includes(ar)) return en;
-  }
-  return q;
+  return (
+    <Image
+      src={!imgFailed && poster ? poster : fallback}
+      alt={video.ar_title || video.en_title || 'ملصق المحتوى'}
+      fill
+      sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
+      unoptimized
+      className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
+      onError={() => setImgFailed(true)}
+    />
+  );
 }
 
 function SearchPageContent() {
@@ -82,7 +78,7 @@ function SearchPageContent() {
   // Filter States
   const [typeFilter, setTypeFilter] = useState<'all' | 'movies' | 'series'>('all');
   const [categoryId, setCategoryId] = useState('');
-  const [yearRange, setYearRange] = useState('1900,2026');
+  const [yearRange, setYearRange] = useState(allYearsRange);
   const [starRating, setStarRating] = useState(''); // 5 (>=5), 6 (>=6), etc.
 
   // UI Dropdowns
@@ -119,11 +115,7 @@ function SearchPageContent() {
     async function performSearch() {
       setIsLoading(true);
 
-      const queriesToTry = [query];
-      const mappedEn = getEnglishSearchQuery(query);
-      if (mappedEn !== query.trim().toLowerCase()) {
-        queriesToTry.push(mappedEn);
-      }
+      const queriesToTry = getMediaSearchQueryVariants(query);
 
       const categoryParam = categoryId ? `&category_id=${categoryId}` : '';
       const starParam = starRating ? `&star=${starRating}` : '';
@@ -143,7 +135,7 @@ function SearchPageContent() {
 
           if (fetchMovies) {
             moviesPromise = fetch(
-              `/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=movies${categoryParam}${starParam}`,
+              `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=movies${categoryParam}${starParam}`,
               { signal }
             )
               .then((res) => (res.ok ? res.json() : null))
@@ -156,7 +148,7 @@ function SearchPageContent() {
 
           if (fetchSeries) {
             seriesPromise = fetch(
-              `/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=series${categoryParam}${starParam}`,
+              `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=series${categoryParam}${starParam}`,
               { signal }
             )
               .then((res) => (res.ok ? res.json() : null))
@@ -173,8 +165,8 @@ function SearchPageContent() {
         }
 
         // Deduplicate items by nb ID
-        const uniqueMovies = Array.from(new Map(allFetchedMovies.map(item => [item.nb, item])).values());
-        const uniqueSeries = Array.from(new Map(allFetchedSeries.map(item => [item.nb, item])).values());
+        const uniqueMovies = rankMediaResults(dedupeMediaById(allFetchedMovies), query);
+        const uniqueSeries = rankMediaResults(dedupeMediaById(allFetchedSeries), query);
 
         if (!signal.aborted) {
           setMovies(uniqueMovies);
@@ -324,7 +316,7 @@ function SearchPageContent() {
             <button
               onClick={() => setIsYearOpen(!isYearOpen)}
               className={`flex items-center gap-2 px-4 py-2.5 bg-black/30 backdrop-blur-md border rounded-xl text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer ${
-                yearRange !== '1900,2026' ? 'border-alex-primary/30 text-alex-primary' : 'border-white/5'
+                yearRange !== allYearsRange ? 'border-alex-primary/30 text-alex-primary' : 'border-white/5'
               }`}
             >
               <i className="fa-solid fa-calendar text-gray-500"></i>
@@ -399,7 +391,7 @@ function SearchPageContent() {
           <button
             onClick={() => {
               setCategoryId('');
-              setYearRange('1900,2026');
+              setYearRange(allYearsRange);
               setStarRating('');
               setTypeFilter('all');
             }}
@@ -423,17 +415,12 @@ function SearchPageContent() {
                   <Link 
                     key={video.nb} 
                     href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
-                    className="group/card block relative snap-start"
+                    className="group/card block relative snap-start cursor-pointer"
                     style={{ animationDelay: `${index * 25}ms` }}
                   >
                     {/* Poster Wrapper */}
                     <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper shadow-lg group-hover/card:shadow-[0_10px_30px_rgba(229,9,20,0.2)] transition-shadow duration-500">
-                      <img 
-                        src={getVideoImageUrl(video, 'poster')}
-                        alt={video.ar_title} 
-                        className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
-                        loading="lazy"
-                      />
+                      <SearchPoster video={video} />
                       <div className="movie-card-overlay"></div>
 
                       {/* IMDb Badge on Poster */}
@@ -479,17 +466,12 @@ function SearchPageContent() {
                   <Link 
                     key={video.nb} 
                     href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
-                    className="group/card block relative snap-start"
+                    className="group/card block relative snap-start cursor-pointer"
                     style={{ animationDelay: `${index * 25}ms` }}
                   >
                     {/* Poster Wrapper */}
                     <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper shadow-lg group-hover/card:shadow-[0_10px_30px_rgba(59,130,246,0.2)] transition-shadow duration-500">
-                      <img 
-                        src={getVideoImageUrl(video, 'poster')}
-                        alt={video.ar_title} 
-                        className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
-                        loading="lazy"
-                      />
+                      <SearchPoster video={video} />
                       <div className="movie-card-overlay"></div>
 
                       {/* IMDb Badge on Poster */}
