@@ -180,8 +180,6 @@ export async function getActiveRooms() {
     const rooms = await prisma.room.findMany({
       where: {
         isPrivate: false,
-        isActive: true,
-        movieId: { not: null } // Only show rooms that actually selected a movie
       },
       include: {
         host: {
