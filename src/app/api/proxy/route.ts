@@ -26,6 +26,7 @@ function buildResponse(upstreamRes: Response, extraHeaders?: Record<string, stri
     }
   }
 
+
   return new NextResponse(overrideBody !== undefined ? overrideBody : upstreamRes.body, {
     status: upstreamRes.status,
     headers,
@@ -35,8 +36,10 @@ function buildResponse(upstreamRes: Response, extraHeaders?: Record<string, stri
 async function handleSrtResponse(response: Response, debugHeaders: Record<string, string>) {
   try {
     const srtText = await readResponseTextWithLimit(response, 5 * 1024 * 1024);
+    // Strip ASS/SSA override tags like {\an8}, {\pos(...)}, etc. before conversion
+    const cleanedSrt = srtText.replace(/\{[^}]*\}/g, '');
     // Convert SRT to VTT format (replace commas with dots in timestamps and add WEBVTT header)
-    const vttText = 'WEBVTT\n\n' + srtText.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+    const vttText = 'WEBVTT\n\n' + cleanedSrt.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
     const res = buildResponse(response, debugHeaders, vttText, 'text/vtt; charset=utf-8');
     res.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
     return res;

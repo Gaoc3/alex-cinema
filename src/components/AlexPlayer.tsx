@@ -37,7 +37,30 @@ type LockableScreenOrientation = ScreenOrientation & {
   unlock?: () => void;
 };
 
-const getCueText = (cue: TextTrackCue) => (cue as TextCueWithContent).text || '';
+/**
+ * Strip formatting artifacts from subtitle cue text:
+ * 1. ASS/SSA override tags: {\an8}, {\pos(...)}, etc.
+ * 2. HTML tags: <i>, <b>, <font color="...">, etc.
+ * 3. Leading/trailing whitespace per line.
+ */
+const cleanSubtitleText = (text: string): string => {
+  return text
+    // Remove ASS/SSA override blocks: {...}
+    .replace(/\{[^}]*\}/g, '')
+    // Remove HTML tags
+    .replace(/<[^>]+>/g, '')
+    // Decode common HTML entities
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#?\w+;/g, '')
+    // Trim each line
+    .split('\n').map(l => l.trim()).filter(Boolean).join('\n')
+    .trim();
+};
+
+const getCueText = (cue: TextTrackCue) => cleanSubtitleText((cue as TextCueWithContent).text || '');
 
 interface AlexPlayerProps {
   videoData: {

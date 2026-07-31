@@ -163,7 +163,7 @@ function RoomPlayerContent({ video, seasons = [], episodes = [], roomHook }: Roo
     : safeVideo.ar_title || '';
 
   return (
-    <div className="relative flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
+    <div className="relative flex w-full min-w-0 flex-col">
       <div className="relative w-full min-w-0">
         <PlayerSection
           isLoadingStreams={isLoadingStreams}

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { getImageUrl } from '@/utils/imageHelper';
 
 export interface SeriesSeason {
@@ -43,7 +43,9 @@ export default function SeriesNavigator({
   canSelectEpisodes = true,
 }: SeriesNavigatorProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  
+  const [canScrollStart, setCanScrollStart] = useState(false);
+  const [canScrollEnd, setCanScrollEnd] = useState(false);
+
   // Format seconds to hh:mm:ss or mm:ss
   const formatDuration = (secondsStr: string | undefined | null) => {
     if (!secondsStr) return "45:00";
@@ -58,6 +60,25 @@ export default function SeriesNavigator({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  // Update scroll arrow visibility
+  const updateScrollButtons = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    // RTL: scrollLeft is negative in RTL containers in some browsers
+    const scrollLeft = Math.abs(el.scrollLeft);
+    setCanScrollStart(scrollLeft > 8);
+    setCanScrollEnd(scrollLeft + el.clientWidth < el.scrollWidth - 8);
+  }, []);
+
+  // Scroll the carousel by a fixed amount
+  const scrollBy = useCallback((direction: 'start' | 'end') => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    // RTL scroll: "start" = right (positive), "end" = left (negative)
+    const amount = direction === 'end' ? -280 : 280;
+    el.scrollBy({ left: amount, behavior: 'smooth' });
+  }, []);
+
   // Auto-align active episode card into view
   useEffect(() => {
     if (scrollContainerRef.current) {
@@ -70,7 +91,18 @@ export default function SeriesNavigator({
         });
       }
     }
-  }, [activeEpisode?.nb]);
+    // Re-check scroll buttons after content settles
+    setTimeout(updateScrollButtons, 300);
+  }, [activeEpisode?.nb, updateScrollButtons]);
+
+  // Check scroll buttons on mount and when season changes
+  useEffect(() => {
+    updateScrollButtons();
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', updateScrollButtons, { passive: true });
+    return () => el.removeEventListener('scroll', updateScrollButtons);
+  }, [currentSeason, seasonEpisodes, updateScrollButtons]);
 
   return (
     <div className="flex flex-col gap-5 w-full animate-fade-in-up" dir="rtl">
@@ -206,68 +238,102 @@ export default function SeriesNavigator({
         {/* ------------------------------------------------------------- */}
         {/* DESKTOP & TABLET VIEW (HIDDEN SM:FLEX): Horizontal Carousel   */}
         {/* ------------------------------------------------------------- */}
-        <div 
-          key={`desktop-${currentSeason}`}
-          ref={scrollContainerRef}
-          className="hidden sm:flex w-[calc(100%+3rem)] -mx-6 md:w-[calc(100%+4rem)] md:-mx-8 overflow-x-auto pb-4 pt-2 px-6 md:px-8 relative z-10 custom-scrollbar flex-row gap-5 select-none animate-fade-in-up" 
-          dir="rtl"
-        >
-          {seasonEpisodes.map((ep) => {
-            const isActiveEp = activeEpisode?.nb === ep.nb;
-            return (
-              <div 
-                key={ep.nb} 
-                data-active={isActiveEp ? "true" : "false"}
-                className="flex flex-col shrink-0 w-52 md:w-60 group"
-              >
-                <button
-                  onClick={() => setActiveEpisode(ep)}
-                  disabled={!canSelectEpisodes}
-                  className={`relative aspect-[16/10] w-full rounded-2xl overflow-hidden border transition-all duration-300 cursor-pointer ${
-                    isActiveEp 
-                      ? 'border-red-500 shadow-[0_8px_30px_rgba(229,9,20,0.4)] scale-[1.03]' 
-                      : 'border-white/10 hover:border-red-500/50 hover:shadow-[0_6px_20px_rgba(0,0,0,0.6)] group-hover:scale-[1.02]'
-                  }`}
-                >
-                  {/* Thumbnail Image */}
-                  <img 
-                    src={getImageUrl(videoImg, 'poster') || '/logo.svg'} 
-                    alt={`الحلقة ${ep.episodeNummer}`}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                    loading="lazy"
-                  />
-                  
-                  {/* Gradient & Hover Overlay */}
-                  <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex items-center justify-center transition-all duration-300 ${
-                    isActiveEp ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                  }`}>
-                    <div className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-red-600 to-rose-700 text-white text-xs font-black tracking-wide flex items-center gap-1.5 shadow-xl border border-white/20">
-                      <i className="fa-solid fa-circle-play text-xs text-white"></i>
-                      <span>{isActiveEp ? 'جارٍ التشغيل 🔴' : 'تشغيل الحلقة'}</span>
-                    </div>
-                  </div>
+        <div className="hidden sm:block relative w-full">
+          {/* Scroll Arrow – Start (right side in RTL) */}
+          <button
+            type="button"
+            aria-label="تمرير لليمين"
+            onClick={() => scrollBy('start')}
+            className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400
+              bg-[#0b101d]/90 backdrop-blur-md border border-white/15 shadow-[0_4px_20px_rgba(0,0,0,0.5)] text-white hover:bg-red-600/90 hover:border-red-500/60 hover:shadow-[0_4px_20px_rgba(229,9,20,0.4)]
+              ${canScrollStart ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+            style={{ right: '-1rem' }}
+          >
+            <i className="fa-solid fa-chevron-right text-xs" aria-hidden="true" />
+          </button>
 
-                  {isActiveEp && (
-                    <div className="absolute top-2.5 right-2.5 bg-red-600/90 text-white px-2 py-0.5 rounded-lg text-[9px] font-black border border-white/20 backdrop-blur-md flex items-center gap-1 shadow-md">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
-                      مباشر
+          {/* Scroll Arrow – End (left side in RTL) */}
+          <button
+            type="button"
+            aria-label="تمرير لليسار"
+            onClick={() => scrollBy('end')}
+            className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400
+              bg-[#0b101d]/90 backdrop-blur-md border border-white/15 shadow-[0_4px_20px_rgba(0,0,0,0.5)] text-white hover:bg-red-600/90 hover:border-red-500/60 hover:shadow-[0_4px_20px_rgba(229,9,20,0.4)]
+              ${canScrollEnd ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+            style={{ left: '-1rem' }}
+          >
+            <i className="fa-solid fa-chevron-left text-xs" aria-hidden="true" />
+          </button>
+
+          {/* Left fade gradient (for RTL: appears on left when content extends right of view) */}
+          <div className={`pointer-events-none absolute right-0 top-0 h-full w-16 z-10 bg-gradient-to-l from-[#0b101d] to-transparent transition-opacity duration-300 ${canScrollStart ? 'opacity-100' : 'opacity-0'}`} />
+          {/* Right fade gradient (for RTL: appears on right when more content to the left) */}
+          <div className={`pointer-events-none absolute left-0 top-0 h-full w-16 z-10 bg-gradient-to-r from-[#0b101d] to-transparent transition-opacity duration-300 ${canScrollEnd ? 'opacity-100' : 'opacity-0'}`} />
+
+          <div 
+            key={`desktop-${currentSeason}`}
+            ref={scrollContainerRef}
+            className="flex w-[calc(100%+3rem)] -mx-6 md:w-[calc(100%+4rem)] md:-mx-8 overflow-x-auto pb-4 pt-2 px-6 md:px-8 relative z-10 custom-scrollbar flex-row gap-5 select-none animate-fade-in-up" 
+            dir="rtl"
+          >
+            {seasonEpisodes.map((ep) => {
+              const isActiveEp = activeEpisode?.nb === ep.nb;
+              return (
+                <div 
+                  key={ep.nb} 
+                  data-active={isActiveEp ? "true" : "false"}
+                  className="flex flex-col shrink-0 w-52 md:w-60 group"
+                >
+                  <button
+                    onClick={() => setActiveEpisode(ep)}
+                    disabled={!canSelectEpisodes}
+                    className={`relative aspect-[16/10] w-full rounded-2xl overflow-hidden border transition-all duration-300 cursor-pointer ${
+                      isActiveEp 
+                        ? 'border-red-500 shadow-[0_8px_30px_rgba(229,9,20,0.4)] scale-[1.03]' 
+                        : 'border-white/10 hover:border-red-500/50 hover:shadow-[0_6px_20px_rgba(0,0,0,0.6)] group-hover:scale-[1.02]'
+                    }`}
+                  >
+                    {/* Thumbnail Image */}
+                    <img 
+                      src={getImageUrl(videoImg, 'poster') || '/logo.svg'} 
+                      alt={`الحلقة ${ep.episodeNummer}`}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                      loading="lazy"
+                    />
+                    
+                    {/* Gradient & Hover Overlay */}
+                    <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex items-center justify-center transition-all duration-300 ${
+                      isActiveEp ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                    }`}>
+                      <div className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-red-600 to-rose-700 text-white text-xs font-black tracking-wide flex items-center gap-1.5 shadow-xl border border-white/20">
+                        <i className="fa-solid fa-circle-play text-xs text-white"></i>
+                        <span>{isActiveEp ? 'جارٍ التشغيل 🔴' : 'تشغيل الحلقة'}</span>
+                      </div>
                     </div>
-                  )}
-                </button>
-                
-                {/* Metadata Row */}
-                <div className="flex justify-between items-center mt-2.5 px-1 text-xs font-bold">
-                  <span className={`transition-colors truncate max-w-[70%] text-right ${isActiveEp ? 'text-red-400 font-black' : 'text-gray-200 group-hover:text-white'}`}>
-                    الحلقة {ep.episodeNummer}
-                  </span>
-                  <span className="text-gray-400 font-en opacity-80 text-[11px]">
-                    {formatDuration(ep.duration || episodes[0]?.duration)}
-                  </span>
+
+                    {isActiveEp && (
+                      <div className="absolute top-2.5 right-2.5 bg-red-600/90 text-white px-2 py-0.5 rounded-lg text-[9px] font-black border border-white/20 backdrop-blur-md flex items-center gap-1 shadow-md">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                        مباشر
+                      </div>
+                    )}
+                  </button>
+                  
+                  {/* Metadata Row */}
+                  <div className="flex justify-between items-center mt-2.5 px-1 text-xs font-bold">
+                    <span className={`transition-colors truncate max-w-[70%] text-right ${isActiveEp ? 'text-red-400 font-black' : 'text-gray-200 group-hover:text-white'}`}>
+                      الحلقة {ep.episodeNummer}
+                    </span>
+                    <span className="text-gray-400 font-en opacity-80 text-[11px]">
+                      {formatDuration(ep.duration || episodes[0]?.duration)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
+
 
       </div>
     </div>
