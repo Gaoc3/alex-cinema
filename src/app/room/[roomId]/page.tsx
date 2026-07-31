@@ -97,15 +97,20 @@ export default async function RoomPage({
     }
   }
 
+  const safeRoom = JSON.parse(JSON.stringify(room));
+  const safeVideo = video ? JSON.parse(JSON.stringify(video)) : null;
+  const safeSeasons = JSON.parse(JSON.stringify(seasons));
+  const safeEpisodes = JSON.parse(JSON.stringify(episodes));
+
   return (
     <RoomClientWrapper 
       roomId={resolvedParams.roomId} 
-      roomData={room}
+      roomData={safeRoom}
       currentUserId={currentUserId}
       isHostUser={isHost}
-      video={video} 
-      seasons={seasons} 
-      episodes={episodes}
+      video={safeVideo} 
+      seasons={safeSeasons} 
+      episodes={safeEpisodes}
     />
   );
 }
