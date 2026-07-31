@@ -1,9 +1,9 @@
 'use client';
-import { getVideoImageUrl } from '@/utils/imageHelper';
 
-import React, { useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getVideoImageUrl } from '@/utils/imageHelper';
 
 interface Video {
   nb: string;
@@ -25,27 +25,50 @@ interface VideoSliderProps {
 
 export default function VideoSlider({ title, subtitle, videos, accentColor = 'red' }: VideoSliderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollStart, setCanScrollStart] = useState(false);
+  const [canScrollEnd, setCanScrollEnd] = useState(false);
+
+  const updateScrollButtons = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const scrollLeft = Math.abs(el.scrollLeft);
+    setCanScrollStart(scrollLeft > 10);
+    setCanScrollEnd(scrollLeft + el.clientWidth < el.scrollWidth - 10);
+  }, []);
 
   const scroll = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const scrollAmount = 500;
-      // In RTL: scrolling left is forward, scrolling right is backward
+    const el = scrollRef.current;
+    if (el) {
+      const scrollAmount = el.clientWidth * 0.75;
+      // In RTL context: 'left' moves towards previous/beginning, 'right' moves towards next/end
       const amount = direction === 'left' ? -scrollAmount : scrollAmount;
-      scrollRef.current.scrollBy({ left: amount, behavior: 'smooth' });
+      el.scrollBy({ left: amount, behavior: 'smooth' });
     }
   };
+
+  useEffect(() => {
+    updateScrollButtons();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', updateScrollButtons, { passive: true });
+    window.addEventListener('resize', updateScrollButtons, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', updateScrollButtons);
+      window.removeEventListener('resize', updateScrollButtons);
+    };
+  }, [videos, updateScrollButtons]);
 
   if (!videos || videos.length === 0) return null;
 
   return (
     <div className="relative w-full px-2 sm:px-4 mb-16 group/slider">
       {/* Slider Title Header */}
-      <div className="flex items-end justify-between mb-8">
+      <div className="flex items-end justify-between mb-6">
         <div className="flex items-center gap-4">
           <div className={`w-1.5 h-9 rounded-full shadow-lg ${
             accentColor === 'red' 
-              ? 'bg-alex-primary shadow-[0_0_10px_rgba(229,9,20,0.5)]' 
-              : 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]'
+              ? 'bg-alex-primary shadow-[0_0_12px_rgba(229,9,20,0.6)]' 
+              : 'bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.6)]'
           }`}></div>
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">{title}</h2>
@@ -56,22 +79,33 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
 
       {/* Slider Container Wrapper */}
       <div className="relative">
-        {/* Navigation Arrows */}
-        <button 
-          onClick={() => scroll('left')}
-          className="hidden sm:flex absolute -left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 lg:w-12 lg:h-12 rounded-full ios-button text-white items-center justify-center lg:opacity-0 lg:group-hover/slider:opacity-100 opacity-100"
-          aria-label="Scroll Left"
-        >
-          <i className="fa-solid fa-chevron-left text-sm lg:text-lg"></i>
-        </button>
-
+        {/* Navigation Arrow – Right / Next (RTL: right side) */}
         <button 
           onClick={() => scroll('right')}
-          className="hidden sm:flex absolute -right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 lg:w-12 lg:h-12 rounded-full ios-button text-white items-center justify-center lg:opacity-0 lg:group-hover/slider:opacity-100 opacity-100"
+          className={`hidden sm:flex absolute -right-3 sm:-right-5 top-[38%] -translate-y-1/2 z-30 w-11 h-11 lg:w-12 lg:h-12 rounded-full items-center justify-center text-white
+            bg-[#0b101d]/90 backdrop-blur-xl border border-white/20 shadow-[0_8px_25px_rgba(0,0,0,0.6)]
+            hover:bg-red-600 hover:border-red-500/80 hover:shadow-[0_8px_30px_rgba(229,9,20,0.5)] hover:scale-110 active:scale-95 transition-all duration-300
+            ${canScrollEnd ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           aria-label="Scroll Right"
         >
-          <i className="fa-solid fa-chevron-right text-sm lg:text-lg"></i>
+          <i className="fa-solid fa-chevron-right text-base"></i>
         </button>
+
+        {/* Navigation Arrow – Left / Prev (RTL: left side) */}
+        <button 
+          onClick={() => scroll('left')}
+          className={`hidden sm:flex absolute -left-3 sm:-left-5 top-[38%] -translate-y-1/2 z-30 w-11 h-11 lg:w-12 lg:h-12 rounded-full items-center justify-center text-white
+            bg-[#0b101d]/90 backdrop-blur-xl border border-white/20 shadow-[0_8px_25px_rgba(0,0,0,0.6)]
+            hover:bg-red-600 hover:border-red-500/80 hover:shadow-[0_8px_30px_rgba(229,9,20,0.5)] hover:scale-110 active:scale-95 transition-all duration-300
+            ${canScrollStart ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+          aria-label="Scroll Left"
+        >
+          <i className="fa-solid fa-chevron-left text-base"></i>
+        </button>
+
+        {/* Left & Right edge blur/fade overlays */}
+        <div className={`pointer-events-none absolute right-0 top-0 h-full w-12 z-20 bg-gradient-to-l from-[#060811]/80 to-transparent transition-opacity duration-300 ${canScrollStart ? 'opacity-100' : 'opacity-0'}`} />
+        <div className={`pointer-events-none absolute left-0 top-0 h-full w-12 z-20 bg-gradient-to-r from-[#060811]/80 to-transparent transition-opacity duration-300 ${canScrollEnd ? 'opacity-100' : 'opacity-0'}`} />
 
         {/* Horizontal Card Rail */}
         <div 
@@ -86,7 +120,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
             return (
               <Link 
                 key={video.nb} 
-              href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
+                href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
                 className="w-[170px] sm:w-[190px] flex-shrink-0 group/card block relative snap-start transition-transform duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-105"
                 style={{ animationDelay: `${index * 25}ms` }}
               >
