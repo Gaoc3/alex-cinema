@@ -811,7 +811,7 @@ export default function RoomSidebar({
                           aria-hidden="true"
                           className={`pointer-events-none relative h-7 w-12 rounded-full border shadow-inner transition-colors duration-200 ${compactChat ? 'border-red-400/40 bg-red-600' : 'border-white/10 bg-slate-700'}`}
                         >
-                          <span className={`absolute top-1 size-5 rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.35)] transition-all duration-200 ease-out ${compactChat ? 'right-1' : 'right-6'}`} />
+                          <span className={`absolute left-[3px] top-[3px] size-5 rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.35)] transition-transform duration-200 ease-out ${compactChat ? 'translate-x-5' : 'translate-x-0'}`} />
                         </span>
                         <span className="sr-only">تبديل كثافة الدردشة</span>
                       </button>
@@ -841,7 +841,7 @@ export default function RoomSidebar({
                           aria-hidden="true"
                           className={`pointer-events-none relative h-7 w-12 rounded-full border shadow-inner transition-colors duration-200 ${notificationSound ? 'border-red-400/40 bg-red-600' : 'border-white/10 bg-slate-700'}`}
                         >
-                          <span className={`absolute top-1 size-5 rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.35)] transition-all duration-200 ease-out ${notificationSound ? 'right-1' : 'right-6'}`} />
+                          <span className={`absolute left-[3px] top-[3px] size-5 rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.35)] transition-transform duration-200 ease-out ${notificationSound ? 'translate-x-5' : 'translate-x-0'}`} />
                         </span>
                         <span className="sr-only">تبديل صوت إشعارات الدردشة</span>
                       </button>
@@ -865,7 +865,7 @@ export default function RoomSidebar({
                           aria-hidden="true"
                           className={`pointer-events-none relative h-7 w-12 rounded-full border shadow-inner transition-colors duration-200 ${isPrivate ? 'border-red-400/40 bg-red-600' : 'border-white/10 bg-slate-700'}`}
                         >
-                          <span className={`absolute top-1 size-5 rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.35)] transition-all duration-200 ease-out ${isPrivate ? 'right-1' : 'right-6'}`} />
+                          <span className={`absolute left-[3px] top-[3px] size-5 rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.35)] transition-transform duration-200 ease-out ${isPrivate ? 'translate-x-5' : 'translate-x-0'}`} />
                         </span>
                       </button>
                     </div>
