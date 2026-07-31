@@ -513,8 +513,6 @@ export default function RoomSidebar({
         <div
             id="room-panel-chat"
             className="flex min-h-0 flex-1 flex-col"
-            role="region"
-            aria-label="الدردشة"
           >
             <div className="relative min-h-0 flex-1 overflow-hidden bg-[#090e17]">
               <div
@@ -763,18 +761,18 @@ export default function RoomSidebar({
                   role="region"
                   aria-label="إعدادات الغرفة"
                 >
-                  <header className="flex min-h-14 shrink-0 items-center border-b border-white/[0.08] px-4">
+                  <header className="flex min-h-12 shrink-0 items-center border-b border-white/[0.08] px-3">
                     <div className="min-w-0">
                       <h3 className="text-sm font-black text-white">إعدادات الغرفة</h3>
                       <p className="mt-0.5 text-[10px] text-slate-500">تفضيلات الجلسة وإدارتها</p>
                     </div>
                   </header>
 
-                  <div className="custom-scrollbar min-h-0 flex-1 space-y-2.5 overflow-x-hidden overflow-y-auto overscroll-contain px-3 py-3 [scrollbar-gutter:stable] sm:px-4">
+                  <div className="custom-scrollbar min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto overscroll-contain px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] [scrollbar-gutter:stable]">
                     <button
                       type="button"
                       onClick={() => void copyInviteLink()}
-                      className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 text-right transition hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                      className="flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-white/[0.08] bg-white/[0.045] px-3 text-right transition hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                     >
                       <span className="min-w-0">
                         <span className="block text-sm font-bold text-white">دعوة الأصدقاء</span>
@@ -786,7 +784,7 @@ export default function RoomSidebar({
                     <button
                       type="button"
                       onClick={() => void copyRoomId()}
-                      className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 text-right transition hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                      className="flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-white/[0.08] bg-white/[0.045] px-3 text-right transition hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                     >
                       <span className="min-w-0">
                         <span className="block text-sm font-bold text-white">معرّف الغرفة</span>
@@ -795,7 +793,7 @@ export default function RoomSidebar({
                       <i className="fa-regular fa-copy shrink-0 text-red-400" aria-hidden="true" />
                     </button>
 
-                    <div className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 py-2.5">
+                    <div className="flex min-h-14 items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-white/[0.045] px-3 py-1.5">
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-white">دردشة مدمجة</p>
                         <p className="mt-1 text-[11px] leading-5 text-slate-400">تقليل المسافات بين الرسائل</p>
@@ -817,7 +815,7 @@ export default function RoomSidebar({
                       </button>
                     </div>
 
-                    <div className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 py-2.5">
+                    <div className="flex min-h-14 items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-white/[0.045] px-3 py-1.5">
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-white">صوت إشعارات الدردشة</p>
                         <p className="mt-1 text-[11px] leading-5 text-slate-400">تنبيه صوتي للرسائل الجديدة</p>
@@ -847,7 +845,7 @@ export default function RoomSidebar({
                       </button>
                     </div>
 
-                    <div className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 py-2.5">
+                    <div className="flex min-h-14 items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-white/[0.045] px-3 py-1.5">
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-white">غرفة خاصة</p>
                         <p className="mt-1 text-[11px] leading-5 text-slate-400">إخفاؤها من قائمة الغرف العامة</p>
@@ -871,7 +869,7 @@ export default function RoomSidebar({
                     </div>
 
                     {!isHost && (
-                      <p className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4 text-xs leading-6 text-slate-400">
+                      <p className="rounded-xl border border-white/[0.07] bg-white/[0.035] p-3 text-xs leading-5 text-slate-400">
                         إعدادات الخصوصية وإدارة المشاركين متاحة للمضيف فقط.
                       </p>
                     )}
@@ -879,7 +877,7 @@ export default function RoomSidebar({
                     <button
                       type="button"
                       onClick={onLeaveRoom}
-                      className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-sm font-extrabold text-slate-200 transition hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                      className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.045] px-4 text-sm font-extrabold text-slate-200 transition hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                     >
                       <i className="fa-solid fa-arrow-right-from-bracket" aria-hidden="true" />
                       مغادرة الغرفة
@@ -890,7 +888,7 @@ export default function RoomSidebar({
                         type="button"
                         onClick={() => setShowCloseRoomModal(true)}
                         disabled={isClosingRoom}
-                        className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-red-500/25 bg-red-500/10 px-4 text-sm font-extrabold text-red-300 transition hover:border-red-500/40 hover:bg-red-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-500/25 bg-red-500/10 px-4 text-sm font-extrabold text-red-300 transition hover:border-red-500/40 hover:bg-red-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <i className="fa-solid fa-trash-can" aria-hidden="true" />
                         {isClosingRoom ? 'جارٍ الإغلاق...' : 'إغلاق الغرفة'}
@@ -901,10 +899,11 @@ export default function RoomSidebar({
               )}
             </div>
 
-            <form
-              onSubmit={handleSendMessage}
-              className="shrink-0 border-t border-white/10 bg-[#0d131f] px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-            >
+            {activeTab === 'chat' && (
+              <form
+                onSubmit={handleSendMessage}
+                className="shrink-0 border-t border-white/10 bg-[#0d131f] px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+              >
               {activeReplyTarget && (
                 <div className="mb-2 flex min-h-11 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] pr-3">
                   <i className="fa-solid fa-reply shrink-0 text-xs text-red-400" aria-hidden="true" />
@@ -948,7 +947,8 @@ export default function RoomSidebar({
                   <i className={`fa-solid ${isSending ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`} aria-hidden="true" />
                 </button>
               </div>
-            </form>
+              </form>
+            )}
           </div>
 
       </section>
