@@ -179,7 +179,12 @@ export default function RoomClientWrapper({
     if (!newTitle.trim() || isSavingTitle) return;
     setIsSavingTitle(true);
     try {
-      const res = await updateRoomTitle(roomId, newTitle.trim());
+      const response = await fetch('/api/rooms/update-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, title: newTitle.trim() }),
+      });
+      const res = await response.json();
       if (res.success && res.title) {
         setDisplayTitle(res.title);
         setIsEditingTitle(false);
