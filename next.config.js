@@ -1,4 +1,7 @@
 /** @type {import('next').NextConfig} */
+const tunnelProxyBaseUrl = (process.env.TUNNEL_PROXY_BASE_URL || 'http://127.0.0.1:80')
+  .replace(/\/$/, '');
+
 const nextConfig = {
   outputFileTracingRoot: __dirname,
   images: {
@@ -45,7 +48,7 @@ const nextConfig = {
     return [
       {
         source: '/tunnel/:path*',
-        destination: 'http://127.0.0.1:80/tunnel/:path*', // Route it through NGINX on the VPS
+        destination: `${tunnelProxyBaseUrl}/tunnel/:path*`,
       }
     ];
   },

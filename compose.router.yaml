@@ -1,0 +1,61 @@
+name: alex-cinema-router
+
+x-logging: &router-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
+services:
+  sni-proxy:
+    image: haproxy:3.0.5-alpine
+    network_mode: host
+    volumes:
+      - ./docker/router/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    healthcheck:
+      test: ["CMD", "haproxy", "-c", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    read_only: true
+    init: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    logging: *router-logging
+
+  reverse-tunnel:
+    build:
+      context: .
+      dockerfile: docker/router/Dockerfile
+    image: alex-cinema-router-tunnel:local
+    network_mode: host
+    environment:
+      VPS_HOST: ${VPS_HOST:?Set VPS_HOST in .env.router}
+      VPS_TUNNEL_SSH_PORT: ${VPS_TUNNEL_SSH_PORT:-2222}
+      VPS_TUNNEL_USER: ${VPS_TUNNEL_USER:-tunnel}
+      REMOTE_TUNNEL_BIND: ${REMOTE_TUNNEL_BIND:-0.0.0.0}
+      REMOTE_TUNNEL_PORT: ${REMOTE_TUNNEL_PORT:-8443}
+      LOCAL_PROXY_HOST: ${LOCAL_PROXY_HOST:-127.0.0.1}
+      LOCAL_PROXY_PORT: ${LOCAL_PROXY_PORT:-8443}
+    secrets:
+      - router_tunnel_key
+      - vps_known_hosts
+    depends_on:
+      sni-proxy:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:uid=1001,gid=1001,mode=0700
+    init: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    logging: *router-logging
+
+secrets:
+  router_tunnel_key:
+    file: ${ROUTER_TUNNEL_KEY_FILE:-./docker/router/secrets/id_ed25519}
+  vps_known_hosts:
+    file: ${VPS_KNOWN_HOSTS_FILE:-./docker/router/secrets/known_hosts}
+

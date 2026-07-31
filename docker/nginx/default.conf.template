@@ -1,0 +1,75 @@
+proxy_cache_path /var/cache/nginx/alex levels=1:2 keys_zone=alex_media:50m max_size=5g inactive=12h use_temp_path=off;
+
+server {
+    listen 8080;
+    server_name _;
+    server_tokens off;
+    client_max_body_size 2m;
+
+    location = /healthz {
+        access_log off;
+        default_type application/json;
+        return 200 '{"status":"ok"}';
+    }
+
+    location ~ ^/tunnel/([a-zA-Z0-9_-]+)/(.*\.(?:mp4|m3u8|ts|mkv))$ {
+        resolver ${CORE_DNS_IP} ipv6=off valid=30s;
+        set $tunnel_subdomain $1;
+        set $tunnel_path $2;
+
+        proxy_pass https://$tunnel_subdomain.shabakaty.com/$tunnel_path$is_args$args;
+        proxy_http_version 1.1;
+        proxy_set_header Host "$tunnel_subdomain.shabakaty.com";
+        proxy_set_header Referer "https://cinemana.shabakaty.com/";
+        proxy_set_header User-Agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126 Safari/537.36";
+        proxy_set_header Bypass-Tunnel-Reminder "true";
+        proxy_ssl_server_name on;
+        proxy_ssl_name "$tunnel_subdomain.shabakaty.com";
+        proxy_ssl_verify on;
+        proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 120s;
+        proxy_send_timeout 120s;
+        proxy_hide_header Cache-Control;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        proxy_redirect ~^https://([a-zA-Z0-9_-]+)\.shabakaty\.com(.*)$ /tunnel/$1$2;
+    }
+
+    location ~ ^/tunnel/([a-zA-Z0-9_-]+)/(.*)$ {
+        resolver ${CORE_DNS_IP} ipv6=off valid=30s;
+        set $tunnel_subdomain $1;
+        set $tunnel_path $2;
+
+        proxy_pass https://$tunnel_subdomain.shabakaty.com/$tunnel_path$is_args$args;
+        proxy_http_version 1.1;
+        proxy_set_header Host "$tunnel_subdomain.shabakaty.com";
+        proxy_set_header Referer "https://cinemana.shabakaty.com/";
+        proxy_set_header User-Agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126 Safari/537.36";
+        proxy_set_header Bypass-Tunnel-Reminder "true";
+        proxy_ssl_server_name on;
+        proxy_ssl_name "$tunnel_subdomain.shabakaty.com";
+        proxy_ssl_verify on;
+        proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
+        proxy_buffering on;
+        proxy_cache alex_media;
+        proxy_cache_lock on;
+        proxy_cache_valid 200 302 12h;
+        proxy_hide_header Cache-Control;
+        add_header Cache-Control "public, max-age=2592000" always;
+        proxy_redirect ~^https://([a-zA-Z0-9_-]+)\.shabakaty\.com(.*)$ /tunnel/$1$2;
+    }
+
+    location / {
+        proxy_pass http://app:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $http_x_real_ip;
+        proxy_set_header X-Forwarded-For $http_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_read_timeout 120s;
+    }
+}
+

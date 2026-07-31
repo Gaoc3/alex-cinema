@@ -1,0 +1,26 @@
+Port 2222
+ListenAddress 0.0.0.0
+Protocol 2
+HostKey /etc/ssh/keys/ssh_host_ed25519_key
+PidFile /run/sshd/sshd.pid
+AuthorizedKeysFile /home/tunnel/.ssh/authorized_keys
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+ChallengeResponseAuthentication no
+PermitRootLogin no
+PermitEmptyPasswords no
+AllowUsers tunnel
+AllowTcpForwarding remote
+GatewayPorts clientspecified
+X11Forwarding no
+AllowAgentForwarding no
+PermitTunnel no
+PermitUserEnvironment no
+PermitUserRC no
+PermitTTY no
+ClientAliveInterval 15
+ClientAliveCountMax 3
+LoginGraceTime 20
+MaxAuthTries 3
+LogLevel VERBOSE
+Subsystem sftp internal-sftp

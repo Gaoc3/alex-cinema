@@ -1,0 +1,15 @@
+FROM python:3.12.8-slim-bookworm
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+RUN groupadd --system --gid 1001 alex \
+    && useradd --system --uid 1001 --gid alex --home-dir /app alex
+COPY requirements-bot.txt ./
+RUN python -m pip install --disable-pip-version-check -r requirements-bot.txt
+COPY --chown=alex:alex telegram_bot.py ./telegram_bot.py
+USER alex
+CMD ["python", "telegram_bot.py"]
+

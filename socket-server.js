@@ -10,6 +10,8 @@ try {
 }
 
 const PORT = Number(process.env.SOCKET_PORT) || 4000;
+const HOST = process.env.SOCKET_HOST || '0.0.0.0';
+const TRUST_PROXY = process.env.SOCKET_TRUST_PROXY === 'true';
 const ROOM_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ISSUER = 'alex-cinema';
@@ -57,6 +59,15 @@ function isAllowedOrigin(origin) {
 }
 
 const server = http.createServer((request, response) => {
+  if (request.method === 'GET' && request.url === '/healthz') {
+    response.writeHead(200, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+    });
+    response.end(JSON.stringify({ status: 'ok' }));
+    return;
+  }
+
   response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
   response.end('Not found');
 });
@@ -162,8 +173,9 @@ function getClientAddress(socket) {
   const peerAddress = cleanText(socket.handshake.address || 'unknown').slice(0, 128);
   const forwarded = socket.handshake.headers['x-forwarded-for'];
   const firstForwarded = Array.isArray(forwarded) ? forwarded[0] : forwarded?.split(',')[0];
-  const fromTrustedLocalProxy = /^(?:127\.0\.0\.1|::1|::ffff:127\.0\.0\.1)$/.test(peerAddress);
-  return cleanText(fromTrustedLocalProxy && firstForwarded ? firstForwarded : peerAddress).slice(0, 128);
+  const fromTrustedProxy = TRUST_PROXY
+    || /^(?:127\.0\.0\.1|::1|::ffff:127\.0\.0\.1)$/.test(peerAddress);
+  return cleanText(fromTrustedProxy && firstForwarded ? firstForwarded : peerAddress).slice(0, 128);
 }
 
 function countConnectionsByKey(room, dataKey, value) {
@@ -792,8 +804,8 @@ async function start() {
     }
   }, CHAT_WINDOW_MS);
   rateLimitCleanupTimer.unref?.();
-  server.listen(PORT, () => {
-    console.log(`Authenticated Socket.io server running on port ${PORT}`);
+  server.listen(PORT, HOST, () => {
+    console.log(`Authenticated Socket.io server running on ${HOST}:${PORT}`);
   });
 }
 

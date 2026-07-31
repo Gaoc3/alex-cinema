@@ -1,0 +1,3 @@
+# Replace the placeholder with the router public key and keep the restrictions.
+restrict,port-forwarding,permitlisten="0.0.0.0:8443" ssh-ed25519 AAAA_REPLACE_WITH_ROUTER_PUBLIC_KEY alex-cinema-router
+

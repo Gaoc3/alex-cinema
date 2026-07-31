@@ -1,0 +1,22 @@
+. {
+    errors
+    health 0.0.0.0:8080
+    ready 0.0.0.0:8181
+
+    template IN A shabakaty.com {
+        match ^([a-zA-Z0-9_-]+\.)+shabakaty\.com\.$
+        answer "{{ .Name }} 30 IN A ${TUNNEL_GATEWAY_IP}"
+        fallthrough
+    }
+
+    template IN AAAA shabakaty.com {
+        match ^([a-zA-Z0-9_-]+\.)+shabakaty\.com\.$
+        rcode NOERROR
+        fallthrough
+    }
+
+    forward . /etc/resolv.conf
+    cache 30
+    reload
+}
+

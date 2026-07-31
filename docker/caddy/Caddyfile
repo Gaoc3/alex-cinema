@@ -1,0 +1,38 @@
+{
+    admin off
+    email {$ACME_EMAIL}
+}
+
+{$APP_DOMAINS:localhost} {
+    encode zstd gzip
+
+    header {
+        -Server
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    handle /healthz {
+        rewrite * /api/health
+        reverse_proxy app:3000
+    }
+
+    @socket path /socket.io/*
+    handle @socket {
+        reverse_proxy socket:4000
+    }
+
+    handle {
+        reverse_proxy web:8080
+    }
+
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 20MiB
+            roll_keep 5
+            roll_keep_for 168h
+        }
+        format json
+    }
+}
+

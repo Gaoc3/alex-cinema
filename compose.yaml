@@ -1,0 +1,333 @@
+name: ${COMPOSE_PROJECT_NAME:-alex-cinema}
+
+x-app-build: &app-build
+  context: .
+  dockerfile: Dockerfile
+  args:
+    NODE_VERSION: ${NODE_VERSION:-24.12.0}
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:?Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY in .env.docker}
+    NEXT_PUBLIC_CLERK_SIGN_IN_URL: ${NEXT_PUBLIC_CLERK_SIGN_IN_URL:-/sign-in}
+    NEXT_PUBLIC_CLERK_SIGN_UP_URL: ${NEXT_PUBLIC_CLERK_SIGN_UP_URL:-/sign-up}
+    NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: ${NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL:-/home}
+    NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL: ${NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL:-/home}
+    NEXT_PUBLIC_TELEGRAM_BOT_URL: ${NEXT_PUBLIC_TELEGRAM_BOT_URL:-}
+    NEXT_PUBLIC_CRYPTO_SECRET: ${NEXT_PUBLIC_CRYPTO_SECRET:-}
+    NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-}
+    TUNNEL_PROXY_BASE_URL: http://web:8080
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 20m
+    max-file: "5"
+
+x-service-security: &service-security
+  security_opt:
+    - no-new-privileges:true
+  init: true
+  restart: unless-stopped
+  logging: *default-logging
+
+services:
+  postgres:
+    image: postgres:16.4-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-alex_cinema}
+      POSTGRES_USER: ${POSTGRES_USER:-alex}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.docker}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    shm_size: 256mb
+    <<: *service-security
+    networks:
+      - alex
+
+  migrate:
+    image: alex-cinema-app:${IMAGE_TAG:-local}
+    build: *app-build
+    command: ["npx", "prisma", "migrate", "deploy"]
+    env_file:
+      - ${APP_ENV_FILE:-.env.docker}
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env.docker}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+    networks:
+      - alex
+
+  coredns:
+    build:
+      context: .
+      dockerfile: docker/coredns/Dockerfile
+    image: alex-cinema-coredns:${IMAGE_TAG:-local}
+    environment:
+      TUNNEL_GATEWAY_IP: ${TUNNEL_GATEWAY_IP:-172.30.250.10}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    read_only: true
+    tmpfs:
+      - /tmp
+    <<: *service-security
+    networks:
+      alex:
+        ipv4_address: ${CORE_DNS_IP:-172.30.250.53}
+
+  tunnel-sshd:
+    build:
+      context: .
+      dockerfile: docker/tunnel-sshd/Dockerfile
+    image: alex-cinema-tunnel-sshd:${IMAGE_TAG:-local}
+    ports:
+      - "${TUNNEL_SSH_BIND:-0.0.0.0}:${TUNNEL_SSH_PORT:-2222}:2222/tcp"
+    volumes:
+      - tunnel-ssh-host-keys:/etc/ssh/keys
+    secrets:
+      - tunnel_authorized_keys
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 2222"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    <<: *service-security
+    networks:
+      - alex
+
+  tunnel-gateway:
+    image: haproxy:3.0.5-alpine
+    volumes:
+      - ./docker/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      tunnel-sshd:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "haproxy", "-c", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    read_only: true
+    <<: *service-security
+    networks:
+      alex:
+        ipv4_address: ${TUNNEL_GATEWAY_IP:-172.30.250.10}
+
+  app:
+    image: alex-cinema-app:${IMAGE_TAG:-local}
+    build: *app-build
+    env_file:
+      - ${APP_ENV_FILE:-.env.docker}
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env.docker}
+      APP_ORIGIN: ${APP_ORIGIN:?Set APP_ORIGIN in .env.docker}
+    dns:
+      - ${CORE_DNS_IP:-172.30.250.53}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      coredns:
+        condition: service_healthy
+      tunnel-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache:uid=1001,gid=1001,mode=0750
+    <<: *service-security
+    networks:
+      - alex
+
+  socket:
+    image: alex-cinema-app:${IMAGE_TAG:-local}
+    build: *app-build
+    command: ["node", "socket-server.js"]
+    env_file:
+      - ${APP_ENV_FILE:-.env.docker}
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env.docker}
+      APP_ORIGIN: ${APP_ORIGIN:?Set APP_ORIGIN in .env.docker}
+      SOCKET_HOST: 0.0.0.0
+      SOCKET_PORT: 4000
+      SOCKET_TRUST_PROXY: "true"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    read_only: true
+    tmpfs:
+      - /tmp
+    <<: *service-security
+    networks:
+      - alex
+
+  bot:
+    image: alex-cinema-bot:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.bot
+    env_file:
+      - ${APP_ENV_FILE:-.env.docker}
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    read_only: true
+    tmpfs:
+      - /tmp
+    <<: *service-security
+    networks:
+      - alex
+
+  tunnel-monitor:
+    image: alex-cinema-app:${IMAGE_TAG:-local}
+    build: *app-build
+    command: ["node", "docker/tunnel-monitor.js"]
+    env_file:
+      - ${APP_ENV_FILE:-.env.docker}
+    dns:
+      - ${CORE_DNS_IP:-172.30.250.53}
+    depends_on:
+      coredns:
+        condition: service_healthy
+      tunnel-gateway:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    <<: *service-security
+    networks:
+      - alex
+
+  web:
+    image: nginx:1.27.2-alpine
+    environment:
+      CORE_DNS_IP: ${CORE_DNS_IP:-172.30.250.53}
+      NGINX_ENVSUBST_FILTER: CORE_DNS_IP
+    volumes:
+      - ./docker/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - nginx-cache:/var/cache/nginx
+    depends_on:
+      app:
+        condition: service_healthy
+      coredns:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    <<: *service-security
+    networks:
+      - alex
+
+  caddy:
+    image: caddy:2.8.4-alpine
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env.docker}
+      APP_DOMAINS: ${APP_DOMAINS:?Set APP_DOMAINS in .env.docker}
+    ports:
+      - "${HTTP_BIND:-0.0.0.0}:80:80/tcp"
+      - "${HTTPS_BIND:-0.0.0.0}:443:443/tcp"
+      - "${HTTPS_BIND:-0.0.0.0}:443:443/udp"
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+      - caddy-logs:/var/log/caddy
+    depends_on:
+      web:
+        condition: service_healthy
+      socket:
+        condition: service_healthy
+    <<: *service-security
+    networks:
+      - alex
+
+  db-backup:
+    image: postgres:16.4-alpine
+    profiles: ["ops"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env.docker}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ./backups:/backups
+      - ./docker/postgres/backup.sh:/usr/local/bin/backup.sh:ro
+    entrypoint: ["/bin/sh", "/usr/local/bin/backup.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - alex
+
+  db-restore:
+    image: postgres:16.4-alpine
+    profiles: ["restore"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env.docker}
+      RESTORE_FILE: ${RESTORE_FILE:-}
+      CONFIRM_RESTORE: ${CONFIRM_RESTORE:-}
+    volumes:
+      - ./backups:/backups:ro
+      - ./docker/postgres/restore.sh:/usr/local/bin/restore.sh:ro
+    entrypoint: ["/bin/sh", "/usr/local/bin/restore.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - alex
+
+volumes:
+  postgres-data:
+  tunnel-ssh-host-keys:
+  nginx-cache:
+  caddy-data:
+  caddy-config:
+  caddy-logs:
+
+networks:
+  alex:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${DOCKER_SUBNET:-172.30.250.0/24}
+
+secrets:
+  tunnel_authorized_keys:
+    file: ${TUNNEL_AUTHORIZED_KEYS_FILE:-./docker/tunnel-sshd/secrets/authorized_keys}
