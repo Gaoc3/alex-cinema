@@ -132,10 +132,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
         ))}
         
         {/* Soft, natural gradients for text contrast without harsh dark ruler bars */}
-        <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#06070a] via-[#06070a]/20 to-transparent z-[2]"></div>
-        <div className="hidden lg:block absolute inset-y-0 right-0 w-[45%] bg-gradient-to-l from-[#06070a]/50 via-[#06070a]/10 to-transparent z-[2]"></div>
-        <div className="hidden lg:block absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-[#06070a]/20 to-transparent z-[2]"></div>
-        <div className="lg:hidden absolute inset-0 bg-gradient-to-t from-[#06070a]/40 via-transparent to-transparent z-[2]"></div>
+        <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#06070a] via-[#06070a]/30 to-transparent z-[2]"></div>
+        <div className="hidden lg:block absolute inset-y-0 right-0 w-[55%] bg-gradient-to-l from-[#06070a]/75 via-[#06070a]/35 to-transparent z-[2]"></div>
+        <div className="hidden lg:block absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-[#06070a]/30 to-transparent z-[2]"></div>
+        <div className="lg:hidden absolute inset-0 bg-gradient-to-t from-[#06070a]/70 via-[#06070a]/20 to-transparent z-[2]"></div>
         
         {/* Mobile "Watch Now" Button (Cinemana Style) */}
         <div className="absolute bottom-3 right-4 z-10 lg:hidden">
@@ -194,15 +194,15 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             {/* Metadata Row: Clean, minimalist, and easy to scan */}
             <div className="flex flex-wrap items-center justify-start gap-3 sm:gap-4 mb-4 relative z-10 text-sm md:text-base font-semibold text-gray-100">
               {current.kind === '2' && (
-                 <span className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">مسلسل</span>
+                 <span className="text-white [text-shadow:_0_1px_4px_rgba(0,0,0,0.8)]">مسلسل</span>
               )}
               {current.kind !== '2' && (
-                 <span className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">فيلم</span>
+                 <span className="text-white [text-shadow:_0_1px_4px_rgba(0,0,0,0.8)]">فيلم</span>
               )}
               <span className="w-1.5 h-1.5 rounded-full bg-gray-400/80"></span>
-              <span className="font-en tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">{current.year}</span>
+              <span className="font-en tracking-wider [text-shadow:_0_1px_4px_rgba(0,0,0,0.8)]">{current.year}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-gray-400/80"></span>
-              <span className="flex items-center gap-1.5 text-yellow-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+              <span className="flex items-center gap-1.5 text-yellow-400 [text-shadow:_0_1px_4px_rgba(0,0,0,0.8)]">
                 <i className="fa-solid fa-star text-xs"></i> 
                 <span className="font-en mt-0.5">{current.stars}</span>
               </span>
@@ -211,16 +211,16 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
               </span>
             </div>
             
-            <h1 className={`${titleFontSizeClass} font-black text-white mb-2 leading-tight drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] [text-shadow:_0_2px_12px_rgba(0,0,0,0.9)] relative z-10`}>
+            <h1 className={`${titleFontSizeClass} font-black text-white mb-2 leading-tight [text-shadow:_0_2px_10px_rgba(0,0,0,0.7)] relative z-10`}>
               {current.ar_title}
             </h1>
             {current.en_title && current.en_title !== current.ar_title && (
-              <h2 className="text-sm sm:text-lg text-gray-200 font-bold font-en mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] relative z-10 tracking-widest uppercase">
+              <h2 className="text-sm sm:text-lg text-gray-200 font-bold font-en mb-4 [text-shadow:_0_1px_6px_rgba(0,0,0,0.7)] relative z-10 tracking-widest uppercase">
                 {current.en_title}
               </h2>
             )}
             
-            <p className={`text-gray-200 text-sm sm:text-base lg:text-lg mb-6 leading-relaxed max-w-xl font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] relative z-10 ${layout.isShortScreen ? 'line-clamp-2' : 'line-clamp-3'}`}>
+            <p className={`text-gray-200 text-sm sm:text-base lg:text-lg mb-6 leading-relaxed max-w-xl font-medium [text-shadow:_0_1px_6px_rgba(0,0,0,0.7)] relative z-10 ${layout.isShortScreen ? 'line-clamp-2' : 'line-clamp-3'}`}>
               {current.ar_content}
             </p>
           </div>
