@@ -22,8 +22,8 @@ const compareEpisodes = (a: SeriesEpisode, b: SeriesEpisode) => {
 
 interface RoomPlayerUIProps {
   video: RoomVideoData;
-  episodes: SeriesEpisode[];
-  seasons: SeriesSeason[];
+  episodes?: SeriesEpisode[];
+  seasons?: SeriesSeason[];
   roomHook: WatchRoomHook;
 }
 
@@ -43,14 +43,18 @@ function getInitialEpisode(
   return sortedEpisodes[0] ?? null;
 }
 
-function RoomPlayerContent({ video, seasons, episodes, roomHook }: RoomPlayerUIProps) {
-  const isSeries = video.kind === '2';
-  const canChangeEpisode = Boolean(roomHook.isHost);
+function RoomPlayerContent({ video, seasons = [], episodes = [], roomHook }: RoomPlayerUIProps) {
+  const safeEpisodes = Array.isArray(episodes) ? episodes : [];
+  const safeSeasons = Array.isArray(seasons) ? seasons : [];
+  const safeVideo = video || {} as RoomVideoData;
+
+  const isSeries = safeVideo.kind === '2';
+  const canChangeEpisode = Boolean(roomHook?.isHost);
   const sortedEpisodesList = useMemo(
-    () => [...episodes].sort(compareEpisodes),
-    [episodes],
+    () => [...safeEpisodes].sort(compareEpisodes),
+    [safeEpisodes],
   );
-  const initialEpisode = getInitialEpisode(sortedEpisodesList, roomHook.remoteEpisodeId);
+  const initialEpisode = getInitialEpisode(sortedEpisodesList, roomHook?.remoteEpisodeId ?? null);
   const [activeEpisode, setActiveEpisode] = useState<SeriesEpisode | null>(initialEpisode);
   const [currentSeason, setCurrentSeason] = useState(initialEpisode?.season || '');
   const [episodeRequest, setEpisodeRequest] = useState<EpisodeRequestState | null>(null);
@@ -121,7 +125,7 @@ function RoomPlayerContent({ video, seasons, episodes, roomHook }: RoomPlayerUIP
     && activeIndex < sortedEpisodesList.length - 1;
 
   const selectEpisode = async (episode: SeriesEpisode) => {
-    if (!canChangeEpisode) return;
+    if (!canChangeEpisode || !roomHook) return;
 
     const result = await roomHook.changeEpisode(
       episode.nb,
@@ -144,19 +148,19 @@ function RoomPlayerContent({ video, seasons, episodes, roomHook }: RoomPlayerUIP
   };
 
   const seasonEpisodes = useMemo(
-    () => episodes
+    () => safeEpisodes
       .filter((episode) => episode.season === currentSeason)
       .sort((a, b) => {
         const numA = parseInt(a.episodeNummer) || 0;
         const numB = parseInt(b.episodeNummer) || 0;
         return numA - numB;
       }),
-    [currentSeason, episodes],
+    [currentSeason, safeEpisodes],
   );
 
   const displayTitle = isSeries && activeEpisode
-    ? `${video.ar_title || ''} - الحلقة ${activeEpisode.episodeNummer}`
-    : video.ar_title || '';
+    ? `${safeVideo.ar_title || ''} - الحلقة ${activeEpisode.episodeNummer}`
+    : safeVideo.ar_title || '';
 
   return (
     <div className="relative flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
@@ -165,7 +169,7 @@ function RoomPlayerContent({ video, seasons, episodes, roomHook }: RoomPlayerUIP
           isLoadingStreams={isLoadingStreams}
           isSeries={isSeries}
           activeEpisodeDetails={activeEpisodeDetails}
-          video={video}
+          video={safeVideo}
           displayTitle={displayTitle}
           hasNextEpisode={hasNextEpisode && canChangeEpisode}
           playNextEpisode={playNextEpisode}
@@ -173,18 +177,18 @@ function RoomPlayerContent({ video, seasons, episodes, roomHook }: RoomPlayerUIP
         />
       </div>
 
-      {isSeries && episodes.length > 0 && (
+      {isSeries && safeEpisodes.length > 0 && (
         <div className="border-t border-white/10 bg-[#0b101a] px-2 pb-4 pt-5 sm:px-5">
           <SeriesNavigator
-            seasons={seasons}
-            episodes={episodes}
+            seasons={safeSeasons}
+            episodes={safeEpisodes}
             currentSeason={currentSeason}
             setCurrentSeason={setCurrentSeason}
             activeEpisode={activeEpisode}
             setActiveEpisode={selectEpisode}
             seasonEpisodes={seasonEpisodes}
-            videoTitle={video.ar_title || ''}
-            videoImg={video.img || ''}
+            videoTitle={safeVideo.ar_title || ''}
+            videoImg={safeVideo.img || ''}
             canSelectEpisodes={canChangeEpisode}
           />
         </div>
@@ -194,9 +198,12 @@ function RoomPlayerContent({ video, seasons, episodes, roomHook }: RoomPlayerUIP
 }
 
 export default function RoomPlayerUI(props: RoomPlayerUIProps) {
-  const videoKey = props.video.nb || props.video.id || 'video';
-  const episodeKey = props.roomHook.remoteEpisodeId || 'default';
-  const contentKey = `${videoKey}:${episodeKey}:${props.episodes.length}`;
+  const safeVideo = props.video || {} as RoomVideoData;
+  const safeEpisodes = Array.isArray(props.episodes) ? props.episodes : [];
+  const safeSeasons = Array.isArray(props.seasons) ? props.seasons : [];
+  const videoKey = safeVideo.nb || safeVideo.id || 'video';
+  const episodeKey = props.roomHook?.remoteEpisodeId || 'default';
+  const contentKey = `${videoKey}:${episodeKey}:${safeEpisodes.length}`;
 
-  return <RoomPlayerContent key={contentKey} {...props} />;
+  return <RoomPlayerContent key={contentKey} {...props} video={safeVideo} episodes={safeEpisodes} seasons={safeSeasons} />;
 }
