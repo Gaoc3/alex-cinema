@@ -178,21 +178,20 @@ function RoomPlayerContent({ video, seasons = [], episodes = [], roomHook }: Roo
       </div>
 
       {isSeries && safeEpisodes.length > 0 && (
-        <div className="border-t border-white/10 bg-[#0b101a] px-2 pb-4 pt-5 sm:px-5">
-          <SeriesNavigator
-            seasons={safeSeasons}
-            episodes={safeEpisodes}
-            currentSeason={currentSeason}
-            setCurrentSeason={setCurrentSeason}
-            activeEpisode={activeEpisode}
-            setActiveEpisode={selectEpisode}
-            seasonEpisodes={seasonEpisodes}
-            videoTitle={safeVideo.ar_title || ''}
-            videoImg={safeVideo.img || ''}
-            canSelectEpisodes={canChangeEpisode}
-          />
-        </div>
+        <SeriesNavigator
+          seasons={safeSeasons}
+          episodes={safeEpisodes}
+          currentSeason={currentSeason}
+          setCurrentSeason={setCurrentSeason}
+          activeEpisode={activeEpisode}
+          setActiveEpisode={selectEpisode}
+          seasonEpisodes={seasonEpisodes}
+          videoTitle={safeVideo.ar_title || ''}
+          videoImg={safeVideo.img || ''}
+          canSelectEpisodes={canChangeEpisode}
+        />
       )}
+
     </div>
   );
 }
