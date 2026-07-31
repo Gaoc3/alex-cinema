@@ -124,6 +124,33 @@ export async function updateRoomVideo(roomId: string, data: {
   }
 }
 
+export async function updateRoomTitle(roomId: string, title: string) {
+  try {
+    const titleResult = validateRoomTitle(title);
+    if (titleResult.error) return { success: false, error: titleResult.error };
+
+    const userSync = await syncUser();
+    if (!userSync.success || !userSync.user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const room = await prisma.room.findUnique({ where: { id: roomId } });
+    if (!room || room.hostId !== userSync.user.id) {
+      return { success: false, error: 'غير مصرح لك بتعديل اسم الغرفة' };
+    }
+
+    const updatedRoom = await prisma.room.update({
+      where: { id: roomId },
+      data: { title: titleResult.title }
+    });
+
+    return { success: true, title: updatedRoom.title };
+  } catch (error) {
+    console.error("Error updating room title:", error);
+    return { success: false, error: 'حدث خطأ أثناء تعديل اسم الغرفة' };
+  }
+}
+
 export async function toggleRoomPrivacy(roomId: string, isPrivate: boolean) {
   try {
     const userSync = await syncUser();

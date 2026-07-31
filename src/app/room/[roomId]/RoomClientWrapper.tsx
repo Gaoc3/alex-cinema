@@ -11,6 +11,7 @@ import { useWatchRoom } from '@/hooks/useWatchRoom';
 import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
 import RoomSidebar, { type RoomTab } from '@/components/watch/RoomSidebar';
 import { getVideoImageUrl } from '@/utils/imageHelper';
+import { updateRoomTitle } from '@/app/actions/room.actions';
 import LobbySearch from './LobbySearch';
 import UserAvatar from '@/components/UserAvatar';
 
@@ -168,6 +169,31 @@ export default function RoomClientWrapper({
   const visibleMembers = roomHook.members.slice(0, 3);
   const memberCount = Math.max(roomHook.members.length, 1);
 
+  const [displayTitle, setDisplayTitle] = useState(roomData.title || 'غرفة المشاهدة');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [newTitle, setNewTitle] = useState(displayTitle);
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
+
+  const handleSaveTitle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim() || isSavingTitle) return;
+    setIsSavingTitle(true);
+    try {
+      const res = await updateRoomTitle(roomId, newTitle.trim());
+      if (res.success && res.title) {
+        setDisplayTitle(res.title);
+        setIsEditingTitle(false);
+        toast.success('تم تغيير اسم الغرفة بنجاح');
+      } else {
+        toast.error(res.error || 'فشل تغيير اسم الغرفة');
+      }
+    } catch {
+      toast.error('حدث خطأ أثناء تعديل اسم الغرفة');
+    } finally {
+      setIsSavingTitle(false);
+    }
+  };
+
   return (
     <div className="relative min-h-[100svh] overflow-x-clip bg-[#070a11] text-white" dir="rtl">
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
@@ -195,14 +221,62 @@ export default function RoomClientWrapper({
 
           <div className="min-w-0 flex-1 px-1">
             <div className="flex min-w-0 items-center gap-2">
-              <h1 className="truncate text-base font-black text-white sm:text-lg">
-                {roomData.title || 'غرفة المشاهدة'}
-              </h1>
-              {roomData.isPrivate && (
-                <span className="shrink-0 rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-200">
-                  <i className="fa-solid fa-lock ml-1" aria-hidden="true" />
-                  خاصة
-                </span>
+              {isEditingTitle ? (
+                <form
+                  onSubmit={handleSaveTitle}
+                  className="flex items-center gap-1.5 min-w-0 flex-1"
+                >
+                  <input
+                    type="text"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    maxLength={50}
+                    className="min-h-8 w-full min-w-0 rounded-lg border border-red-500/40 bg-black/40 px-2.5 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-red-500/30"
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSavingTitle}
+                    className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-red-600 text-xs font-bold text-white hover:bg-red-700 cursor-pointer"
+                    title="حفظ الاسم"
+                  >
+                    <i className={isSavingTitle ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-check"} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingTitle(false)}
+                    className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-xs text-slate-300 hover:bg-white/10 cursor-pointer"
+                    title="إلغاء"
+                  >
+                    <i className="fa-solid fa-xmark" />
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <h1 className="truncate text-base font-black text-white sm:text-lg">
+                    {displayTitle}
+                  </h1>
+                  {isHostUser && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewTitle(displayTitle);
+                        setIsEditingTitle(true);
+                      }}
+                      className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition"
+                      title="إعادة تسمية الغرفة"
+                      aria-label="إعادة تسمية الغرفة"
+                    >
+                      <i className="fa-solid fa-pen text-xs" aria-hidden="true" />
+                    </button>
+                  )}
+                  {roomData.isPrivate && (
+                    <span className="shrink-0 rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-200">
+                      <i className="fa-solid fa-lock ml-1" aria-hidden="true" />
+                      خاصة
+                    </span>
+                  )}
+                </>
               )}
             </div>
             <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden text-[11px] text-slate-400">
