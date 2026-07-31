@@ -805,9 +805,14 @@ export default function RoomSidebar({
                         role="switch"
                         aria-checked={compactChat}
                         onClick={() => setCompactChat((value) => !value)}
-                        className={`relative h-11 w-14 shrink-0 cursor-pointer rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${compactChat ? 'bg-red-600' : 'bg-slate-700'}`}
+                        className="group flex h-11 w-14 shrink-0 cursor-pointer items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b111c]"
                       >
-                        <span className={`absolute top-2.5 size-6 rounded-full bg-white shadow transition-transform ${compactChat ? 'right-1.5' : 'right-6'}`} />
+                        <span
+                          aria-hidden="true"
+                          className={`pointer-events-none relative h-7 w-12 rounded-full border shadow-inner transition-colors duration-200 ${compactChat ? 'border-red-400/40 bg-red-600' : 'border-white/10 bg-slate-700'}`}
+                        >
+                          <span className={`absolute top-1 size-5 rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.35)] transition-all duration-200 ease-out ${compactChat ? 'right-1' : 'right-6'}`} />
+                        </span>
                         <span className="sr-only">تبديل كثافة الدردشة</span>
                       </button>
                     </div>
@@ -830,9 +835,14 @@ export default function RoomSidebar({
                             return !value;
                           });
                         }}
-                        className={`relative h-11 w-14 shrink-0 cursor-pointer rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${notificationSound ? 'bg-red-600' : 'bg-slate-700'}`}
+                        className="group flex h-11 w-14 shrink-0 cursor-pointer items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b111c]"
                       >
-                        <span className={`absolute top-2.5 size-6 rounded-full bg-white shadow transition-transform ${notificationSound ? 'right-1.5' : 'right-6'}`} />
+                        <span
+                          aria-hidden="true"
+                          className={`pointer-events-none relative h-7 w-12 rounded-full border shadow-inner transition-colors duration-200 ${notificationSound ? 'border-red-400/40 bg-red-600' : 'border-white/10 bg-slate-700'}`}
+                        >
+                          <span className={`absolute top-1 size-5 rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.35)] transition-all duration-200 ease-out ${notificationSound ? 'right-1' : 'right-6'}`} />
+                        </span>
                         <span className="sr-only">تبديل صوت إشعارات الدردشة</span>
                       </button>
                     </div>
@@ -849,9 +859,14 @@ export default function RoomSidebar({
                         disabled={!isHost || isToggling}
                         aria-checked={isPrivate}
                         aria-label="تبديل خصوصية الغرفة"
-                        className={`relative h-11 w-14 shrink-0 cursor-pointer rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-45 ${isPrivate ? 'bg-red-600' : 'bg-slate-700'}`}
+                        className="group flex h-11 w-14 shrink-0 cursor-pointer items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b111c] disabled:cursor-not-allowed disabled:opacity-45"
                       >
-                        <span className={`absolute top-2.5 size-6 rounded-full bg-white shadow transition-transform ${isPrivate ? 'right-1.5' : 'right-6'}`} />
+                        <span
+                          aria-hidden="true"
+                          className={`pointer-events-none relative h-7 w-12 rounded-full border shadow-inner transition-colors duration-200 ${isPrivate ? 'border-red-400/40 bg-red-600' : 'border-white/10 bg-slate-700'}`}
+                        >
+                          <span className={`absolute top-1 size-5 rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.35)] transition-all duration-200 ease-out ${isPrivate ? 'right-1' : 'right-6'}`} />
+                        </span>
                       </button>
                     </div>
 
