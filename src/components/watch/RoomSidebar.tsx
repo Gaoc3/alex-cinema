@@ -474,7 +474,7 @@ export default function RoomSidebar({
       />
 
       <section
-        className="relative flex h-[clamp(26rem,60dvh,38rem)] min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0b101a] shadow-2xl lg:h-[calc(100dvh-6.25rem)] lg:min-h-[34rem] lg:max-h-[54rem]"
+        className="relative flex h-[clamp(26rem,60dvh,38rem)] min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0b101a] shadow-2xl lg:h-[min(68dvh,42rem)] lg:min-h-[30rem] lg:max-h-[42rem]"
         aria-label="لوحة الغرفة"
       >
         <header className="flex min-h-14 items-center justify-between gap-3 border-b border-white/10 px-4">

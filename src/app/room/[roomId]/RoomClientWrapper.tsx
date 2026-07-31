@@ -245,7 +245,7 @@ export default function RoomClientWrapper({
           </button>
         </header>
 
-        <div className="grid min-h-0 flex-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]" dir="ltr">
+        <div className="grid min-h-0 flex-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]" dir="ltr">
           <section className="min-w-0" dir="rtl">
             {!video ? (
               <div className="flex min-h-[min(46svh,26rem)] items-center justify-center rounded-2xl border border-white/10 bg-[#0b101a]/90 p-5 shadow-2xl sm:min-h-[min(56svh,34rem)] sm:p-9 lg:min-h-[min(68svh,42rem)]">
