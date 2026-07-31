@@ -384,9 +384,13 @@ export default function RoomSidebar({
     if (!isHost || isToggling) return;
     setIsToggling(true);
     try {
-      const { toggleRoomPrivacy } = await import('@/app/actions/room.actions');
       const nextPrivacy = !isPrivate;
-      const result = await toggleRoomPrivacy(roomId, nextPrivacy);
+      const response = await fetch('/api/rooms/toggle-privacy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, isPrivate: nextPrivacy }),
+      });
+      const result = await response.json();
       if (result.success) {
         setIsPrivate(nextPrivacy);
         toast.success(nextPrivacy ? 'أصبحت الغرفة خاصة' : 'أصبحت الغرفة عامة');
@@ -405,8 +409,12 @@ export default function RoomSidebar({
     if (!isHost || isClosingRoom) return;
     setIsClosingRoom(true);
     try {
-      const { deleteRoom } = await import('@/app/actions/room.actions');
-      const result = await deleteRoom(roomId);
+      const response = await fetch('/api/rooms/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId }),
+      });
+      const result = await response.json();
       if (result.success) {
         await closeRoom();
         toast.success('تم إغلاق الغرفة');
