@@ -55,7 +55,12 @@ export default async function RoomPage({
   let episodes: SeriesEpisode[] = [];
 
   if (videoId) {
-    video = await getVideoDetails(videoId) as RoomPageVideo | null;
+    try {
+      video = await getVideoDetails(videoId) as RoomPageVideo | null;
+    } catch (e) {
+      console.error('Error fetching video details for room:', e);
+      video = null;
+    }
 
     if (!video) {
       try {
