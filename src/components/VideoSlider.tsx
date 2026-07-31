@@ -60,52 +60,99 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
 
   if (!videos || videos.length === 0) return null;
 
+  const isRed = accentColor === 'red';
+
   return (
     <div className="relative w-full px-2 sm:px-4 mb-16 group/slider">
       {/* Slider Title Header */}
-      <div className="flex items-end justify-between mb-6">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <div className={`w-1.5 h-9 rounded-full shadow-lg ${
-            accentColor === 'red' 
-              ? 'bg-alex-primary shadow-[0_0_12px_rgba(229,9,20,0.6)]' 
-              : 'bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.6)]'
+            isRed 
+              ? 'bg-alex-primary shadow-[0_0_14px_rgba(229,9,20,0.7)]' 
+              : 'bg-blue-500 shadow-[0_0_14px_rgba(59,130,246,0.7)]'
           }`}></div>
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">{title}</h2>
             {subtitle && <p className="text-gray-400 mt-1 text-sm font-medium">{subtitle}</p>}
           </div>
         </div>
+
+        {/* Header Quick Navigation Pills */}
+        <div className="hidden sm:flex items-center gap-1.5 bg-black/40 border border-white/10 p-1.5 rounded-2xl backdrop-blur-xl shadow-lg">
+          <button 
+            type="button"
+            onClick={() => scroll('left')}
+            disabled={!canScrollStart}
+            aria-label="السابق"
+            className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs transition-all duration-300 ${
+              canScrollStart
+                ? isRed 
+                  ? 'bg-white/10 text-white hover:bg-red-600 hover:text-white hover:shadow-[0_0_12px_rgba(229,9,20,0.5)] cursor-pointer'
+                  : 'bg-white/10 text-white hover:bg-blue-600 hover:text-white hover:shadow-[0_0_12px_rgba(59,130,246,0.5)] cursor-pointer'
+                : 'bg-white/5 text-gray-600 cursor-not-allowed opacity-40'
+            }`}
+          >
+            <i className="fa-solid fa-chevron-right"></i>
+          </button>
+
+          <span className="w-px h-4 bg-white/10"></span>
+
+          <button 
+            type="button"
+            onClick={() => scroll('right')}
+            disabled={!canScrollEnd}
+            aria-label="التالي"
+            className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs transition-all duration-300 ${
+              canScrollEnd
+                ? isRed 
+                  ? 'bg-white/10 text-white hover:bg-red-600 hover:text-white hover:shadow-[0_0_12px_rgba(229,9,20,0.5)] cursor-pointer'
+                  : 'bg-white/10 text-white hover:bg-blue-600 hover:text-white hover:shadow-[0_0_12px_rgba(59,130,246,0.5)] cursor-pointer'
+                : 'bg-white/5 text-gray-600 cursor-not-allowed opacity-40'
+            }`}
+          >
+            <i className="fa-solid fa-chevron-left"></i>
+          </button>
+        </div>
       </div>
 
       {/* Slider Container Wrapper */}
       <div className="relative">
-        {/* Navigation Arrow – Right / Next (RTL: right side) */}
+        {/* Modern Vertical Capsule Navigation Handles – Right (RTL Next) */}
         <button 
+          type="button"
           onClick={() => scroll('right')}
-          className={`hidden sm:flex absolute -right-3 sm:-right-5 top-[38%] -translate-y-1/2 z-30 w-11 h-11 lg:w-12 lg:h-12 rounded-full items-center justify-center text-white
-            bg-[#0b101d]/90 backdrop-blur-xl border border-white/20 shadow-[0_8px_25px_rgba(0,0,0,0.6)]
-            hover:bg-red-600 hover:border-red-500/80 hover:shadow-[0_8px_30px_rgba(229,9,20,0.5)] hover:scale-110 active:scale-95 transition-all duration-300
-            ${canScrollEnd ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           aria-label="Scroll Right"
+          className={`hidden sm:flex group/btn absolute -right-3 sm:-right-6 top-[125px] -translate-y-1/2 z-30 w-10 sm:w-11 h-24 sm:h-28 rounded-2xl items-center justify-center text-white
+            bg-[#090d18]/85 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)]
+            ${isRed 
+              ? 'hover:bg-gradient-to-b hover:from-red-600 hover:to-rose-700 hover:border-red-400/80 hover:shadow-[0_0_25px_rgba(229,9,20,0.6)]' 
+              : 'hover:bg-gradient-to-b hover:from-blue-600 hover:to-indigo-700 hover:border-blue-400/80 hover:shadow-[0_0_25px_rgba(59,130,246,0.6)]'
+            } hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer
+            ${canScrollEnd ? 'opacity-90 hover:opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         >
-          <i className="fa-solid fa-chevron-right text-base"></i>
+          <i className="fa-solid fa-angle-right text-lg transition-transform duration-300 group-hover/btn:translate-x-0.5"></i>
         </button>
 
-        {/* Navigation Arrow – Left / Prev (RTL: left side) */}
+        {/* Modern Vertical Capsule Navigation Handles – Left (RTL Prev) */}
         <button 
+          type="button"
           onClick={() => scroll('left')}
-          className={`hidden sm:flex absolute -left-3 sm:-left-5 top-[38%] -translate-y-1/2 z-30 w-11 h-11 lg:w-12 lg:h-12 rounded-full items-center justify-center text-white
-            bg-[#0b101d]/90 backdrop-blur-xl border border-white/20 shadow-[0_8px_25px_rgba(0,0,0,0.6)]
-            hover:bg-red-600 hover:border-red-500/80 hover:shadow-[0_8px_30px_rgba(229,9,20,0.5)] hover:scale-110 active:scale-95 transition-all duration-300
-            ${canScrollStart ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           aria-label="Scroll Left"
+          className={`hidden sm:flex group/btn absolute -left-3 sm:-left-6 top-[125px] -translate-y-1/2 z-30 w-10 sm:w-11 h-24 sm:h-28 rounded-2xl items-center justify-center text-white
+            bg-[#090d18]/85 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)]
+            ${isRed 
+              ? 'hover:bg-gradient-to-b hover:from-red-600 hover:to-rose-700 hover:border-red-400/80 hover:shadow-[0_0_25px_rgba(229,9,20,0.6)]' 
+              : 'hover:bg-gradient-to-b hover:from-blue-600 hover:to-indigo-700 hover:border-blue-400/80 hover:shadow-[0_0_25px_rgba(59,130,246,0.6)]'
+            } hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer
+            ${canScrollStart ? 'opacity-90 hover:opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         >
-          <i className="fa-solid fa-chevron-left text-base"></i>
+          <i className="fa-solid fa-angle-left text-lg transition-transform duration-300 group-hover/btn:-translate-x-0.5"></i>
         </button>
 
         {/* Left & Right edge blur/fade overlays */}
-        <div className={`pointer-events-none absolute right-0 top-0 h-full w-12 z-20 bg-gradient-to-l from-[#060811]/80 to-transparent transition-opacity duration-300 ${canScrollStart ? 'opacity-100' : 'opacity-0'}`} />
-        <div className={`pointer-events-none absolute left-0 top-0 h-full w-12 z-20 bg-gradient-to-r from-[#060811]/80 to-transparent transition-opacity duration-300 ${canScrollEnd ? 'opacity-100' : 'opacity-0'}`} />
+        <div className={`pointer-events-none absolute right-0 top-0 h-full w-14 z-20 bg-gradient-to-l from-[#060811] via-[#060811]/60 to-transparent transition-opacity duration-300 ${canScrollStart ? 'opacity-100' : 'opacity-0'}`} />
+        <div className={`pointer-events-none absolute left-0 top-0 h-full w-14 z-20 bg-gradient-to-r from-[#060811] via-[#060811]/60 to-transparent transition-opacity duration-300 ${canScrollEnd ? 'opacity-100' : 'opacity-0'}`} />
 
         {/* Horizontal Card Rail */}
         <div 
@@ -138,11 +185,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
 
                   {/* Play Hover Indicator */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 transform scale-50 group-hover/card:opacity-100 group-hover/card:scale-100 transition-all duration-300 z-20">
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center ios-button ${
-                      accentColor === 'red' 
-                        ? 'text-white' 
-                        : 'text-white'
-                    }`}>
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center ios-button text-white">
                       <i className="fa-solid fa-play ml-1 text-xl"></i>
                     </div>
                   </div>
