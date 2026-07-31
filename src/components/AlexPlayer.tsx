@@ -1373,7 +1373,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         className={`relative select-none group/player transition-all duration-300 min-h-[200px] ${
           isFullscreen 
             ? 'fixed inset-0 w-screen h-[100dvh] z-[9999] rounded-none border-none bg-black'
-            : 'w-full rounded-3xl shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 bg-black/90 aspect-video'
+            : 'w-full rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 bg-black aspect-video'
         }`}
         style={{ aspectRatio: isFullscreen ? 'auto' : 16/9 }}
         dir="ltr"
