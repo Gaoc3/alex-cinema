@@ -110,6 +110,11 @@ export default function RoomClientWrapper({
     }
   }, [roomHook.connectionError, roomId]);
 
+  const [displayTitle, setDisplayTitle] = useState(roomData.title || 'غرفة المشاهدة');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [newTitle, setNewTitle] = useState(roomData.title || 'غرفة المشاهدة');
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
+
   const handleShareRoom = async () => {
     const url = window.location.href;
     try {
@@ -168,11 +173,6 @@ export default function RoomClientWrapper({
   const bgImage = video ? getVideoImageUrl(video) : null;
   const visibleMembers = roomHook.members.slice(0, 3);
   const memberCount = Math.max(roomHook.members.length, 1);
-
-  const [displayTitle, setDisplayTitle] = useState(roomData.title || 'غرفة المشاهدة');
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [newTitle, setNewTitle] = useState(displayTitle);
-  const [isSavingTitle, setIsSavingTitle] = useState(false);
 
   const handleSaveTitle = async (e: React.FormEvent) => {
     e.preventDefault();
