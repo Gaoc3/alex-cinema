@@ -160,32 +160,23 @@ export default function CreateRoomButton({ className }: { className?: string }) 
     ? createPortal(
       <div
         ref={overlayRef}
-        className="fixed inset-x-0 z-[200] overflow-x-hidden overflow-y-auto overscroll-contain bg-black/80 backdrop-blur-lg"
+        className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-black/80 backdrop-blur-lg p-4 sm:p-6"
         dir="rtl"
-        style={{
-          top: dialogViewport.top,
-          height: dialogViewport.height,
-          paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
-          paddingRight: 'max(0.75rem, env(safe-area-inset-right, 0px))',
-          paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
-          paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))'
-        }}
         onPointerDown={(event) => {
           const target = event.target as Node;
           if (!dialogRef.current?.contains(target) && !isCreating) setIsDialogOpen(false);
         }}
       >
-        <div className="flex min-h-full w-full min-w-0 flex-col">
-          <form
-            ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            aria-describedby={descriptionId}
-            tabIndex={-1}
-            onSubmit={handleCreateRoom}
-            className="my-auto w-full min-w-0 max-w-md shrink-0 overflow-x-hidden rounded-[1.5rem] border border-white/15 bg-[#0d1322] p-4 text-right shadow-2xl outline-none sm:rounded-3xl sm:p-8"
-          >
+        <form
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={descriptionId}
+          tabIndex={-1}
+          onSubmit={handleCreateRoom}
+          className="m-auto w-full max-w-md shrink-0 overflow-hidden rounded-[1.5rem] border border-white/15 bg-[#0d1322] p-5 text-right shadow-2xl outline-none sm:rounded-3xl sm:p-8"
+        >
             <div className="mb-4 flex min-w-0 items-center gap-3 sm:mb-5">
               <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-red-400 sm:size-12">
                 <i className="fa-solid fa-users" aria-hidden="true" />
@@ -233,7 +224,6 @@ export default function CreateRoomButton({ className }: { className?: string }) 
               </button>
             </div>
           </form>
-        </div>
       </div>,
       document.body
     )
