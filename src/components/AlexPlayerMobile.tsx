@@ -220,6 +220,8 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const controlsBarRef = useRef<HTMLDivElement>(null);
+  const [controlsBarHeight, setControlsBarHeight] = useState(0);
   const {
     isZoomed,
     showZoomIndicator,
@@ -392,7 +394,6 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       setYoutubeFallback(false);
       setRetryCount(0);
       setLastErrorEvent(null);
-      setIsPaused(true);
       setCurrentTime(0);
       setActiveSkipKind(null);
       setDuration(initialDuration);
@@ -1028,9 +1029,29 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   const vttTranslations = getVttTracks();
   const getSubtitlesProxyUrl = (url: string) => url;
+  const controlsVisible = showControls || isPaused;
   const skipActionVisible = Boolean(
     activeSkipKind && (!roomHook || isHost) && activeDropdown !== 'settings'
   );
+
+  useEffect(() => {
+    const controlsBar = controlsBarRef.current;
+    if (!controlsBar) return;
+
+    const updateHeight = () => {
+      const nextHeight = Math.ceil(controlsBar.getBoundingClientRect().height);
+      setControlsBarHeight((currentHeight) => currentHeight === nextHeight ? currentHeight : nextHeight);
+    };
+
+    updateHeight();
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateHeight) : null;
+    observer?.observe(controlsBar);
+    window.addEventListener('resize', updateHeight);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, [currentStreamUrl, isFullscreen, showStreamError, youtubeFallback]);
 
   // Keyboard Shortcuts Handler
   useEffect(() => {
@@ -1466,12 +1487,16 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 lastSyncTimeRef.current = Date.now();
               }
             }}
-            onPause={() => {
-              setIsPaused(true);
-              if (isHost && roomHook && videoRef.current) {
-                sendSyncUpdate?.(videoRef.current.currentTime, false);
-                lastSyncTimeRef.current = Date.now();
-              }
+            onPause={(event) => {
+              const video = event.currentTarget;
+              requestAnimationFrame(() => {
+                if (!video.paused) return;
+                setIsPaused(true);
+                if (isHost && roomHook) {
+                  sendSyncUpdate?.(video.currentTime, false);
+                  lastSyncTimeRef.current = Date.now();
+                }
+              });
             }}
             onWaiting={() => {
               if (!waitingTimeoutRef.current) {
@@ -1544,8 +1569,8 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           <div 
             className="absolute left-0 w-full text-center pointer-events-none flex flex-col items-center justify-end z-20 transition-all duration-300"
             style={{ 
-               bottom: showControls
-                 ? 'calc(env(safe-area-inset-bottom, 0px) + 5.25rem)'
+               bottom: controlsVisible
+                 ? `calc(${controlsBarHeight || (isMobile ? 80 : 136)}px + 0.5rem)`
                  : 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
                paddingLeft: '5%',
                paddingRight: skipActionVisible
@@ -1598,8 +1623,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         {/* Skip action: physical right edge, clear of controls and device safe areas. */}
         {skipActionVisible && activeSkipKind && (
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)_+_5.75rem)] z-40 flex items-center justify-end md:bottom-[calc(env(safe-area-inset-bottom,0px)_+_7rem)]"
+            className="pointer-events-none absolute inset-x-0 z-40 flex items-center justify-end transition-[bottom] duration-300 ease-out"
             style={{
+              bottom: controlsVisible
+                ? `calc(${controlsBarHeight || (isMobile ? 80 : 136)}px + clamp(0.5rem, 1vw, 0.75rem))`
+                : 'calc(env(safe-area-inset-bottom, 0px) + clamp(0.75rem, 2vw, 1.25rem))',
               paddingLeft: 'max(clamp(0.75rem, 2vw, 1.5rem), env(safe-area-inset-left, 0px))',
               paddingRight: 'max(clamp(0.75rem, 2vw, 1.5rem), env(safe-area-inset-right, 0px))',
             }}
@@ -1640,7 +1668,8 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
         {/* BOTTOM CUSTOM CONTROL BAR */}
         <div
-          aria-hidden={!(showControls || isPaused)}
+          ref={controlsBarRef}
+          aria-hidden={!controlsVisible}
           className={`absolute bottom-0 inset-x-0 ${isFullscreen ? '' : 'rounded-b-3xl'} p-2 pt-6 pb-[calc(env(safe-area-inset-bottom)+4px)] md:pb-8 md:pt-12 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-1.5 md:gap-3 transition-all duration-300 transform z-30 ${showControls || isPaused ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
           style={{
             paddingLeft: 'max(clamp(0.5rem, 2vw, 1.5rem), env(safe-area-inset-left, 0px))',
@@ -1732,13 +1761,13 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 aria-label={isZoomed ? 'إعادة الفيديو إلى الحجم الملائم' : 'تكبير الفيديو لملء الإطار'}
                 aria-pressed={isZoomed}
                 title={isZoomed ? 'ملاءمة الفيديو' : 'تكبير الفيديو'}
-                className={`flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 ${
+                className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 md:h-10 md:w-10 md:rounded-xl ${
                   isZoomed
                     ? 'border-red-400/45 bg-red-500/20 text-red-200'
                     : 'border-white/10 bg-white/5 text-white hover:border-white/25 hover:bg-white/10'
                 }`}
               >
-                <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-magnifying-glass-plus'} text-base`}></i>
+                <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-magnifying-glass-plus'} text-sm md:text-base`}></i>
               </button>
               
               {/* Settings Menu Toggle Button */}
@@ -1764,7 +1793,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               <button 
                 onClick={toggleFullscreen} 
                 aria-label={isFullscreen ? 'الخروج من ملء الشاشة' : 'ملء الشاشة'}
-                className="text-white hover:text-alex-primary text-lg md:text-2xl transition-colors cursor-pointer outline-none focus:outline-none ring-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center"
+                className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-white/5 text-sm text-white transition-colors hover:border-white/15 hover:bg-white/5 hover:text-alex-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 md:h-10 md:w-10 md:rounded-xl md:text-base"
               >
                 <i className={`fa-solid ${isFullscreen ? 'fa-minimize' : 'fa-maximize'}`}></i>
               </button>
