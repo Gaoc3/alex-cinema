@@ -87,7 +87,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
           type="button"
           onClick={() => scroll('prev')}
           aria-label="السابق"
-          className={`hidden sm:flex absolute right-2 sm:right-3 top-[36%] -translate-y-1/2 z-30 w-11 h-11 rounded-full items-center justify-center text-white
+          className={`hidden sm:flex absolute right-2 sm:right-3 top-[43%] -translate-y-1/2 z-30 w-11 h-11 rounded-full items-center justify-center text-white
             bg-[#0d1322]/95 backdrop-blur-xl border border-white/25 shadow-[0_6px_24px_rgba(0,0,0,0.8)]
             ${isRed 
               ? 'hover:bg-red-600 hover:border-red-500 hover:shadow-[0_0_22px_rgba(229,9,20,0.7)]' 
@@ -103,7 +103,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
           type="button"
           onClick={() => scroll('next')}
           aria-label="التالي"
-          className={`hidden sm:flex absolute left-2 sm:left-3 top-[36%] -translate-y-1/2 z-30 w-11 h-11 rounded-full items-center justify-center text-white
+          className={`hidden sm:flex absolute left-2 sm:left-3 top-[43%] -translate-y-1/2 z-30 w-11 h-11 rounded-full items-center justify-center text-white
             bg-[#0d1322]/95 backdrop-blur-xl border border-white/20 shadow-[0_6px_24px_rgba(0,0,0,0.8)]
             ${isRed 
               ? 'hover:bg-red-600 hover:border-red-500 hover:shadow-[0_0_22px_rgba(229,9,20,0.7)]' 
