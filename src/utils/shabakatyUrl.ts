@@ -23,11 +23,21 @@ export function requireAllowedShabakatyUrl(value: string): URL {
 /** Accepts either a full approved URL or the encrypted `/subdomain/path` payload format. */
 export function resolveShabakatyReference(value: string): URL | null {
   const absolute = parseAllowedShabakatyUrl(value);
-  if (absolute) return absolute;
+  if (absolute) {
+    if (absolute.hostname.startsWith('vascin') || absolute.hostname.startsWith('cinemana')) {
+      absolute.hostname = 'cnth2.shabakaty.com';
+    }
+    return absolute;
+  }
 
   const parts = value.split('/').filter(Boolean);
-  const subdomain = parts.shift();
+  let subdomain = parts.shift();
   if (!subdomain || !SUBDOMAIN_PATTERN.test(subdomain) || parts.length === 0) return null;
+
+  // Direct canonical CDN resolution: vascin24-mp4 / cinemana -> cnth2 (bypasses 302 redirect roundtrip)
+  if (subdomain.startsWith('vascin') || subdomain.startsWith('cinemana')) {
+    subdomain = 'cnth2';
+  }
 
   const pathAndQuery = value.slice(value.indexOf(subdomain) + subdomain.length);
   return parseAllowedShabakatyUrl(`https://${subdomain}.shabakaty.com${pathAndQuery}`);

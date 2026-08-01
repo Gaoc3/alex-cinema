@@ -79,12 +79,9 @@ export async function GET(request: NextRequest) {
           : 'application/octet-stream';
     responseHeaders.set('Content-Type', mediaType);
     responseHeaders.set('X-Content-Type-Options', 'nosniff');
-    
-    // Add aggressive caching headers for the browser
+    responseHeaders.set('X-Accel-Buffering', 'no');
     responseHeaders.set('Cache-Control', 'public, max-age=2592000, immutable');
 
-    // Return the response body directly as a stream. 
-    // Next.js App Router natively handles ReadableStream backpressure.
     return new NextResponse(response.body, {
       status: response.status,
       headers: responseHeaders,
