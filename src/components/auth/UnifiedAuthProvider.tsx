@@ -105,28 +105,28 @@ export function UnifiedAuthProvider({ children }: { children: React.ReactNode })
   }, [fetchTgUser, tgRetryVersion, tgSessionState]);
 
   const signOut = useCallback(async () => {
-    const logoutResponse = await fetch("/api/auth/logout", {
-      method: "POST",
-      credentials: "same-origin",
-      cache: "no-store",
-    });
-    if (!logoutResponse.ok) {
-      throw new Error("تعذر تسجيل الخروج. حاول مجددًا.");
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+    } catch (err) {
+      console.warn("[Logout API Warning]:", err);
     }
 
     if (isClerkSignedIn) {
       try {
         await clerkSignOut();
-      } catch {
-        await fetchTgUser();
-        throw new Error("تعذر إنهاء جلسة الحساب. حاول مجددًا.");
+      } catch (err) {
+        console.warn("[Clerk SignOut Warning]:", err);
       }
     }
 
     setTgUser(null);
     setTgSessionState("anonymous");
     window.location.href = "/";
-  }, [isClerkSignedIn, clerkSignOut, fetchTgUser]);
+  }, [isClerkSignedIn, clerkSignOut]);
 
   // Clerk is only eligible after the server has confirmed that no Telegram
   // session is active. This keeps client and API identity selection aligned.

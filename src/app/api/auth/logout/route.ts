@@ -2,17 +2,32 @@ import { NextResponse } from 'next/server';
 import { TELEGRAM_SESSION_COOKIE } from '@/lib/telegramSession';
 import { TELEGRAM_OIDC_TRANSACTION_COOKIE } from '@/lib/telegramOidc';
 
-function getExpectedOrigin(request: Request): string {
+function isAllowedOrigin(request: Request): boolean {
+  const requestOrigin = request.headers.get('origin');
+  if (!requestOrigin) return true;
+
   try {
-    return new URL(process.env.APP_ORIGIN || request.url).origin;
+    const originHost = new URL(requestOrigin).hostname.toLowerCase();
+    const reqHost = new URL(request.url).hostname.toLowerCase();
+    const headerHost = (request.headers.get('host') || '').split(':')[0].toLowerCase();
+
+    if (
+      originHost === reqHost ||
+      originHost === headerHost ||
+      originHost.endsWith('cinax.live') ||
+      originHost === 'localhost' ||
+      originHost === '127.0.0.1'
+    ) {
+      return true;
+    }
   } catch {
-    return new URL(request.url).origin;
+    // ignore parse error
   }
+  return false;
 }
 
 export async function POST(request: Request) {
-  const requestOrigin = request.headers.get('origin');
-  if (!requestOrigin || requestOrigin !== getExpectedOrigin(request)) {
+  if (!isAllowedOrigin(request)) {
     return NextResponse.json(
       { success: false, error: 'مصدر الطلب غير مسموح.' },
       { status: 403, headers: { 'Cache-Control': 'no-store' } },
@@ -31,6 +46,7 @@ export async function POST(request: Request) {
     path: '/',
     expires: new Date(0),
   });
+
   response.cookies.set(TELEGRAM_OIDC_TRANSACTION_COOKIE, '', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
