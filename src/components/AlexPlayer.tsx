@@ -99,8 +99,32 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const sendSyncUpdate = roomHook?.sendSyncUpdate;
 
   // Stream URL & Resolution states
-  const [currentStreamUrl, setCurrentStreamUrl] = useState<string | null>(null);
-  const [selectedResolution, setSelectedResolution] = useState<string>('');
+  const [currentStreamUrl, setCurrentStreamUrl] = useState<string | null>(() => {
+    if (streams && streams.length > 0) {
+      const preferred = streams.find(s => s.resolution && s.resolution.toLowerCase().includes('1080')) 
+                     || streams.find(s => s.resolution && s.resolution.toLowerCase().includes('720')) 
+                     || streams[0];
+      return preferred.videoUrl ? preferred.videoUrl.trim() : null;
+    }
+    return videoData.stream_url ? videoData.stream_url.trim() : null;
+  });
+  const [selectedResolution, setSelectedResolution] = useState<string>(() => {
+    if (streams && streams.length > 0) {
+      const preferred = streams.find(s => s.resolution && s.resolution.toLowerCase().includes('1080')) 
+                     || streams.find(s => s.resolution && s.resolution.toLowerCase().includes('720')) 
+                     || streams[0];
+      return preferred.resolution || '';
+    }
+    return '';
+  });
+  const [isInitializing, setIsInitializing] = useState<boolean>(() => {
+    const hasInitialUrl = !!(
+      (streams && streams.length > 0 && streams[0].videoUrl) ||
+      videoData.stream_url ||
+      extractYouTubeId(videoData.trailer || '')
+    );
+    return !hasInitialUrl;
+  });
   const [showStreamError, setShowStreamError] = useState(false);
   const [youtubeFallback, setYoutubeFallback] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -395,6 +419,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       setDuration(initialDuration);
       setCurrentStreamUrl(initialStreamUrl);
       setSelectedResolution(initialResolution);
+      setIsInitializing(false);
     });
     return () => { cancelled = true; };
   }, [videoData, streams]);
@@ -1751,6 +1776,17 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
         </div>
 
+      </div>
+    );
+  }
+
+  // Loading skeleton while stream is initializing
+  if (isInitializing || (!currentStreamUrl && !showStreamError && (videoData.stream_url || (streams && streams.length > 0)))) {
+    return (
+      <div className="aspect-video flex flex-col items-center justify-center bg-black/90 rounded-3xl border border-white/10 relative overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-tr from-alex-primary/10 via-transparent to-transparent animate-pulse pointer-events-none" />
+        <div className="w-16 h-16 rounded-full border-4 border-alex-primary/30 border-t-alex-primary animate-spin mb-4" />
+        <p className="text-white font-bold text-sm tracking-wide">جاري تحضير المشغل...</p>
       </div>
     );
   }
