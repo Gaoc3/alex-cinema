@@ -104,9 +104,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       const preferred = streams.find(s => s.resolution && s.resolution.toLowerCase().includes('1080')) 
                      || streams.find(s => s.resolution && s.resolution.toLowerCase().includes('720')) 
                      || streams[0];
-      return preferred.videoUrl ? preferred.videoUrl.trim() : null;
+      const target = ((preferred as { directUrl?: string }).directUrl || preferred.videoUrl) as string;
+      return target ? target.trim() : null;
     }
-    return videoData.stream_url ? videoData.stream_url.trim() : null;
+    const target = ((videoData as { direct_stream_url?: string }).direct_stream_url || videoData.stream_url) as string;
+    return target ? target.trim() : null;
   });
   const [selectedResolution, setSelectedResolution] = useState<string>(() => {
     if (streams && streams.length > 0) {
@@ -741,6 +743,18 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     const errMsg = mediaError ? `${mediaError.code}: ${mediaError.message}` : 'unknown';
     console.error("Direct stream failed to play. URL:", currentStreamUrl, "Error:", errMsg);
     setLastErrorEvent(errMsg);
+
+    if (currentStreamUrl && currentStreamUrl.startsWith('https://cnth2.shabakaty.com')) {
+      const preferred = streams.find(s => s.resolution && s.resolution.toLowerCase().includes('1080')) 
+                     || streams.find(s => s.resolution && s.resolution.toLowerCase().includes('720')) 
+                     || streams[0];
+      const proxiedUrl = preferred?.videoUrl || (videoData.stream_url as string);
+      if (proxiedUrl && proxiedUrl !== currentStreamUrl) {
+        console.warn("Direct Shabakaty CDN unreachable, switching to proxied stream:", proxiedUrl);
+        setCurrentStreamUrl(proxiedUrl);
+        return;
+      }
+    }
 
     if (retryCount < MAX_RETRIES) {
       // Retry with backoff before giving up and falling back to YouTube

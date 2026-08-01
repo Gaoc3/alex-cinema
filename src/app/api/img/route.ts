@@ -178,7 +178,10 @@ export async function GET(req: NextRequest) {
   const ref = req.nextUrl.searchParams.get('ref');
 
   let target: URL | null = null;
-  if (ref) target = resolveShabakatyReference(decryptPath(ref));
+  if (ref) {
+    const dec = decryptPath(ref);
+    if (dec) target = resolveShabakatyReference(dec);
+  }
 
   if (!target && file) {
     const fileName = sanitizeFilename(file.split('/').pop() || '');

@@ -1,49 +1,61 @@
-import 'server-only';
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
-import CryptoJS from 'crypto-js';
-import { isHlsUrl, parseAllowedShabakatyUrl } from '@/utils/shabakatyUrl';
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto';
+import { parseAllowedShabakatyUrl, isHlsUrl } from '@/utils/shabakatyUrl';
 
-const TOKEN_VERSION = 1;
 const IV_LENGTH = 12;
 const AUTH_TAG_LENGTH = 16;
-const MAX_TOKEN_LENGTH = 8_192;
+const PROXY_KEY_SALT = 'alex-cinema-proxy-key-v1';
 
-function getProxyKey() {
-  const secret = process.env.PROXY_SECRET;
-  if (!secret || secret.length < 32) {
-    throw new Error('PROXY_SECRET must contain at least 32 characters');
-  }
+function getProxyKey(): Buffer {
+  const secret = process.env.PROXY_SECRET || 'default_secret_key_32_bytes_len!';
+  return createHash('sha256').update(`${secret}:${PROXY_KEY_SALT}`).digest();
+}
+
+function getLegacyProxyKey(): Buffer {
+  const secret = process.env.PROXY_SECRET || 'default_secret_key_32_bytes_len!';
   return createHash('sha256').update(secret).digest();
 }
 
-function decryptLegacyPath(token: string): string {
-  try {
-    const secret = process.env.PROXY_SECRET_LEGACY || process.env.PROXY_SECRET;
-    if (!secret) return '';
-    let base64 = token.replace(/-/g, '+').replace(/_/g, '/');
-    while (base64.length % 4) base64 += '=';
-    const key = CryptoJS.enc.Utf8.parse(secret.padEnd(32, '0').slice(0, 32));
-    const iv = CryptoJS.enc.Utf8.parse(secret.slice(0, 16).padEnd(16, '0'));
-    return CryptoJS.AES.decrypt(base64, key, { iv }).toString(CryptoJS.enc.Utf8) || '';
-  } catch {
-    return '';
-  }
-}
-
-/** Creates a randomized, authenticated, URL-safe server-only reference. */
 export function encryptPath(path: string): string {
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv('aes-256-gcm', getProxyKey(), iv);
-  const ciphertext = Buffer.concat([cipher.update(path, 'utf8'), cipher.final()]);
-  const authTag = cipher.getAuthTag();
-  return Buffer.concat([Buffer.from([TOKEN_VERSION]), iv, authTag, ciphertext]).toString('base64url');
+
+  const ciphertext = Buffer.concat([
+    cipher.update(path, 'utf8'),
+    cipher.final(),
+  ]);
+
+  const tag = cipher.getAuthTag();
+  const payload = Buffer.concat([Buffer.from([0x01]), iv, tag, ciphertext]);
+  return payload.toString('base64url');
 }
 
-export function decryptPath(token: string): string {
+function decryptLegacyPath(token: string): string | null {
   try {
-    if (!token || token.length > MAX_TOKEN_LENGTH) return '';
     const payload = Buffer.from(token, 'base64url');
-    if (payload.length <= 1 + IV_LENGTH + AUTH_TAG_LENGTH || payload[0] !== TOKEN_VERSION) {
+    if (payload.length < 1 + IV_LENGTH + AUTH_TAG_LENGTH) return null;
+
+    const iv = payload.subarray(0, IV_LENGTH);
+    const tag = payload.subarray(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH);
+    const ciphertext = payload.subarray(IV_LENGTH + AUTH_TAG_LENGTH);
+
+    const decipher = createDecipheriv('aes-256-gcm', getLegacyProxyKey(), iv);
+    decipher.setAuthTag(tag);
+
+    return Buffer.concat([
+      decipher.update(ciphertext),
+      decipher.final(),
+    ]).toString('utf8');
+  } catch {
+    return null;
+  }
+}
+
+export function decryptPath(token: string): string | null {
+  if (!token || typeof token !== 'string') return null;
+
+  try {
+    const payload = Buffer.from(token, 'base64url');
+    if (payload.length < 1 + IV_LENGTH + AUTH_TAG_LENGTH || payload[0] !== 0x01) {
       return decryptLegacyPath(token);
     }
 
@@ -58,6 +70,17 @@ export function decryptPath(token: string): string {
     ]).toString('utf8');
   } catch {
     return decryptLegacyPath(token);
+  }
+}
+
+export function getDirectShabakatyUrl(url: string): string {
+  if (!url || typeof url !== 'string') return url;
+  try {
+    const parsed = parseAllowedShabakatyUrl(url);
+    if (!parsed) return url;
+    return `https://cnth2.shabakaty.com${parsed.pathname}${parsed.search}`;
+  } catch {
+    return url;
   }
 }
 
@@ -86,7 +109,7 @@ export function sanitizeUrl(url: string): string {
 
 const URL_FIELDS = [
   'imgObjUrl', 'imgMediumThumb', 'imgThumb', 'imgBig',
-  'stream_url', 'videoUrl', 'arTranslationFilePath', 'enTranslationFilePath',
+  'arTranslationFilePath', 'enTranslationFilePath',
 ];
 
 export function sanitizeVideoData<T>(data: T): T {
@@ -95,6 +118,12 @@ export function sanitizeVideoData<T>(data: T): T {
   if (typeof data !== 'object') return data;
 
   const result = { ...(data as Record<string, unknown>) };
+
+  if (typeof result.stream_url === 'string' && parseAllowedShabakatyUrl(result.stream_url)) {
+    result.direct_stream_url = getDirectShabakatyUrl(result.stream_url);
+    result.stream_url = sanitizeUrl(result.stream_url);
+  }
+
   for (const field of URL_FIELDS) {
     const value = result[field];
     if (typeof value === 'string' && parseAllowedShabakatyUrl(value)) {
@@ -107,10 +136,14 @@ export function sanitizeVideoData<T>(data: T): T {
   }
 
   if (Array.isArray(result.streams)) {
-    result.streams = (result.streams as Record<string, unknown>[]).map((stream) => ({
-      ...stream,
-      videoUrl: typeof stream.videoUrl === 'string' ? sanitizeUrl(stream.videoUrl) : stream.videoUrl,
-    }));
+    result.streams = (result.streams as Record<string, unknown>[]).map((stream) => {
+      const rawUrl = typeof stream.videoUrl === 'string' ? stream.videoUrl : '';
+      return {
+        ...stream,
+        directUrl: rawUrl && parseAllowedShabakatyUrl(rawUrl) ? getDirectShabakatyUrl(rawUrl) : undefined,
+        videoUrl: rawUrl ? sanitizeUrl(rawUrl) : stream.videoUrl,
+      };
+    });
   }
 
   if (Array.isArray(result.translations)) {

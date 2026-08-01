@@ -10,7 +10,8 @@ export async function GET(req: NextRequest) {
   const ref = req.nextUrl.searchParams.get('ref');
   if (!ref) return new NextResponse('Missing stream parameter', { status: 400 });
 
-  const approvedUrl = resolveShabakatyReference(decryptPath(ref));
+  const dec = decryptPath(ref);
+  const approvedUrl = dec ? resolveShabakatyReference(dec) : null;
   if (!approvedUrl) return new NextResponse('Invalid stream reference', { status: 400 });
 
   const lowerPath = approvedUrl.pathname.toLowerCase();
