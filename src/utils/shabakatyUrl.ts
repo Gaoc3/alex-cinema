@@ -22,6 +22,8 @@ export function requireAllowedShabakatyUrl(value: string): URL {
 
 /** Accepts either a full approved URL or the encrypted `/subdomain/path` payload format. */
 export function resolveShabakatyReference(value: string): URL | null {
+  if (!value || typeof value !== 'string') return null;
+
   const absolute = parseAllowedShabakatyUrl(value);
   if (absolute) {
     if (absolute.hostname.startsWith('vascin') || absolute.hostname.startsWith('cinemana')) {
@@ -39,7 +41,7 @@ export function resolveShabakatyReference(value: string): URL | null {
     targetSubdomain = 'cnth2';
   }
 
-  const pathAndQuery = value.slice(value.indexOf(originalSubdomain) + originalSubdomain.length);
+  const pathAndQuery = '/' + parts.join('/');
   return parseAllowedShabakatyUrl(`https://${targetSubdomain}.shabakaty.com${pathAndQuery}`);
 }
 
