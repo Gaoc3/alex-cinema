@@ -39,7 +39,8 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
   const scroll = (direction: 'prev' | 'next') => {
     const el = scrollRef.current;
     if (el) {
-      const scrollAmount = el.clientWidth * 0.75;
+      // Scroll by 1 full page width (full row)
+      const scrollAmount = el.clientWidth;
       // In RTL: 'next' (leftward) is negative, 'prev' (rightward) is positive
       const amount = direction === 'next' ? -scrollAmount : scrollAmount;
       el.scrollBy({ left: amount, behavior: 'smooth' });
@@ -63,9 +64,9 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
   const isRed = accentColor === 'red';
 
   return (
-    <div className="relative w-full px-4 sm:px-8 mb-14 group/slider">
+    <div className="relative w-full mb-14 group/slider">
       {/* Slider Title Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-5 px-1 sm:px-2">
         <div className="flex items-center gap-3.5">
           <div className={`w-1.5 h-8 rounded-full shadow-lg ${
             isRed 
@@ -86,8 +87,8 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
           type="button"
           onClick={() => scroll('prev')}
           aria-label="السابق"
-          className={`hidden sm:flex absolute right-1 sm:right-2 top-[135px] -translate-y-1/2 z-30 w-11 h-11 rounded-full items-center justify-center text-white
-            bg-[#0d1322]/90 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.6)]
+          className={`hidden sm:flex absolute -right-3 sm:-right-4 top-[35%] -translate-y-1/2 z-30 w-11 h-11 rounded-full items-center justify-center text-white
+            bg-[#0d1322]/90 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.7)]
             ${isRed 
               ? 'hover:bg-red-600 hover:border-red-500 hover:shadow-[0_0_20px_rgba(229,9,20,0.6)]' 
               : 'hover:bg-blue-600 hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.6)]'
@@ -102,8 +103,8 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
           type="button"
           onClick={() => scroll('next')}
           aria-label="التالي"
-          className={`hidden sm:flex absolute left-1 sm:left-2 top-[135px] -translate-y-1/2 z-30 w-11 h-11 rounded-full items-center justify-center text-white
-            bg-[#0d1322]/90 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.6)]
+          className={`hidden sm:flex absolute -left-3 sm:-left-4 top-[35%] -translate-y-1/2 z-30 w-11 h-11 rounded-full items-center justify-center text-white
+            bg-[#0d1322]/90 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.7)]
             ${isRed 
               ? 'hover:bg-red-600 hover:border-red-500 hover:shadow-[0_0_20px_rgba(229,9,20,0.6)]' 
               : 'hover:bg-blue-600 hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.6)]'
@@ -113,14 +114,10 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
           <i className="fa-solid fa-chevron-left text-sm"></i>
         </button>
 
-        {/* Left & Right Edge Vignette Gradients */}
-        <div className={`pointer-events-none absolute right-0 top-0 h-full w-14 z-20 bg-gradient-to-l from-[#060811] via-[#060811]/70 to-transparent transition-opacity duration-300 ${canScrollStart ? 'opacity-100' : 'opacity-0'}`} />
-        <div className={`pointer-events-none absolute left-0 top-0 h-full w-14 z-20 bg-gradient-to-r from-[#060811] via-[#060811]/70 to-transparent transition-opacity duration-300 ${canScrollEnd ? 'opacity-100' : 'opacity-0'}`} />
-
-        {/* Horizontal Card Rail */}
+        {/* Horizontal Card Rail - Clean Grid Fit without Cut-off Cards or Dark Edge Gradients */}
         <div 
           ref={scrollRef}
-          className="flex gap-5 sm:gap-6 overflow-x-auto hide-scrollbar scroll-smooth py-2 px-6 sm:px-10 snap-x snap-mandatory"
+          className="flex gap-4 sm:gap-5 overflow-x-auto hide-scrollbar scroll-smooth py-2 px-1 snap-x snap-mandatory"
         >
           {videos.map((video, index) => {
             const displayCategory = video.categories && video.categories.length > 0 
@@ -131,7 +128,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
               <Link 
                 key={video.nb} 
                 href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
-                className="w-[160px] sm:w-[185px] flex-shrink-0 group/card block relative snap-start transition-transform duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-105"
+                className="w-[calc((100%-1rem)/2)] sm:w-[calc((100%-1.25rem*3)/4)] md:w-[calc((100%-1.25rem*4)/5)] lg:w-[calc((100%-1.25rem*5)/6)] xl:w-[calc((100%-1.25rem*6)/7)] flex-shrink-0 group/card block relative snap-start transition-transform duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-105"
                 style={{ animationDelay: `${index * 25}ms` }}
               >
                 {/* Poster Wrapper */}
@@ -148,8 +145,8 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
 
                   {/* Play Hover Indicator */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 transform scale-50 group-hover/card:opacity-100 group-hover/card:scale-100 transition-all duration-300 z-20">
-                    <div className="w-13 h-13 rounded-full flex items-center justify-center ios-button text-white">
-                      <i className="fa-solid fa-play ml-1 text-xl"></i>
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center ios-button text-white">
+                      <i className="fa-solid fa-play ml-1 text-lg"></i>
                     </div>
                   </div>
                 </div>
