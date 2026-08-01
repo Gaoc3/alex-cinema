@@ -1,8 +1,10 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import {
+  createTelegramSessionToken,
   parseTelegramSessionToken,
   TELEGRAM_SESSION_COOKIE,
+  TELEGRAM_SESSION_MAX_AGE_SECONDS,
 } from '@/lib/telegramSession';
 
 const isProtectedRoute = createRouteMatcher([
@@ -23,7 +25,21 @@ export default clerkMiddleware(async (auth, req) => {
   if (telegramCookie) {
     const session = await parseTelegramSessionToken(telegramCookie);
     if (session) {
-      return NextResponse.next();
+      // Automatic Sliding Session Refresh for Telegram: extends 30 days on every active visit
+      const response = NextResponse.next();
+      try {
+        const freshToken = await createTelegramSessionToken({ clerkId: session.clerkId });
+        response.cookies.set(TELEGRAM_SESSION_COOKIE, freshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          path: '/',
+          maxAge: TELEGRAM_SESSION_MAX_AGE_SECONDS,
+        });
+      } catch (err) {
+        console.error('[Telegram Session Refresh Error]:', err);
+      }
+      return response;
     }
   }
 
