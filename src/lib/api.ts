@@ -5,6 +5,10 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const CINEMANA_API_BASE = new URL('https://cinemana.shabakaty.com/api/android/');
 
+// Memory cache for Cinemana API requests to provide 0ms latency on repeated calls
+const apiMemoryCache = new Map<string, { data: unknown; expiresAt: number }>();
+const API_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 function resolveCinemanaEndpoint(endpoint: string, params: Record<string, string>): URL | null {
   const relativeEndpoint = endpoint.trim();
   if (
@@ -37,6 +41,12 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
     return null;
   }
 
+  const cacheKey = targetUrl.href;
+  const cached = apiMemoryCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.data;
+  }
+
   const fullEndpoint = `${targetUrl.pathname.slice(CINEMANA_API_BASE.pathname.length)}${targetUrl.search}`;
   const isServer = typeof window === 'undefined';
 
@@ -63,7 +73,12 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
         
         // Sanitize all shabakaty URLs before data reaches client components
         const { sanitizeVideoData } = await import('./serverCrypto');
-        return sanitizeVideoData(raw);
+        const sanitized = sanitizeVideoData(raw);
+
+        if (sanitized) {
+          apiMemoryCache.set(cacheKey, { data: sanitized, expiresAt: Date.now() + API_CACHE_TTL });
+        }
+        return sanitized;
       } catch {
         return null;
       }
@@ -94,7 +109,11 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
 
     if (!res.ok) return null;
     const data = await res.json();
-    return decryptData(data.payload);
+    const decrypted = decryptData(data.payload);
+    if (decrypted) {
+      apiMemoryCache.set(cacheKey, { data: decrypted, expiresAt: Date.now() + API_CACHE_TTL });
+    }
+    return decrypted;
   } catch (error: unknown) {
     if (!(error instanceof Error && error.name === 'AbortError')) {
       console.error('[Client Fetch Error]:', error instanceof Error ? error.message : 'Unknown error');
@@ -114,16 +133,15 @@ export async function getMoviesByCategory(categoryId: string, kind = '1', offset
   const data = await fetchCinemana('videosByCategory', { categoryID: categoryId, orderby: 'desc', videoKind: kind, offset: offset.toString(), level: '2' });
   return data?.info || [];
 }
+
 export async function getVideoDetails(id: string) {
-  const data = await fetchCinemana(`allVideoInfo/id/${id}`);
+  const [data, streams] = await Promise.all([
+    fetchCinemana(`allVideoInfo/id/${id}`),
+    fetchCinemana(`transcoddedFiles/id/${id}`).catch(() => []),
+  ]);
+
   if (data) {
-    try {
-      const streams = await fetchCinemana(`transcoddedFiles/id/${id}`);
-      data.streams = Array.isArray(streams) ? streams : [];
-    } catch (e) {
-      console.error('Error fetching streams:', e);
-      data.streams = [];
-    }
+    data.streams = Array.isArray(streams) ? streams : [];
     
     if (data.streams.length > 0) {
       data.stream_url = data.streams[0].videoUrl;
@@ -138,6 +156,7 @@ export async function getVideoDetails(id: string) {
   }
   return data;
 }
+
 export async function getSeriesSeasons(seriesId: string) { return fetchCinemana(`videoSeasonNumber/id/${seriesId}`); }
 export async function getSeriesEpisodes(seriesId: string) { return fetchCinemana(`videoSeason/id/${seriesId}`); }
 export async function searchMovies(query: string, type: 'movies' | 'series' = 'movies') {
