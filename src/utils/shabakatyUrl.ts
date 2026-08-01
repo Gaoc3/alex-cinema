@@ -31,16 +31,16 @@ export function resolveShabakatyReference(value: string): URL | null {
   }
 
   const parts = value.split('/').filter(Boolean);
-  let subdomain = parts.shift();
-  if (!subdomain || !SUBDOMAIN_PATTERN.test(subdomain) || parts.length === 0) return null;
+  const originalSubdomain = parts.shift();
+  if (!originalSubdomain || !SUBDOMAIN_PATTERN.test(originalSubdomain) || parts.length === 0) return null;
 
-  // Direct canonical CDN resolution: vascin24-mp4 / cinemana -> cnth2 (bypasses 302 redirect roundtrip)
-  if (subdomain.startsWith('vascin') || subdomain.startsWith('cinemana')) {
-    subdomain = 'cnth2';
+  let targetSubdomain = originalSubdomain;
+  if (targetSubdomain.startsWith('vascin') || targetSubdomain.startsWith('cinemana')) {
+    targetSubdomain = 'cnth2';
   }
 
-  const pathAndQuery = value.slice(value.indexOf(subdomain) + subdomain.length);
-  return parseAllowedShabakatyUrl(`https://${subdomain}.shabakaty.com${pathAndQuery}`);
+  const pathAndQuery = value.slice(value.indexOf(originalSubdomain) + originalSubdomain.length);
+  return parseAllowedShabakatyUrl(`https://${targetSubdomain}.shabakaty.com${pathAndQuery}`);
 }
 
 export function isHlsUrl(value: string) {
