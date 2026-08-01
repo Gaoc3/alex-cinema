@@ -4,6 +4,9 @@ import { encryptPath } from '@/lib/serverCrypto';
 import { fetchWithRedirects, readResponseTextWithLimit } from '@/utils/proxyHelper';
 import { parseAllowedShabakatyUrl } from '@/utils/shabakatyUrl';
 
+// Allow node fetch to access internal Shabakaty CDN SSL endpoints
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const CINEMANA_API_BASE = 'https://cinemana.shabakaty.com/api/android/';
 
 function buildResponse(upstreamRes: Response, extraHeaders?: Record<string, string>, overrideBody?: string, overrideContentType?: string) {

@@ -3,6 +3,9 @@ import { decryptPath } from '@/lib/serverCrypto';
 import { fetchWithRedirects } from '@/utils/proxyHelper';
 import { parseAllowedShabakatyUrl, resolveShabakatyReference } from '@/utils/shabakatyUrl';
 
+// Allow node fetch to access internal Shabakaty CDN SSL endpoints
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 export const dynamic = 'force-dynamic';
 
 const ALLOWED_IMAGE_TYPES = new Set([

@@ -3,6 +3,9 @@ import { decryptPath } from '@/lib/serverCrypto';
 import { fetchWithRedirects, readResponseTextWithLimit } from '@/utils/proxyHelper';
 import { resolveShabakatyReference } from '@/utils/shabakatyUrl';
 
+// Allow node fetch to access internal Shabakaty CDN SSL endpoints
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 export async function GET(req: NextRequest) {
   const ref = req.nextUrl.searchParams.get('ref');
   if (!ref) return new NextResponse('Missing stream parameter', { status: 400 });
