@@ -178,12 +178,12 @@ export default function SearchBar() {
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
               onFocus={() => query.trim().length >= 2 && setShowDropdown(true)}
-              className="bg-transparent xl:bg-white/5 focus:xl:bg-[#06070a]/90 xl:backdrop-blur-md border-none xl:border xl:border-white/5 focus:xl:border-alex-primary/40 text-white pr-14 xl:pr-10 pl-4 py-4 xl:py-2 h-auto rounded-none xl:rounded-full w-full xl:w-64 focus:w-full xl:focus:w-80 transition-all duration-500 outline-none text-xl sm:text-2xl font-bold xl:font-normal xl:text-sm block shadow-none focus:shadow-none xl:shadow-inner xl:focus:shadow-[0_0_20px_rgba(229,9,20,0.15)] placeholder:text-gray-500 xl:placeholder:text-gray-400"
-              placeholder="ابحث..."
+              className="bg-black/60 focus:bg-black/85 backdrop-blur-xl border border-white/20 focus:border-alex-primary/80 text-white pr-10 pl-4 py-2 h-auto rounded-full w-full xl:w-64 focus:w-full xl:focus:w-80 transition-all duration-300 outline-none text-sm font-medium shadow-[0_4px_15px_rgba(0,0,0,0.5)] focus:shadow-[0_0_20px_rgba(229,9,20,0.3)] placeholder:text-gray-200 block"
+              placeholder="ابحث عن فيلم أو مسلسل..."
               aria-label="البحث عن فيلم أو مسلسل"
             />
-            <div className="absolute inset-y-0 right-0 pr-4 xl:pr-4 flex items-center pointer-events-none text-gray-500 xl:text-gray-400 group-focus-within:text-alex-primary transition-colors">
-              <i className="fa-solid fa-search text-xl sm:text-2xl xl:text-base drop-shadow-md"></i>
+            <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-200 group-focus-within:text-alex-primary transition-colors">
+              <i className="fa-solid fa-search text-sm drop-shadow-md"></i>
             </div>
             
             {isLoading && (

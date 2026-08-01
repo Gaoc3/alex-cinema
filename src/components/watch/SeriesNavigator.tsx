@@ -70,12 +70,12 @@ export default function SeriesNavigator({
     setCanScrollEnd(scrollLeft + el.clientWidth < el.scrollWidth - 8);
   }, []);
 
-  // Scroll the carousel by a fixed amount
+  // Scroll the carousel by a full page width
   const scrollBy = useCallback((direction: 'start' | 'end') => {
     const el = scrollContainerRef.current;
     if (!el) return;
     // RTL scroll: "start" = right (positive), "end" = left (negative)
-    const amount = direction === 'end' ? -280 : 280;
+    const amount = direction === 'end' ? -el.clientWidth : el.clientWidth;
     el.scrollBy({ left: amount, behavior: 'smooth' });
   }, []);
 
@@ -244,10 +244,9 @@ export default function SeriesNavigator({
             type="button"
             aria-label="تمرير لليمين"
             onClick={() => scrollBy('start')}
-            className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400
-              bg-[#0b101d]/90 backdrop-blur-md border border-white/15 shadow-[0_4px_20px_rgba(0,0,0,0.5)] text-white hover:bg-red-600/90 hover:border-red-500/60 hover:shadow-[0_4px_20px_rgba(229,9,20,0.4)]
-              ${canScrollStart ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-            style={{ right: '-1rem' }}
+            className={`absolute right-1 top-[40%] -translate-y-1/2 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 cursor-pointer
+              bg-[#0b101d]/95 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.7)] text-white hover:bg-red-600 hover:border-red-500 hover:shadow-[0_0_20px_rgba(229,9,20,0.6)] hover:scale-110 active:scale-95
+              ${canScrollStart ? 'opacity-90 hover:opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           >
             <i className="fa-solid fa-chevron-right text-xs" aria-hidden="true" />
           </button>
@@ -257,23 +256,17 @@ export default function SeriesNavigator({
             type="button"
             aria-label="تمرير لليسار"
             onClick={() => scrollBy('end')}
-            className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400
-              bg-[#0b101d]/90 backdrop-blur-md border border-white/15 shadow-[0_4px_20px_rgba(0,0,0,0.5)] text-white hover:bg-red-600/90 hover:border-red-500/60 hover:shadow-[0_4px_20px_rgba(229,9,20,0.4)]
-              ${canScrollEnd ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-            style={{ left: '-1rem' }}
+            className={`absolute left-1 top-[40%] -translate-y-1/2 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 cursor-pointer
+              bg-[#0b101d]/95 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.7)] text-white hover:bg-red-600 hover:border-red-500 hover:shadow-[0_0_20px_rgba(229,9,20,0.6)] hover:scale-110 active:scale-95
+              ${canScrollEnd ? 'opacity-90 hover:opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           >
             <i className="fa-solid fa-chevron-left text-xs" aria-hidden="true" />
           </button>
 
-          {/* Left fade gradient (for RTL: appears on left when content extends right of view) */}
-          <div className={`pointer-events-none absolute right-0 top-0 h-full w-16 z-10 bg-gradient-to-l from-[#0b101d] to-transparent transition-opacity duration-300 ${canScrollStart ? 'opacity-100' : 'opacity-0'}`} />
-          {/* Right fade gradient (for RTL: appears on right when more content to the left) */}
-          <div className={`pointer-events-none absolute left-0 top-0 h-full w-16 z-10 bg-gradient-to-r from-[#0b101d] to-transparent transition-opacity duration-300 ${canScrollEnd ? 'opacity-100' : 'opacity-0'}`} />
-
           <div 
             key={`desktop-${currentSeason}`}
             ref={scrollContainerRef}
-            className="flex w-[calc(100%+3rem)] -mx-6 md:w-[calc(100%+4rem)] md:-mx-8 overflow-x-auto pb-4 pt-2 px-6 md:px-8 relative z-10 custom-scrollbar flex-row gap-5 select-none animate-fade-in-up" 
+            className="flex w-full overflow-x-auto hide-scrollbar scroll-smooth py-2 px-1 relative z-10 flex-row gap-4 sm:gap-5 select-none snap-x snap-mandatory animate-fade-in-up" 
             dir="rtl"
           >
             {seasonEpisodes.map((ep) => {
@@ -282,7 +275,7 @@ export default function SeriesNavigator({
                 <div 
                   key={ep.nb} 
                   data-active={isActiveEp ? "true" : "false"}
-                  className="flex flex-col shrink-0 w-52 md:w-60 group"
+                  className="flex flex-col shrink-0 w-[calc((100%-1rem)/2)] sm:w-[calc((100%-1.25rem*2)/3)] md:w-[calc((100%-1.25rem*3)/4)] lg:w-[calc((100%-1.25rem*4)/5)] xl:w-[calc((100%-1.25rem*5)/6)] snap-start group"
                 >
                   <button
                     onClick={() => setActiveEpisode(ep)}
