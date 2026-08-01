@@ -81,17 +81,17 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
       </div>
 
       {/* Slider Container Wrapper */}
-      <div className="relative">
+      <div className="relative px-1 sm:px-2">
         {/* Sleek Floating Circular Arrow – Right / Prev (RTL: Right side goes back to start) */}
         <button 
           type="button"
           onClick={() => scroll('prev')}
           aria-label="السابق"
-          className={`hidden sm:flex absolute -right-3 sm:-right-4 top-[35%] -translate-y-1/2 z-30 w-11 h-11 rounded-full items-center justify-center text-white
-            bg-[#0d1322]/90 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.7)]
+          className={`hidden sm:flex absolute right-2 sm:right-3 top-[36%] -translate-y-1/2 z-30 w-11 h-11 rounded-full items-center justify-center text-white
+            bg-[#0d1322]/95 backdrop-blur-xl border border-white/25 shadow-[0_6px_24px_rgba(0,0,0,0.8)]
             ${isRed 
-              ? 'hover:bg-red-600 hover:border-red-500 hover:shadow-[0_0_20px_rgba(229,9,20,0.6)]' 
-              : 'hover:bg-blue-600 hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.6)]'
+              ? 'hover:bg-red-600 hover:border-red-500 hover:shadow-[0_0_22px_rgba(229,9,20,0.7)]' 
+              : 'hover:bg-blue-600 hover:border-blue-500 hover:shadow-[0_0_22px_rgba(59,130,246,0.7)]'
             } hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer
             ${canScrollStart ? 'opacity-90 hover:opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         >
@@ -103,11 +103,11 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
           type="button"
           onClick={() => scroll('next')}
           aria-label="التالي"
-          className={`hidden sm:flex absolute -left-3 sm:-left-4 top-[35%] -translate-y-1/2 z-30 w-11 h-11 rounded-full items-center justify-center text-white
-            bg-[#0d1322]/90 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.7)]
+          className={`hidden sm:flex absolute left-2 sm:left-3 top-[36%] -translate-y-1/2 z-30 w-11 h-11 rounded-full items-center justify-center text-white
+            bg-[#0d1322]/95 backdrop-blur-xl border border-white/20 shadow-[0_6px_24px_rgba(0,0,0,0.8)]
             ${isRed 
-              ? 'hover:bg-red-600 hover:border-red-500 hover:shadow-[0_0_20px_rgba(229,9,20,0.6)]' 
-              : 'hover:bg-blue-600 hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.6)]'
+              ? 'hover:bg-red-600 hover:border-red-500 hover:shadow-[0_0_22px_rgba(229,9,20,0.7)]' 
+              : 'hover:bg-blue-600 hover:border-blue-500 hover:shadow-[0_0_22px_rgba(59,130,246,0.7)]'
             } hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer
             ${canScrollEnd ? 'opacity-90 hover:opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         >
