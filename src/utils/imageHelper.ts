@@ -4,7 +4,7 @@
  */
 
 // Bump when a previously cached proxy failure must be invalidated in browsers/CDNs.
-const IMAGE_CACHE_VERSION = '20260730-1';
+const IMAGE_CACHE_VERSION = '20260801-99';
 
 function withImageCacheVersion(url: string): string {
   if (!url || (!url.startsWith('/api/img') && !url.startsWith('/tunnel/'))) return url;
