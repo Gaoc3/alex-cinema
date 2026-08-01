@@ -178,8 +178,8 @@ export default function SearchBar() {
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
               onFocus={() => query.trim().length >= 2 && setShowDropdown(true)}
-              className="bg-black/60 focus:bg-black/85 backdrop-blur-xl border border-white/20 focus:border-alex-primary/80 text-white pr-10 pl-4 py-2 h-auto rounded-full w-full xl:w-64 focus:w-full xl:focus:w-80 transition-all duration-300 outline-none text-sm font-medium shadow-[0_4px_15px_rgba(0,0,0,0.5)] focus:shadow-[0_0_20px_rgba(229,9,20,0.3)] placeholder:text-gray-200 block"
-              placeholder="ابحث عن فيلم أو مسلسل..."
+              className="bg-black/60 focus:bg-black/85 backdrop-blur-xl border border-white/20 focus:border-alex-primary/80 text-white pr-10 pl-4 py-2 h-auto rounded-2xl w-full xl:w-64 focus:w-full xl:focus:w-80 transition-all duration-300 outline-none text-sm font-medium shadow-[0_4px_15px_rgba(0,0,0,0.5)] focus:shadow-[0_0_20px_rgba(229,9,20,0.3)] placeholder:text-gray-200 block"
+              placeholder="ابحث..."
               aria-label="البحث عن فيلم أو مسلسل"
             />
             <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-200 group-focus-within:text-alex-primary transition-colors">

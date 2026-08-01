@@ -250,6 +250,9 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       {/* Slide Indicators / Thumbnails Row (Desktop: Thumbnails, Mobile: Dots) */}
       {videos.length > 1 && (
         <div ref={thumbnailsContainerRef} className="w-full z-20 relative mt-4 lg:mt-0 lg:absolute lg:bottom-0 pointer-events-none">
+          {/* Subtle dark backdrop specifically behind thumbnail strip for contrast */}
+          <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#060811]/95 via-[#060811]/60 to-transparent pointer-events-none -z-10"></div>
+
           {/* Mobile Dots */}
           <div className="flex lg:hidden justify-center items-center gap-2 pb-4 pointer-events-auto">
              {videos.map((_, idx) => (
@@ -263,9 +266,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           </div>
 
           {/* Desktop Thumbnails */}
-          <div className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-8 py-6 scroll-smooth items-end pointer-events-auto">
+          <div className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-8 py-5 scroll-smooth items-end pointer-events-auto">
             {videos.map((video, idx) => {
             const thumbUrl = getVideoImageUrl(video, 'cover');
+            const isActive = activeIndex === idx;
             return (
               <button
                 key={video.nb}
@@ -273,10 +277,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                   thumbnailsRef.current[idx] = el;
                 }}
                 onClick={() => triggerSlideChange(idx)}
-                className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none ${
-                  activeIndex === idx 
-                    ? 'w-32 sm:w-44 md:w-56 lg:w-64 ring-2 ring-alex-primary shadow-[0_10px_25px_rgba(229,9,20,0.4)] scale-100 opacity-100 z-10' 
-                    : 'w-24 sm:w-32 md:w-40 lg:w-48 opacity-50 hover:opacity-100 hover:scale-105 z-0'
+                className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none border ${
+                  isActive 
+                    ? 'w-32 sm:w-44 md:w-56 lg:w-64 border-alex-primary ring-2 ring-alex-primary shadow-[0_10px_30px_rgba(229,9,20,0.5)] scale-100 opacity-100 z-10' 
+                    : 'w-24 sm:w-32 md:w-40 lg:w-48 border-white/10 opacity-85 hover:opacity-100 scale-95 hover:scale-100 z-0 bg-[#060811]'
                 }`}
                 aria-label={`Go to slide ${idx + 1}`}
               >
@@ -289,7 +293,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                   loading="lazy"
                 />
                 <div className={`absolute inset-0 transition-colors duration-300 ${
-                  activeIndex === idx ? 'bg-transparent' : 'bg-black/40 hover:bg-black/10'
+                  isActive ? 'bg-transparent' : 'bg-black/40 hover:bg-black/10'
                 }`}></div>
               </button>
             );
