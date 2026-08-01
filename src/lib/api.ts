@@ -1,5 +1,8 @@
 import { decryptData } from '@/utils/cryptoHelper';
 
+// Shabakaty internal HTTPS endpoints use custom/unverified leaf SSL certificates
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const CINEMANA_API_BASE = new URL('https://cinemana.shabakaty.com/api/android/');
 
 function resolveCinemanaEndpoint(endpoint: string, params: Record<string, string>): URL | null {

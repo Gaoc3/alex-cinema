@@ -1,5 +1,8 @@
 import { requireAllowedShabakatyUrl } from '@/utils/shabakatyUrl';
 
+// Shabakaty internal HTTPS endpoints use custom/unverified leaf SSL certificates
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 export const encodeProxyUrl = (url: string): string => {
   if (!url) return '';
   return encodeURIComponent(url);
