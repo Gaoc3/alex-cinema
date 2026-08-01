@@ -117,14 +117,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     }
     return '';
   });
-  const [isInitializing, setIsInitializing] = useState<boolean>(() => {
-    const hasInitialUrl = !!(
-      (streams && streams.length > 0 && streams[0].videoUrl) ||
-      videoData.stream_url ||
-      extractYouTubeId(videoData.trailer || '')
-    );
-    return !hasInitialUrl;
-  });
+  const [isInitializing, setIsInitializing] = useState<boolean>(false);
   const [showStreamError, setShowStreamError] = useState(false);
   const [youtubeFallback, setYoutubeFallback] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -408,21 +401,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     }
 
     let cancelled = false;
-    queueMicrotask(() => {
-      if (cancelled) return;
-      setShowStreamError(false);
-      setYoutubeFallback(false);
-      setRetryCount(0);
-      setLastErrorEvent(null);
-      setCurrentTime(0);
-      setActiveSkipKind(null);
-      setDuration(initialDuration);
+    if (initialStreamUrl && initialStreamUrl !== currentStreamUrl) {
       setCurrentStreamUrl(initialStreamUrl);
       setSelectedResolution(initialResolution);
-      setIsInitializing(false);
-    });
-    return () => { cancelled = true; };
-  }, [videoData, streams]);
+    }
+  }, [videoData, streams, currentStreamUrl]);
 
   // HLS stream logic
   useEffect(() => {
