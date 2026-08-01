@@ -6,25 +6,6 @@ let failCount = 0;
 function handleFailure(reason) {
   failCount += 1;
   console.log(`[Watchdog Fail #${failCount}]: ${reason} (${new Date().toISOString()})`);
-
-  if (failCount < 2) return;
-
-  console.log("[Watchdog Action]: Triggering Router Auto-Reconnect...");
-  failCount = 0;
-
-  exec("fuser -k 8443/tcp", () => {
-    exec(
-      'ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 root@192.168.1.1 "/etc/tunnel_daemon.sh &"',
-      (error) => {
-        if (error) {
-          console.error("[Watchdog SSH Router Error]:", error.message);
-          return;
-        }
-
-        console.log("[Watchdog Router Trigger Success]");
-      },
-    );
-  });
 }
 
 function checkShabakaty() {
