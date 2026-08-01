@@ -131,11 +131,11 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           </div>
         ))}
         
-        {/* Soft, natural gradients for text contrast without harsh dark ruler bars */}
-        <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#06070a] via-[#06070a]/30 to-transparent z-[2]"></div>
-        <div className="hidden lg:block absolute inset-y-0 right-0 w-[55%] bg-gradient-to-l from-[#06070a]/75 via-[#06070a]/35 to-transparent z-[2]"></div>
-        <div className="hidden lg:block absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-[#06070a]/30 to-transparent z-[2]"></div>
-        <div className="lg:hidden absolute inset-0 bg-gradient-to-t from-[#06070a]/70 via-[#06070a]/20 to-transparent z-[2]"></div>
+        {/* Crisp, natural bottom gradient for smooth page transition without foggy dark bars */}
+        <div className="hidden lg:block absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#060811] to-transparent z-[2]"></div>
+        <div className="hidden lg:block absolute inset-y-0 right-0 w-[50%] bg-gradient-to-l from-[#060811]/70 via-[#060811]/25 to-transparent z-[2]"></div>
+        <div className="hidden lg:block absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-[#060811]/25 to-transparent z-[2]"></div>
+        <div className="lg:hidden absolute inset-0 bg-gradient-to-t from-[#060811]/60 via-transparent to-transparent z-[2]"></div>
         
         {/* Mobile "Watch Now" Button (Cinemana Style) */}
         <div className="absolute bottom-3 right-4 z-10 lg:hidden">
@@ -250,8 +250,6 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
       {/* Slide Indicators / Thumbnails Row (Desktop: Thumbnails, Mobile: Dots) */}
       {videos.length > 1 && (
         <div ref={thumbnailsContainerRef} className="w-full z-20 relative mt-4 lg:mt-0 lg:absolute lg:bottom-0 pointer-events-none">
-          <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-[#06070a]/90 via-[#06070a]/30 to-transparent pointer-events-none -z-10"></div>
-          
           {/* Mobile Dots */}
           <div className="flex lg:hidden justify-center items-center gap-2 pb-4 pointer-events-auto">
              {videos.map((_, idx) => (
