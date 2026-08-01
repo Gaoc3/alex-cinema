@@ -34,27 +34,25 @@ export function getImageUrl(
   return withImageCacheVersion(`/api/img?type=${type}&file=${encodeURIComponent(imgField)}`);
 }
 
-/**
- * Returns the best available image URL from a video object.
- * Prefers imgObjUrl (already sanitized by server) over img filename.
- */
 export function getVideoImageUrl(
   video: { img?: string; imgObjUrl?: string; imgMediumThumb?: string; imgThumb?: string },
   type: 'poster' | 'cover' | 'backdrop' = 'poster'
 ): string {
-  // Grid cards must prefer the dedicated thumbnails. Some full poster PNGs are
-  // multiple megabytes while the corresponding medium thumbnail is ~30 KB.
-  if (type === 'poster') {
-    const thumbnail = video.imgMediumThumb || video.imgThumb;
-    if (thumbnail) return getImageUrl(thumbnail, type);
+  if (!video) return '';
+
+  // 1. For covers/backdrops (like HeroCarousel), prefer high-res main image
+  if (type === 'cover' || type === 'backdrop') {
+    const img = video.img || video.imgMediumThumb || video.imgThumb;
+    return getImageUrl(img, type);
   }
 
-  // imgObjUrl is already sanitized by the server to /api/img?ref=...
+  // 2. For poster grid cards:
+  // Prefer imgObjUrl if pre-sanitized by server
   if (video.imgObjUrl && (video.imgObjUrl.startsWith('/api/') || video.imgObjUrl.startsWith('/tunnel/'))) {
     return withImageCacheVersion(video.imgObjUrl);
   }
 
-  // For covers (like HeroCarousel), prefer high-res
+  // Prefer main img, then fallback to medium/small thumbnails
   const img = video.img || video.imgMediumThumb || video.imgThumb;
-  return getImageUrl(img, type);
+  return getImageUrl(img, 'poster');
 }
