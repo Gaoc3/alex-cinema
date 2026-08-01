@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const tunnelProxyBaseUrl = (process.env.TUNNEL_PROXY_BASE_URL || 'http://127.0.0.1:80')
   .replace(/\/$/, '');
 
