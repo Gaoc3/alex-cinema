@@ -43,7 +43,7 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
   if (isServer) {
     // /etc/hosts routes shabakaty.com → 127.0.0.1:443 (router SSH reverse tunnel)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for tunnel latency
+    const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s fast timeout to prevent NGINX 502 Gateway timeouts
 
     try {
       const { fetchWithRedirects, readResponseTextWithLimit } = await import('@/utils/proxyHelper');
