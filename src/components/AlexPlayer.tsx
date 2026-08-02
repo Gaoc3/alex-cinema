@@ -395,10 +395,12 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       const preferred = streams.find(s => s.resolution && s.resolution.toLowerCase().includes('1080')) 
                      || streams.find(s => s.resolution && s.resolution.toLowerCase().includes('720')) 
                      || streams[0];
-      initialStreamUrl = toProxyUrl(preferred.videoUrl);
+      const target = ((preferred as { directUrl?: string }).directUrl || preferred.videoUrl) as string;
+      initialStreamUrl = toProxyUrl(target);
       initialResolution = preferred.resolution;
     } else {
-      initialStreamUrl = toProxyUrl(videoData.stream_url);
+      const target = ((videoData as { direct_stream_url?: string }).direct_stream_url || videoData.stream_url) as string;
+      initialStreamUrl = toProxyUrl(target);
       initialResolution = '';
     }
 
