@@ -67,7 +67,7 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
         await res.body?.cancel().catch(() => undefined);
         return null;
       }
-      const text = await readResponseTextWithLimit(res, 10 * 1024 * 1024);
+      const text = await readResponseTextWithLimit(res, 10 * 1024 * 1024, controller.signal);
       try {
         const raw = JSON.parse(text);
         
