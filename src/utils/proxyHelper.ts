@@ -52,15 +52,12 @@ export async function fetchWithRedirects(
   signal?: AbortSignal,
 ): Promise<Response> {
   let targetUrl = initialUrl;
-  let originalHost = '';
+  let cacheKey = initialUrl;
 
   try {
-    const parsed = new URL(initialUrl);
-    originalHost = parsed.hostname;
-    const cached = redirectHostCache.get(originalHost);
+    const cached = redirectHostCache.get(cacheKey);
     if (cached && Date.now() < cached.expiresAt) {
-      parsed.hostname = cached.targetHost;
-      targetUrl = parsed.href;
+      targetUrl = cached.targetHost;
     }
   } catch {
     // ignore parse error
@@ -80,6 +77,7 @@ export async function fetchWithRedirects(
       headers: currentHeaders,
       redirect: 'manual',
       signal,
+      keepalive: true,
     });
 
     if ([301, 302, 303, 307, 308].includes(response.status)) {
@@ -90,13 +88,11 @@ export async function fetchWithRedirects(
         const nextUrlObj = requireAllowedShabakatyUrl(new URL(location, currentUrl).href);
         await response.body?.cancel().catch(() => undefined);
 
-        // Cache host mapping for zero-redirect performance on all subsequent range requests!
-        if (originalHost && nextUrlObj.hostname && originalHost !== nextUrlObj.hostname) {
-          redirectHostCache.set(originalHost, {
-            targetHost: nextUrlObj.hostname,
-            expiresAt: Date.now() + REDIRECT_CACHE_TTL,
-          });
-        }
+        // Cache exact resolved target URL for zero-redirect performance on all subsequent range requests for this file!
+        redirectHostCache.set(cacheKey, {
+          targetHost: nextUrlObj.href,
+          expiresAt: Date.now() + REDIRECT_CACHE_TTL,
+        });
 
         currentUrl = nextUrlObj.href;
       } catch {
