@@ -943,40 +943,42 @@ export default function RoomSidebar({
                         const isMemberMod = member.role === 'moderator';
 
                         return (
-                          <div key={member.id} className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.04] p-2.5">
-                            <div className="flex min-w-0 items-center gap-3">
-                              <span className="relative flex size-11 shrink-0 items-center justify-center">
-                                <UserAvatar
-                                  imageUrl={member.avatarUrl}
-                                  name={member.name}
-                                  className={`size-10 text-xs ring-offset-2 ring-offset-[#111824] ${isMemberHost ? 'ring-2 ring-amber-400/70' : isMemberMod ? 'ring-2 ring-blue-400/70' : ''}`}
-                                />
-                                {isMemberHost ? (
-                                  <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-amber-300 text-[8px] text-amber-950 ring-2 ring-[#111824]">
-                                    <i className="fa-solid fa-crown" aria-hidden="true" />
-                                  </span>
-                                ) : isMemberMod ? (
-                                  <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-blue-400 text-[8px] text-blue-950 ring-2 ring-[#111824]">
-                                    <i className="fa-solid fa-shield-halved" aria-hidden="true" />
-                                  </span>
-                                ) : null}
-                              </span>
-                              <div className="min-w-0">
-                                <p className="truncate text-xs font-bold text-slate-100">{member.name}</p>
-                                <p className="mt-0.5 text-[10px] text-slate-500">
-                                  {isMemberHost ? 'المضيف' : isMemberMod ? 'مشرف الغرفة' : 'مشاهد'}
-                                </p>
+                          <div key={member.id} className="flex flex-col gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.04] p-3 transition hover:bg-white/[0.06]">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex min-w-0 items-center gap-2.5">
+                                <span className="relative flex size-9 shrink-0 items-center justify-center">
+                                  <UserAvatar
+                                    imageUrl={member.avatarUrl}
+                                    name={member.name}
+                                    className={`size-9 text-xs ring-offset-2 ring-offset-[#111824] ${isMemberHost ? 'ring-2 ring-amber-400/70' : isMemberMod ? 'ring-2 ring-blue-400/70' : ''}`}
+                                  />
+                                  {isMemberHost ? (
+                                    <span className="absolute -right-0.5 -top-0.5 flex size-3.5 items-center justify-center rounded-full bg-amber-300 text-[7px] text-amber-950 ring-2 ring-[#111824]">
+                                      <i className="fa-solid fa-crown" aria-hidden="true" />
+                                    </span>
+                                  ) : isMemberMod ? (
+                                    <span className="absolute -right-0.5 -top-0.5 flex size-3.5 items-center justify-center rounded-full bg-blue-400 text-[7px] text-blue-950 ring-2 ring-[#111824]">
+                                      <i className="fa-solid fa-shield-halved" aria-hidden="true" />
+                                    </span>
+                                  ) : null}
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="truncate text-xs font-bold text-slate-100">{member.name}</p>
+                                  <p className="mt-0.5 text-[10px] font-semibold text-slate-400">
+                                    {isMemberHost ? 'المضيف' : isMemberMod ? 'مشرف الغرفة' : 'مشاهد'}
+                                  </p>
+                                </div>
                               </div>
                             </div>
 
-                            {!isMemberHost && (
-                              <div className="flex shrink-0 items-center gap-1">
+                            {!isMemberHost && (canManageMembers || isHost) && (
+                              <div className="flex flex-wrap items-center justify-end gap-1.5 pt-2 border-t border-white/[0.06]">
                                 {isHost && (
                                   <>
                                     <button
                                       type="button"
                                       onClick={() => openModPermissionsModal(member)}
-                                      className="min-h-9 cursor-pointer rounded-lg border border-blue-400/20 bg-blue-500/10 px-2.5 text-[11px] font-bold text-blue-300 transition hover:bg-blue-500/20"
+                                      className="min-h-8 cursor-pointer rounded-lg border border-blue-400/20 bg-blue-500/10 px-2 text-[11px] font-bold text-blue-300 transition hover:bg-blue-500/20 active:scale-95"
                                       title="إدارة صلاحيات المشرف"
                                     >
                                       {isMemberMod ? 'الصلاحيات' : 'ترقية لمشرف'}
@@ -985,7 +987,7 @@ export default function RoomSidebar({
                                       <button
                                         type="button"
                                         onClick={() => void handleRemoveModeratorRole(member)}
-                                        className="min-h-9 cursor-pointer rounded-lg border border-white/10 bg-white/5 px-2 text-[11px] font-bold text-slate-300 transition hover:bg-white/10"
+                                        className="min-h-8 cursor-pointer rounded-lg border border-white/10 bg-white/5 px-2 text-[11px] font-bold text-slate-300 transition hover:bg-white/10 active:scale-95"
                                         title="تجريد من الإشراف"
                                       >
                                         تجريد
@@ -1000,7 +1002,7 @@ export default function RoomSidebar({
                                       <button
                                         type="button"
                                         onClick={() => setKickMemberTarget(member)}
-                                        className="min-h-9 cursor-pointer rounded-lg bg-amber-500/10 px-2 text-[11px] font-bold text-amber-300 transition hover:bg-amber-500/20"
+                                        className="min-h-8 cursor-pointer rounded-lg border border-amber-500/20 bg-amber-500/10 px-2.5 text-[11px] font-bold text-amber-300 transition hover:bg-amber-500/20 active:scale-95"
                                         title="طرد موقت من الغرفة"
                                       >
                                         طرد
@@ -1010,7 +1012,7 @@ export default function RoomSidebar({
                                       <button
                                         type="button"
                                         onClick={() => setBanMemberTarget(member)}
-                                        className="min-h-9 cursor-pointer rounded-lg bg-red-500/15 px-2 text-[11px] font-bold text-red-300 transition hover:bg-red-500/25"
+                                        className="min-h-8 cursor-pointer rounded-lg border border-red-500/25 bg-red-500/15 px-2.5 text-[11px] font-bold text-red-300 transition hover:bg-red-500/25 active:scale-95"
                                         title="حظر أبدي من الغرفة"
                                       >
                                         حظر أبدي

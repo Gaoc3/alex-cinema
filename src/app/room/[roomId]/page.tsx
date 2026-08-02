@@ -56,6 +56,54 @@ export default async function RoomPage({
       console.error('Error syncing user in room page:', e);
     }
 
+    // Unauthenticated User Auth Guard: prompt to sign in and redirect back to this room
+    if (!currentUserId) {
+      const roomTitle = room.movieTitle || room.title || 'غرفة مشاهدة جماعية';
+      const redirectUrl = `/room/${resolvedParams.roomId}`;
+
+      return (
+        <div className="flex min-h-[100svh] items-center justify-center bg-[#070a11] p-4 text-white" dir="rtl">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-red-500/30 bg-[#0d121d] p-7 text-center shadow-2xl backdrop-blur-md sm:p-10">
+            <div className="absolute -top-20 -right-20 size-48 rounded-full bg-red-600/15 blur-[60px] pointer-events-none" />
+            <div className="absolute -bottom-20 -left-20 size-48 rounded-full bg-blue-600/15 blur-[60px] pointer-events-none" />
+
+            <div className="relative z-10 mx-auto mb-5 flex size-20 items-center justify-center rounded-3xl border border-red-500/40 bg-red-500/10 text-3xl text-red-500 shadow-[0_0_30px_rgba(239,68,68,0.25)]">
+              <i className="fa-solid fa-user-lock" aria-hidden="true" />
+            </div>
+
+            <span className="relative z-10 inline-block rounded-full border border-red-500/20 bg-red-500/10 px-3.5 py-1 text-xs font-black text-red-300 mb-3">
+              المشاهدة الجماعية
+            </span>
+
+            <h1 className="relative z-10 mb-2 text-2xl font-black text-white sm:text-3xl">
+              تسجيل الدخول مطلوب
+            </h1>
+
+            <p className="relative z-10 mb-7 text-sm leading-7 text-slate-300">
+              أهلاً بك! ينبغي تسجيل الدخول أو إنشاء حساب للانضمام لـ <strong className="text-white font-black">{roomTitle}</strong> والاستمتاع بالمشاهدة والدردشة المباشرة مع باقي الحاضرين.
+            </p>
+
+            <div className="relative z-10 flex flex-col gap-3">
+              <Link
+                href={`/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`}
+                className="flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-sm font-extrabold text-white transition hover:bg-red-700 active:scale-98 shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 cursor-pointer"
+              >
+                <i className="fa-solid fa-right-to-bracket text-xs" />
+                <span>تسجيل الدخول / إنشاء حساب</span>
+              </Link>
+
+              <Link
+                href="/rooms"
+                className="flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-6 py-2.5 text-xs font-bold text-slate-300 transition hover:bg-white/10 active:scale-98 cursor-pointer"
+              >
+                <span>استكشاف الغرف العامة النشطة</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     const isHost = currentUserId === room.hostId;
 
     // 3. Determine videoId (from URL searchParams first, then DB room.movieId)

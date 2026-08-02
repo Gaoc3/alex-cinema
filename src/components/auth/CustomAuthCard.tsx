@@ -11,6 +11,7 @@ import {
 
 interface CustomAuthCardProps {
   mode?: "sign-in" | "sign-up";
+  redirectUrl?: string;
 }
 
 interface TelegramAuthPayload {
@@ -149,10 +150,10 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps) {
-  const [loading, setLoading] = useState(true);
-  const [isOutsideTelegram, setIsOutsideTelegram] = useState(false);
-  const [isTelegramContext, setIsTelegramContext] = useState(false);
+export default function CustomAuthCard({ mode = "sign-in", redirectUrl = "/home" }: CustomAuthCardProps) {
+  const [isTelegramContext, setIsTelegramContext] = useState<boolean>(true);
+  const [isOutsideTelegram, setIsOutsideTelegram] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const authProcessedRef = useRef(false);
   const telegramAuthControllerRef = useRef<AbortController | null>(null);
@@ -415,16 +416,18 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
               <SignIn
                 routing="path"
                 path="/sign-in"
-                signUpUrl="/sign-up"
-                forceRedirectUrl="/home"
+                signUpUrl={`/sign-up${redirectUrl !== '/home' ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ''}`}
+                forceRedirectUrl={redirectUrl}
+                fallbackRedirectUrl={redirectUrl}
                 appearance={clerkAppearance}
               />
             ) : (
               <SignUp
                 routing="path"
                 path="/sign-up"
-                signInUrl="/sign-in"
-                forceRedirectUrl="/home"
+                signInUrl={`/sign-in${redirectUrl !== '/home' ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ''}`}
+                forceRedirectUrl={redirectUrl}
+                fallbackRedirectUrl={redirectUrl}
                 appearance={clerkAppearance}
               />
             )}
@@ -436,7 +439,11 @@ export default function CustomAuthCard({ mode = "sign-in" }: CustomAuthCardProps
                 </p>
               </div>
               <Link
-                href={mode === "sign-in" ? "/sign-up" : "/sign-in"}
+                href={
+                  mode === "sign-in"
+                    ? `/sign-up${redirectUrl !== '/home' ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ''}`
+                    : `/sign-in${redirectUrl !== '/home' ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ''}`
+                }
                 className="inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/12 px-4 py-2 text-sm font-black text-red-200 shadow-[0_8px_22px_rgba(229,9,20,0.12)] transition hover:border-red-300/50 hover:bg-red-500/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/70 min-[440px]:w-auto"
               >
                 <i className={`fa-solid ${mode === "sign-in" ? "fa-user-plus" : "fa-arrow-right-to-bracket"} text-xs`} aria-hidden="true" />
