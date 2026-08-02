@@ -8,6 +8,7 @@ import {
   getTelegramLaunchPayload,
   isTelegramWebAppContext,
 } from "@/lib/telegramWebAppClient";
+import AuthCardSkeleton from "@/components/skeleton/AuthCardSkeleton";
 
 interface CustomAuthCardProps {
   mode?: "sign-in" | "sign-up";
@@ -348,9 +349,13 @@ export default function CustomAuthCard({ mode = "sign-in", redirectUrl = "/home"
     window.location.assign("/api/auth/telegram/start");
   };
 
+  if (loading && !isOutsideTelegram) {
+    return <AuthCardSkeleton mode={mode} />;
+  }
+
   return (
     <section
-      className="relative min-w-0 w-full max-w-[29rem] px-px"
+      className="relative min-w-0 w-full max-w-[29rem] px-px animate-fade-in-up"
       aria-label={mode === "sign-in" ? "تسجيل الدخول إلى أليكس سينما" : "إنشاء حساب أليكس سينما"}
     >
       <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-gradient-to-b from-white/30 via-white/[0.06] to-red-500/22" />
@@ -360,27 +365,7 @@ export default function CustomAuthCard({ mode = "sign-in", redirectUrl = "/home"
           <div className="absolute -bottom-28 -left-20 size-64 rounded-full bg-sky-500/10 blur-3xl" />
         </div>
 
-        {loading && !isOutsideTelegram ? (
-          <div
-            className="relative flex min-h-52 flex-col items-center justify-center gap-4 rounded-3xl border border-red-500/20 bg-red-950/15 p-6 text-center"
-            role="status"
-            aria-live="polite"
-          >
-            <div className="relative size-14">
-              <div className="absolute inset-0 rounded-full border border-red-400/20" />
-              <div className="absolute inset-1 animate-spin rounded-full border-[3px] border-red-500/20 border-t-red-500 motion-reduce:animate-none" />
-              <i
-                className={`${isTelegramContext ? "fa-brands fa-telegram text-sky-400" : "fa-solid fa-shield-halved text-red-300"} absolute inset-0 flex items-center justify-center text-lg`}
-                aria-hidden="true"
-              />
-            </div>
-            <div>
-              <p className="text-sm font-black text-white sm:text-base">
-                {isTelegramContext ? "جاري ربط حساب تليجرام" : "جاري تجهيز صفحة الدخول"}
-              </p>
-            </div>
-          </div>
-        ) : isOutsideTelegram ? (
+        {isOutsideTelegram ? (
           <div className="relative">
             {/* Header Title at VERY TOP of Card */}
             <div className="mb-5 text-right border-b border-white/10 pb-4">
