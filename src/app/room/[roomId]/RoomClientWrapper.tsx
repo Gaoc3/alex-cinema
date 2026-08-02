@@ -146,6 +146,18 @@ export default function RoomClientWrapper({
     );
   }
 
+  if (roomHook.isBanned) {
+    return (
+      <RoomStateScreen
+        icon="fa-solid fa-user-slash"
+        title="تم حظرك نهائياً من الغرفة"
+        description={roomHook.banReason || 'حُظرت من المشاركة في هذه الغرفة مستقبلاً.'}
+        actionLabel="تصفح الغرف الأخرى"
+        onAction={() => router.push('/rooms')}
+      />
+    );
+  }
+
   if (roomHook.isKicked) {
     return (
       <RoomStateScreen
@@ -173,6 +185,7 @@ export default function RoomClientWrapper({
   const bgImage = video ? getVideoImageUrl(video) : null;
   const visibleMembers = roomHook.members.slice(0, 3);
   const memberCount = Math.max(roomHook.members.length, 1);
+  const canChangeMedia = isHostUser || roomHook.userPermissions.canChangeMedia;
 
   const handleSaveTitle = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -333,14 +346,14 @@ export default function RoomClientWrapper({
                     <i className="fa-solid fa-film" aria-hidden="true" />
                   </div>
                   <h2 className="mb-2 text-2xl font-black sm:text-3xl">
-                    {isHostUser ? 'اختر ما ستشاهدونه' : 'بانتظار اختيار المحتوى'}
+                    {canChangeMedia ? 'اختر ما ستشاهدونه' : 'بانتظار اختيار المحتوى'}
                   </h2>
                   <p className="mx-auto mb-7 max-w-xl text-sm leading-7 text-slate-300">
-                    {isHostUser
+                    {canChangeMedia
                       ? 'ابحث عن فيلم أو مسلسل، وسيظهر لجميع المشاركين فور اختياره.'
-                      : 'سيبدأ العرض تلقائياً عندما يختار المضيف الفيلم أو الحلقة.'}
+                      : 'سيبدأ العرض تلقائياً عندما يختار المضيف أو المشرف الفيلم أو الحلقة.'}
                   </p>
-                  {isHostUser ? (
+                  {canChangeMedia ? (
                     <LobbySearch roomId={roomId} onVideoSelected={roomHook.changeVideo} />
                   ) : (
                     <div className="flex justify-center gap-2" role="status" aria-label="بانتظار المضيف">
@@ -360,7 +373,7 @@ export default function RoomClientWrapper({
                   roomHook={roomHook}
                 />
 
-                {isHostUser && (
+                {canChangeMedia && (
                   <details className="group rounded-2xl border border-white/10 bg-[#0b101a]/90 shadow-lg">
                     <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm font-extrabold marker:content-none sm:px-5">
                       <span className="flex items-center gap-2.5">
@@ -387,10 +400,16 @@ export default function RoomClientWrapper({
               connectionState={roomHook.connectionState}
               isChatHistoryLoaded={roomHook.isChatHistoryLoaded}
               sendChatMessage={roomHook.sendChatMessage}
+              editChatMessage={roomHook.editChatMessage}
               deleteChatMessage={roomHook.deleteChatMessage}
               currentUserId={currentUserId}
               isHost={isHostUser}
+              userRole={roomHook.userRole}
+              userPermissions={roomHook.userPermissions}
+              setModeratorPermissions={roomHook.setModeratorPermissions}
+              removeModerator={roomHook.removeModerator}
               kickUser={roomHook.kickUser}
+              banUser={roomHook.banUser}
               closeRoom={roomHook.closeRoom}
               activeTab={activeRoomTab}
               onActiveTabChange={setActiveRoomTab}

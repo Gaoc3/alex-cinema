@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import ConfirmModal from '@/components/ConfirmModal';
-import type { ChatMessage, RoomConnectionState, RoomMember } from '@/hooks/useWatchRoom';
+import type { ChatMessage, MemberPermissions, RoomConnectionState, RoomMember } from '@/hooks/useWatchRoom';
 import UserAvatar from '@/components/UserAvatar';
 
 export type RoomTab = 'chat' | 'members' | 'settings';
@@ -16,10 +16,16 @@ interface RoomSidebarProps {
   connectionState: RoomConnectionState;
   isChatHistoryLoaded: boolean;
   sendChatMessage: (text: string, replyToId?: string) => Promise<{ ok: boolean; error?: string }>;
+  editChatMessage: (messageId: string, text: string) => Promise<{ ok: boolean; error?: string }>;
   deleteChatMessage: (messageId: string) => Promise<{ ok: boolean; error?: string }>;
   currentUserId: string | null;
   isHost: boolean;
-  kickUser: (socketId: string) => void;
+  userRole?: 'host' | 'moderator' | 'member';
+  userPermissions?: MemberPermissions;
+  setModeratorPermissions: (targetSocketId: string, permissions: MemberPermissions) => Promise<{ ok: boolean; error?: string }>;
+  removeModerator: (targetSocketId: string) => Promise<{ ok: boolean; error?: string }>;
+  kickUser: (targetSocketId: string) => Promise<{ ok: boolean; error?: string }>;
+  banUser: (targetSocketId: string) => Promise<{ ok: boolean; error?: string }>;
   closeRoom: () => Promise<void>;
   activeTab: RoomTab;
   onActiveTabChange: (tab: RoomTab) => void;
@@ -53,10 +59,16 @@ export default function RoomSidebar({
   connectionState,
   isChatHistoryLoaded,
   sendChatMessage,
+  editChatMessage,
   deleteChatMessage,
   currentUserId,
   isHost,
+  userRole = 'member',
+  userPermissions = { canKick: false, canBan: false, canSeek: false, canChangeMedia: false },
+  setModeratorPermissions,
+  removeModerator,
   kickUser,
+  banUser,
   closeRoom,
   activeTab,
   onActiveTabChange,
@@ -69,6 +81,16 @@ export default function RoomSidebar({
   const [isSending, setIsSending] = useState(false);
   const [showCloseRoomModal, setShowCloseRoomModal] = useState(false);
   const [kickMemberTarget, setKickMemberTarget] = useState<RoomMember | null>(null);
+  const [banMemberTarget, setBanMemberTarget] = useState<RoomMember | null>(null);
+  const [modPermissionsTarget, setModPermissionsTarget] = useState<RoomMember | null>(null);
+  const [permissionsState, setPermissionsState] = useState<MemberPermissions>({
+    canKick: false,
+    canBan: false,
+    canSeek: true,
+    canChangeMedia: false,
+  });
+
+  const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [deleteMessageTarget, setDeleteMessageTarget] = useState<ChatMessage | null>(null);
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
@@ -92,19 +114,23 @@ export default function RoomSidebar({
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const hosts = members.filter((member) => member.isHost);
-  const viewers = members.filter((member) => !member.isHost);
+  const moderators = members.filter((member) => !member.isHost && member.role === 'moderator');
+  const viewers = members.filter((member) => !member.isHost && member.role !== 'moderator');
+
   const connectionMeta = {
     connecting: { label: 'جارٍ الاتصال', color: 'bg-amber-400' },
     connected: { label: 'جلسة مباشرة', color: 'bg-emerald-400' },
     reconnecting: { label: 'إعادة الاتصال', color: 'bg-amber-400 motion-safe:animate-pulse' },
     offline: { label: 'غير متصل', color: 'bg-red-500' },
   }[connectionState];
+
   const currentReplyTarget = replyingTo
     ? messages.find((message) => message.id === replyingTo.id)
     : null;
   const activeReplyTarget = currentReplyTarget && !currentReplyTarget.isDeleted
     ? currentReplyTarget
     : null;
+
   const currentDeleteTarget = deleteMessageTarget
     ? messages.find((message) => message.id === deleteMessageTarget.id)
     : null;
@@ -128,7 +154,7 @@ export default function RoomSidebar({
       if (context.state === 'suspended') void context.resume();
       playTone(context);
     } catch {
-      // Browsers can block audio until the next user gesture.
+      // Audio playback blocked until user gesture
     }
   }, [getAudioContext]);
 
@@ -151,7 +177,7 @@ export default function RoomSidebar({
           setNotificationSound(Boolean(parsed.notificationSound));
         }
       } catch {
-        // Keep the defaults when storage is unavailable or malformed.
+        // Fallback to default
       } finally {
         setPreferencesLoaded(true);
       }
@@ -167,7 +193,7 @@ export default function RoomSidebar({
         notificationSound,
       }));
     } catch {
-      // The preferences remain active for this session when storage is unavailable.
+      // Preferences active for current session
     }
   }, [compactChat, notificationSound, preferencesLoaded]);
 
@@ -270,18 +296,43 @@ export default function RoomSidebar({
     if (!inputText.trim() || isSending) return;
     setIsSending(true);
     try {
-      const result = await sendChatMessage(inputText, activeReplyTarget?.id);
-      if (result.ok) {
-        setInputText('');
-        setReplyingTo(null);
-        onActiveTabChange('chat');
-        window.requestAnimationFrame(() => scrollToLatest('smooth'));
+      if (editingMessage) {
+        const result = await editChatMessage(editingMessage.id, inputText);
+        if (result.ok) {
+          setInputText('');
+          setEditingMessage(null);
+          toast.success('تم تعديل الرسالة');
+        } else {
+          toast.error(result.error || 'تعذر تعديل الرسالة');
+        }
       } else {
-        toast.error(result.error || 'تعذر إرسال الرسالة');
+        const result = await sendChatMessage(inputText, activeReplyTarget?.id);
+        if (result.ok) {
+          setInputText('');
+          setReplyingTo(null);
+          onActiveTabChange('chat');
+          window.requestAnimationFrame(() => scrollToLatest('smooth'));
+        } else {
+          toast.error(result.error || 'تعذر إرسال الرسالة');
+        }
       }
     } finally {
       setIsSending(false);
     }
+  };
+
+  const beginEditMessage = (message: ChatMessage) => {
+    if (message.isDeleted) return;
+    setOpenActionsId(null);
+    setReplyingTo(null);
+    setEditingMessage(message);
+    setInputText(message.text);
+    window.requestAnimationFrame(() => composerRef.current?.focus());
+  };
+
+  const cancelEdit = () => {
+    setEditingMessage(null);
+    setInputText('');
   };
 
   const formatMessageTime = (createdAt: string) => {
@@ -311,6 +362,7 @@ export default function RoomSidebar({
   const beginReply = (message: ChatMessage) => {
     if (message.isDeleted) return;
     setOpenActionsId(null);
+    setEditingMessage(null);
     setReplyingTo(message);
     window.requestAnimationFrame(() => composerRef.current?.focus());
   };
@@ -325,7 +377,12 @@ export default function RoomSidebar({
     if (!button) return;
     const bounds = button.getBoundingClientRect();
     const menuWidth = 144;
-    const estimatedHeight = canDeleteMessage(message) ? 148 : 104;
+    const isOwner = Boolean(currentUserId && message.senderId === currentUserId);
+    const canDelete = canDeleteMessage(message);
+    let estimatedHeight = 104;
+    if (isOwner) estimatedHeight += 44;
+    if (canDelete) estimatedHeight += 44;
+
     const spaceBelow = window.innerHeight - bounds.bottom;
     const top = spaceBelow >= estimatedHeight + 12
       ? bounds.bottom + 4
@@ -364,6 +421,10 @@ export default function RoomSidebar({
     || (currentUserId && message.senderId === currentUserId),
   );
 
+  const isMessageOwner = (message: ChatMessage) => Boolean(
+    currentUserId && message.senderId === currentUserId,
+  );
+
   const handleConfirmMessageDelete = async () => {
     const target = activeDeleteTarget;
     if (!target || deletingMessageId) return;
@@ -373,6 +434,7 @@ export default function RoomSidebar({
     if (result.ok) {
       toast.success('تم حذف الرسالة');
       if (activeReplyTarget?.id === target.id) setReplyingTo(null);
+      if (editingMessage?.id === target.id) setEditingMessage(null);
       window.requestAnimationFrame(() => composerRef.current?.focus());
     } else {
       toast.error(result.error || 'تعذر حذف الرسالة');
@@ -429,10 +491,47 @@ export default function RoomSidebar({
     }
   };
 
-  const handleConfirmKick = () => {
+  const handleConfirmKick = async () => {
     if (!kickMemberTarget) return;
-    kickUser(kickMemberTarget.id);
+    const result = await kickUser(kickMemberTarget.id);
+    if (result.ok) toast.success(`تم طرد ${kickMemberTarget.name}`);
+    else toast.error(result.error || 'تعذر طرد العضو');
     setKickMemberTarget(null);
+  };
+
+  const handleConfirmBan = async () => {
+    if (!banMemberTarget) return;
+    const result = await banUser(banMemberTarget.id);
+    if (result.ok) toast.success(`تم حظر ${banMemberTarget.name} نهائياً`);
+    else toast.error(result.error || 'تعذر حظر العضو');
+    setBanMemberTarget(null);
+  };
+
+  const openModPermissionsModal = (member: RoomMember) => {
+    setModPermissionsTarget(member);
+    setPermissionsState(
+      member.permissions || { canKick: false, canBan: false, canSeek: true, canChangeMedia: false },
+    );
+  };
+
+  const handleSaveModeratorPermissions = async () => {
+    if (!modPermissionsTarget) return;
+    const result = await setModeratorPermissions(modPermissionsTarget.id, permissionsState);
+    if (result.ok) {
+      toast.success(`تم تحديث صلاحيات المشرف ${modPermissionsTarget.name}`);
+      setModPermissionsTarget(null);
+    } else {
+      toast.error(result.error || 'تعذر تحديث الصلاحيات');
+    }
+  };
+
+  const handleRemoveModeratorRole = async (member: RoomMember) => {
+    const result = await removeModerator(member.id);
+    if (result.ok) {
+      toast.success(`تم تجريد ${member.name} من الإشراف`);
+    } else {
+      toast.error(result.error || 'تعذر تجريد العضو من الإشراف');
+    }
   };
 
   const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -454,6 +553,8 @@ export default function RoomSidebar({
     { id: 'settings', label: 'الإعدادات', icon: 'fa-gear' },
   ];
 
+  const canManageMembers = isHost || userPermissions.canKick || userPermissions.canBan;
+
   return (
     <>
       <ConfirmModal
@@ -467,10 +568,18 @@ export default function RoomSidebar({
       <ConfirmModal
         isOpen={Boolean(kickMemberTarget)}
         onCancel={() => setKickMemberTarget(null)}
-        onConfirm={handleConfirmKick}
-        title="إخراج مشارك"
-        message={`هل تريد إخراج ${kickMemberTarget?.name || 'هذا المشارك'} من الغرفة؟`}
-        confirmText="إخراج"
+        onConfirm={() => void handleConfirmKick()}
+        title="طرد مشارك من الغرفة"
+        message={`هل تريد طرد ${kickMemberTarget?.name || 'هذا المشارك'} من الغرفة؟ سيمكنه العودة مجدداً عند استخدام الرابط.`}
+        confirmText="طرد فقط"
+      />
+      <ConfirmModal
+        isOpen={Boolean(banMemberTarget)}
+        onCancel={() => setBanMemberTarget(null)}
+        onConfirm={() => void handleConfirmBan()}
+        title="حظر أبدي من الغرفة"
+        message={`هل أنت مقتنع برغبتك في حظر ${banMemberTarget?.name || 'هذا العضو'} نهائياً من هذه الغرفة؟ لن يتمكن من إعادة الدخول مستقبلاً إطلاقاً.`}
+        confirmText="تأكيد الحظر الأبدي"
       />
       <ConfirmModal
         isOpen={Boolean(activeDeleteTarget)}
@@ -480,6 +589,86 @@ export default function RoomSidebar({
         message="ستظهر الرسالة كمحذوفة مع بقاء الردود المرتبطة بها. هل تريد المتابعة؟"
         confirmText="حذف الرسالة"
       />
+
+      {/* Permissions Modal for Host */}
+      {modPermissionsTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" dir="rtl">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] p-5 shadow-2xl">
+            <header className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-base font-black text-white">إدارة صلاحيات المشرف</h3>
+                <p className="mt-0.5 text-xs text-slate-400">{modPermissionsTarget.name}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModPermissionsTarget(null)}
+                className="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white"
+              >
+                <i className="fa-solid fa-xmark" aria-hidden="true" />
+              </button>
+            </header>
+
+            <div className="space-y-3 py-2">
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 hover:bg-white/10">
+                <span className="text-xs font-bold text-slate-200">صلاحية طرد الأعضاء (Kick)</span>
+                <input
+                  type="checkbox"
+                  checked={permissionsState.canKick}
+                  onChange={(e) => setPermissionsState((prev) => ({ ...prev, canKick: e.target.checked }))}
+                  className="size-4 rounded accent-red-600"
+                />
+              </label>
+
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 hover:bg-white/10">
+                <span className="text-xs font-bold text-slate-200">صلاحية حظر الأعضاء أبداً (Ban Forever)</span>
+                <input
+                  type="checkbox"
+                  checked={permissionsState.canBan}
+                  onChange={(e) => setPermissionsState((prev) => ({ ...prev, canBan: e.target.checked }))}
+                  className="size-4 rounded accent-red-600"
+                />
+              </label>
+
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 hover:bg-white/10">
+                <span className="text-xs font-bold text-slate-200">التحكم بالتقديم والتأخير (Seek / Playback)</span>
+                <input
+                  type="checkbox"
+                  checked={permissionsState.canSeek}
+                  onChange={(e) => setPermissionsState((prev) => ({ ...prev, canSeek: e.target.checked }))}
+                  className="size-4 rounded accent-red-600"
+                />
+              </label>
+
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 hover:bg-white/10">
+                <span className="text-xs font-bold text-slate-200">تغيير الفيلم أو الحلقة (Change Media)</span>
+                <input
+                  type="checkbox"
+                  checked={permissionsState.canChangeMedia}
+                  onChange={(e) => setPermissionsState((prev) => ({ ...prev, canChangeMedia: e.target.checked }))}
+                  className="size-4 rounded accent-red-600"
+                />
+              </label>
+            </div>
+
+            <footer className="mt-5 flex gap-2 border-t border-white/10 pt-4">
+              <button
+                type="button"
+                onClick={() => void handleSaveModeratorPermissions()}
+                className="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white hover:bg-red-700 cursor-pointer"
+              >
+                حفظ الصلاحيات
+              </button>
+              <button
+                type="button"
+                onClick={() => setModPermissionsTarget(null)}
+                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-bold text-slate-300 hover:bg-white/10 cursor-pointer"
+              >
+                إلغاء
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
 
       <section
         className="relative flex h-[clamp(26rem,60dvh,38rem)] min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0b101a] shadow-2xl lg:h-[min(68dvh,42rem)] lg:min-h-[30rem] lg:max-h-[42rem]"
@@ -550,6 +739,7 @@ export default function RoomSidebar({
                   <div className={compactChat ? 'space-y-2' : 'space-y-4'}>
                     {messages.map((message) => {
                       const canDelete = !message.isDeleted && canDeleteMessage(message);
+                      const isOwner = !message.isDeleted && isMessageOwner(message);
                       const menuId = `message-actions-${message.id}`;
                       return (
                         <article
@@ -570,7 +760,10 @@ export default function RoomSidebar({
                                 </span>
                               )}
                             </div>
-                            <div className="flex shrink-0 items-center gap-1">
+                            <div className="flex shrink-0 items-center gap-1.5">
+                              {message.isEdited && !message.isDeleted && (
+                                <span className="text-[9px] font-bold text-slate-500">مُعدّلة</span>
+                              )}
                               <time className="text-[10px] text-slate-500" dateTime={message.createdAt}>
                                 {formatMessageTime(message.createdAt)}
                               </time>
@@ -596,14 +789,6 @@ export default function RoomSidebar({
                                     aria-controls={menuId}
                                     aria-expanded={openActionsId === message.id}
                                     onClick={() => toggleMessageActions(message)}
-                                    onKeyDown={(event) => {
-                                      if (!['ArrowDown', 'Enter', ' '].includes(event.key)) return;
-                                      event.preventDefault();
-                                      if (openActionsId !== message.id) toggleMessageActions(message);
-                                      window.requestAnimationFrame(() => {
-                                        document.querySelector<HTMLButtonElement>(`#${menuId} [role="menuitem"]`)?.focus();
-                                      });
-                                    }}
                                     className="flex size-11 cursor-pointer items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                                   >
                                     <i className="fa-solid fa-ellipsis" aria-hidden="true" />
@@ -617,6 +802,17 @@ export default function RoomSidebar({
                                       className="fixed z-50 w-36 overflow-hidden rounded-xl border border-white/10 bg-[#151c29] p-1.5 shadow-2xl"
                                       style={actionMenuPosition}
                                     >
+                                      {isOwner && (
+                                        <button
+                                          type="button"
+                                          role="menuitem"
+                                          onClick={() => beginEditMessage(message)}
+                                          className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg px-3 text-right text-xs font-bold text-amber-300 transition hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                                        >
+                                          <i className="fa-solid fa-pen text-amber-400" aria-hidden="true" />
+                                          تعديل
+                                        </button>
+                                      )}
                                       <button
                                         type="button"
                                         role="menuitem"
@@ -726,37 +922,91 @@ export default function RoomSidebar({
                         <p className="text-xs font-bold text-slate-300">جارٍ تحديث قائمة الأعضاء...</p>
                       </div>
                     ) : (
-                      [...hosts, ...viewers].map((member) => (
-                        <div key={member.id} className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.04] p-2.5">
-                          <div className="flex min-w-0 items-center gap-3">
-                            <span className="relative flex size-11 shrink-0 items-center justify-center">
-                              <UserAvatar
-                                imageUrl={member.avatarUrl}
-                                name={member.name}
-                                className={`size-10 text-xs ring-offset-2 ring-offset-[#111824] ${member.isHost ? 'ring-2 ring-amber-400/70' : ''}`}
-                              />
-                              {member.isHost && (
-                                <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-amber-300 text-[8px] text-amber-950 ring-2 ring-[#111824]">
-                                  <i className="fa-solid fa-crown" aria-hidden="true" />
-                                </span>
-                              )}
-                            </span>
-                            <div className="min-w-0">
-                              <p className="truncate text-xs font-bold text-slate-100">{member.name}</p>
-                              <p className="mt-0.5 text-[10px] text-slate-500">{member.isHost ? 'المضيف' : 'مشاهد'}</p>
+                      [...hosts, ...moderators, ...viewers].map((member) => {
+                        const isMemberHost = member.isHost;
+                        const isMemberMod = member.role === 'moderator';
+
+                        return (
+                          <div key={member.id} className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.04] p-2.5">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <span className="relative flex size-11 shrink-0 items-center justify-center">
+                                <UserAvatar
+                                  imageUrl={member.avatarUrl}
+                                  name={member.name}
+                                  className={`size-10 text-xs ring-offset-2 ring-offset-[#111824] ${isMemberHost ? 'ring-2 ring-amber-400/70' : isMemberMod ? 'ring-2 ring-blue-400/70' : ''}`}
+                                />
+                                {isMemberHost ? (
+                                  <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-amber-300 text-[8px] text-amber-950 ring-2 ring-[#111824]">
+                                    <i className="fa-solid fa-crown" aria-hidden="true" />
+                                  </span>
+                                ) : isMemberMod ? (
+                                  <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-blue-400 text-[8px] text-blue-950 ring-2 ring-[#111824]">
+                                    <i className="fa-solid fa-shield-halved" aria-hidden="true" />
+                                  </span>
+                                ) : null}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="truncate text-xs font-bold text-slate-100">{member.name}</p>
+                                <p className="mt-0.5 text-[10px] text-slate-500">
+                                  {isMemberHost ? 'المضيف' : isMemberMod ? 'مشرف الغرفة' : 'مشاهد'}
+                                </p>
+                              </div>
                             </div>
+
+                            {!isMemberHost && (
+                              <div className="flex shrink-0 items-center gap-1">
+                                {isHost && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => openModPermissionsModal(member)}
+                                      className="min-h-9 cursor-pointer rounded-lg border border-blue-400/20 bg-blue-500/10 px-2.5 text-[11px] font-bold text-blue-300 transition hover:bg-blue-500/20"
+                                      title="إدارة صلاحيات المشرف"
+                                    >
+                                      {isMemberMod ? 'الصلاحيات' : 'ترقية لمشرف'}
+                                    </button>
+                                    {isMemberMod && (
+                                      <button
+                                        type="button"
+                                        onClick={() => void handleRemoveModeratorRole(member)}
+                                        className="min-h-9 cursor-pointer rounded-lg border border-white/10 bg-white/5 px-2 text-[11px] font-bold text-slate-300 transition hover:bg-white/10"
+                                        title="تجريد من الإشراف"
+                                      >
+                                        تجريد
+                                      </button>
+                                    )}
+                                  </>
+                                )}
+
+                                {canManageMembers && (
+                                  <>
+                                    {(isHost || userPermissions.canKick) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setKickMemberTarget(member)}
+                                        className="min-h-9 cursor-pointer rounded-lg bg-amber-500/10 px-2 text-[11px] font-bold text-amber-300 transition hover:bg-amber-500/20"
+                                        title="طرد موقت من الغرفة"
+                                      >
+                                        طرد
+                                      </button>
+                                    )}
+                                    {(isHost || userPermissions.canBan) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setBanMemberTarget(member)}
+                                        className="min-h-9 cursor-pointer rounded-lg bg-red-500/15 px-2 text-[11px] font-bold text-red-300 transition hover:bg-red-500/25"
+                                        title="حظر أبدي من الغرفة"
+                                      >
+                                        حظر أبدي
+                                      </button>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            )}
                           </div>
-                          {isHost && !member.isHost && (
-                            <button
-                              type="button"
-                              onClick={() => setKickMemberTarget(member)}
-                              className="min-h-11 shrink-0 cursor-pointer rounded-xl px-3 text-xs font-bold text-red-300 transition hover:bg-red-500/10 hover:text-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                            >
-                              إخراج
-                            </button>
-                          )}
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </section>
@@ -912,7 +1162,23 @@ export default function RoomSidebar({
                 onSubmit={handleSendMessage}
                 className="shrink-0 border-t border-white/10 bg-[#0d131f] px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
               >
-              {activeReplyTarget && (
+              {editingMessage ? (
+                <div className="mb-2 flex min-h-11 items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 pr-3">
+                  <i className="fa-solid fa-pen shrink-0 text-xs text-amber-400" aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[10px] font-extrabold text-amber-300">تعديل الرسالة</p>
+                    <p className="truncate text-[11px] text-slate-400" dir="auto">{editingMessage.text}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={cancelEdit}
+                    className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                    aria-label="إلغاء التعديل"
+                  >
+                    <i className="fa-solid fa-xmark" aria-hidden="true" />
+                  </button>
+                </div>
+              ) : activeReplyTarget ? (
                 <div className="mb-2 flex min-h-11 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] pr-3">
                   <i className="fa-solid fa-reply shrink-0 text-xs text-red-400" aria-hidden="true" />
                   <div className="min-w-0 flex-1">
@@ -928,7 +1194,7 @@ export default function RoomSidebar({
                     <i className="fa-solid fa-xmark" aria-hidden="true" />
                   </button>
                 </div>
-              )}
+              ) : null}
               <div className="flex items-end gap-2">
                 <textarea
                   ref={composerRef}
@@ -942,17 +1208,17 @@ export default function RoomSidebar({
                   }}
                   maxLength={1000}
                   rows={1}
-                  placeholder="اكتب رسالة..."
+                  placeholder={editingMessage ? 'أدخل الرسالة المعدلة...' : 'اكتب رسالة...'}
                   aria-label="رسالة الدردشة"
                   className="max-h-28 min-h-11 min-w-0 flex-1 resize-none rounded-xl border border-white/10 bg-white/[0.055] px-3.5 py-3 text-[13px] leading-5 text-white outline-none placeholder:text-slate-500 focus:border-red-500/60 focus:ring-2 focus:ring-red-500/20"
                 />
                 <button
                   type="submit"
                   disabled={!inputText.trim() || isSending}
-                  className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-[#e50914] text-white transition hover:bg-red-700 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-not-allowed disabled:opacity-35"
-                  aria-label={isSending ? 'جارٍ إرسال الرسالة' : 'إرسال الرسالة'}
+                  className={`flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-white transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-not-allowed disabled:opacity-35 ${editingMessage ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#e50914] hover:bg-red-700'}`}
+                  aria-label={isSending ? 'جارٍ الإرسال' : editingMessage ? 'حفظ التعديل' : 'إرسال الرسالة'}
                 >
-                  <i className={`fa-solid ${isSending ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`} aria-hidden="true" />
+                  <i className={`fa-solid ${isSending ? 'fa-spinner fa-spin' : editingMessage ? 'fa-check' : 'fa-paper-plane'}`} aria-hidden="true" />
                 </button>
               </div>
               </form>

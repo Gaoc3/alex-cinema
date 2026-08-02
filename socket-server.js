@@ -104,8 +104,29 @@ function cleanAvatarUrl(value) {
   }
 }
 
+function sanitizePermissions(input) {
+  return {
+    canKick: Boolean(input && input.canKick),
+    canBan: Boolean(input && input.canBan),
+    canSeek: Boolean(input && input.canSeek),
+    canChangeMedia: Boolean(input && input.canChangeMedia),
+  };
+}
+
+function isRoomHost(socket, room) {
+  return Boolean(socket.data.userId && socket.data.userId === room.hostUserId);
+}
+
+function hasPermission(socket, room, permName) {
+  if (isRoomHost(socket, room)) return true;
+  const member = room.members.get(socket.id);
+  if (!member || member.role !== 'moderator') return false;
+  return Boolean(member.permissions && member.permissions[permName]);
+}
+
 function toChatMessage(message, hostUserId, canDelete = false) {
   const isDeleted = Boolean(message.deletedAt);
+  const isEdited = Boolean(message.editedAt);
   const replyIsDeleted = Boolean(message.replyTo?.deletedAt);
   return {
     id: message.id,
@@ -118,6 +139,8 @@ function toChatMessage(message, hostUserId, canDelete = false) {
     canDelete,
     isDeleted,
     deletedAt: toISOString(message.deletedAt),
+    isEdited,
+    editedAt: toISOString(message.editedAt),
     replyTo: message.replyTo
       ? {
         id: message.replyTo.id,
@@ -244,10 +267,6 @@ function queueRoomPresence(roomId, isActive) {
   return next;
 }
 
-function isRoomHost(socket, room) {
-  return Boolean(socket.data.userId && socket.data.userId === room.hostUserId);
-}
-
 function canDeleteChatMessage(socket, room, message) {
   if (isRoomHost(socket, room)) return true;
   return Boolean(
@@ -370,6 +389,10 @@ async function start() {
 
         let room = rooms.get(roomId);
         if (!room) {
+          const dbBans = await prisma.roomBan.findMany({
+            where: { roomId },
+            select: { bannedIdentity: true },
+          });
           room = {
             hostUserId: roomRecord.hostId,
             videoId: roomRecord.movieId,
@@ -379,6 +402,8 @@ async function start() {
             episodeId: roomRecord.currentEpisodeId,
             state: { time: 0, playing: false, lastUpdated: Date.now() },
             members: new Map(),
+            moderators: new Map(),
+            bannedIdentities: new Set(dbBans.map((b) => b.bannedIdentity)),
           };
           rooms.set(roomId, room);
         } else {
@@ -402,6 +427,13 @@ async function start() {
           }
         }
 
+        if (room.bannedIdentities.has(socket.data.senderIdentity)) {
+          safeAck(callback, { ok: false, error: 'تم حظرك نهائياً من هذه الغرفة' });
+          socket.emit('banned', { reason: 'تم حظرك نهائياً من هذه الغرفة' });
+          socket.disconnect(true);
+          return;
+        }
+
         if (room.members.size >= MAX_MEMBERS_PER_ROOM) {
           safeAck(callback, { ok: false, error: 'الغرفة ممتلئة حالياً' });
           socket.disconnect(true);
@@ -419,11 +451,24 @@ async function start() {
         socket.join(roomId);
         socket.data.joinedRoom = true;
         const isHost = isRoomHost(socket, room);
+        const modPerms = room.moderators.get(socket.data.senderIdentity);
+        const isMod = Boolean(!isHost && modPerms);
+        const role = isHost ? 'host' : isMod ? 'moderator' : 'member';
+        const permissions = isHost
+          ? { canKick: true, canBan: true, canSeek: true, canChangeMedia: true }
+          : isMod
+            ? modPerms
+            : { canKick: false, canBan: false, canSeek: false, canChangeMedia: false };
+
         room.members.set(socket.id, {
           id: socket.id,
           name: socket.data.name,
           avatarUrl: socket.data.imageUrl,
+          userId: socket.data.userId,
+          identity: socket.data.senderIdentity,
           isHost,
+          role,
+          permissions,
         });
 
         const hasConnectedHost = getMembersArray(room).some((member) => member.isHost);
@@ -431,6 +476,8 @@ async function start() {
 
         socket.emit('room_state', {
           isHost,
+          role,
+          permissions,
           videoId: room.videoId,
           kind: room.kind,
           season: room.season,
@@ -573,6 +620,70 @@ async function start() {
       }
     });
 
+    socket.on('chat_edit', async (payload, callback) => {
+      try {
+        const room = rooms.get(roomId);
+        const messageId = payload && payload.messageId;
+        const text = cleanText(payload && payload.text);
+
+        if (!room || !socket.data.joinedRoom) {
+          safeAck(callback, { ok: false, error: 'يجب دخول الغرفة أولاً' });
+          return;
+        }
+        if (typeof messageId !== 'string' || !UUID_PATTERN.test(messageId)) {
+          safeAck(callback, { ok: false, error: 'تعذر تعديل الرسالة' });
+          return;
+        }
+        if (!text || text.length > MAX_MESSAGE_LENGTH || Buffer.byteLength(text, 'utf8') > MAX_MESSAGE_BYTES) {
+          safeAck(callback, { ok: false, error: 'الرسالة فارغة أو طويلة جداً' });
+          return;
+        }
+
+        const message = await prisma.roomMessage.findFirst({
+          where: { id: messageId, roomId },
+          select: { senderId: true, senderIdentity: true, deletedAt: true },
+        });
+
+        if (!message) {
+          safeAck(callback, { ok: false, error: 'الرسالة غير موجودة' });
+          return;
+        }
+
+        if (message.deletedAt) {
+          safeAck(callback, { ok: false, error: 'لا يمكن تعديل رسالة محذوفة' });
+          return;
+        }
+
+        const isOwner = Boolean(
+          (socket.data.userId && message.senderId === socket.data.userId)
+          || (socket.data.senderIdentity && message.senderIdentity === socket.data.senderIdentity),
+        );
+        if (!isOwner) {
+          safeAck(callback, { ok: false, error: 'غير مصرح بتعديل هذه الرسالة' });
+          return;
+        }
+
+        const editedAt = new Date();
+        await prisma.roomMessage.update({
+          where: { id: messageId },
+          data: { text, editedAt },
+        });
+
+        const publicEditedAt = editedAt.toISOString();
+        io.to(roomId).emit('chat_message_edited', {
+          messageId,
+          text,
+          isEdited: true,
+          editedAt: publicEditedAt,
+        });
+
+        safeAck(callback, { ok: true, messageId, text, editedAt: publicEditedAt });
+      } catch (error) {
+        console.error('chat_edit failed:', error);
+        safeAck(callback, { ok: false, error: 'تعذر تعديل الرسالة' });
+      }
+    });
+
     socket.on('chat_delete', async (payload, callback) => {
       try {
         const room = rooms.get(roomId);
@@ -645,7 +756,7 @@ async function start() {
       const room = rooms.get(roomId);
       const time = Number(payload && payload.time);
       const playing = payload && payload.playing;
-      if (!room || !isRoomHost(socket, room) || !Number.isFinite(time) || time < 0 || time > 172_800 || typeof playing !== 'boolean') return;
+      if (!room || !hasPermission(socket, room, 'canSeek') || !Number.isFinite(time) || time < 0 || time > 172_800 || typeof playing !== 'boolean') return;
 
       room.state = { time, playing, lastUpdated: Date.now() };
       socket.to(roomId).emit('sync_update', room.state);
@@ -655,14 +766,14 @@ async function start() {
       try {
         const room = rooms.get(roomId);
         const videoId = cleanText(payload && payload.videoId).slice(0, 128);
-        if (!room || !isRoomHost(socket, room) || !videoId) {
+        if (!room || !hasPermission(socket, room, 'canChangeMedia') || !videoId) {
           safeAck(callback, { ok: false, error: 'غير مصرح' });
           return;
         }
 
         const kind = cleanText(payload && payload.kind).slice(0, 16) || null;
         const updateResult = await prisma.room.updateMany({
-          where: { id: roomId, hostId: socket.data.userId },
+          where: { id: roomId },
           data: {
             movieId: videoId,
             currentEpisodeId: null,
@@ -697,7 +808,7 @@ async function start() {
       try {
         const room = rooms.get(roomId);
         const episodeId = cleanText(payload && payload.episodeId).slice(0, 128);
-        if (!room || !isRoomHost(socket, room) || !episodeId) {
+        if (!room || !hasPermission(socket, room, 'canChangeMedia') || !episodeId) {
           safeAck(callback, { ok: false, error: 'غير مصرح' });
           return;
         }
@@ -705,7 +816,7 @@ async function start() {
         const season = cleanText(payload && payload.season).slice(0, 16) || null;
         const episode = cleanText(payload && payload.episode).slice(0, 16) || null;
         const updateResult = await prisma.room.updateMany({
-          where: { id: roomId, hostId: socket.data.userId },
+          where: { id: roomId },
           data: {
             currentEpisodeId: episodeId,
             currentSeason: season,
@@ -730,19 +841,128 @@ async function start() {
       }
     });
 
-    socket.on('kick_user', (payload) => {
+    socket.on('set_moderator_permissions', (payload, callback) => {
       const room = rooms.get(roomId);
       const targetSocketId = payload && payload.targetSocketId;
-      if (!room || !isRoomHost(socket, room) || typeof targetSocketId !== 'string') return;
-      if (!room.members.has(targetSocketId) || targetSocketId === socket.id) return;
+      const rawPermissions = payload && payload.permissions;
+
+      if (!room || !isRoomHost(socket, room) || typeof targetSocketId !== 'string') {
+        safeAck(callback, { ok: false, error: 'غير مصرح' });
+        return;
+      }
+
+      const targetMember = room.members.get(targetSocketId);
+      if (!targetMember || targetMember.isHost) {
+        safeAck(callback, { ok: false, error: 'تعذر تعديل رتبة العضو' });
+        return;
+      }
+
+      const permissions = sanitizePermissions(rawPermissions);
+      targetMember.role = 'moderator';
+      targetMember.permissions = permissions;
+      room.moderators.set(targetMember.identity, permissions);
 
       const targetSocket = io.sockets.sockets.get(targetSocketId);
-      if (!targetSocket || isRoomHost(targetSocket, room)) return;
+      if (targetSocket) {
+        targetSocket.emit('permissions_updated', { role: 'moderator', permissions });
+      }
+
+      io.to(roomId).emit('room_members', getMembersArray(room));
+      safeAck(callback, { ok: true });
+    });
+
+    socket.on('remove_moderator', (payload, callback) => {
+      const room = rooms.get(roomId);
+      const targetSocketId = payload && payload.targetSocketId;
+
+      if (!room || !isRoomHost(socket, room) || typeof targetSocketId !== 'string') {
+        safeAck(callback, { ok: false, error: 'غير مصرح' });
+        return;
+      }
+
+      const targetMember = room.members.get(targetSocketId);
+      if (!targetMember || targetMember.isHost) {
+        safeAck(callback, { ok: false, error: 'تعذر تجريد العضو من الإشراف' });
+        return;
+      }
+
+      targetMember.role = 'member';
+      targetMember.permissions = { canKick: false, canBan: false, canSeek: false, canChangeMedia: false };
+      room.moderators.delete(targetMember.identity);
+
+      const targetSocket = io.sockets.sockets.get(targetSocketId);
+      if (targetSocket) {
+        targetSocket.emit('permissions_updated', { role: 'member', permissions: targetMember.permissions });
+      }
+
+      io.to(roomId).emit('room_members', getMembersArray(room));
+      safeAck(callback, { ok: true });
+    });
+
+    socket.on('kick_user', (payload, callback) => {
+      const room = rooms.get(roomId);
+      const targetSocketId = payload && payload.targetSocketId;
+      if (!room || !hasPermission(socket, room, 'canKick') || typeof targetSocketId !== 'string') {
+        safeAck(callback, { ok: false, error: 'غير مصرح' });
+        return;
+      }
+      if (!room.members.has(targetSocketId) || targetSocketId === socket.id) {
+        safeAck(callback, { ok: false, error: 'العضو غير موجود' });
+        return;
+      }
+
+      const targetSocket = io.sockets.sockets.get(targetSocketId);
+      if (!targetSocket || isRoomHost(targetSocket, room)) {
+        safeAck(callback, { ok: false, error: 'لا يمكن طرد مُضيف الغرفة' });
+        return;
+      }
+
       targetSocket.emit('kicked');
       room.members.delete(targetSocketId);
       targetSocket.leave(roomId);
       setTimeout(() => targetSocket.disconnect(true), 250);
       io.to(roomId).emit('room_members', getMembersArray(room));
+      safeAck(callback, { ok: true });
+    });
+
+    socket.on('ban_user', async (payload, callback) => {
+      try {
+        const room = rooms.get(roomId);
+        const targetSocketId = payload && payload.targetSocketId;
+        if (!room || !hasPermission(socket, room, 'canBan') || typeof targetSocketId !== 'string') {
+          safeAck(callback, { ok: false, error: 'غير مصرح' });
+          return;
+        }
+        if (!room.members.has(targetSocketId) || targetSocketId === socket.id) {
+          safeAck(callback, { ok: false, error: 'العضو غير موجود' });
+          return;
+        }
+
+        const targetSocket = io.sockets.sockets.get(targetSocketId);
+        if (!targetSocket || isRoomHost(targetSocket, room)) {
+          safeAck(callback, { ok: false, error: 'لا يمكن حظر مُضيف الغرفة' });
+          return;
+        }
+
+        const bannedIdentity = targetSocket.data.senderIdentity;
+        room.bannedIdentities.add(bannedIdentity);
+
+        await prisma.roomBan.upsert({
+          where: { roomId_bannedIdentity: { roomId, bannedIdentity } },
+          create: { roomId, bannedIdentity, bannedName: targetSocket.data.name },
+          update: { bannedName: targetSocket.data.name },
+        }).catch((err) => console.error('Failed to persist room ban:', err));
+
+        targetSocket.emit('banned', { reason: 'تم حظرك نهائياً من هذه الغرفة' });
+        room.members.delete(targetSocketId);
+        targetSocket.leave(roomId);
+        setTimeout(() => targetSocket.disconnect(true), 250);
+        io.to(roomId).emit('room_members', getMembersArray(room));
+        safeAck(callback, { ok: true });
+      } catch (error) {
+        console.error('ban_user failed:', error);
+        safeAck(callback, { ok: false, error: 'تعذر حظر العضو' });
+      }
     });
 
     socket.on('delete_room', async (callback) => {

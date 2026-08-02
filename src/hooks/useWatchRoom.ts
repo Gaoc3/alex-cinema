@@ -10,11 +10,20 @@ interface RoomState {
 
 export type RoomConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'offline';
 
+export interface MemberPermissions {
+  canKick: boolean;
+  canBan: boolean;
+  canSeek: boolean;
+  canChangeMedia: boolean;
+}
+
 export interface RoomMember {
   id: string;
   name: string;
   avatarUrl: string | null;
   isHost: boolean;
+  role?: 'host' | 'moderator' | 'member';
+  permissions?: MemberPermissions;
 }
 
 export interface ChatMessage {
@@ -28,6 +37,8 @@ export interface ChatMessage {
   canDelete?: boolean;
   isDeleted: boolean;
   deletedAt: string | null;
+  isEdited?: boolean;
+  editedAt?: string | null;
   replyTo: {
     id: string;
     sender: string;
@@ -46,6 +57,8 @@ interface ChatSendResult {
 export interface WatchRoomHook {
   connectionState: RoomConnectionState;
   isHost: boolean;
+  userRole: 'host' | 'moderator' | 'member';
+  userPermissions: MemberPermissions;
   roomState: RoomState | null;
   members: RoomMember[];
   messages: ChatMessage[];
@@ -53,13 +66,19 @@ export interface WatchRoomHook {
   sendSyncUpdate: (time: number, playing: boolean) => void;
   changeVideo: (newVideoId: string, kind?: string, season?: string, episode?: string) => Promise<ChatSendResult>;
   changeEpisode: (episodeId: string, season?: string, episode?: string) => Promise<ChatSendResult>;
-  kickUser: (targetSocketId: string) => void;
+  setModeratorPermissions: (targetSocketId: string, permissions: MemberPermissions) => Promise<ChatSendResult>;
+  removeModerator: (targetSocketId: string) => Promise<ChatSendResult>;
+  kickUser: (targetSocketId: string) => Promise<ChatSendResult>;
+  banUser: (targetSocketId: string) => Promise<ChatSendResult>;
   closeRoom: () => Promise<void>;
   sendChatMessage: (text: string, replyToId?: string) => Promise<ChatSendResult>;
+  editChatMessage: (messageId: string, text: string) => Promise<ChatSendResult>;
   deleteChatMessage: (messageId: string) => Promise<ChatSendResult>;
   remoteVideoId: string | null;
   remoteEpisodeId: string | null;
   isKicked: boolean;
+  isBanned: boolean;
+  banReason: string | null;
   isRoomClosed: boolean;
   connectionError: string | null;
 }
@@ -70,12 +89,15 @@ function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]) {
     if (!message?.id) continue;
     const previous = byId.get(message.id);
     const isDeleted = Boolean(previous?.isDeleted || message.isDeleted);
+    const isEdited = Boolean(previous?.isEdited || message.isEdited);
     byId.set(message.id, {
       ...previous,
       ...message,
       senderId: message.senderId ?? previous?.senderId ?? null,
       isDeleted,
       deletedAt: message.deletedAt ?? previous?.deletedAt ?? null,
+      isEdited,
+      editedAt: message.editedAt ?? previous?.editedAt ?? null,
       replyTo: message.replyTo ?? previous?.replyTo ?? null,
       text: isDeleted ? '' : message.text,
     });
@@ -151,6 +173,13 @@ function emitWithAcknowledgement(
   });
 }
 
+const DEFAULT_PERMISSIONS: MemberPermissions = {
+  canKick: false,
+  canBan: false,
+  canSeek: false,
+  canChangeMedia: false,
+};
+
 export function useWatchRoom(
   roomId: string,
   initIsHost: boolean,
@@ -158,16 +187,24 @@ export function useWatchRoom(
   avatarUrl: string | null = null,
 ): WatchRoomHook {
   const [isHost, setIsHost] = useState(initIsHost);
+  const [userRole, setUserRole] = useState<'host' | 'moderator' | 'member'>(initIsHost ? 'host' : 'member');
+  const [userPermissions, setUserPermissions] = useState<MemberPermissions>(
+    initIsHost
+      ? { canKick: true, canBan: true, canSeek: true, canChangeMedia: true }
+      : DEFAULT_PERMISSIONS,
+  );
   const [connectionState, setConnectionState] = useState<RoomConnectionState>('connecting');
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [members, setMembers] = useState<RoomMember[]>(() => (
-    username ? [{ id: 'self', name: username, avatarUrl, isHost: initIsHost }] : []
+    username ? [{ id: 'self', name: username, avatarUrl, isHost: initIsHost, role: initIsHost ? 'host' : 'member' }] : []
   ));
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isChatHistoryLoaded, setIsChatHistoryLoaded] = useState(false);
   const [remoteVideoId, setRemoteVideoId] = useState<string | null>(null);
   const [remoteEpisodeId, setRemoteEpisodeId] = useState<string | null>(null);
   const [isKicked, setIsKicked] = useState(false);
+  const [isBanned, setIsBanned] = useState(false);
+  const [banReason, setBanReason] = useState<string | null>(null);
   const [isRoomClosed, setIsRoomClosed] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
@@ -251,6 +288,7 @@ export function useWatchRoom(
         name: identityRef.current.username || 'مشاهد',
         avatarUrl: identityRef.current.avatarUrl,
         isHost: identityRef.current.initIsHost,
+        role: identityRef.current.initIsHost ? 'host' : 'member',
       }]);
       newSocket.emit('join_room', { roomId }, (result: ChatSendResult) => {
         if (result?.ok) {
@@ -294,11 +332,28 @@ export function useWatchRoom(
     });
 
     newSocket.on('room_state', (data) => {
-      setIsHost(Boolean(data?.isHost));
+      const hostFlag = Boolean(data?.isHost);
+      setIsHost(hostFlag);
+      if (data?.role) setUserRole(data.role);
+      else setUserRole(hostFlag ? 'host' : 'member');
+
+      if (data?.permissions) {
+        setUserPermissions(data.permissions);
+      } else if (hostFlag) {
+        setUserPermissions({ canKick: true, canBan: true, canSeek: true, canChangeMedia: true });
+      } else {
+        setUserPermissions(DEFAULT_PERMISSIONS);
+      }
+
       setRemoteVideoId(typeof data?.videoId === 'string' ? data.videoId : null);
       setRemoteEpisodeId(typeof data?.episodeId === 'string' ? data.episodeId : null);
       if (data?.state) setRoomState({ ...data.state, receivedAt: Date.now() });
       if (Array.isArray(data?.members)) setMembers(data.members);
+    });
+
+    newSocket.on('permissions_updated', (data: { role: 'host' | 'moderator' | 'member'; permissions: MemberPermissions }) => {
+      if (data?.role) setUserRole(data.role);
+      if (data?.permissions) setUserPermissions(data.permissions);
     });
 
     newSocket.on('room_members', (updatedMembers: RoomMember[]) => {
@@ -330,6 +385,24 @@ export function useWatchRoom(
       }
     });
 
+    newSocket.on('chat_message_edited', (data: { messageId?: string; text?: string; editedAt?: string }) => {
+      const messageId = data?.messageId;
+      const text = data?.text;
+      if (typeof messageId !== 'string' || typeof text !== 'string') return;
+      const editedAt = typeof data.editedAt === 'string' ? data.editedAt : new Date().toISOString();
+      setMessages((current) => current.map((msg) => {
+        const isTarget = msg.id === messageId;
+        const repliesToTarget = msg.replyTo?.id === messageId;
+        if (!isTarget && !repliesToTarget) return msg;
+
+        return {
+          ...msg,
+          ...(isTarget ? { text, isEdited: true, editedAt } : {}),
+          ...(repliesToTarget && msg.replyTo ? { replyTo: { ...msg.replyTo, text } } : {}),
+        };
+      }));
+    });
+
     newSocket.on('chat_message_deleted', (data: { messageId?: string; deletedAt?: string }) => {
       const messageId = data?.messageId;
       if (typeof messageId !== 'string') return;
@@ -357,6 +430,15 @@ export function useWatchRoom(
       terminalDisconnect = true;
       setConnectionState('offline');
       setIsKicked(true);
+      newSocket.disconnect();
+    });
+
+    newSocket.on('banned', (data: { reason?: string }) => {
+      terminalDisconnect = true;
+      setConnectionState('offline');
+      setIsBanned(true);
+      setBanReason(data?.reason || 'تم حظرك نهائياً من هذه الغرفة');
+      setConnectionError(data?.reason || 'تم حظرك نهائياً من هذه الغرفة');
       newSocket.disconnect();
     });
 
@@ -393,10 +475,10 @@ export function useWatchRoom(
   }, [roomId]);
 
   const sendSyncUpdate = useCallback((time: number, playing: boolean) => {
-    if (socketRef.current?.connected && isHost) {
+    if (socketRef.current?.connected && (isHost || userPermissions.canSeek)) {
       socketRef.current.emit('sync_update', { time, playing });
     }
-  }, [isHost]);
+  }, [isHost, userPermissions.canSeek]);
 
   const sendChatMessage = useCallback(async (
     rawText: string,
@@ -426,6 +508,32 @@ export function useWatchRoom(
         settled = true;
         window.clearTimeout(timeout);
         resolve(result?.ok ? { ok: true } : { ok: false, error: result?.error || 'تعذر إرسال الرسالة' });
+      });
+    });
+  }, []);
+
+  const editChatMessage = useCallback(async (messageId: string, rawText: string): Promise<ChatSendResult> => {
+    const activeSocket = socketRef.current;
+    const text = rawText.trim();
+    if (!activeSocket?.connected) return { ok: false, error: 'الاتصال بالغرفة غير جاهز' };
+    if (!messageId) return { ok: false, error: 'تعذر تعديل الرسالة' };
+    if (!text) return { ok: false, error: 'اكتب الرسالة أولاً' };
+    if (text.length > 1000) return { ok: false, error: 'الرسالة أطول من الحد المسموح' };
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const timeout = window.setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          resolve({ ok: false, error: 'انتهت مهلة تعديل الرسالة' });
+        }
+      }, 8_000);
+
+      activeSocket.emit('chat_edit', { messageId, text }, (result: ChatSendResult) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeout);
+        resolve(result?.ok ? { ok: true } : { ok: false, error: result?.error || 'تعذر تعديل الرسالة' });
       });
     });
   }, []);
@@ -468,21 +576,50 @@ export function useWatchRoom(
     episode = '',
   ): Promise<ChatSendResult> => {
     const activeSocket = socketRef.current;
-    if (!activeSocket?.connected || !isHost) return { ok: false, error: 'الاتصال بالغرفة غير جاهز' };
-    return emitWithAcknowledgement(activeSocket, 'change_video', { videoId: newVideoId, kind, season, episode });
-  }, [isHost]);
-
-  const kickUser = useCallback((targetSocketId: string) => {
-    if (socketRef.current?.connected && isHost) {
-      socketRef.current.emit('kick_user', { targetSocketId });
+    if (!activeSocket?.connected || (!isHost && !userPermissions.canChangeMedia)) {
+      return { ok: false, error: 'غير مصرح بتغيير المحتوى' };
     }
-  }, [isHost]);
+    return emitWithAcknowledgement(activeSocket, 'change_video', { videoId: newVideoId, kind, season, episode });
+  }, [isHost, userPermissions.canChangeMedia]);
 
   const changeEpisode = useCallback(async (episodeId: string, season = '', episode = ''): Promise<ChatSendResult> => {
     const activeSocket = socketRef.current;
-    if (!activeSocket?.connected || !isHost) return { ok: false, error: 'الاتصال بالغرفة غير جاهز' };
+    if (!activeSocket?.connected || (!isHost && !userPermissions.canChangeMedia)) {
+      return { ok: false, error: 'غير مصرح بتغيير الحلقة' };
+    }
     return emitWithAcknowledgement(activeSocket, 'change_episode', { episodeId, season, episode });
+  }, [isHost, userPermissions.canChangeMedia]);
+
+  const setModeratorPermissions = useCallback(async (
+    targetSocketId: string,
+    permissions: MemberPermissions,
+  ): Promise<ChatSendResult> => {
+    const activeSocket = socketRef.current;
+    if (!activeSocket?.connected || !isHost) return { ok: false, error: 'غير مصرح' };
+    return emitWithAcknowledgement(activeSocket, 'set_moderator_permissions', { targetSocketId, permissions });
   }, [isHost]);
+
+  const removeModerator = useCallback(async (targetSocketId: string): Promise<ChatSendResult> => {
+    const activeSocket = socketRef.current;
+    if (!activeSocket?.connected || !isHost) return { ok: false, error: 'غير مصرح' };
+    return emitWithAcknowledgement(activeSocket, 'remove_moderator', { targetSocketId });
+  }, [isHost]);
+
+  const kickUser = useCallback(async (targetSocketId: string): Promise<ChatSendResult> => {
+    const activeSocket = socketRef.current;
+    if (!activeSocket?.connected || (!isHost && !userPermissions.canKick)) {
+      return { ok: false, error: 'غير مصرح بالطرد' };
+    }
+    return emitWithAcknowledgement(activeSocket, 'kick_user', { targetSocketId });
+  }, [isHost, userPermissions.canKick]);
+
+  const banUser = useCallback(async (targetSocketId: string): Promise<ChatSendResult> => {
+    const activeSocket = socketRef.current;
+    if (!activeSocket?.connected || (!isHost && !userPermissions.canBan)) {
+      return { ok: false, error: 'غير مصرح بالحظر' };
+    }
+    return emitWithAcknowledgement(activeSocket, 'ban_user', { targetSocketId });
+  }, [isHost, userPermissions.canBan]);
 
   const closeRoom = useCallback(async () => {
     const activeSocket = socketRef.current;
@@ -508,6 +645,8 @@ export function useWatchRoom(
   return {
     connectionState,
     isHost,
+    userRole,
+    userPermissions,
     roomState,
     members,
     messages,
@@ -515,13 +654,19 @@ export function useWatchRoom(
     sendSyncUpdate,
     changeVideo,
     changeEpisode,
+    setModeratorPermissions,
+    removeModerator,
     kickUser,
+    banUser,
     closeRoom,
     sendChatMessage,
+    editChatMessage,
     deleteChatMessage,
     remoteVideoId,
     remoteEpisodeId,
     isKicked,
+    isBanned,
+    banReason,
     isRoomClosed,
     connectionError,
   };
