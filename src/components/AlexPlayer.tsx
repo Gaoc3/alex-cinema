@@ -98,17 +98,35 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const roomState = roomHook?.roomState;
   const sendSyncUpdate = roomHook?.sendSyncUpdate;
 
-  // Stream URL & Resolution states
-  const [useTunnelFallback, setUseTunnelFallback] = useState<boolean>(false);
+  // Stream URL & Resolution states with persistent session memory
+  const [useTunnelFallback, setUseTunnelFallbackState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('alex_use_tunnel') === 'true';
+    }
+    return false;
+  });
+
+  const setUseTunnelFallback = (val: boolean) => {
+    if (typeof window !== 'undefined' && val) {
+      sessionStorage.setItem('alex_use_tunnel', 'true');
+    }
+    setUseTunnelFallbackState(val);
+  };
+
   const [currentStreamUrl, setCurrentStreamUrl] = useState<string | null>(() => {
+    const initialTunnel = typeof window !== 'undefined' && sessionStorage.getItem('alex_use_tunnel') === 'true';
     if (streams && streams.length > 0) {
       const preferred = streams.find(s => s.resolution && s.resolution.toLowerCase().includes('1080')) 
                      || streams.find(s => s.resolution && s.resolution.toLowerCase().includes('720')) 
                      || streams[0];
-      const target = ((preferred as { directUrl?: string }).directUrl || preferred.videoUrl) as string;
+      const target = initialTunnel
+        ? (preferred.videoUrl || (preferred as { directUrl?: string }).directUrl)
+        : ((preferred as { directUrl?: string }).directUrl || preferred.videoUrl);
       return target ? target.trim() : null;
     }
-    const target = ((videoData as { direct_stream_url?: string }).direct_stream_url || videoData.stream_url) as string;
+    const target = initialTunnel
+      ? (videoData.stream_url || (videoData as { direct_stream_url?: string }).direct_stream_url)
+      : ((videoData as { direct_stream_url?: string }).direct_stream_url || videoData.stream_url);
     return target ? target.trim() : null;
   });
   const [selectedResolution, setSelectedResolution] = useState<string>(() => {
@@ -423,7 +441,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
     let cancelled = false;
     const controller = new AbortController();
-    const probeTimeout = setTimeout(() => controller.abort(), 1500);
+    const probeTimeout = setTimeout(() => controller.abort(), 300);
 
     fetch(currentStreamUrl, { method: 'HEAD', mode: 'no-cors', signal: controller.signal })
       .then(() => clearTimeout(probeTimeout))
