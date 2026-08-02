@@ -4,14 +4,14 @@ import SliderSkeleton from '@/components/skeleton/SliderSkeleton';
 
 export default function HomeLoading() {
   return (
-    <div className="animate-fade-in-up pb-20 overflow-hidden">
+    <div className="animate-fade-in-up pb-20 overflow-hidden w-full bg-[#070a11]">
       {/* Hero Section Skeleton */}
-      <div className="-mt-16 sm:-mt-20 lg:mt-0 relative z-0">
+      <div className="relative z-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
         <HeroSkeleton />
       </div>
 
       {/* Row Sliders Skeletons */}
-      <div className="mt-4 sm:mt-6 space-y-6">
+      <div className="mt-8 space-y-8 max-w-7xl mx-auto">
         <SliderSkeleton />
         <SliderSkeleton />
         <SliderSkeleton />
