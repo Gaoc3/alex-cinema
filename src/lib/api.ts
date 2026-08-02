@@ -146,6 +146,28 @@ export async function getVideoDetails(id: string) {
     if (data.streams.length > 0) {
       data.stream_url = data.streams[0].videoUrl;
       data.direct_stream_url = data.streams[0].directUrl || data.streams[0].videoUrl;
+
+      // SSR Proactive Prefetching: Prefetch MP4 Moov Atom into VPS RAM before client loads page
+      if (typeof window === 'undefined') {
+        import('../app/api/tunnel-video/route').then(({ triggerTailPrefetch }) => {
+          import('./serverCrypto').then(({ decryptPath }) => {
+            import('../utils/shabakatyUrl').then(({ resolveShabakatyReference }) => {
+              try {
+                const ref = new URL(data.stream_url, 'https://cinax.live').searchParams.get('ref');
+                if (ref) {
+                  const decrypted = decryptPath(ref);
+                  if (decrypted) {
+                    const approved = resolveShabakatyReference(decrypted);
+                    if (approved) {
+                      triggerTailPrefetch(approved.href, 200_000_000);
+                    }
+                  }
+                }
+              } catch {}
+            });
+          });
+        }).catch(() => undefined);
+      }
     } else if (data.fileFile) {
       if (typeof window === 'undefined') {
         const { sanitizeUrl } = await import('./serverCrypto');

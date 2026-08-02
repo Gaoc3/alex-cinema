@@ -6,43 +6,46 @@ import { isHlsUrl, resolveShabakatyReference } from '@/utils/shabakatyUrl';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// RAM cache for MP4 tail/moov atom range requests (caches tail chunks in VPS memory)
-interface CachedRange {
+// RAM cache for MP4 tail/moov atom range requests
+export interface CachedRange {
   buffer: Buffer;
   headers: Record<string, string>;
   expiresAt: number;
 }
 const tailRangeCache = new Map<string, CachedRange>();
+const pendingTailPrefetches = new Map<string, Promise<CachedRange | null>>();
 const CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
 
 function getCacheKey(url: string, rangeHeader: string): string {
   return `${url}::${rangeHeader}`;
 }
 
-// Background prefetch for tail moov atom if totalLength is known
-function triggerTailPrefetch(internalUrl: string, contentRangeHeader: string | null) {
-  if (!contentRangeHeader) return;
-  const match = contentRangeHeader.match(/\/(\d+)$/);
-  if (!match) return;
-  const totalLength = parseInt(match[1], 10);
-  if (isNaN(totalLength) || totalLength < 5_000_000) return;
+export function triggerTailPrefetch(internalUrl: string, totalLength: number): Promise<CachedRange | null> {
+  if (totalLength < 5_000_000) return Promise.resolve(null);
 
   const tailStart = Math.max(0, totalLength - 5_242_880); // Last 5MB
   const rangeHeader = `bytes=${tailStart}-${totalLength - 1}`;
   const cacheKey = getCacheKey(internalUrl, rangeHeader);
 
-  if (tailRangeCache.has(cacheKey)) return;
+  const existingCached = tailRangeCache.get(cacheKey);
+  if (existingCached && Date.now() < existingCached.expiresAt) {
+    return Promise.resolve(existingCached);
+  }
+
+  if (pendingTailPrefetches.has(cacheKey)) {
+    return pendingTailPrefetches.get(cacheKey)!;
+  }
 
   const fetchHeaders = new Headers();
   fetchHeaders.set('range', rangeHeader);
   fetchHeaders.set('Bypass-Tunnel-Reminder', 'true');
   fetchHeaders.set('Referer', 'https://cinemana.shabakaty.com/');
 
-  fetchWithRedirects(internalUrl, fetchHeaders, 5).then(async (res) => {
+  const promise = fetchWithRedirects(internalUrl, fetchHeaders, 5).then(async (res) => {
     if (res.ok || res.status === 206) {
       const arrayBuf = await res.arrayBuffer();
       const buffer = Buffer.from(arrayBuf);
-      tailRangeCache.set(cacheKey, {
+      const cached: CachedRange = {
         buffer,
         headers: {
           'content-length': String(buffer.length),
@@ -53,9 +56,17 @@ function triggerTailPrefetch(internalUrl: string, contentRangeHeader: string | n
           'x-accel-buffering': 'no',
         },
         expiresAt: Date.now() + CACHE_TTL,
-      });
+      };
+      tailRangeCache.set(cacheKey, cached);
+      return cached;
     }
-  }).catch(() => undefined);
+    return null;
+  }).catch(() => null).finally(() => {
+    pendingTailPrefetches.delete(cacheKey);
+  });
+
+  pendingTailPrefetches.set(cacheKey, promise);
+  return promise;
 }
 
 export async function GET(request: NextRequest) {
@@ -83,9 +94,14 @@ export async function GET(request: NextRequest) {
     const internalUrl = approvedUrl.href;
     const rangeHeader = request.headers.get('range');
 
-    // Check RAM cache for tail/moov atom range request
+    // Check RAM cache or await pending prefetch for tail/moov atom range request
     if (rangeHeader) {
       const cacheKey = getCacheKey(internalUrl, rangeHeader);
+      
+      if (pendingTailPrefetches.has(cacheKey)) {
+        await pendingTailPrefetches.get(cacheKey);
+      }
+
       const cached = tailRangeCache.get(cacheKey);
       if (cached && Date.now() < cached.expiresAt) {
         return new NextResponse(new Uint8Array(cached.buffer), {
@@ -94,7 +110,7 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // Check if requested range falls within a cached tail chunk
+      // Check if requested range falls within a cached or pending tail chunk
       for (const [ckey, cval] of tailRangeCache.entries()) {
         if (ckey.startsWith(`${internalUrl}::`) && Date.now() < cval.expiresAt) {
           const reqRangeMatch = rangeHeader.match(/bytes=(\d+)-(\d+)?/);
@@ -146,8 +162,17 @@ export async function GET(request: NextRequest) {
       return new NextResponse(`Proxy error: ${response.status}`, { status: response.status });
     }
 
-    // Non-blocking trigger prefetch for tail Moov atom
-    triggerTailPrefetch(internalUrl, response.headers.get('content-range'));
+    // Trigger non-blocking background prefetch for tail Moov atom if total length is known
+    const contentRangeHeader = response.headers.get('content-range');
+    if (contentRangeHeader) {
+      const match = contentRangeHeader.match(/\/(\d+)$/);
+      if (match) {
+        const totalLength = parseInt(match[1], 10);
+        if (!isNaN(totalLength)) {
+          triggerTailPrefetch(internalUrl, totalLength);
+        }
+      }
+    }
 
     const responseHeaders = new Headers();
     const headersToKeep = ['content-length', 'accept-ranges', 'content-range', 'cache-control'];
