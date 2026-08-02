@@ -3,8 +3,8 @@ import React from 'react';
 export default function HeroSkeleton() {
   return (
     <div className="w-full relative mt-0 bg-transparent flex flex-col lg:block" dir="rtl">
-      {/* Background Container Skeleton */}
-      <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] lg:aspect-auto lg:h-[520px] lg:min-h-[480px] lg:max-h-[560px] overflow-hidden rounded-3xl border border-white/[0.07] bg-[#0c1019]">
+      {/* Background Container Skeleton matching HeroCarousel.tsx */}
+      <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] lg:aspect-auto lg:h-[520px] lg:min-h-[480px] lg:max-h-[560px] overflow-hidden bg-[#0c1019]">
         {/* Shimmer Effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent animate-pulse" />
 

@@ -382,6 +382,16 @@ export default function CustomAuthCard({ mode = "sign-in", redirectUrl = "/home"
           </div>
         ) : isOutsideTelegram ? (
           <div className="relative">
+            {/* Header Title at VERY TOP of Card */}
+            <div className="mb-5 text-right border-b border-white/10 pb-4">
+              <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+                {mode === "sign-in" ? "تسجيل الدخول" : "إنشاء حساب جديد"}
+              </h2>
+              <p className="mt-1 text-xs font-bold text-slate-300">
+                {mode === "sign-in" ? "مرحباً بك! اختر وسيلة الدخول المناسبة" : "أنشئ حسابك واستمتع بالمشاهدة والدردشة المباشرة"}
+              </p>
+            </div>
+
             {errorMessage && (
               <div role="alert" className="mb-4 flex items-start gap-3 rounded-2xl border border-red-400/25 bg-red-950/35 p-4 text-sm font-bold leading-6 text-red-100">
                 <i className="fa-solid fa-circle-exclamation mt-1 text-red-400" aria-hidden="true" />
@@ -389,27 +399,23 @@ export default function CustomAuthCard({ mode = "sign-in", redirectUrl = "/home"
               </div>
             )}
 
+            {/* Quick Telegram OAuth Button */}
             <button
               type="button"
               onClick={startTelegramOidc}
-              className="group flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl border border-sky-300/35 bg-gradient-to-l from-sky-500/25 to-blue-500/20 px-4 py-3 text-sm font-black text-white shadow-[0_12px_30px_rgba(14,165,233,0.16)] transition hover:border-sky-200/55 hover:from-sky-500/35 hover:to-blue-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 active:scale-[0.99]"
+              className="group flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl border border-sky-400/35 bg-gradient-to-l from-sky-500/25 to-blue-500/20 px-4 py-3 text-sm font-black text-white shadow-[0_12px_30px_rgba(14,165,233,0.16)] transition hover:border-sky-200/55 hover:from-sky-500/35 hover:to-blue-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 active:scale-[0.99] cursor-pointer"
             >
-              <span className="flex size-9 items-center justify-center rounded-xl bg-sky-400/15 text-xl text-sky-300 transition group-hover:scale-105">
+              <span className="flex size-8 items-center justify-center rounded-xl bg-sky-400/20 text-lg text-sky-300 transition group-hover:scale-105">
                 <i className="fa-brands fa-telegram" aria-hidden="true" />
               </span>
-              <span>الدخول عبر تليجرام</span>
+              <span>الدخول السريع عبر تليجرام</span>
             </button>
 
-            <div className="my-4 flex items-center gap-3" aria-hidden="true">
+            {/* Divider */}
+            <div className="my-5 flex items-center gap-3" aria-hidden="true">
               <span className="h-px flex-1 bg-white/10" />
-              <span className="text-[0.72rem] font-black tracking-wider text-slate-300">أو</span>
+              <span className="text-xs font-bold text-slate-300">أو عبر البريد الإلكتروني</span>
               <span className="h-px flex-1 bg-white/10" />
-            </div>
-
-            <div className="mb-4 text-right">
-              <h2 className="text-xl font-black tracking-tight text-white sm:text-2xl">
-                {mode === "sign-in" ? "تسجيل الدخول" : "إنشاء حساب"}
-              </h2>
             </div>
 
             {mode === "sign-in" ? (

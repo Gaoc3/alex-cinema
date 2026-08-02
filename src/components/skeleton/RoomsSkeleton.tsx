@@ -16,24 +16,27 @@ export default function RoomsSkeleton() {
           </div>
         </div>
 
-        {/* Room Cards Grid Skeleton */}
+        {/* Room Cards Grid Skeleton matching RoomsListClient.tsx */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[...Array(8)].map((_, i) => (
             <div
               key={i}
-              className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0c1019] p-4 shadow-xl space-y-4 animate-pulse"
+              className="relative min-h-[240px] flex flex-col justify-between overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0c1019] p-5 shadow-xl animate-pulse"
             >
-              {/* Media Poster Aspect Ratio */}
-              <div className="relative aspect-video w-full rounded-2xl bg-white/5 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent" />
-                <div className="absolute top-3 right-3 h-6 w-20 rounded-full bg-white/10" />
+              {/* Shimmer Backdrop */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#0c1019] via-white/[0.03] to-[#0c1019]" />
+
+              {/* Top Badges */}
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="h-6 w-20 rounded-full bg-white/10" />
+                <div className="h-6 w-16 rounded-full bg-white/10" />
               </div>
 
-              {/* Room & Host Info */}
-              <div className="space-y-3">
-                <div className="h-5 w-3/4 rounded-md bg-white/10" />
-                <div className="flex items-center gap-3 pt-1">
-                  <div className="size-8 rounded-full bg-white/10" />
+              {/* Bottom Info */}
+              <div className="relative z-10 space-y-3 pt-8">
+                <div className="h-6 w-3/4 rounded-lg bg-white/10" />
+                <div className="flex items-center gap-3">
+                  <div className="size-9 rounded-full bg-white/10" />
                   <div className="space-y-1">
                     <div className="h-3.5 w-24 rounded bg-white/10" />
                     <div className="h-3 w-16 rounded bg-white/5" />

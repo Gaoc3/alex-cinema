@@ -33,7 +33,7 @@ export default function AuthPageShell({ mode, children }: AuthPageShellProps) {
             aria-label="تصفح المنصة"
             className="inline-flex size-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.07] text-xs font-extrabold text-slate-200 backdrop-blur-md transition hover:border-white/25 hover:bg-white/[0.12] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70 min-[360px]:size-auto min-[360px]:px-3 min-[360px]:py-2.5 sm:px-4"
           >
-            <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+            <i className="fa-solid fa-arrow-left" aria-hidden="true" />
             <span className="hidden min-[360px]:inline">تصفح المنصة</span>
           </Link>
         </header>
