@@ -36,25 +36,46 @@ function RoomStateScreen({
   description,
   actionLabel,
   onAction,
+  autoRedirectSeconds = 5,
 }: {
   icon: string;
   title: string;
   description: string;
   actionLabel: string;
   onAction: () => void;
+  autoRedirectSeconds?: number;
 }) {
+  const [countdown, setCountdown] = useState(autoRedirectSeconds);
+
+  useEffect(() => {
+    if (countdown <= 0) {
+      onAction();
+      return;
+    }
+    const timer = setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [countdown, onAction]);
+
   return (
-    <div className="flex min-h-[100svh] items-center justify-center bg-[#070a11] p-4 text-white">
-      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0d121d] p-7 text-center shadow-2xl sm:p-10">
-        <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-2xl text-red-400">
+    <div className="flex min-h-[100svh] items-center justify-center bg-[#070a11] p-4 text-white" dir="rtl">
+      <div className="w-full max-w-md rounded-3xl border border-red-500/30 bg-[#0d121d] p-7 text-center shadow-2xl sm:p-10 backdrop-blur-md">
+        <div className="mx-auto mb-5 flex size-20 items-center justify-center rounded-3xl border border-red-500/40 bg-red-500/10 text-3xl text-red-500 shadow-[0_0_30px_rgba(239,68,68,0.25)]">
           <i className={icon} aria-hidden="true" />
         </div>
-        <h1 className="mb-2 text-2xl font-black">{title}</h1>
-        <p className="mb-7 text-sm leading-7 text-slate-300">{description}</p>
+        <h1 className="mb-2 text-2xl font-black text-white sm:text-3xl">{title}</h1>
+        <p className="mb-6 text-sm leading-7 text-slate-300">{description}</p>
+
+        <div className="mb-6 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 px-4 text-xs text-slate-400">
+          <i className="fa-solid fa-clock text-amber-400" aria-hidden="true" />
+          <span>سيتم تحويلك تلقائياً خلال <strong className="text-white font-mono text-sm">{countdown}</strong> ثوانٍ...</span>
+        </div>
+
         <button
           type="button"
           onClick={onAction}
-          className="min-h-11 cursor-pointer rounded-xl bg-[#e50914] px-6 py-3 text-sm font-extrabold text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+          className="w-full min-h-12 cursor-pointer rounded-xl bg-[#e50914] px-6 py-3 text-sm font-extrabold text-white transition hover:bg-red-700 active:scale-98 shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
         >
           {actionLabel}
         </button>

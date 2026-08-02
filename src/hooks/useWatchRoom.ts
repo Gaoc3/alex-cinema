@@ -297,7 +297,17 @@ export function useWatchRoom(
           return;
         }
         setConnectionState('offline');
-        setConnectionError(result?.error || 'تعذر دخول الغرفة');
+        const errMsg = result?.error || 'تعذر دخول الغرفة';
+        if (errMsg.includes('حظرك') || errMsg.includes('حظر') || errMsg.includes('BANNED')) {
+          terminalDisconnect = true;
+          setIsBanned(true);
+          setBanReason(errMsg);
+        } else if (errMsg.includes('طرد')) {
+          terminalDisconnect = true;
+          setIsKicked(true);
+        } else {
+          setConnectionError(errMsg);
+        }
         newSocket.disconnect();
       });
     });
