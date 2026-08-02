@@ -4,7 +4,7 @@ export default function HeroSkeleton() {
   return (
     <div className="w-full relative mt-0 bg-transparent flex flex-col lg:block" dir="rtl">
       {/* Background Container Skeleton matching HeroCarousel.tsx */}
-      <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] lg:aspect-auto lg:h-[520px] lg:min-h-[480px] lg:max-h-[560px] overflow-hidden bg-[#0c1019]">
+      <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] lg:aspect-auto lg:h-[85vh] lg:min-h-[600px] lg:max-h-[700px] overflow-hidden bg-[#0c1019]">
         {/* Shimmer Effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent animate-pulse" />
 
@@ -17,7 +17,7 @@ export default function HeroSkeleton() {
         <div className="hidden lg:block absolute inset-y-0 right-0 w-[55%] bg-gradient-to-l from-[#070a11]/90 via-[#070a11]/50 to-transparent z-[2]" />
 
         {/* Text Content Skeleton */}
-        <div className="hidden lg:flex absolute inset-0 z-10 items-center pr-12 pl-6">
+        <div className="hidden lg:flex absolute inset-0 z-10 items-center pr-16 pl-6">
           <div className="max-w-xl space-y-4">
             {/* Type/Badge */}
             <div className="h-6 w-24 rounded-full bg-white/10 animate-pulse" />
@@ -39,10 +39,10 @@ export default function HeroSkeleton() {
               <div className="h-4 w-4/6 rounded bg-white/5 animate-pulse" />
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3 pt-3">
+            {/* 2 Restored Action Buttons Skeleton */}
+            <div className="flex items-center gap-4 pt-3">
               <div className="h-12 w-36 rounded-xl bg-red-600/40 animate-pulse" />
-              <div className="h-12 w-12 rounded-xl bg-white/10 animate-pulse" />
+              <div className="h-12 w-44 rounded-xl bg-white/10 border border-white/10 animate-pulse" />
             </div>
           </div>
         </div>

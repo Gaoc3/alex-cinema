@@ -188,16 +188,16 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
 
       {/* Content Overlay - Shown on Desktop */}
       <div
-        className="hidden lg:flex relative z-30 w-full flex-col justify-end lg:h-[520px] lg:min-h-[480px] lg:max-h-[560px] pt-24 pointer-events-none transition-all duration-300"
+        className="hidden lg:flex relative z-30 w-full flex-col justify-end lg:h-[85vh] lg:min-h-[600px] lg:max-h-[700px] pt-32 pointer-events-none transition-all duration-300"
         style={{ paddingBottom: `${layout.paddingBottom}px` }}
       >
         <div
-          className="max-w-screen-2xl mx-auto pl-16 w-full flex flex-col justify-end mb-4 sm:mb-6 mt-auto transition-all duration-300"
+          className="max-w-screen-2xl mx-auto pl-16 w-full flex flex-col justify-end mb-6 sm:mb-8 mt-auto transition-all duration-300"
           style={{ paddingRight: `${layout.paddingRight}px` }}
         >
           <div
             key={current.nb}
-            className="max-w-3xl relative animate-fade-in-up transform text-right flex flex-col justify-end min-h-[220px] sm:min-h-[260px]"
+            className="max-w-3xl relative animate-fade-in-up transform text-right flex flex-col justify-end min-h-[260px] sm:min-h-[300px]"
           >
             <div className="flex-grow flex flex-col justify-end">
               <div className="flex flex-wrap items-center justify-start gap-3 mb-3 relative z-10 text-sm font-semibold text-gray-100">
@@ -213,7 +213,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                   <i className="fa-solid fa-star text-xs" />
                   <span className="font-mono mt-0.5">{current.stars}</span>
                 </span>
-                <span className="px-2 py-0.5 ml-2 bg-red-600 text-white text-xs font-bold rounded shadow-sm">
+                <span className="px-2.5 py-0.5 ml-2 bg-red-600 text-white text-xs font-black rounded-md shadow-sm uppercase tracking-wider">
                   حصرياً
                 </span>
               </div>
@@ -227,19 +227,29 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                 </h2>
               )}
 
-              <p className={`text-slate-200 text-sm sm:text-base mb-5 leading-relaxed max-w-xl font-medium drop-shadow relative z-10 ${layout.isShortScreen ? 'line-clamp-2' : 'line-clamp-3'}`}>
+              <p className={`text-slate-200 text-sm sm:text-base lg:text-lg mb-6 leading-relaxed max-w-xl font-medium drop-shadow relative z-10 ${layout.isShortScreen ? 'line-clamp-2' : 'line-clamp-3'}`}>
                 {current.ar_content}
               </p>
             </div>
 
+            {/* Restored 2 Action Buttons (Red Play + Dark Glass Trailer) */}
             <div className="flex flex-wrap items-center justify-start gap-4 relative z-[100] mt-auto pointer-events-auto">
               <Link
                 href={`/watch/${current.nb}?title=${encodeURIComponent(current.ar_title || current.en_title || '')}`}
-                className="flex items-center justify-center gap-2 px-7 py-3 rounded-xl font-extrabold text-sm sm:text-base bg-red-600 text-white hover:bg-red-700 transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
+                className="flex items-center justify-center gap-3 px-8 py-3.5 rounded-xl font-extrabold text-sm sm:text-base bg-red-600 text-white hover:bg-red-700 transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <span>شاهد الآن</span>
                 <i className="fa-solid fa-play text-xs mt-0.5" />
               </Link>
+              <a
+                href={current.trailer || `/watch/${current.nb}`}
+                target={current.trailer ? "_blank" : "_self"}
+                rel="noreferrer"
+                className="flex items-center justify-center gap-3 px-8 py-3.5 rounded-xl font-bold text-sm sm:text-base bg-white/15 text-white backdrop-blur-md hover:bg-white/25 border border-white/20 transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <i className="fa-regular fa-circle-play text-lg" />
+                <span>الإعلان الترويجي</span>
+              </a>
             </div>
           </div>
         </div>

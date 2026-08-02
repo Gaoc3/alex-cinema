@@ -349,6 +349,12 @@ export default function CustomAuthCard({ mode = "sign-in", redirectUrl = "/home"
     window.location.assign("/api/auth/telegram/start");
   };
 
+  const [clerkMounted, setClerkMounted] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setClerkMounted(true), 350);
+    return () => clearTimeout(timer);
+  }, []);
+
   if (loading && !isOutsideTelegram) {
     return <AuthCardSkeleton mode={mode} />;
   }
@@ -388,11 +394,10 @@ export default function CustomAuthCard({ mode = "sign-in", redirectUrl = "/home"
             <button
               type="button"
               onClick={startTelegramOidc}
-              className="group flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl border border-sky-400/35 bg-gradient-to-l from-sky-500/25 to-blue-500/20 px-4 py-3 text-sm font-black text-white shadow-[0_12px_30px_rgba(14,165,233,0.16)] transition hover:border-sky-200/55 hover:from-sky-500/35 hover:to-blue-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 active:scale-[0.99] cursor-pointer"
+              className="group relative flex w-full items-center justify-center gap-3 rounded-2xl border border-sky-400/40 bg-gradient-to-r from-sky-500/20 via-sky-400/15 to-blue-600/20 p-3.5 text-sm font-black text-sky-100 shadow-[0_10px_30px_rgba(14,165,233,0.15)] transition duration-200 hover:border-sky-300/70 hover:bg-sky-500/30 hover:text-white hover:shadow-[0_14px_36px_rgba(14,165,233,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 active:scale-[0.99]"
             >
-              <span className="flex size-8 items-center justify-center rounded-xl bg-sky-400/20 text-lg text-sky-300 transition group-hover:scale-105">
-                <i className="fa-brands fa-telegram" aria-hidden="true" />
-              </span>
+              <span className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 transition group-hover:opacity-100" />
+              <i className="fa-brands fa-telegram text-lg text-sky-300 transition group-hover:scale-110" aria-hidden="true" />
               <span>الدخول السريع عبر تليجرام</span>
             </button>
 
@@ -403,25 +408,55 @@ export default function CustomAuthCard({ mode = "sign-in", redirectUrl = "/home"
               <span className="h-px flex-1 bg-white/10" />
             </div>
 
-            {mode === "sign-in" ? (
-              <SignIn
-                routing="path"
-                path="/sign-in"
-                signUpUrl={`/sign-up${redirectUrl !== '/home' ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ''}`}
-                forceRedirectUrl={redirectUrl}
-                fallbackRedirectUrl={redirectUrl}
-                appearance={clerkAppearance}
-              />
-            ) : (
-              <SignUp
-                routing="path"
-                path="/sign-up"
-                signInUrl={`/sign-in${redirectUrl !== '/home' ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ''}`}
-                forceRedirectUrl={redirectUrl}
-                fallbackRedirectUrl={redirectUrl}
-                appearance={clerkAppearance}
-              />
-            )}
+            {/* Clerk Auth Component with Placeholder Skeleton until Mounted */}
+            <div className="relative min-h-[220px] w-full">
+              {!clerkMounted && (
+                <div className="absolute inset-0 z-20 space-y-4 bg-[#102139] pointer-events-none">
+                  {/* GitHub Social Button Skeleton */}
+                  <div className="h-12 w-full rounded-2xl border border-white/20 bg-slate-800/60 flex items-center justify-center gap-3 px-4 shadow-sm animate-pulse">
+                    <div className="size-5 rounded-full bg-white/20" />
+                    <div className="h-4 w-36 rounded-md bg-white/15" />
+                  </div>
+
+                  {/* Email Input Skeleton */}
+                  <div className="space-y-2">
+                    <div className="h-3.5 w-28 rounded bg-white/10 animate-pulse" />
+                    <div className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 animate-pulse" />
+                  </div>
+                  {mode === 'sign-up' && (
+                    <div className="space-y-2">
+                      <div className="h-3.5 w-24 rounded bg-white/10 animate-pulse" />
+                      <div className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 animate-pulse" />
+                    </div>
+                  )}
+
+                  {/* Submit Button Skeleton */}
+                  <div className="h-12 w-full rounded-2xl bg-red-600/40 border border-red-500/30 animate-pulse" />
+                </div>
+              )}
+
+              <div className={clerkMounted ? 'opacity-100 transition-opacity duration-300' : 'opacity-0'}>
+                {mode === "sign-in" ? (
+                  <SignIn
+                    routing="path"
+                    path="/sign-in"
+                    signUpUrl={`/sign-up${redirectUrl !== '/home' ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ''}`}
+                    forceRedirectUrl={redirectUrl}
+                    fallbackRedirectUrl={redirectUrl}
+                    appearance={clerkAppearance}
+                  />
+                ) : (
+                  <SignUp
+                    routing="path"
+                    path="/sign-up"
+                    signInUrl={`/sign-in${redirectUrl !== '/home' ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ''}`}
+                    forceRedirectUrl={redirectUrl}
+                    fallbackRedirectUrl={redirectUrl}
+                    appearance={clerkAppearance}
+                  />
+                )}
+              </div>
+            </div>
 
             <div className="mt-4 flex min-w-0 flex-col items-stretch gap-3 rounded-2xl border border-white/15 bg-white/[0.065] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] min-[440px]:flex-row min-[440px]:items-center min-[440px]:justify-between">
               <div className="min-w-0 text-center min-[440px]:text-right">
