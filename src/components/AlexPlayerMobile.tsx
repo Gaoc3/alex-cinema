@@ -1714,8 +1714,8 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             className="pointer-events-none absolute inset-x-0 z-40 flex items-center justify-end transition-[bottom] duration-300 ease-out"
             style={{
               bottom: controlsVisible
-                ? `calc(${controlsBarHeight || (isMobile ? 80 : 136)}px + clamp(0.5rem, 1vw, 0.75rem))`
-                : 'calc(env(safe-area-inset-bottom, 0px) + clamp(0.75rem, 2vw, 1.25rem))',
+                ? `calc(clamp(3.75rem, 9vw, 4.75rem) + env(safe-area-inset-bottom, 0px))`
+                : `calc(clamp(1rem, 3.5vw, 1.5rem) + env(safe-area-inset-bottom, 0px))`,
               paddingLeft: 'max(clamp(0.75rem, 2vw, 1.5rem), env(safe-area-inset-left, 0px))',
               paddingRight: 'max(clamp(0.75rem, 2vw, 1.5rem), env(safe-area-inset-right, 0px))',
             }}
