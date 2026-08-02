@@ -67,7 +67,7 @@ export function prefetchSingleRange(internalUrl: string, start: number, end: num
 }
 
 export function prefetchStreamHeadAndTail(internalUrl: string, totalLength = 200_000_000): Promise<void> {
-  const chunkSize = 5_242_880; // 5 MB covers ALL Shabakaty MP4 moov atoms (e.g. 3.96MB in 3118184) and initial video frames
+  const chunkSize = 6_291_456; // 6 MB covers ALL Shabakaty MP4 moov atoms and initial video frames
   const headEnd = Math.min(chunkSize - 1, totalLength - 1);
   const tailStart = Math.max(0, totalLength - chunkSize);
 

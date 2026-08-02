@@ -53,6 +53,13 @@ export async function GET(request: NextRequest) {
         });
       }
 
+      // Wait for any ongoing prefetch for this URL to complete before sub-range matching
+      for (const [pkey, ppromise] of pendingRangePrefetches.entries()) {
+        if (pkey.startsWith(`${internalUrl}::`)) {
+          await ppromise.catch(() => null);
+        }
+      }
+
       // Check if requested range falls within a cached head/tail chunk
       for (const [ckey, cval] of mediaRangeCache.entries()) {
         if (ckey.startsWith(`${internalUrl}::`) && Date.now() < cval.expiresAt) {
