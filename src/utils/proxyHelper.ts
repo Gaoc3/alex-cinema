@@ -66,15 +66,37 @@ export function prefetchSingleRange(internalUrl: string, start: number, end: num
   return promise;
 }
 
-export function prefetchStreamHeadAndTail(internalUrl: string, totalLength = 200_000_000): Promise<void> {
+export async function prefetchStreamHeadAndTail(internalUrl: string, totalLength?: number): Promise<void> {
+  let realLength = totalLength;
+
+  // If totalLength is missing or default dummy, query exact byte length from Shabakaty
+  if (!realLength || realLength === 200_000_000) {
+    try {
+      const h = new Headers();
+      h.set('range', 'bytes=0-0');
+      h.set('Bypass-Tunnel-Reminder', 'true');
+      h.set('Referer', 'https://cinemana.shabakaty.com/');
+      const checkRes = await fetchWithRedirects(internalUrl, h, 5);
+      const cr = checkRes.headers.get('content-range');
+      await checkRes.body?.cancel().catch(() => undefined);
+      if (cr) {
+        const m = cr.match(/\/(\d+)$/);
+        if (m) {
+          realLength = parseInt(m[1], 10);
+        }
+      }
+    } catch {}
+  }
+
+  const finalLength = realLength || 250_000_000;
   const chunkSize = 6_291_456; // 6 MB covers ALL Shabakaty MP4 moov atoms and initial video frames
-  const headEnd = Math.min(chunkSize - 1, totalLength - 1);
-  const tailStart = Math.max(0, totalLength - chunkSize);
+  const headEnd = Math.min(chunkSize - 1, finalLength - 1);
+  const tailStart = Math.max(0, finalLength - chunkSize);
 
-  const fetchHead = prefetchSingleRange(internalUrl, 0, headEnd, totalLength);
-  const fetchTail = prefetchSingleRange(internalUrl, tailStart, totalLength - 1, totalLength);
+  const fetchHead = prefetchSingleRange(internalUrl, 0, headEnd, finalLength);
+  const fetchTail = prefetchSingleRange(internalUrl, tailStart, finalLength - 1, finalLength);
 
-  return Promise.all([fetchHead, fetchTail]).then(() => undefined);
+  await Promise.all([fetchHead, fetchTail]);
 }
 
 export const encodeProxyUrl = (url: string): string => {
