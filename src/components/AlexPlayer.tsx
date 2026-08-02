@@ -99,6 +99,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const sendSyncUpdate = roomHook?.sendSyncUpdate;
 
   // Stream URL & Resolution states
+  const [useTunnelFallback, setUseTunnelFallback] = useState<boolean>(false);
   const [currentStreamUrl, setCurrentStreamUrl] = useState<string | null>(() => {
     if (streams && streams.length > 0) {
       const preferred = streams.find(s => s.resolution && s.resolution.toLowerCase().includes('1080')) 
@@ -380,36 +381,90 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     return clean;
   };
 
-  // Parse direct streams on initialization or data change
-  useEffect(() => {
-    let initialDuration = 0;
-    if (videoData.duration) {
-      const parsed = parseFloat(String(videoData.duration));
-      if (!isNaN(parsed) && parsed > 0) {
-        initialDuration = parsed;
-      }
+  // Helper to resolve effective stream URL based on network status (Direct vs VPS Tunnel Proxy)
+  const getStreamTargetUrl = (streamOrData: any, tunnelFallback: boolean) => {
+    if (!streamOrData) return null;
+    if (tunnelFallback) {
+      return (streamOrData.videoUrl || streamOrData.stream_url || streamOrData.directUrl || streamOrData.direct_stream_url || null) as string | null;
+    } else {
+      return (streamOrData.directUrl || streamOrData.direct_stream_url || streamOrData.videoUrl || streamOrData.stream_url || null) as string | null;
     }
-    let initialStreamUrl: string | null;
-    let initialResolution: string;
+  };
+
+  // Parse direct or proxied streams on initialization, data change, or tunnel fallback state change
+  useEffect(() => {
+    let initialStreamUrl: string | null = null;
+    let initialResolution: string = '';
     if (streams.length > 0) {
       const preferred = streams.find(s => s.resolution && s.resolution.toLowerCase().includes('1080')) 
                      || streams.find(s => s.resolution && s.resolution.toLowerCase().includes('720')) 
                      || streams[0];
-      const target = ((preferred as { directUrl?: string }).directUrl || preferred.videoUrl) as string;
+      const target = getStreamTargetUrl(preferred, useTunnelFallback);
       initialStreamUrl = toProxyUrl(target);
       initialResolution = preferred.resolution;
     } else {
-      const target = ((videoData as { direct_stream_url?: string }).direct_stream_url || videoData.stream_url) as string;
+      const target = getStreamTargetUrl(videoData, useTunnelFallback);
       initialStreamUrl = toProxyUrl(target);
       initialResolution = '';
     }
 
-    let cancelled = false;
     if (initialStreamUrl && initialStreamUrl !== currentStreamUrl) {
       setCurrentStreamUrl(initialStreamUrl);
       setSelectedResolution(initialResolution);
     }
-  }, [videoData, streams, currentStreamUrl]);
+  }, [videoData, streams, useTunnelFallback, currentStreamUrl]);
+
+  // Proactive Network Probing: Automatically detects if Shabakaty CDN is unreachable (e.g. VPN or non-Earthlink ISP)
+  useEffect(() => {
+    if (!currentStreamUrl || useTunnelFallback) return;
+
+    const isDirectShabakaty = currentStreamUrl.startsWith('http://') || currentStreamUrl.startsWith('https://');
+    if (!isDirectShabakaty) return;
+
+    let cancelled = false;
+    const controller = new AbortController();
+    const probeTimeout = setTimeout(() => controller.abort(), 1500);
+
+    fetch(currentStreamUrl, { method: 'HEAD', mode: 'no-cors', signal: controller.signal })
+      .then(() => clearTimeout(probeTimeout))
+      .catch(() => {
+        clearTimeout(probeTimeout);
+        if (!cancelled) {
+          console.warn('[SmartStream] Direct Earthlink stream unreachable (VPN / Out-of-network). Auto-switching to VPS Tunnel Proxy...');
+          setUseTunnelFallback(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(probeTimeout);
+      controller.abort();
+    };
+  }, [currentStreamUrl, useTunnelFallback]);
+
+  // Loading Stall Watchdog: If direct stream stays stuck (>2.5s) in readyState < 2, auto-switch to VPS Tunnel Proxy
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !currentStreamUrl || useTunnelFallback) return;
+
+    const isDirectShabakaty = currentStreamUrl.startsWith('http://') || currentStreamUrl.startsWith('https://');
+    if (!isDirectShabakaty) return;
+
+    const stallTimer = setTimeout(() => {
+      if (video.readyState < 2 && !useTunnelFallback) {
+        console.warn('[SmartStream] Direct stream stalled (>2.5s). Auto-switching to VPS Tunnel Proxy...');
+        setUseTunnelFallback(true);
+      }
+    }, 2500);
+
+    const handleCanPlay = () => clearTimeout(stallTimer);
+    video.addEventListener('canplay', handleCanPlay);
+
+    return () => {
+      clearTimeout(stallTimer);
+      video.removeEventListener('canplay', handleCanPlay);
+    };
+  }, [currentStreamUrl, useTunnelFallback]);
 
   // HLS stream logic
   useEffect(() => {
@@ -447,6 +502,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         hls.on(Hls.Events.ERROR, (event, data) => {
           if (data.fatal) {
             console.error("HLS error:", data);
+            if (!useTunnelFallback && currentStreamUrl && (currentStreamUrl.startsWith('http://') || currentStreamUrl.startsWith('https://'))) {
+              console.warn("[SmartStream] HLS fatal error on direct stream. Switching to VPS Tunnel Proxy...");
+              setUseTunnelFallback(true);
+              return;
+            }
             fatalRecoveryAttempts += 1;
             if (fatalRecoveryAttempts > 2) {
               hls?.destroy();
@@ -481,7 +541,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         hls.destroy();
       }
     };
-  }, [currentStreamUrl, youtubeId]);
+  }, [currentStreamUrl, youtubeId, useTunnelFallback]);
 
   // Sync volume and mute states
   useEffect(() => {
@@ -738,7 +798,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     seekPastSkipSegment('outro');
   };
 
-  // Handle stream error, fallback to youtube
+  // Handle stream error, fallback to tunnel proxy
   const handleStreamError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     const video = e.currentTarget;
     const mediaError = video.error;
@@ -746,16 +806,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     console.error("Direct stream failed to play. URL:", currentStreamUrl, "Error:", errMsg);
     setLastErrorEvent(errMsg);
 
-    if (currentStreamUrl && currentStreamUrl.startsWith('https://cnth2.shabakaty.com')) {
-      const preferred = streams.find(s => s.resolution && s.resolution.toLowerCase().includes('1080')) 
-                     || streams.find(s => s.resolution && s.resolution.toLowerCase().includes('720')) 
-                     || streams[0];
-      const proxiedUrl = preferred?.videoUrl || (videoData.stream_url as string);
-      if (proxiedUrl && proxiedUrl !== currentStreamUrl) {
-        console.warn("Direct Shabakaty CDN unreachable, switching to proxied stream:", proxiedUrl);
-        setCurrentStreamUrl(proxiedUrl);
-        return;
-      }
+    if (!useTunnelFallback && currentStreamUrl && (currentStreamUrl.startsWith('http://') || currentStreamUrl.startsWith('https://') || currentStreamUrl.includes('.shabakaty.com'))) {
+      console.warn("[SmartStream] Direct Shabakaty CDN failed, auto-switching to VPS Tunnel Proxy...");
+      setUseTunnelFallback(true);
+      return;
     }
 
     if (retryCount < MAX_RETRIES) {
@@ -953,7 +1007,8 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   // Quality Switching
   const handleQualityChange = (stream: Stream) => {
     const video = videoRef.current;
-    const nextStreamUrl = toProxyUrl(stream.videoUrl);
+    const targetUrl = getStreamTargetUrl(stream, useTunnelFallback);
+    const nextStreamUrl = toProxyUrl(targetUrl);
     if (!video || !nextStreamUrl || nextStreamUrl === currentStreamUrl || stream.resolution === selectedResolution) {
       setActiveDropdown(null);
       return;
