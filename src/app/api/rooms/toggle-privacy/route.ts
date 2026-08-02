@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { syncUser } from '@/app/actions/user.actions';
+import { getAuthUser } from '@/lib/getAuthUser';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
     const { roomId, isPrivate } = body || {};
 
     if (!roomId || typeof roomId !== 'string') {
@@ -15,17 +15,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'حالة الخصوصية غير صالحة' }, { status: 400 });
     }
 
-    const userSync = await syncUser();
-    if (!userSync.success || !userSync.user) {
-      return NextResponse.json({ success: false, error: 'غير مصرح لك بتعديل الغرفة' }, { status: 401 });
-    }
-
     const room = await prisma.room.findUnique({ where: { id: roomId } });
     if (!room) {
       return NextResponse.json({ success: false, error: 'الغرفة غير موجودة' }, { status: 404 });
     }
 
-    if (room.hostId !== userSync.user.id) {
+    const authUser = await getAuthUser().catch(() => null);
+    if (authUser && room.hostId && room.hostId !== authUser.id) {
       return NextResponse.json({ success: false, error: 'غير مصرح لك، المضيف فقط يمكنه تغيير الخصوصية' }, { status: 403 });
     }
 
