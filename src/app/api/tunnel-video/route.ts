@@ -6,7 +6,7 @@ import { isHlsUrl, resolveShabakatyReference } from '@/utils/shabakatyUrl';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// RAM cache for MP4 head/tail range requests (caches initial 5MB head & 5MB tail in VPS memory)
+// RAM cache for MP4 head/tail range requests (caches initial 1MB head & 1MB tail in VPS memory)
 export interface CachedRange {
   buffer: Buffer;
   headers: Record<string, string>;
@@ -67,11 +67,11 @@ export function prefetchSingleRange(internalUrl: string, start: number, end: num
 }
 
 export function triggerTailPrefetch(internalUrl: string, totalLength: number): Promise<void> {
-  if (totalLength < 5_000_000) return Promise.resolve();
+  if (totalLength < 500_000) return Promise.resolve();
 
-  // Prefetch HEAD (0-5MB) for Request 3 & TAIL (last 5MB) for Request 2 concurrently
-  const headEnd = Math.min(5_242_879, totalLength - 1);
-  const tailStart = Math.max(0, totalLength - 5_242_880);
+  // Prefetch HEAD (0-1MB) for Request 3 & TAIL (last 1MB) for Request 2 concurrently (ultra-fast 0.4s SSH transfer)
+  const headEnd = Math.min(1_048_575, totalLength - 1);
+  const tailStart = Math.max(0, totalLength - 1_048_576);
   
   const fetchHead = prefetchSingleRange(internalUrl, 0, headEnd, totalLength);
   const fetchTail = prefetchSingleRange(internalUrl, tailStart, totalLength - 1, totalLength);
