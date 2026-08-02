@@ -12,7 +12,7 @@ export const encodeProxyUrl = (url: string): string => {
   return encodeURIComponent(url);
 };
 
-export async function readResponseTextWithLimit(response: Response, maxBytes: number, signal?: AbortSignal): Promise<string> {
+export async function readResponseTextWithLimit(response: Response, maxBytes: number): Promise<string> {
   const declaredLength = Number(response.headers.get('content-length') || 0);
   if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
     await response.body?.cancel().catch(() => undefined);
@@ -26,10 +26,6 @@ export async function readResponseTextWithLimit(response: Response, maxBytes: nu
   let text = '';
   try {
     while (true) {
-      if (signal?.aborted) {
-        await reader.cancel('Aborted').catch(() => undefined);
-        throw new Error('Upstream response reading aborted by timeout');
-      }
       const { done, value } = await reader.read();
       if (done) break;
       totalBytes += value.byteLength;
