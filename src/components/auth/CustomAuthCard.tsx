@@ -355,7 +355,7 @@ export default function CustomAuthCard({ mode = "sign-in", redirectUrl = "/home"
 
   return (
     <section
-      className="relative min-w-0 w-full max-w-[29rem] px-px animate-fade-in-up"
+      className="relative min-w-0 w-full max-w-[29rem] px-px"
       aria-label={mode === "sign-in" ? "تسجيل الدخول إلى أليكس سينما" : "إنشاء حساب أليكس سينما"}
     >
       <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-gradient-to-b from-white/30 via-white/[0.06] to-red-500/22" />

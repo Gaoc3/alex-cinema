@@ -38,7 +38,7 @@ export default function AuthPageShell({ mode, children }: AuthPageShellProps) {
           </Link>
         </header>
 
-        <main className="auth-main flex min-h-0 flex-1 items-center justify-center py-5 sm:py-8">
+        <main className="auth-main flex min-h-0 flex-1 items-center justify-center py-5 sm:py-8 animate-fade-in-up">
           <div className="flex min-w-0 w-full items-center justify-center px-0.5">{children}</div>
         </main>
       </div>
