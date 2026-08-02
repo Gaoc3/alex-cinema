@@ -609,44 +609,60 @@ export default function RoomSidebar({
             </header>
 
             <div className="space-y-3 py-2">
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 hover:bg-white/10">
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 transition hover:bg-white/10 select-none">
                 <span className="text-xs font-bold text-slate-200">صلاحية طرد الأعضاء (Kick)</span>
-                <input
-                  type="checkbox"
-                  checked={permissionsState.canKick}
-                  onChange={(e) => setPermissionsState((prev) => ({ ...prev, canKick: e.target.checked }))}
-                  className="size-4 rounded accent-red-600"
-                />
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={permissionsState.canKick}
+                  onClick={() => setPermissionsState((prev) => ({ ...prev, canKick: !prev.canKick }))}
+                  className="relative h-6 w-11 shrink-0 rounded-full border border-white/10 transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                  style={{ backgroundColor: permissionsState.canKick ? '#e50914' : '#334155' }}
+                >
+                  <span className={`block size-4 rounded-full bg-white shadow transition-transform duration-200 ${permissionsState.canKick ? 'translate-x-5' : 'translate-x-1'}`} />
+                </button>
               </label>
 
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 hover:bg-white/10">
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 transition hover:bg-white/10 select-none">
                 <span className="text-xs font-bold text-slate-200">صلاحية حظر الأعضاء أبداً (Ban Forever)</span>
-                <input
-                  type="checkbox"
-                  checked={permissionsState.canBan}
-                  onChange={(e) => setPermissionsState((prev) => ({ ...prev, canBan: e.target.checked }))}
-                  className="size-4 rounded accent-red-600"
-                />
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={permissionsState.canBan}
+                  onClick={() => setPermissionsState((prev) => ({ ...prev, canBan: !prev.canBan }))}
+                  className="relative h-6 w-11 shrink-0 rounded-full border border-white/10 transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                  style={{ backgroundColor: permissionsState.canBan ? '#e50914' : '#334155' }}
+                >
+                  <span className={`block size-4 rounded-full bg-white shadow transition-transform duration-200 ${permissionsState.canBan ? 'translate-x-5' : 'translate-x-1'}`} />
+                </button>
               </label>
 
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 hover:bg-white/10">
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 transition hover:bg-white/10 select-none">
                 <span className="text-xs font-bold text-slate-200">التحكم بالتقديم والتأخير (Seek / Playback)</span>
-                <input
-                  type="checkbox"
-                  checked={permissionsState.canSeek}
-                  onChange={(e) => setPermissionsState((prev) => ({ ...prev, canSeek: e.target.checked }))}
-                  className="size-4 rounded accent-red-600"
-                />
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={permissionsState.canSeek}
+                  onClick={() => setPermissionsState((prev) => ({ ...prev, canSeek: !prev.canSeek }))}
+                  className="relative h-6 w-11 shrink-0 rounded-full border border-white/10 transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                  style={{ backgroundColor: permissionsState.canSeek ? '#e50914' : '#334155' }}
+                >
+                  <span className={`block size-4 rounded-full bg-white shadow transition-transform duration-200 ${permissionsState.canSeek ? 'translate-x-5' : 'translate-x-1'}`} />
+                </button>
               </label>
 
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 hover:bg-white/10">
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 transition hover:bg-white/10 select-none">
                 <span className="text-xs font-bold text-slate-200">تغيير الفيلم أو الحلقة (Change Media)</span>
-                <input
-                  type="checkbox"
-                  checked={permissionsState.canChangeMedia}
-                  onChange={(e) => setPermissionsState((prev) => ({ ...prev, canChangeMedia: e.target.checked }))}
-                  className="size-4 rounded accent-red-600"
-                />
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={permissionsState.canChangeMedia}
+                  onClick={() => setPermissionsState((prev) => ({ ...prev, canChangeMedia: !prev.canChangeMedia }))}
+                  className="relative h-6 w-11 shrink-0 rounded-full border border-white/10 transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                  style={{ backgroundColor: permissionsState.canChangeMedia ? '#e50914' : '#334155' }}
+                >
+                  <span className={`block size-4 rounded-full bg-white shadow transition-transform duration-200 ${permissionsState.canChangeMedia ? 'translate-x-5' : 'translate-x-1'}`} />
+                </button>
               </label>
             </div>
 
@@ -762,7 +778,7 @@ export default function RoomSidebar({
                             </div>
                             <div className="flex shrink-0 items-center gap-1.5">
                               {message.isEdited && !message.isDeleted && (
-                                <span className="text-[9px] font-bold text-slate-500">مُعدّلة</span>
+                                <span className="text-[10px] font-extrabold text-amber-400/90 bg-amber-400/10 px-1.5 py-0.5 rounded">مُعدّلة</span>
                               )}
                               <time className="text-[10px] text-slate-500" dateTime={message.createdAt}>
                                 {formatMessageTime(message.createdAt)}

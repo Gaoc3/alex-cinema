@@ -124,31 +124,31 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
 
       {/* Batch Control Action Bar */}
       {isSelectionMode && rooms.length > 0 && (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-red-500/30 bg-[#121827]/90 p-4 shadow-2xl backdrop-blur-md animate-fade-in-up">
-          <div className="flex items-center gap-4">
+        <div className="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 rounded-2xl border border-red-500/30 bg-[#121827]/95 p-4 shadow-2xl backdrop-blur-md animate-fade-in-up">
+          <div className="flex flex-wrap items-center gap-3.5">
             <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white select-none">
               <input
                 type="checkbox"
                 checked={isAllSelected}
                 onChange={toggleSelectAll}
-                className="size-5 rounded border-white/20 bg-black/40 text-red-600 focus:ring-red-500 cursor-pointer accent-red-600"
+                className="size-5 rounded-md border-2 border-white/30 bg-black/40 text-red-600 focus:ring-red-500 cursor-pointer accent-red-600 shadow-md transition"
               />
               <span>تحديد الكل ({rooms.length})</span>
             </label>
 
-            <span className="h-4 w-px bg-white/15" />
+            <span className="hidden sm:inline-block h-4 w-px bg-white/15" />
 
-            <span className="text-xs font-bold text-slate-300">
+            <span className="rounded-lg border border-red-500/20 bg-red-500/10 px-2.5 py-1 text-xs font-bold text-red-300">
               تم تحديد <strong className="text-white font-mono text-sm">{selectedRoomIds.length}</strong> غرفة
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-end gap-3">
             <button
               type="button"
               disabled={selectedRoomIds.length === 0}
               onClick={() => setShowConfirmModal(true)}
-              className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-extrabold text-white transition hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg cursor-pointer"
+              className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-xs font-extrabold text-white transition hover:bg-red-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg cursor-pointer"
             >
               <i className="fa-solid fa-trash" aria-hidden="true" />
               <span>حذف المحدد ({selectedRoomIds.length})</span>
@@ -211,14 +211,14 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                       : 'border-white/10 group-hover:-translate-y-1.5 group-hover:border-red-500/50 group-hover:shadow-[0_14px_40px_rgba(229,9,20,0.25)]'
                   }`}
                 >
-                  {/* Selection Mode Checkbox Indicator */}
+                  {/* Selection Mode Checkbox Indicator (Positioned Right, Badges Push Left) */}
                   {isSelectionMode && (
-                    <div className="absolute top-3.5 left-3.5 z-30 flex items-center justify-center">
+                    <div className="absolute top-3.5 right-3.5 z-30 flex items-center justify-center">
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleSelectRoom(room.id)}
-                        className="size-6 rounded-lg border-2 border-white/40 bg-black/60 text-red-600 focus:ring-red-500 cursor-pointer accent-red-600 shadow-lg"
+                        className="size-6 rounded-lg border-2 border-white/50 bg-black/70 text-red-600 focus:ring-red-500 cursor-pointer accent-red-600 shadow-[0_0_12px_rgba(0,0,0,0.8)]"
                       />
                     </div>
                   )}
@@ -239,14 +239,16 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_15%,rgba(229,9,20,0.18),transparent_38%),linear-gradient(135deg,#121929,#080b13_55%,#180a12)]" />
                   )}
 
-                  <div className={`pointer-events-none absolute inset-x-3.5 top-3.5 z-20 flex items-center ${isSelectionMode ? 'justify-end' : 'justify-between'}`}>
-                    {!isSelectionMode && (
+                  <div className="pointer-events-none absolute inset-x-3.5 top-3.5 z-20 flex items-center justify-between">
+                    {!isSelectionMode ? (
                       <span className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-red-600/90 px-2.5 py-1 text-[0.68rem] font-black text-white shadow-[0_0_14px_rgba(229,9,20,0.45)] backdrop-blur-md">
                         <span className="size-2 rounded-full bg-white motion-safe:animate-pulse" />
                         مباشر
                       </span>
+                    ) : (
+                      <div />
                     )}
-                    <span className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/60 px-2.5 py-1 text-[0.68rem] font-bold text-slate-100 backdrop-blur-md">
+                    <span className={`flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/60 px-2.5 py-1 text-[0.68rem] font-bold text-slate-100 backdrop-blur-md ${isSelectionMode ? 'ml-9' : ''}`}>
                       <i className="fa-solid fa-users text-[0.62rem] text-sky-400" aria-hidden="true" />
                       متاحة الآن
                     </span>
