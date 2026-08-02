@@ -37,16 +37,27 @@ export async function GET(request: NextRequest) {
     const internalUrl = approvedUrl.href;
     const rangeHeader = request.headers.get('range');
 
-    // Check RAM cache for head/tail range requests
+    // Check RAM cache or await pending prefetch for head/tail range requests
     if (rangeHeader) {
       const cacheKey = getRangeCacheKey(internalUrl, rangeHeader);
       
+      if (pendingRangePrefetches.has(cacheKey)) {
+        await pendingRangePrefetches.get(cacheKey);
+      }
+
       const cached = mediaRangeCache.get(cacheKey);
       if (cached && Date.now() < cached.expiresAt) {
         return new NextResponse(new Uint8Array(cached.buffer), {
           status: 206,
           headers: cached.headers,
         });
+      }
+
+      // Wait for any ongoing prefetch for this URL to complete before sub-range matching
+      for (const [pkey, ppromise] of pendingRangePrefetches.entries()) {
+        if (pkey.startsWith(`${internalUrl}::`)) {
+          await ppromise.catch(() => null);
+        }
       }
 
       // Check if requested range falls within a cached head/tail chunk
