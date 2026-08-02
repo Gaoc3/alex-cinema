@@ -6,7 +6,7 @@ import { isHlsUrl, resolveShabakatyReference } from '@/utils/shabakatyUrl';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// RAM cache for MP4 tail/moov atom range requests
+// RAM cache for MP4 head/tail range requests (caches initial 5MB head & 5MB tail in VPS memory)
 export interface CachedRange {
   buffer: Buffer;
   headers: Record<string, string>;
@@ -20,11 +20,8 @@ function getCacheKey(url: string, rangeHeader: string): string {
   return `${url}::${rangeHeader}`;
 }
 
-export function triggerTailPrefetch(internalUrl: string, totalLength: number): Promise<CachedRange | null> {
-  if (totalLength < 5_000_000) return Promise.resolve(null);
-
-  const tailStart = Math.max(0, totalLength - 5_242_880); // Last 5MB
-  const rangeHeader = `bytes=${tailStart}-${totalLength - 1}`;
+export function prefetchSingleRange(internalUrl: string, start: number, end: number, totalLength: number): Promise<CachedRange | null> {
+  const rangeHeader = `bytes=${start}-${end}`;
   const cacheKey = getCacheKey(internalUrl, rangeHeader);
 
   const existingCached = tailRangeCache.get(cacheKey);
@@ -50,7 +47,7 @@ export function triggerTailPrefetch(internalUrl: string, totalLength: number): P
         headers: {
           'content-length': String(buffer.length),
           'accept-ranges': 'bytes',
-          'content-range': res.headers.get('content-range') || `bytes ${tailStart}-${totalLength - 1}/${totalLength}`,
+          'content-range': res.headers.get('content-range') || `bytes ${start}-${end}/${totalLength}`,
           'content-type': 'video/mp4',
           'cache-control': 'public, max-age=2592000, immutable',
           'x-accel-buffering': 'no',
@@ -67,6 +64,19 @@ export function triggerTailPrefetch(internalUrl: string, totalLength: number): P
 
   pendingTailPrefetches.set(cacheKey, promise);
   return promise;
+}
+
+export function triggerTailPrefetch(internalUrl: string, totalLength: number): Promise<void> {
+  if (totalLength < 5_000_000) return Promise.resolve();
+
+  // Prefetch HEAD (0-5MB) for Request 3 & TAIL (last 5MB) for Request 2 concurrently
+  const headEnd = Math.min(5_242_879, totalLength - 1);
+  const tailStart = Math.max(0, totalLength - 5_242_880);
+  
+  const fetchHead = prefetchSingleRange(internalUrl, 0, headEnd, totalLength);
+  const fetchTail = prefetchSingleRange(internalUrl, tailStart, totalLength - 1, totalLength);
+
+  return Promise.all([fetchHead, fetchTail]).then(() => undefined);
 }
 
 export async function GET(request: NextRequest) {
@@ -94,7 +104,7 @@ export async function GET(request: NextRequest) {
     const internalUrl = approvedUrl.href;
     const rangeHeader = request.headers.get('range');
 
-    // Check RAM cache or await pending prefetch for tail/moov atom range request
+    // Check RAM cache or await pending prefetch for head/tail range requests
     if (rangeHeader) {
       const cacheKey = getCacheKey(internalUrl, rangeHeader);
       
@@ -110,7 +120,7 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // Check if requested range falls within a cached or pending tail chunk
+      // Check if requested range falls within a cached or pending head/tail chunk
       for (const [ckey, cval] of tailRangeCache.entries()) {
         if (ckey.startsWith(`${internalUrl}::`) && Date.now() < cval.expiresAt) {
           const reqRangeMatch = rangeHeader.match(/bytes=(\d+)-(\d+)?/);
@@ -162,7 +172,7 @@ export async function GET(request: NextRequest) {
       return new NextResponse(`Proxy error: ${response.status}`, { status: response.status });
     }
 
-    // Trigger non-blocking background prefetch for tail Moov atom if total length is known
+    // Trigger non-blocking background prefetch for BOTH HEAD & TAIL Moov atoms if total length is known
     const contentRangeHeader = response.headers.get('content-range');
     if (contentRangeHeader) {
       const match = contentRangeHeader.match(/\/(\d+)$/);
