@@ -1,83 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { decryptPath } from '@/lib/serverCrypto';
-import { fetchWithRedirects } from '@/utils/proxyHelper';
+import { 
+  fetchWithRedirects, 
+  getRangeCacheKey, 
+  mediaRangeCache, 
+  pendingRangePrefetches, 
+  prefetchStreamHeadAndTail 
+} from '@/utils/proxyHelper';
 import { isHlsUrl, resolveShabakatyReference } from '@/utils/shabakatyUrl';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-// RAM cache for MP4 head/tail range requests (caches initial 1MB head & 1MB tail in VPS memory)
-export interface CachedRange {
-  buffer: Buffer;
-  headers: Record<string, string>;
-  expiresAt: number;
-}
-const tailRangeCache = new Map<string, CachedRange>();
-const pendingTailPrefetches = new Map<string, Promise<CachedRange | null>>();
-const CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
-
-function getCacheKey(url: string, rangeHeader: string): string {
-  return `${url}::${rangeHeader}`;
-}
-
-export function prefetchSingleRange(internalUrl: string, start: number, end: number, totalLength: number): Promise<CachedRange | null> {
-  const rangeHeader = `bytes=${start}-${end}`;
-  const cacheKey = getCacheKey(internalUrl, rangeHeader);
-
-  const existingCached = tailRangeCache.get(cacheKey);
-  if (existingCached && Date.now() < existingCached.expiresAt) {
-    return Promise.resolve(existingCached);
-  }
-
-  if (pendingTailPrefetches.has(cacheKey)) {
-    return pendingTailPrefetches.get(cacheKey)!;
-  }
-
-  const fetchHeaders = new Headers();
-  fetchHeaders.set('range', rangeHeader);
-  fetchHeaders.set('Bypass-Tunnel-Reminder', 'true');
-  fetchHeaders.set('Referer', 'https://cinemana.shabakaty.com/');
-
-  const promise = fetchWithRedirects(internalUrl, fetchHeaders, 5).then(async (res) => {
-    if (res.ok || res.status === 206) {
-      const arrayBuf = await res.arrayBuffer();
-      const buffer = Buffer.from(arrayBuf);
-      const cached: CachedRange = {
-        buffer,
-        headers: {
-          'content-length': String(buffer.length),
-          'accept-ranges': 'bytes',
-          'content-range': res.headers.get('content-range') || `bytes ${start}-${end}/${totalLength}`,
-          'content-type': 'video/mp4',
-          'cache-control': 'public, max-age=2592000, immutable',
-          'x-accel-buffering': 'no',
-        },
-        expiresAt: Date.now() + CACHE_TTL,
-      };
-      tailRangeCache.set(cacheKey, cached);
-      return cached;
-    }
-    return null;
-  }).catch(() => null).finally(() => {
-    pendingTailPrefetches.delete(cacheKey);
-  });
-
-  pendingTailPrefetches.set(cacheKey, promise);
-  return promise;
-}
-
-export function triggerTailPrefetch(internalUrl: string, totalLength: number): Promise<void> {
-  if (totalLength < 500_000) return Promise.resolve();
-
-  // Prefetch HEAD (0-1MB) for Request 3 & TAIL (last 1MB) for Request 2 concurrently (ultra-fast 0.4s SSH transfer)
-  const headEnd = Math.min(1_048_575, totalLength - 1);
-  const tailStart = Math.max(0, totalLength - 1_048_576);
-  
-  const fetchHead = prefetchSingleRange(internalUrl, 0, headEnd, totalLength);
-  const fetchTail = prefetchSingleRange(internalUrl, tailStart, totalLength - 1, totalLength);
-
-  return Promise.all([fetchHead, fetchTail]).then(() => undefined);
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -106,13 +39,13 @@ export async function GET(request: NextRequest) {
 
     // Check RAM cache or await pending prefetch for head/tail range requests
     if (rangeHeader) {
-      const cacheKey = getCacheKey(internalUrl, rangeHeader);
+      const cacheKey = getRangeCacheKey(internalUrl, rangeHeader);
       
-      if (pendingTailPrefetches.has(cacheKey)) {
-        await pendingTailPrefetches.get(cacheKey);
+      if (pendingRangePrefetches.has(cacheKey)) {
+        await pendingRangePrefetches.get(cacheKey);
       }
 
-      const cached = tailRangeCache.get(cacheKey);
+      const cached = mediaRangeCache.get(cacheKey);
       if (cached && Date.now() < cached.expiresAt) {
         return new NextResponse(new Uint8Array(cached.buffer), {
           status: 206,
@@ -120,8 +53,8 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // Check if requested range falls within a cached or pending head/tail chunk
-      for (const [ckey, cval] of tailRangeCache.entries()) {
+      // Check if requested range falls within a cached head/tail chunk
+      for (const [ckey, cval] of mediaRangeCache.entries()) {
         if (ckey.startsWith(`${internalUrl}::`) && Date.now() < cval.expiresAt) {
           const reqRangeMatch = rangeHeader.match(/bytes=(\d+)-(\d+)?/);
           const cachedRangeMatch = cval.headers['content-range']?.match(/bytes (\d+)-(\d+)\/(\d+)/);
@@ -179,7 +112,7 @@ export async function GET(request: NextRequest) {
       if (match) {
         const totalLength = parseInt(match[1], 10);
         if (!isNaN(totalLength)) {
-          triggerTailPrefetch(internalUrl, totalLength);
+          prefetchStreamHeadAndTail(internalUrl, totalLength);
         }
       }
     }

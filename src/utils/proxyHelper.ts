@@ -7,6 +7,76 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const redirectHostCache = new Map<string, { targetHost: string; expiresAt: number }>();
 const REDIRECT_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
+export interface CachedRange {
+  buffer: Buffer;
+  headers: Record<string, string>;
+  expiresAt: number;
+}
+export const mediaRangeCache = new Map<string, CachedRange>();
+export const pendingRangePrefetches = new Map<string, Promise<CachedRange | null>>();
+const MEDIA_CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
+
+export function getRangeCacheKey(url: string, rangeHeader: string): string {
+  return `${url}::${rangeHeader}`;
+}
+
+export function prefetchSingleRange(internalUrl: string, start: number, end: number, totalLength: number): Promise<CachedRange | null> {
+  const rangeHeader = `bytes=${start}-${end}`;
+  const cacheKey = getRangeCacheKey(internalUrl, rangeHeader);
+
+  const existing = mediaRangeCache.get(cacheKey);
+  if (existing && Date.now() < existing.expiresAt) {
+    return Promise.resolve(existing);
+  }
+
+  if (pendingRangePrefetches.has(cacheKey)) {
+    return pendingRangePrefetches.get(cacheKey)!;
+  }
+
+  const fetchHeaders = new Headers();
+  fetchHeaders.set('range', rangeHeader);
+  fetchHeaders.set('Bypass-Tunnel-Reminder', 'true');
+  fetchHeaders.set('Referer', 'https://cinemana.shabakaty.com/');
+
+  const promise = fetchWithRedirects(internalUrl, fetchHeaders, 5).then(async (res) => {
+    if (res.ok || res.status === 206) {
+      const arrayBuf = await res.arrayBuffer();
+      const buffer = Buffer.from(arrayBuf);
+      const cached: CachedRange = {
+        buffer,
+        headers: {
+          'content-length': String(buffer.length),
+          'accept-ranges': 'bytes',
+          'content-range': res.headers.get('content-range') || `bytes ${start}-${end}/${totalLength}`,
+          'content-type': 'video/mp4',
+          'cache-control': 'public, max-age=2592000, immutable',
+          'x-accel-buffering': 'no',
+        },
+        expiresAt: Date.now() + MEDIA_CACHE_TTL,
+      };
+      mediaRangeCache.set(cacheKey, cached);
+      return cached;
+    }
+    return null;
+  }).catch(() => null).finally(() => {
+    pendingRangePrefetches.delete(cacheKey);
+  });
+
+  pendingRangePrefetches.set(cacheKey, promise);
+  return promise;
+}
+
+export function prefetchStreamHeadAndTail(internalUrl: string, totalLength = 200_000_000): Promise<void> {
+  const chunkSize = 5_242_880; // 5 MB covers ALL Shabakaty MP4 moov atoms (e.g. 3.96MB in 3118184) and initial video frames
+  const headEnd = Math.min(chunkSize - 1, totalLength - 1);
+  const tailStart = Math.max(0, totalLength - chunkSize);
+
+  const fetchHead = prefetchSingleRange(internalUrl, 0, headEnd, totalLength);
+  const fetchTail = prefetchSingleRange(internalUrl, tailStart, totalLength - 1, totalLength);
+
+  return Promise.all([fetchHead, fetchTail]).then(() => undefined);
+}
+
 export const encodeProxyUrl = (url: string): string => {
   if (!url) return '';
   return encodeURIComponent(url);

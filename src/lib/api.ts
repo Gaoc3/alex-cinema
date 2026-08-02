@@ -147,9 +147,9 @@ export async function getVideoDetails(id: string) {
       data.stream_url = data.streams[0].videoUrl;
       data.direct_stream_url = data.streams[0].directUrl || data.streams[0].videoUrl;
 
-      // SSR Proactive Prefetching: Prefetch MP4 Moov Atom into VPS RAM before client loads page
+      // SSR Proactive Prefetching: Prefetch 5MB MP4 Head & Tail into VPS RAM before client loads page
       if (typeof window === 'undefined') {
-        import('../app/api/tunnel-video/route').then(({ triggerTailPrefetch }) => {
+        import('../utils/proxyHelper').then(({ prefetchStreamHeadAndTail }) => {
           import('./serverCrypto').then(({ decryptPath }) => {
             import('../utils/shabakatyUrl').then(({ resolveShabakatyReference }) => {
               try {
@@ -159,7 +159,7 @@ export async function getVideoDetails(id: string) {
                   if (decrypted) {
                     const approved = resolveShabakatyReference(decrypted);
                     if (approved) {
-                      triggerTailPrefetch(approved.href, 200_000_000);
+                      prefetchStreamHeadAndTail(approved.href, 200_000_000);
                     }
                   }
                 }
