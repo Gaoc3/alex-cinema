@@ -114,19 +114,14 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   };
 
   const [currentStreamUrl, setCurrentStreamUrl] = useState<string | null>(() => {
-    const initialTunnel = typeof window !== 'undefined' && sessionStorage.getItem('alex_use_tunnel') === 'true';
     if (streams && streams.length > 0) {
       const preferred = streams.find(s => s.resolution && s.resolution.toLowerCase().includes('1080')) 
                      || streams.find(s => s.resolution && s.resolution.toLowerCase().includes('720')) 
                      || streams[0];
-      const target = initialTunnel
-        ? (preferred.videoUrl || (preferred as { directUrl?: string }).directUrl)
-        : ((preferred as { directUrl?: string }).directUrl || preferred.videoUrl);
+      const target = (preferred.videoUrl || (preferred as { stream_url?: string }).stream_url || (preferred as { directUrl?: string }).directUrl) as string;
       return target ? target.trim() : null;
     }
-    const target = initialTunnel
-      ? (videoData.stream_url || (videoData as { direct_stream_url?: string }).direct_stream_url)
-      : ((videoData as { direct_stream_url?: string }).direct_stream_url || videoData.stream_url);
+    const target = (videoData.stream_url || (videoData as { direct_stream_url?: string }).direct_stream_url) as string;
     return target ? target.trim() : null;
   });
   const [selectedResolution, setSelectedResolution] = useState<string>(() => {
@@ -399,14 +394,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     return clean;
   };
 
-  // Helper to resolve effective stream URL based on network status (Direct vs VPS Tunnel Proxy)
-  const getStreamTargetUrl = (streamOrData: any, tunnelFallback: boolean) => {
+  // Helper to resolve effective stream URL based on network status (Always prioritize universal VPS Tunnel Proxy)
+  const getStreamTargetUrl = (streamOrData: any, _tunnelFallback?: boolean) => {
     if (!streamOrData) return null;
-    if (tunnelFallback) {
-      return (streamOrData.videoUrl || streamOrData.stream_url || streamOrData.directUrl || streamOrData.direct_stream_url || null) as string | null;
-    } else {
-      return (streamOrData.directUrl || streamOrData.direct_stream_url || streamOrData.videoUrl || streamOrData.stream_url || null) as string | null;
-    }
+    return (streamOrData.videoUrl || streamOrData.stream_url || streamOrData.directUrl || streamOrData.direct_stream_url || null) as string | null;
   };
 
   // Parse direct or proxied streams on initialization, data change, or tunnel fallback state change
