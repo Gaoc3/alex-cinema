@@ -124,6 +124,11 @@ export function sanitizeVideoData<T>(data: T): T {
     result.stream_url = sanitizeUrl(result.stream_url);
   }
 
+  if (typeof result.videoUrl === 'string' && parseAllowedShabakatyUrl(result.videoUrl)) {
+    result.directUrl = getDirectShabakatyUrl(result.videoUrl);
+    result.videoUrl = sanitizeUrl(result.videoUrl);
+  }
+
   for (const field of URL_FIELDS) {
     const value = result[field];
     if (typeof value === 'string' && parseAllowedShabakatyUrl(value)) {

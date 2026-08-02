@@ -145,6 +145,7 @@ export async function getVideoDetails(id: string) {
     
     if (data.streams.length > 0) {
       data.stream_url = data.streams[0].videoUrl;
+      data.direct_stream_url = data.streams[0].directUrl || data.streams[0].videoUrl;
     } else if (data.fileFile) {
       if (typeof window === 'undefined') {
         const { sanitizeUrl } = await import('./serverCrypto');
