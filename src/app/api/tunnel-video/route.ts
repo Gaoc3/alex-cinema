@@ -6,6 +6,58 @@ import { isHlsUrl, resolveShabakatyReference } from '@/utils/shabakatyUrl';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// RAM cache for MP4 tail/moov atom range requests (caches tail chunks in VPS memory)
+interface CachedRange {
+  buffer: Buffer;
+  headers: Record<string, string>;
+  expiresAt: number;
+}
+const tailRangeCache = new Map<string, CachedRange>();
+const CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
+
+function getCacheKey(url: string, rangeHeader: string): string {
+  return `${url}::${rangeHeader}`;
+}
+
+// Background prefetch for tail moov atom if totalLength is known
+function triggerTailPrefetch(internalUrl: string, contentRangeHeader: string | null) {
+  if (!contentRangeHeader) return;
+  const match = contentRangeHeader.match(/\/(\d+)$/);
+  if (!match) return;
+  const totalLength = parseInt(match[1], 10);
+  if (isNaN(totalLength) || totalLength < 5_000_000) return;
+
+  const tailStart = Math.max(0, totalLength - 5_242_880); // Last 5MB
+  const rangeHeader = `bytes=${tailStart}-${totalLength - 1}`;
+  const cacheKey = getCacheKey(internalUrl, rangeHeader);
+
+  if (tailRangeCache.has(cacheKey)) return;
+
+  const fetchHeaders = new Headers();
+  fetchHeaders.set('range', rangeHeader);
+  fetchHeaders.set('Bypass-Tunnel-Reminder', 'true');
+  fetchHeaders.set('Referer', 'https://cinemana.shabakaty.com/');
+
+  fetchWithRedirects(internalUrl, fetchHeaders, 5).then(async (res) => {
+    if (res.ok || res.status === 206) {
+      const arrayBuf = await res.arrayBuffer();
+      const buffer = Buffer.from(arrayBuf);
+      tailRangeCache.set(cacheKey, {
+        buffer,
+        headers: {
+          'content-length': String(buffer.length),
+          'accept-ranges': 'bytes',
+          'content-range': res.headers.get('content-range') || `bytes ${tailStart}-${totalLength - 1}/${totalLength}`,
+          'content-type': 'video/mp4',
+          'cache-control': 'public, max-age=2592000, immutable',
+          'x-accel-buffering': 'no',
+        },
+        expiresAt: Date.now() + CACHE_TTL,
+      });
+    }
+  }).catch(() => undefined);
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -28,14 +80,56 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL(`/api/hls?ref=${encodeURIComponent(ref)}`, request.nextUrl.origin));
     }
 
-    // We need to fetch the video through the SSH tunnel, passing the Range header.
-    // By using fetch() in Node.js, we automatically follow any 302 redirects from the CDN,
-    // so the browser never sees the redirect and the URL remains /api/tunnel-video!
     const internalUrl = approvedUrl.href;
-    
+    const rangeHeader = request.headers.get('range');
+
+    // Check RAM cache for tail/moov atom range request
+    if (rangeHeader) {
+      const cacheKey = getCacheKey(internalUrl, rangeHeader);
+      const cached = tailRangeCache.get(cacheKey);
+      if (cached && Date.now() < cached.expiresAt) {
+        return new NextResponse(new Uint8Array(cached.buffer), {
+          status: 206,
+          headers: cached.headers,
+        });
+      }
+
+      // Check if requested range falls within a cached tail chunk
+      for (const [ckey, cval] of tailRangeCache.entries()) {
+        if (ckey.startsWith(`${internalUrl}::`) && Date.now() < cval.expiresAt) {
+          const reqRangeMatch = rangeHeader.match(/bytes=(\d+)-(\d+)?/);
+          const cachedRangeMatch = cval.headers['content-range']?.match(/bytes (\d+)-(\d+)\/(\d+)/);
+          if (reqRangeMatch && cachedRangeMatch) {
+            const reqStart = parseInt(reqRangeMatch[1], 10);
+            const reqEnd = reqRangeMatch[2] ? parseInt(reqRangeMatch[2], 10) : parseInt(cachedRangeMatch[3], 10) - 1;
+            const cStart = parseInt(cachedRangeMatch[1], 10);
+            const cEnd = parseInt(cachedRangeMatch[2], 10);
+            const total = parseInt(cachedRangeMatch[3], 10);
+
+            if (reqStart >= cStart && reqEnd <= cEnd) {
+              const sliceStart = reqStart - cStart;
+              const sliceEnd = reqEnd - cStart + 1;
+              const slicedBuffer = cval.buffer.subarray(sliceStart, sliceEnd);
+              return new NextResponse(new Uint8Array(slicedBuffer), {
+                status: 206,
+                headers: {
+                  'content-length': String(slicedBuffer.length),
+                  'accept-ranges': 'bytes',
+                  'content-range': `bytes ${reqStart}-${reqEnd}/${total}`,
+                  'content-type': 'video/mp4',
+                  'cache-control': 'public, max-age=2592000, immutable',
+                  'x-accel-buffering': 'no',
+                },
+              });
+            }
+          }
+        }
+      }
+    }
+
     const fetchHeaders = new Headers();
-    if (request.headers.has('range')) {
-      fetchHeaders.set('range', request.headers.get('range')!);
+    if (rangeHeader) {
+      fetchHeaders.set('range', rangeHeader);
     }
     fetchHeaders.set('Bypass-Tunnel-Reminder', 'true');
     fetchHeaders.set('Referer', 'https://cinemana.shabakaty.com/');
@@ -52,15 +146,11 @@ export async function GET(request: NextRequest) {
       return new NextResponse(`Proxy error: ${response.status}`, { status: response.status });
     }
 
+    // Non-blocking trigger prefetch for tail Moov atom
+    triggerTailPrefetch(internalUrl, response.headers.get('content-range'));
+
     const responseHeaders = new Headers();
-    // Copy essential media headers back to the browser
-    const headersToKeep = [
-      'content-length',
-      'accept-ranges',
-      'content-range',
-      'cache-control'
-    ];
-    
+    const headersToKeep = ['content-length', 'accept-ranges', 'content-range', 'cache-control'];
     headersToKeep.forEach(h => {
       if (response.headers.has(h)) {
         responseHeaders.set(h, response.headers.get(h)!);
