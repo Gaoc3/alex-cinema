@@ -1726,7 +1726,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               onClick={activeSkipKind === 'intro' ? handleSkipIntro : handleSkipOutro}
               aria-label={activeSkipKind === 'intro' ? 'تخطي المقدمة' : onNextEpisode ? 'الانتقال إلى الحلقة التالية' : 'تخطي الخاتمة'}
               dir="rtl"
-              className="pointer-events-auto flex min-h-[28px] max-w-full origin-right touch-manipulation items-center justify-center gap-1 rounded-md border border-white/30 bg-black/80 px-2 py-0.5 text-[10px] font-bold text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:border-white hover:bg-white hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white active:scale-95 md:min-h-[32px] md:px-3 md:text-xs cursor-pointer"
+              className="pointer-events-auto flex min-h-[28px] max-w-full origin-right touch-manipulation items-center justify-center gap-1 rounded-md border border-white/10 bg-black/85 px-2 py-0.5 text-[10px] font-bold text-white shadow-xl backdrop-blur-md transition-all duration-200 hover:border-white hover:bg-white hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white active:scale-95 md:min-h-[32px] md:px-3 md:text-xs cursor-pointer"
             >
               <i 
                 aria-hidden="true" 
