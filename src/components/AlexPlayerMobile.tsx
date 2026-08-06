@@ -1714,10 +1714,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             className="pointer-events-none absolute inset-x-0 z-40 flex items-center justify-end transition-[bottom] duration-300 ease-out"
             style={{
               bottom: controlsVisible
-                ? `calc(clamp(4.75rem, 9vw, 5.5rem) + env(safe-area-inset-bottom, 0px))`
-                : `calc(clamp(1.25rem, 4vw, 1.75rem) + env(safe-area-inset-bottom, 0px))`,
-              paddingLeft: 'max(clamp(0.75rem, 2vw, 1.25rem), env(safe-area-inset-left, 0px))',
-              paddingRight: 'max(clamp(0.75rem, 2vw, 1.25rem), env(safe-area-inset-right, 0px))',
+                ? `calc(clamp(5.25rem, 9.5vw, 6rem) + env(safe-area-inset-bottom, 0px))`
+                : `calc(clamp(1.5rem, 4.5vw, 2rem) + env(safe-area-inset-bottom, 0px))`,
+              paddingLeft: 'max(clamp(0.375rem, 1.2vw, 0.75rem), env(safe-area-inset-left, 0px))',
+              paddingRight: 'max(clamp(0.375rem, 1.2vw, 0.75rem), env(safe-area-inset-right, 0px))',
             }}
             dir="ltr"
           >
@@ -1726,11 +1726,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               onClick={activeSkipKind === 'intro' ? handleSkipIntro : handleSkipOutro}
               aria-label={activeSkipKind === 'intro' ? 'تخطي المقدمة' : onNextEpisode ? 'الانتقال إلى الحلقة التالية' : 'تخطي الخاتمة'}
               dir="rtl"
-              className="pointer-events-auto flex min-h-[38px] max-w-full origin-right touch-manipulation items-center justify-center gap-2 rounded-lg border border-white/30 bg-black/80 px-3.5 py-1.5 text-xs font-bold text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:border-white hover:bg-white hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white active:scale-95 md:px-5 md:text-sm cursor-pointer"
+              className="pointer-events-auto flex min-h-[32px] max-w-full origin-right touch-manipulation items-center justify-center gap-1.5 rounded-md border border-white/30 bg-black/80 px-3 py-1 text-[11px] font-bold text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:border-white hover:bg-white hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white active:scale-95 md:min-h-[36px] md:px-4 md:text-xs cursor-pointer"
             >
               <i 
                 aria-hidden="true" 
-                className={`fa-solid ${activeSkipKind === 'intro' ? 'fa-forward-step' : 'fa-forward'} text-xs leading-none`}
+                className={`fa-solid ${activeSkipKind === 'intro' ? 'fa-forward-step' : 'fa-forward'} text-[10px] md:text-xs leading-none`}
               />
               <span className="leading-none tracking-wide font-bold">
                 {activeSkipKind === 'intro'
