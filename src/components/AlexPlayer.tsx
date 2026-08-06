@@ -1671,7 +1671,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         {/* Skip action: physical right edge, clear of controls and device safe areas. */}
         {skipActionVisible && activeSkipKind && (
           <div
-            className="pointer-events-none absolute inset-x-0 z-40 flex items-center justify-end transition-[bottom] duration-300 ease-out"
+            className="pointer-events-none absolute inset-x-0 z-40 flex items-center justify-end transition-[bottom] duration-500 ease-out"
             style={{
               bottom: controlsVisible
                 ? `calc(clamp(6.5rem, 9.5vw, 7.5rem) + env(safe-area-inset-bottom, 0px))`
@@ -1686,10 +1686,19 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               onClick={activeSkipKind === 'intro' ? handleSkipIntro : handleSkipOutro}
               aria-label={activeSkipKind === 'intro' ? 'تخطي المقدمة' : onNextEpisode ? 'الانتقال إلى الحلقة التالية' : 'تخطي الخاتمة'}
               dir="rtl"
-              className="pointer-events-auto flex min-h-11 max-w-full origin-right touch-manipulation items-center justify-center gap-2.5 whitespace-nowrap rounded-xl border border-white/20 bg-black/75 px-4 py-2.5 text-xs font-black leading-none text-white shadow-[0_4px_20px_rgba(0,0,0,0.5)] backdrop-blur-md transition-all duration-300 hover:scale-[1.03] hover:border-white/40 hover:bg-black/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 focus-visible:ring-offset-2 focus-visible:ring-offset-black/70 active:scale-95 md:px-5 md:text-sm cursor-pointer"
+              className="group pointer-events-auto relative flex min-h-[44px] max-w-full origin-right touch-manipulation items-center justify-center gap-2.5 overflow-hidden rounded-2xl border border-white/20 bg-gradient-to-b from-white/10 via-black/75 to-black/90 px-4 py-2.5 text-xs font-bold leading-none text-white shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.3)] backdrop-blur-xl transition-all duration-300 hover:scale-[1.04] hover:border-red-500/50 hover:bg-black/90 hover:shadow-[0_0_25px_rgba(229,9,20,0.45),inset_0_1px_2px_rgba(255,255,255,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/80 active:scale-95 md:px-5 md:text-sm cursor-pointer"
             >
-              <i aria-hidden="true" className={`fa-solid ${activeSkipKind === 'intro' ? 'fa-forward-step' : 'fa-forward'} text-xs text-gray-300 leading-none`}></i>
-              <span className="leading-none">
+              {/* Ambient Specular Glass Reflection Sweep */}
+              <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" aria-hidden="true" />
+
+              {/* Action Icon with Micro-Animation */}
+              <i 
+                aria-hidden="true" 
+                className={`fa-solid ${activeSkipKind === 'intro' ? 'fa-forward-step' : 'fa-forward'} text-xs text-red-500 leading-none transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:scale-110`}
+              />
+
+              {/* Text Label */}
+              <span className="leading-none tracking-wide text-white font-bold drop-shadow-sm">
                 {activeSkipKind === 'intro'
                   ? 'تخطي المقدمة'
                   : onNextEpisode ? 'الحلقة التالية' : 'تخطي الخاتمة'}
