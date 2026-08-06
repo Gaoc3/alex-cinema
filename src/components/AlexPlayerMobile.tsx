@@ -1716,8 +1716,8 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               bottom: controlsVisible
                 ? `calc(clamp(5.25rem, 9.5vw, 6rem) + env(safe-area-inset-bottom, 0px))`
                 : `calc(clamp(1.5rem, 4.5vw, 2rem) + env(safe-area-inset-bottom, 0px))`,
-              paddingLeft: 'max(clamp(0.375rem, 1.2vw, 0.75rem), env(safe-area-inset-left, 0px))',
-              paddingRight: 'max(clamp(0.375rem, 1.2vw, 0.75rem), env(safe-area-inset-right, 0px))',
+              paddingLeft: 'max(clamp(0.15rem, 0.8vw, 0.5rem), env(safe-area-inset-left, 0px))',
+              paddingRight: 'max(clamp(0.15rem, 0.8vw, 0.5rem), env(safe-area-inset-right, 0px))',
             }}
             dir="ltr"
           >
