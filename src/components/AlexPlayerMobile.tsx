@@ -1714,10 +1714,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             className="pointer-events-none absolute inset-x-0 z-40 flex items-center justify-end transition-[bottom] duration-300 ease-out"
             style={{
               bottom: controlsVisible
-                ? `calc(clamp(5.25rem, 9.5vw, 6rem) + env(safe-area-inset-bottom, 0px))`
-                : `calc(clamp(1.5rem, 4.5vw, 2rem) + env(safe-area-inset-bottom, 0px))`,
-              paddingLeft: 'max(clamp(0.15rem, 0.8vw, 0.5rem), env(safe-area-inset-left, 0px))',
-              paddingRight: 'max(clamp(0.15rem, 0.8vw, 0.5rem), env(safe-area-inset-right, 0px))',
+                ? `calc(clamp(6.25rem, 15vh, 7.25rem) + env(safe-area-inset-bottom, 0px))`
+                : `calc(clamp(1.75rem, 5vh, 2.5rem) + env(safe-area-inset-bottom, 0px))`,
+              paddingLeft: 'max(clamp(0.5rem, 2vw, 1rem), env(safe-area-inset-left, 0px))',
+              paddingRight: 'max(clamp(0.5rem, 2vw, 1rem), env(safe-area-inset-right, 0px))',
             }}
             dir="ltr"
           >
