@@ -82,9 +82,23 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const fetchHeaders = new Headers();
+    let effectiveRangeHeader = rangeHeader;
     if (rangeHeader) {
-      fetchHeaders.set('range', rangeHeader);
+      const rangeMatch = rangeHeader.match(/bytes=(\d+)-(\d+)?/);
+      if (rangeMatch) {
+        const start = parseInt(rangeMatch[1], 10);
+        const rawEnd = rangeMatch[2] ? parseInt(rangeMatch[2], 10) : null;
+        const maxChunkSize = 512 * 1024; // 512 KB max chunk size for sub-second TTFB & instant video start
+        if (rawEnd === null || (rawEnd - start + 1) > maxChunkSize) {
+          const cappedEnd = start + maxChunkSize - 1;
+          effectiveRangeHeader = `bytes=${start}-${cappedEnd}`;
+        }
+      }
+    }
+
+    const fetchHeaders = new Headers();
+    if (effectiveRangeHeader) {
+      fetchHeaders.set('range', effectiveRangeHeader);
     }
     fetchHeaders.set('Bypass-Tunnel-Reminder', 'true');
     fetchHeaders.set('Referer', 'https://cinemana.shabakaty.com/');
