@@ -13,7 +13,7 @@ export default function Sidebar() {
   const searchParams = useSearchParams();
   const [moviesOpen, setMoviesOpen] = useState(false);
   const [seriesOpen, setSeriesOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const { getToken } = useAuth();
   const { isSignedIn, user } = useUnifiedAuth();
