@@ -440,58 +440,6 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     }
   }, [(videoData as any)?.nb, (videoData as any)?.id, videoData?.ar_title, streams, useTunnelFallback]);
 
-  // Proactive Network Probing: Automatically detects if Shabakaty CDN is unreachable (e.g. VPN or non-Earthlink ISP)
-  useEffect(() => {
-    if (!currentStreamUrl || useTunnelFallback) return;
-
-    const isDirectShabakaty = currentStreamUrl.startsWith('http://') || currentStreamUrl.startsWith('https://');
-    if (!isDirectShabakaty) return;
-
-    let cancelled = false;
-    const controller = new AbortController();
-    const probeTimeout = setTimeout(() => controller.abort(), 300);
-
-    fetch(currentStreamUrl, { method: 'HEAD', mode: 'no-cors', signal: controller.signal })
-      .then(() => clearTimeout(probeTimeout))
-      .catch(() => {
-        clearTimeout(probeTimeout);
-        if (!cancelled) {
-          console.warn('[SmartStream] Direct Earthlink stream unreachable (VPN / Out-of-network). Auto-switching to VPS Tunnel Proxy...');
-          setUseTunnelFallback(true);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-      clearTimeout(probeTimeout);
-      controller.abort();
-    };
-  }, [currentStreamUrl, useTunnelFallback]);
-
-  // Loading Stall Watchdog: If direct stream stays stuck (>2.5s) in readyState < 2, auto-switch to VPS Tunnel Proxy
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !currentStreamUrl || useTunnelFallback) return;
-
-    const isDirectShabakaty = currentStreamUrl.startsWith('http://') || currentStreamUrl.startsWith('https://');
-    if (!isDirectShabakaty) return;
-
-    const stallTimer = setTimeout(() => {
-      if (video.readyState < 2 && !useTunnelFallback) {
-        console.warn('[SmartStream] Direct stream stalled (>2.5s). Auto-switching to VPS Tunnel Proxy...');
-        setUseTunnelFallback(true);
-      }
-    }, 2500);
-
-    const handleCanPlay = () => clearTimeout(stallTimer);
-    video.addEventListener('canplay', handleCanPlay);
-
-    return () => {
-      clearTimeout(stallTimer);
-      video.removeEventListener('canplay', handleCanPlay);
-    };
-  }, [currentStreamUrl, useTunnelFallback]);
-
   // HLS stream logic & Quality Restore
   useEffect(() => {
     const video = videoRef.current;
