@@ -1201,7 +1201,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const renderSettingsMenu = () => {
     return (
       <div 
-        className="relative w-full max-w-[280px] md:w-64 max-h-[80vh] md:max-h-[60vh] overflow-y-auto liquid-glass-heavy md:bg-[#141414]/95 border border-[#e50914]/40 rounded-3xl md:rounded-2xl shadow-[0_0_30px_rgba(229,9,20,0.25)] md:shadow-[0_0_40px_rgba(229,9,20,0.3)] flex flex-col p-4 md:p-3 animate-fade-in-up"
+        className="relative w-full max-w-[280px] md:w-64 max-h-[80vh] md:max-h-[60vh] overflow-y-auto bg-[#121212] border border-[#e50914]/60 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.95)] flex flex-col p-4 md:p-3 animate-fade-in-up"
         onPointerUp={(e) => e.stopPropagation()}
         dir="rtl"
       >

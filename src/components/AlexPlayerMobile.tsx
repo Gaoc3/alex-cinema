@@ -1246,7 +1246,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const renderSettingsMenu = () => {
     return (
       <div 
-        className="settings-target relative w-[220px] md:w-[260px] h-auto max-h-full overflow-y-auto overscroll-contain bg-[#141414]/90 md:bg-[#141414]/98 backdrop-blur-xl border border-[#e50914]/40 rounded-2xl shadow-[0_0_30px_rgba(229,9,20,0.25)] flex flex-col p-2.5 animate-fade-in-up [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/20 hover:[&::-webkit-scrollbar-thumb]:bg-alex-primary"
+        className="settings-target relative w-[230px] md:w-[260px] h-auto max-h-full overflow-y-auto overscroll-contain bg-[#121212] border border-[#e50914]/60 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.95)] flex flex-col p-2.5 animate-fade-in-up [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/20 hover:[&::-webkit-scrollbar-thumb]:bg-alex-primary"
         onPointerUp={(e) => e.stopPropagation()}
         dir="rtl"
       >
