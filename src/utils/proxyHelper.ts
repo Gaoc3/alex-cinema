@@ -174,7 +174,6 @@ export async function fetchWithRedirects(
       headers: currentHeaders,
       redirect: 'manual',
       signal,
-      keepalive: true,
     });
 
     if ([301, 302, 303, 307, 308].includes(response.status)) {

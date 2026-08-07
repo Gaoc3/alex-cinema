@@ -88,7 +88,8 @@ export async function GET(request: NextRequest) {
       if (rangeMatch) {
         const start = parseInt(rangeMatch[1], 10);
         const rawEnd = rangeMatch[2] ? parseInt(rangeMatch[2], 10) : null;
-        const maxChunkSize = 2 * 1024 * 1024; // 2 MB optimal chunk size prevents 25-request floods while ensuring smooth buffer
+        // Adaptive chunking: 1MB initial chunk for sub-400ms TTFB & instant start; 4MB sustained chunks for deep buffer
+        const maxChunkSize = start === 0 ? 1024 * 1024 : 4 * 1024 * 1024;
         if (rawEnd === null) {
           effectiveRangeHeader = `bytes=${start}-${start + maxChunkSize - 1}`;
         } else if ((rawEnd - start + 1) > maxChunkSize) {
