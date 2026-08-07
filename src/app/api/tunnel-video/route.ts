@@ -88,10 +88,11 @@ export async function GET(request: NextRequest) {
       if (rangeMatch) {
         const start = parseInt(rangeMatch[1], 10);
         const rawEnd = rangeMatch[2] ? parseInt(rangeMatch[2], 10) : null;
-        const maxChunkSize = 512 * 1024; // 512 KB max chunk size for sub-second TTFB & instant video start
-        if (rawEnd === null || (rawEnd - start + 1) > maxChunkSize) {
-          const cappedEnd = start + maxChunkSize - 1;
-          effectiveRangeHeader = `bytes=${start}-${cappedEnd}`;
+        const maxChunkSize = 2 * 1024 * 1024; // 2 MB optimal chunk size prevents 25-request floods while ensuring smooth buffer
+        if (rawEnd === null) {
+          effectiveRangeHeader = `bytes=${start}-${start + maxChunkSize - 1}`;
+        } else if ((rawEnd - start + 1) > maxChunkSize) {
+          effectiveRangeHeader = `bytes=${start}-${start + maxChunkSize - 1}`;
         }
       }
     }
