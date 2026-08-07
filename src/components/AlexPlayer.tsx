@@ -1815,13 +1815,15 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 aria-label={isZoomed ? 'إعادة الفيديو إلى الحجم الملائم' : 'تكبير الفيديو لملء الإطار'}
                 aria-pressed={isZoomed}
                 title={isZoomed ? 'ملاءمة الفيديو' : 'تكبير الفيديو'}
-                className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 md:h-10 md:w-10 md:rounded-xl ${
+                className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border transition-all duration-300 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 md:h-10 md:w-10 md:rounded-xl ${
                   isZoomed
-                    ? 'border-red-400/45 bg-red-500/20 text-red-200'
+                    ? 'border-red-400/50 bg-red-500/25 text-red-200 shadow-[0_0_15px_rgba(239,68,68,0.35)]'
                     : 'border-white/10 bg-white/5 text-white hover:border-white/25 hover:bg-white/10'
                 }`}
               >
-                <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-expand'} text-sm md:text-base`}></i>
+                <span className={`inline-flex items-center justify-center transition-all duration-300 ease-out transform ${isZoomed ? 'rotate-180 scale-110' : 'rotate-0 scale-100'}`}>
+                  <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-expand'} text-sm md:text-base`}></i>
+                </span>
               </button>
               
               {/* Settings Menu */}
