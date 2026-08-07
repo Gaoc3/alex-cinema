@@ -1623,7 +1623,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             dir="ltr"
           >
             <span className="flex items-center gap-2">
-              <i className={`fa-solid ${isZoomed ? 'fa-magnifying-glass-plus' : 'fa-compress'} text-[11px] text-red-300`}></i>
+              <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-expand'} text-[11px] text-red-300`}></i>
               {zoomPercent}%
             </span>
           </div>
@@ -1821,7 +1821,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                     : 'border-white/10 bg-white/5 text-white hover:border-white/25 hover:bg-white/10'
                 }`}
               >
-                <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-magnifying-glass-plus'} text-sm md:text-base`}></i>
+                <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-expand'} text-sm md:text-base`}></i>
               </button>
               
               {/* Settings Menu */}

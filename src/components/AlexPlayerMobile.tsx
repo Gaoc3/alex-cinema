@@ -1672,7 +1672,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             dir="ltr"
           >
             <span className="flex items-center gap-2">
-              <i className={`fa-solid ${isZoomed ? 'fa-magnifying-glass-plus' : 'fa-compress'} text-[11px] text-red-300`}></i>
+              <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-expand'} text-[11px] text-red-300`}></i>
               {zoomPercent}%
             </span>
           </div>
@@ -1684,8 +1684,12 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             className="absolute left-0 w-full text-center pointer-events-none flex flex-col items-center justify-end z-20 transition-all duration-300"
             style={{ 
                bottom: controlsVisible
-                 ? `calc(${controlsBarHeight || (isMobile ? 80 : 136)}px + 0.5rem)`
-                 : 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
+                 ? isFullscreen
+                   ? `calc(${controlsBarHeight || 70}px + 0.25rem)`
+                   : `calc(${controlsBarHeight || 80}px + 0.5rem)`
+                 : isFullscreen
+                   ? 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)'
+                   : 'calc(env(safe-area-inset-bottom, 0px) + 1.25rem)',
                paddingLeft: '5%',
                paddingRight: skipActionVisible
                  ? 'calc(env(safe-area-inset-right, 0px) + clamp(9rem, 38vw, 12rem))'
@@ -1876,6 +1880,13 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 onClick={(event) => {
                   event.stopPropagation();
                   toggleZoom();
+                  if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+                  if (!videoRef.current?.paused) {
+                    controlsTimeoutRef.current = setTimeout(() => {
+                      setShowControls(false);
+                      setActiveDropdown(null);
+                    }, 3000);
+                  }
                 }}
                 aria-label={isZoomed ? 'إعادة الفيديو إلى الحجم الملائم' : 'تكبير الفيديو لملء الإطار'}
                 aria-pressed={isZoomed}
@@ -1886,7 +1897,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                     : 'border-white/10 bg-white/5 text-white hover:border-white/25 hover:bg-white/10'
                 }`}
               >
-                <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-magnifying-glass-plus'} text-sm md:text-base`}></i>
+                <i className={`fa-solid ${isZoomed ? 'fa-compress' : 'fa-expand'} text-sm md:text-base`}></i>
               </button>
               
               {/* Settings Menu Toggle Button */}
