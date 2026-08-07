@@ -42,7 +42,7 @@ export default function Sidebar() {
     });
     return () => window.cancelAnimationFrame(frame);
   }, [pathname, searchParams, searchParamsString]);
-  
+
   // Local short screen check (Can optionally use global var, but keeping it here for reactivity on padding)
   const [layout, setLayout] = useState({ isShortScreen: false });
 
@@ -50,6 +50,11 @@ export default function Sidebar() {
     const checkState = () => {
       if (typeof window !== 'undefined') {
         const isMobile = window.innerWidth < 1280;
+        const savedState = localStorage.getItem('sidebar-collapsed');
+        const defaultCollapsed = savedState === 'false' ? false : true;
+        if (!isMobile && defaultCollapsed && !document.body.classList.contains('sidebar-collapsed')) {
+          document.body.classList.add('sidebar-collapsed');
+        }
         setIsCollapsed(isMobile ? false : document.body.classList.contains('sidebar-collapsed'));
         setIsMobileSidebarOpen(document.body.classList.contains('sidebar-open'));
         setLayout({
@@ -79,7 +84,6 @@ export default function Sidebar() {
   const paddingClass = layout.isShortScreen ? 'py-2.5' : 'py-3.5';
 
   const isActive = (path: string) => {
-    // If the path contains a query string
     if (path.includes('?')) {
       const [basePath, queryString] = path.split('?');
       if (pathname !== basePath) return false;

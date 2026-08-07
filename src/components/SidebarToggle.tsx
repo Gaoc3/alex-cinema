@@ -7,13 +7,12 @@ export default function SidebarToggle() {
     // Check initial sidebar state from localStorage on mount
     if (typeof window !== 'undefined') {
       const savedState = localStorage.getItem('sidebar-collapsed');
-      if (savedState === 'true') {
-        document.body.classList.add('sidebar-collapsed');
-      } else {
+      if (savedState === 'false') {
         document.body.classList.remove('sidebar-collapsed');
+      } else {
+        document.body.classList.add('sidebar-collapsed');
       }
     }
-
   }, []);
 
   const toggleSidebar = () => {

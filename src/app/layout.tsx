@@ -57,9 +57,14 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('sidebar-collapsed');if(s==='false'){document.body&&document.body.classList.remove('sidebar-collapsed');}else{document.body&&document.body.classList.add('sidebar-collapsed');}}catch(e){}})();`,
+          }}
+        />
       </head>
 
-      <body className="antialiased min-h-screen font-sans bg-black" suppressHydrationWarning>
+      <body className="antialiased min-h-screen font-sans bg-black sidebar-collapsed" suppressHydrationWarning>
         <UnifiedAuthProvider>
           <TelegramAutoAuth />
           <ImageRecovery />
