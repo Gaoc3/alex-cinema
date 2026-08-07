@@ -92,6 +92,18 @@ export async function GET(request: NextRequest) {
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 90_000);
+
+    const onClientAbort = () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+
+    if (request.signal.aborted) {
+      onClientAbort();
+    } else {
+      request.signal.addEventListener('abort', onClientAbort, { once: true });
+    }
+
     const response = await fetchWithRedirects(internalUrl, fetchHeaders, 5, controller.signal);
     clearTimeout(timeout);
 
@@ -136,7 +148,47 @@ export async function GET(request: NextRequest) {
     responseHeaders.set('X-Accel-Buffering', 'no');
     responseHeaders.set('Cache-Control', 'public, max-age=2592000, immutable');
 
-    return new NextResponse(response.body, {
+    // Return piped stream that instantly terminates upstream Shabakaty fetch when client disconnects
+    const bodyStream = response.body;
+    if (!bodyStream) {
+      return new NextResponse(null, { status: response.status, headers: responseHeaders });
+    }
+
+    const passthrough = new ReadableStream({
+      async start(streamController) {
+        const reader = bodyStream.getReader();
+        const killUpstream = () => {
+          reader.cancel().catch(() => undefined);
+          controller.abort();
+        };
+
+        if (request.signal.aborted) {
+          killUpstream();
+          try { streamController.close(); } catch {}
+          return;
+        }
+
+        request.signal.addEventListener('abort', killUpstream, { once: true });
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            streamController.enqueue(value);
+          }
+          streamController.close();
+        } catch (err) {
+          streamController.error(err);
+        } finally {
+          request.signal.removeEventListener('abort', killUpstream);
+        }
+      },
+      cancel() {
+        controller.abort();
+      }
+    });
+
+    return new NextResponse(passthrough, {
       status: response.status,
       headers: responseHeaders,
     });
