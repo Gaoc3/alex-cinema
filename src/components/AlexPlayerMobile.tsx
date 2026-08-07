@@ -1475,13 +1475,13 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         className={`relative select-none group/player transition-all duration-300 min-h-[200px] ${
           isFullscreen 
             ? 'fixed inset-0 w-screen h-[100dvh] z-[9999] rounded-none border-none bg-black'
-            : 'w-full rounded-3xl overflow-visible shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 bg-black aspect-video'
+            : 'w-full rounded-3xl bg-black aspect-video'
         }`}
         style={{ aspectRatio: isFullscreen ? 'auto' : 16/9 }}
         dir="ltr"
       >
-        {/* Inner wrapper for rounded corners and overflow clipping to not affect dropdowns */}
-        <div className={`absolute inset-0 w-full h-full pointer-events-none ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
+        {/* Inner wrapper for rounded corners and 16:9 border clipping */}
+        <div className={`absolute inset-0 w-full h-full pointer-events-none ${isFullscreen ? 'rounded-none' : 'rounded-3xl border border-white/10 overflow-hidden shadow-[0_0_50px_rgba(229,9,20,0.15)]'}`}>
           {/* Adaptive Ambient Light Canvas */}
           <canvas
             ref={canvasRef}
@@ -1725,19 +1725,17 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           </div>
         )}
 
-        {/* FLOATING SETTINGS MENU (UNBOUNDED IN INLINE MODE) */}
+        {/* FLOATING SETTINGS MENU (EXACT FIT SOLID CARD) */}
         {activeDropdown === 'settings' && (
           <div 
-            className="absolute z-[999] pointer-events-none flex flex-col justify-end items-end"
+            className="absolute z-[9999] pointer-events-auto"
             style={{ 
-              bottom: isFullscreen ? '18%' : '52px',
+              bottom: isFullscreen ? '18%' : '56px',
               right: isFullscreen ? '2%' : '8px',
-              maxHeight: isFullscreen ? '75%' : '340px',
+              maxHeight: isFullscreen ? '75%' : '320px',
             }}
           >
-            <div className="pointer-events-auto h-auto max-h-full flex flex-col justify-end shadow-[0_15px_40px_rgba(0,0,0,0.9)]">
-              {renderSettingsMenu()}
-            </div>
+            {renderSettingsMenu()}
           </div>
         )}
 
