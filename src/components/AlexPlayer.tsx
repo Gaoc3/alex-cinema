@@ -1696,9 +1696,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             style={{
               bottom: controlsVisible
                 ? isFullscreen
-                  ? `calc(clamp(6.25rem, 9vw, 7.25rem) + env(safe-area-inset-bottom, 0px))`
-                  : `calc(clamp(5.25rem, 8vw, 6rem) + env(safe-area-inset-bottom, 0px))`
-                : `calc(clamp(1.75rem, 3.5vw, 2.25rem) + env(safe-area-inset-bottom, 0px))`,
+                  ? `calc(clamp(6.75rem, 9.5vw, 7.75rem) + env(safe-area-inset-bottom, 0px))`
+                  : `calc(clamp(5.75rem, 8.5vw, 6.5rem) + env(safe-area-inset-bottom, 0px))`
+                : `calc(clamp(2rem, 4vw, 2.5rem) + env(safe-area-inset-bottom, 0px))`,
               paddingLeft: 'max(clamp(0.15rem, 0.8vw, 0.5rem), env(safe-area-inset-left, 0px))',
               paddingRight: 'max(clamp(0.15rem, 0.8vw, 0.5rem), env(safe-area-inset-right, 0px))',
             }}

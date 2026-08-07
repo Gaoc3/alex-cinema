@@ -66,7 +66,16 @@ export function prefetchSingleRange(internalUrl: string, start: number, end: num
   return promise;
 }
 
+const completedPrefetchUrls = new Set<string>();
+
 export async function prefetchStreamHeadAndTail(internalUrl: string, totalLength?: number): Promise<void> {
+  if (completedPrefetchUrls.has(internalUrl)) return;
+  completedPrefetchUrls.add(internalUrl);
+  if (completedPrefetchUrls.size > 200) {
+    const firstKey = completedPrefetchUrls.values().next().value;
+    if (firstKey) completedPrefetchUrls.delete(firstKey);
+  }
+
   let realLength = totalLength;
 
   // If totalLength is missing or default dummy, query exact byte length from Shabakaty
@@ -89,14 +98,10 @@ export async function prefetchStreamHeadAndTail(internalUrl: string, totalLength
   }
 
   const finalLength = realLength || 250_000_000;
-  const chunkSize = 6_291_456; // 6 MB covers ALL Shabakaty MP4 moov atoms and initial video frames
+  const chunkSize = 1_048_576; // 1 MB initial header prefetch to prevent socket congestion
   const headEnd = Math.min(chunkSize - 1, finalLength - 1);
-  const tailStart = Math.max(0, finalLength - chunkSize);
 
-  const fetchHead = prefetchSingleRange(internalUrl, 0, headEnd, finalLength);
-  const fetchTail = prefetchSingleRange(internalUrl, tailStart, finalLength - 1, finalLength);
-
-  await Promise.all([fetchHead, fetchTail]);
+  await prefetchSingleRange(internalUrl, 0, headEnd, finalLength);
 }
 
 export const encodeProxyUrl = (url: string): string => {
