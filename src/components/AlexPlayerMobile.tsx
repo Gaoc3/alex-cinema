@@ -1529,7 +1529,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           `}</style>
           <video
             ref={videoRef}
-            className="h-full w-full cursor-pointer object-contain"
+            className="h-full w-full cursor-pointer object-cover"
             style={videoZoomStyle}
             onPointerUp={handleVideoPointerUp}
             onPointerCancel={handleVideoPointerCancel}
