@@ -15,10 +15,10 @@ const ALLOWED_IMAGE_TYPES = new Set([
   'image/png',
   'image/webp',
 ]);
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
-const MAX_CACHE_BYTES = 36 * 1024 * 1024;
-const MAX_CACHE_ITEMS = 128;
-const RETRY_DELAYS_MS = [0, 250, 900];
+const MAX_IMAGE_BYTES = 32 * 1024 * 1024;
+const MAX_CACHE_BYTES = 64 * 1024 * 1024;
+const MAX_CACHE_ITEMS = 256;
+const RETRY_DELAYS_MS = [0, 150, 500];
 
 interface CachedImage {
   body: ArrayBuffer;
@@ -172,6 +172,81 @@ async function waitForRetry(delayMs: number, signal: AbortSignal) {
   });
 }
 
+function buildImageCandidates(initialTarget: URL | null, fileParam: string | null): URL[] {
+  const candidateSet = new Set<string>();
+  const results: URL[] = [];
+
+  const addUrl = (urlStr: string) => {
+    try {
+      const parsed = parseAllowedShabakatyUrl(urlStr);
+      if (parsed && !candidateSet.has(parsed.href)) {
+        candidateSet.add(parsed.href);
+        results.push(parsed);
+      }
+    } catch {}
+  };
+
+  if (initialTarget) {
+    addUrl(initialTarget.href);
+  }
+
+  const rawFileName = fileParam || (initialTarget ? initialTarget.pathname.split('/').pop() || '' : '');
+  const cleanName = sanitizeFilename(rawFileName);
+
+  if (cleanName) {
+    const baseHosts = [
+      'cnth2.shabakaty.com',
+      'cnth1.shabakaty.com',
+      'cnth3.shabakaty.com',
+      'cnth4.shabakaty.com',
+      'cdn.shabakaty.com',
+      'cinemana.shabakaty.com',
+    ];
+
+    const dirs = [
+      'vascin-poster-images',
+      'vascin-cover-images',
+      'vascin-staff-poster',
+      'vascin-poster',
+      'vascin-images',
+      'vascin-photos',
+    ];
+
+    const fileVariants = new Set<string>([cleanName]);
+    if (cleanName.includes('_poster_medium_thumb.')) {
+      fileVariants.add(cleanName.replace('_poster_medium_thumb.', '_poster.'));
+      fileVariants.add(cleanName.replace('_poster_medium_thumb.', '_poster_thumb.'));
+    } else if (cleanName.includes('_poster_thumb.')) {
+      fileVariants.add(cleanName.replace('_poster_thumb.', '_poster.'));
+      fileVariants.add(cleanName.replace('_poster_thumb.', '_poster_medium_thumb.'));
+    } else if (cleanName.includes('_poster.')) {
+      fileVariants.add(cleanName.replace('_poster.', '_poster_medium_thumb.'));
+      fileVariants.add(cleanName.replace('_poster.', '_poster_thumb.'));
+    }
+
+    const extVariants = new Set<string>();
+    fileVariants.forEach((fn) => {
+      extVariants.add(fn);
+      if (fn.endsWith('.png')) {
+        extVariants.add(fn.replace(/\.png$/i, '.jpg'));
+        extVariants.add(fn.replace(/\.png$/i, '.jpeg'));
+      } else if (fn.endsWith('.jpg') || fn.endsWith('.jpeg')) {
+        extVariants.add(fn.replace(/\.jpe?g$/i, '.png'));
+      }
+    });
+
+    for (const host of baseHosts) {
+      for (const dir of dirs) {
+        for (const fn of extVariants) {
+          addUrl(`https://${host}/${dir}/${fn}`);
+        }
+      }
+    }
+  }
+
+  return results.slice(0, 16);
+}
+
 export async function GET(req: NextRequest) {
   const type = req.nextUrl.searchParams.get('type');
   const file = req.nextUrl.searchParams.get('file');
@@ -193,8 +268,9 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  if (!target) {
-    return NextResponse.json({ error: 'Invalid or missing image parameters' }, { status: 400 });
+  const candidates = buildImageCandidates(target, file);
+  if (candidates.length === 0) {
+    return placeholderResponse();
   }
 
   const headers = new Headers({
@@ -204,12 +280,6 @@ export async function GET(req: NextRequest) {
   });
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
-  const candidates = [target];
-  if (target.pathname.includes('/vascin-poster-images/')) {
-    candidates.push(new URL(target.href.replace('/vascin-poster-images/', '/vascin-cover-images/')));
-  } else if (target.pathname.includes('/vascin-cover-images/')) {
-    candidates.push(new URL(target.href.replace('/vascin-cover-images/', '/vascin-poster-images/')));
-  }
 
   try {
     for (const candidate of candidates) {
