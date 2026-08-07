@@ -397,6 +397,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   // Helper to resolve effective stream URL based on network status (Always prioritize universal VPS Tunnel Proxy)
   const getStreamTargetUrl = (streamOrData: any, _tunnelFallback?: boolean) => {
     if (!streamOrData) return null;
+    const proxied = streamOrData.videoUrl || streamOrData.stream_url;
+    if (proxied && (proxied.startsWith('/api/') || proxied.includes('/api/tunnel-video'))) {
+      return proxied;
+    }
     return (streamOrData.videoUrl || streamOrData.stream_url || streamOrData.directUrl || streamOrData.direct_stream_url || null) as string | null;
   };
 
