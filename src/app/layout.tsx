@@ -59,12 +59,12 @@ export default function RootLayout({
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var s=localStorage.getItem('sidebar-collapsed');if(s==='false'){document.body&&document.body.classList.remove('sidebar-collapsed');}else{document.body&&document.body.classList.add('sidebar-collapsed');}}catch(e){}})();`,
+            __html: `(function(){try{document.documentElement.classList.add('preload');var s=localStorage.getItem('sidebar-expanded');if(s==='true'){document.documentElement.classList.add('sidebar-expanded');}else{document.documentElement.classList.add('sidebar-collapsed');}window.addEventListener('DOMContentLoaded',function(){setTimeout(function(){document.documentElement.classList.remove('preload');if(document.body){document.body.classList.remove('preload');if(s==='true'){document.body.classList.add('sidebar-expanded');}else{document.body.classList.add('sidebar-collapsed');}}},100);});}catch(e){}})();`,
           }}
         />
       </head>
 
-      <body className="antialiased min-h-screen font-sans bg-black sidebar-collapsed" suppressHydrationWarning>
+      <body className="antialiased min-h-screen font-sans bg-black preload sidebar-collapsed" suppressHydrationWarning>
         <UnifiedAuthProvider>
           <TelegramAutoAuth />
           <ImageRecovery />

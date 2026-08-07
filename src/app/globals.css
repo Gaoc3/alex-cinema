@@ -418,48 +418,55 @@ main, nav, footer {
   transition: opacity 0.1s ease 0s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Disable all transitions during initial page load to prevent reload animation glitch */
+.preload *,
+.preload .sidebar,
+.preload nav#navbar,
+body.preload *,
+body.preload .sidebar,
+body.preload nav#navbar {
+  transition: none !important;
+}
+
 @media (min-width: 1280px) {
+  /* Default Desktop Sidebar State: 80px (5rem) Collapsed */
   .sidebar {
-    transform: translateX(0) !important; /* Always visible on desktop */
+    width: 5rem !important; /* 80px by default */
+    transform: translateX(0) !important;
   }
   
   /* Prevent navbar from stretching over the sidebar and blocking click events */
   nav#navbar {
     position: absolute !important;
     left: 0 !important;
-    right: 18rem !important; /* w-72 (288px) */
-    width: auto !important; /* overrides w-full */
+    right: 5rem !important; /* 80px by default */
+    width: auto !important;
     padding-right: 0 !important;
     transition: right 0.5s cubic-bezier(0.16, 1, 0.3, 1), padding-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
+  
+  main, nav, footer {
+    padding-right: 5rem !important; /* 80px gap by default */
+  }
+
+  body.sidebar-collapsed .sidebar {
+    width: 5rem !important;
+  }
 
   body.sidebar-collapsed nav#navbar {
-    position: absolute !important;
-    right: 5rem !important; /* w-20 (80px) */
-    padding-right: 0 !important;
+    right: 5rem !important;
   }
-  
-  /* When sidebar is collapsed on desktop, shrink its width */
-  body.sidebar-collapsed .sidebar {
-    width: 5rem !important; /* 80px */
-  }
-  
+
   body.sidebar-collapsed main,
   body.sidebar-collapsed nav,
   body.sidebar-collapsed footer {
-    padding-right: 5rem !important; /* Shrink the right layout gap to match w-20 */
+    padding-right: 5rem !important;
   }
   
-  /* Hide labels, brand name, and submenus when collapsed using transitions */
-  body.sidebar-collapsed .sidebar-label {
-    opacity: 0 !important;
-    max-width: 0 !important;
-    transform: translateX(15px) scale(0.9) !important;
-    pointer-events: none !important;
-    overflow: hidden !important;
-    transition: opacity 0.1s ease 0s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  }
-
+  /* Hide labels, brand name, and submenus by default when collapsed */
+  .sidebar-label,
+  .sidebar-brand-name,
+  body.sidebar-collapsed .sidebar-label,
   body.sidebar-collapsed .sidebar-brand-name {
     opacity: 0 !important;
     max-width: 0 !important;
@@ -469,6 +476,7 @@ main, nav, footer {
     transition: opacity 0.1s ease 0s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
 
+  .sidebar-submenu,
   body.sidebar-collapsed .sidebar-submenu {
     max-height: 0 !important;
     opacity: 0 !important;
@@ -476,7 +484,8 @@ main, nav, footer {
     overflow: hidden !important;
   }
   
-  /* Show centered logo only when collapsed */
+  /* Show centered logo by default when collapsed */
+  .sidebar-collapsed-logo,
   body.sidebar-collapsed .sidebar-collapsed-logo {
     opacity: 1 !important;
     max-width: 200px !important;
@@ -486,7 +495,8 @@ main, nav, footer {
     transition: opacity 0.3s ease 0.2s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
   
-  /* Center the menu items and icons when collapsed */
+  /* Center menu items and icons by default when collapsed */
+  .sidebar-item-content,
   body.sidebar-collapsed .sidebar-item-content {
     justify-content: center !important;
     padding-left: 0 !important;
@@ -495,11 +505,49 @@ main, nav, footer {
     transition: justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1), gap 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
+  .sidebar-link-btn,
   body.sidebar-collapsed .sidebar-link-btn {
     padding-left: 0 !important;
     padding-right: 0 !important;
     justify-content: center !important;
     transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* EXPANDED STATE: Only when body has .sidebar-expanded */
+  body.sidebar-expanded .sidebar {
+    width: 18rem !important; /* 288px */
+  }
+
+  body.sidebar-expanded nav#navbar {
+    right: 18rem !important;
+  }
+
+  body.sidebar-expanded main,
+  body.sidebar-expanded nav,
+  body.sidebar-expanded footer {
+    padding-right: 18rem !important;
+  }
+
+  body.sidebar-expanded .sidebar-label,
+  body.sidebar-expanded .sidebar-brand-name {
+    opacity: 1 !important;
+    max-width: 300px !important;
+    transform: translateX(0) !important;
+    pointer-events: auto !important;
+    overflow: visible !important;
+  }
+
+  body.sidebar-expanded .sidebar-collapsed-logo {
+    opacity: 0 !important;
+    max-width: 0 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+    transform: scale(0.8) !important;
+  }
+
+  body.sidebar-expanded .sidebar-item-content,
+  body.sidebar-expanded .sidebar-link-btn {
+    justify-content: flex-start !important;
   }
 }
 
