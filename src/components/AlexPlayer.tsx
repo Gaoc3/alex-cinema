@@ -1630,7 +1630,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         )}
 
         {/* TOP TITLE BAR */}
-        <div aria-hidden={!(showControls || isPaused)} className={`absolute top-0 inset-x-0 ${isFullscreen ? '' : 'rounded-t-3xl'} p-3 pb-8 md:p-5 md:pt-6 md:pb-20 bg-gradient-to-b from-black/90 md:via-black/40 to-transparent flex flex-row-reverse items-center justify-between transition-all duration-300 transform z-20 ${showControls || isPaused ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
+        <div aria-hidden={!(showControls || isPaused)} className={`absolute top-0 inset-x-0 ${isFullscreen ? '' : 'rounded-t-3xl'} p-2.5 px-3 pb-4 md:p-4 md:pb-6 bg-gradient-to-b from-black/50 to-transparent flex flex-row-reverse items-center justify-between transition-all duration-300 transform z-20 ${showControls || isPaused ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
           <h3 className="text-white text-xs md:text-lg font-black drop-shadow-md flex items-center gap-2 md:gap-3" dir="rtl">
             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-alex-primary animate-pulse"></span>
             {videoData.ar_title}
