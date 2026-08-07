@@ -1470,6 +1470,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         {/* The Native HTML5 Video Element */}
         <div className={`absolute inset-0 w-full h-full ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
           <style>{`
+            video {
+              object-fit: cover !important;
+              width: 100% !important;
+              height: 100% !important;
+            }
             /* Completely hide native subtitles so our React custom overlay can handle them flawlessly */
             video::-webkit-media-text-track-display {
               display: none !important;

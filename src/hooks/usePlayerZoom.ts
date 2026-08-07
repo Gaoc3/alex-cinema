@@ -257,6 +257,9 @@ export function usePlayerZoom<TContainer extends HTMLElement>({
     transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
     transition: isPinching ? 'none' : 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)',
     willChange: isPinching || zoomScale > ZOOM_SNAP_THRESHOLD ? 'transform' : 'auto',
+    objectFit: 'cover',
+    width: '100%',
+    height: '100%',
   };
 
   return {
