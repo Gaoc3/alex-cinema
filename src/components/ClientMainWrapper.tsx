@@ -16,7 +16,7 @@ export default function ClientMainWrapper({ children }: { children: ReactNode })
         ? 'auth-main flex-grow'
         : isRoomPage
           ? 'min-w-0 flex-grow'
-        : 'flex-grow pt-16 sm:pt-20 xl:pt-0 xl:pr-72'}
+        : 'flex-grow pt-16 sm:pt-20 xl:pt-0 xl:pr-20'}
     >
       {children}
     </main>

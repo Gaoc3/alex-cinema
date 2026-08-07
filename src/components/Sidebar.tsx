@@ -166,7 +166,7 @@ export default function Sidebar() {
       />
       
       <aside 
-        className="fixed top-0 right-0 w-72 z-[60] flex flex-col bg-[#06070a]/95 backdrop-blur-2xl sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/[0.05] xl:border-l-0 rounded-none shadow-2xl xl:shadow-none h-screen" 
+        className="fixed top-0 right-0 w-20 z-[60] flex flex-col bg-[#06070a]/95 backdrop-blur-2xl sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/[0.05] xl:border-l-0 rounded-none shadow-2xl xl:shadow-none h-screen" 
       >
 
         {/* Sidebar Header (Zero-Legacy Cinematic Style) */}

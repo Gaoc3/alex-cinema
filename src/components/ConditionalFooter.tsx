@@ -15,7 +15,7 @@ export default function ConditionalFooter() {
   }
 
   return (
-    <footer className="border-t border-white/5 bg-[#090a0f] py-6 text-center text-xs text-[#94a3b8] mt-auto relative z-10 xl:pr-72">
+    <footer className="border-t border-white/5 bg-[#090a0f] py-6 text-center text-xs text-[#94a3b8] mt-auto relative z-10 xl:pr-20">
       <p>© {new Date().getFullYear()} ALEX CINEMA. جميع الحقوق محفوظة.</p>
       <div className="mt-2 flex justify-center gap-4 opacity-60">
         <span className="hover:text-white cursor-pointer transition-colors">سياسة الخصوصية</span>
