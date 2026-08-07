@@ -401,7 +401,16 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   };
 
   // Parse direct or proxied streams on initialization, data change, or tunnel fallback state change
+  const currentVideoIdRef = useRef<string | null>(null);
   useEffect(() => {
+    const videoId = (videoData as any)?.nb || (videoData as any)?.id || videoData?.ar_title || '';
+    const isNewVideo = currentVideoIdRef.current !== videoId;
+
+    if (currentStreamUrl && selectedResolution && !isNewVideo) {
+      return;
+    }
+
+    currentVideoIdRef.current = videoId;
     let initialStreamUrl: string | null = null;
     let initialResolution: string = '';
     if (streams.length > 0) {
@@ -417,11 +426,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       initialResolution = '';
     }
 
-    if (initialStreamUrl && initialStreamUrl !== currentStreamUrl) {
+    if (initialStreamUrl) {
       setCurrentStreamUrl(initialStreamUrl);
       setSelectedResolution(initialResolution);
     }
-  }, [videoData, streams, useTunnelFallback, currentStreamUrl]);
+  }, [(videoData as any)?.nb, (videoData as any)?.id, videoData?.ar_title, streams, useTunnelFallback]);
 
   // Proactive Network Probing: Automatically detects if Shabakaty CDN is unreachable (e.g. VPN or non-Earthlink ISP)
   useEffect(() => {
