@@ -1004,13 +1004,23 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       setIsFullscreen(true);
       setShowControls(true);
 
-      if (orientation?.lock) {
+      const lockLandscape = async () => {
         try {
-          await orientation.lock('landscape');
-        } catch {
-          // Orientation locking is optional on iOS/iPadOS and some WebViews.
-        }
-      }
+          const orientation = (screen as any).orientation || (screen as any).mozOrientation || (screen as any).msOrientation;
+          if (orientation && typeof orientation.lock === 'function') {
+            await orientation.lock('landscape').catch(async () => {
+              await orientation.lock('landscape-primary').catch(() => {});
+            });
+          } else if ((screen as any).lockOrientation) {
+            (screen as any).lockOrientation('landscape');
+          } else if ((screen as any).mozLockOrientation) {
+            (screen as any).mozLockOrientation('landscape');
+          }
+        } catch {}
+      };
+
+      lockLandscape();
+      setTimeout(lockLandscape, 150);
       return;
     }
 
@@ -1027,7 +1037,14 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     } finally {
       setIsFullscreen(false);
       setShowControls(true);
-      orientation?.unlock?.();
+      try {
+        const orientation = (screen as any).orientation || (screen as any).mozOrientation || (screen as any).msOrientation;
+        if (orientation && typeof orientation.unlock === 'function') {
+          orientation.unlock();
+        } else if ((screen as any).unlockOrientation) {
+          (screen as any).unlockOrientation();
+        }
+      } catch {}
     }
   }, [isInlineFullscreen]);
   const toggleFullscreenRef = useRef(toggleFullscreen);
@@ -1714,10 +1731,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             className="pointer-events-none absolute inset-x-0 z-40 flex items-center justify-end transition-[bottom] duration-300 ease-out"
             style={{
               bottom: controlsVisible
-                ? `calc(clamp(6.25rem, 15vh, 7.25rem) + env(safe-area-inset-bottom, 0px))`
-                : `calc(clamp(1.75rem, 5vh, 2.5rem) + env(safe-area-inset-bottom, 0px))`,
-              paddingLeft: 'max(clamp(0.5rem, 2vw, 1rem), env(safe-area-inset-left, 0px))',
-              paddingRight: 'max(clamp(0.5rem, 2vw, 1rem), env(safe-area-inset-right, 0px))',
+                ? `calc(clamp(5.25rem, 11vh, 6rem) + env(safe-area-inset-bottom, 0px))`
+                : `calc(clamp(1.25rem, 4vh, 1.75rem) + env(safe-area-inset-bottom, 0px))`,
+              paddingLeft: 'max(clamp(0.15rem, 0.8vw, 0.5rem), env(safe-area-inset-left, 0px))',
+              paddingRight: 'max(clamp(0.15rem, 0.8vw, 0.5rem), env(safe-area-inset-right, 0px))',
             }}
             dir="ltr"
           >

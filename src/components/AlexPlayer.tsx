@@ -958,15 +958,23 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           }
           setIsFullscreen(true);
           
-          // Try to lock orientation to landscape on mobile
-          const orientation = screen.orientation as LockableScreenOrientation | undefined;
-          if (orientation?.lock) {
+          // Try to lock orientation to landscape on mobile devices
+          const lockLandscape = async () => {
             try {
-              await orientation.lock('landscape');
-            } catch (err) {
-              console.warn('Orientation lock failed:', err);
-            }
-          }
+              const orientation = (screen as any).orientation || (screen as any).mozOrientation || (screen as any).msOrientation;
+              if (orientation && typeof orientation.lock === 'function') {
+                await orientation.lock('landscape').catch(async () => {
+                  await orientation.lock('landscape-primary').catch(() => {});
+                });
+              } else if ((screen as any).lockOrientation) {
+                (screen as any).lockOrientation('landscape');
+              } else if ((screen as any).mozLockOrientation) {
+                (screen as any).mozLockOrientation('landscape');
+              }
+            } catch {}
+          };
+          lockLandscape();
+          setTimeout(lockLandscape, 150);
         } catch (err) {
           console.error("Fullscreen failed:", err);
           setIsFullscreen(false);
