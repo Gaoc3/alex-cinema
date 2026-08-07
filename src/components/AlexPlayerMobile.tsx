@@ -1475,7 +1475,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         className={`relative select-none group/player transition-all duration-300 min-h-[200px] ${
           isFullscreen 
             ? 'fixed inset-0 w-screen h-[100dvh] z-[9999] rounded-none border-none bg-black'
-            : 'w-full rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 bg-black aspect-video'
+            : 'w-full rounded-3xl overflow-visible shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 bg-black aspect-video'
         }`}
         style={{ aspectRatio: isFullscreen ? 'auto' : 16/9 }}
         dir="ltr"
@@ -1633,7 +1633,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         {/* Custom React Subtitle Overlay (100% Real-time styling) */}
         {currentSubtitle && (
           <div 
-            className="absolute left-0 w-full text-center pointer-events-none flex flex-col items-center justify-end z-20 transition-all duration-300"
+            className="absolute left-1/2 -translate-x-1/2 w-full max-w-[92%] text-center pointer-events-none flex flex-col items-center justify-end z-20 transition-all duration-300 px-4"
             style={{ 
                bottom: controlsVisible
                  ? isFullscreen
@@ -1642,25 +1642,25 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                  : isFullscreen
                    ? 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)'
                    : 'calc(env(safe-area-inset-bottom, 0px) + 1.25rem)',
-               paddingLeft: '5%',
-               paddingRight: skipActionVisible
-                 ? 'calc(env(safe-area-inset-right, 0px) + clamp(9rem, 38vw, 12rem))'
-                 : '5%'
+               paddingLeft: '0px',
+               paddingRight: '0px'
             }}
           >
             {currentSubtitle.split('\n').map((line, idx) => (
               <span 
                 key={idx} 
-                className="inline-block max-w-full"
+                className="inline-block max-w-full text-center"
                 style={{
                   fontSize: `${(subtitleSize / 100) * (isMobile ? 16 : 24)}px`,
                   fontFamily: `'${selectedFont}', 'Outfit', sans-serif`,
                   backgroundColor: showSubtitleBg ? 'rgba(0,0,0,0.65)' : 'transparent',
                   color: 'white',
-                  padding: showSubtitleBg ? '4px 8px' : '0',
+                  padding: showSubtitleBg ? '4px 12px' : '0',
+                  borderRadius: showSubtitleBg ? '6px' : '0',
                   lineHeight: '1.4',
                   whiteSpace: 'pre-wrap',
-                  textShadow: showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)'
+                  textShadow: showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)',
+                  margin: '0 auto'
                 }}
               >
                 {line}
@@ -1725,20 +1725,20 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           </div>
         )}
 
-        {/* SETTINGS MENU (BOUNDED BOX) - باستخدام النسب المئوية */}
-            {activeDropdown === 'settings' && (
-              <div 
-                className="absolute z-[60] pointer-events-none flex flex-col justify-end items-end"
-                style={{ 
-                  bottom: '18%',       /* ترتفع القائمة بنسبة 18% من أسفل المشغل لتتجاوز شريط التحكم دائماً */
-                  right: '2%',         /* مسافة بسيطة 2% من الحافة اليمنى */
-                  maxHeight: '75%',    /* لا تتجاوز أبداً 75% من طول الفيديو، لكي لا تضرب بالشعار العلوي */
-                }}
-              >
-                <div className="pointer-events-auto h-full max-h-full flex flex-col justify-end">
-                  {renderSettingsMenu()}
-                </div>
-              </div>
+        {/* FLOATING SETTINGS MENU (UNBOUNDED IN INLINE MODE) */}
+        {activeDropdown === 'settings' && (
+          <div 
+            className="absolute z-[999] pointer-events-none flex flex-col justify-end items-end"
+            style={{ 
+              bottom: isFullscreen ? '18%' : '52px',
+              right: isFullscreen ? '2%' : '8px',
+              maxHeight: isFullscreen ? '75%' : '340px',
+            }}
+          >
+            <div className="pointer-events-auto h-auto max-h-full flex flex-col justify-end shadow-[0_15px_40px_rgba(0,0,0,0.9)]">
+              {renderSettingsMenu()}
+            </div>
+          </div>
         )}
 
         {/* BOTTOM CUSTOM CONTROL BAR */}

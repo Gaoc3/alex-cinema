@@ -1584,30 +1584,30 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         {/* Custom React Subtitle Overlay (100% Real-time styling) */}
         {currentSubtitle && (
           <div 
-            className="absolute left-0 w-full text-center pointer-events-none flex flex-col items-center justify-end z-20 transition-all duration-300"
+            className="absolute left-1/2 -translate-x-1/2 w-full max-w-[92%] text-center pointer-events-none flex flex-col items-center justify-end z-20 transition-all duration-300 px-4"
             style={{ 
                bottom: controlsVisible
                  ? `calc(${controlsBarHeight || (isMobile ? 80 : 136)}px + 0.5rem)`
                  : 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
-               paddingLeft: '5%',
-               paddingRight: skipActionVisible
-                 ? 'calc(env(safe-area-inset-right, 0px) + clamp(9rem, 38vw, 12rem))'
-                 : '5%'
+               paddingLeft: '0px',
+               paddingRight: '0px'
             }}
           >
             {currentSubtitle.split('\n').map((line, idx) => (
               <span 
                 key={idx} 
-                className="inline-block max-w-full"
+                className="inline-block max-w-full text-center"
                 style={{
                   fontSize: `${(subtitleSize / 100) * (isMobile ? 16 : 24)}px`,
                   fontFamily: `'${selectedFont}', 'Outfit', sans-serif`,
                   backgroundColor: showSubtitleBg ? 'rgba(0,0,0,0.65)' : 'transparent',
                   color: 'white',
-                  padding: showSubtitleBg ? '4px 8px' : '0',
+                  padding: showSubtitleBg ? '4px 12px' : '0',
+                  borderRadius: showSubtitleBg ? '6px' : '0',
                   lineHeight: '1.4',
                   whiteSpace: 'pre-wrap',
-                  textShadow: showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)'
+                  textShadow: showSubtitleBg ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)',
+                  margin: '0 auto'
                 }}
               >
                 {line}
