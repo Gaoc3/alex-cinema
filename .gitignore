@@ -81,3 +81,13 @@ __pycache__/
 !/docker/router/secrets/.gitkeep
 /docker/tunnel-sshd/secrets/*
 !/docker/tunnel-sshd/secrets/.gitkeep
+
+next_dist.zip
+*.zip
+*.pdf
+almanjam_invoice_modified.*
+crop_*.png
+original_rendered.png
+pdf_text_dict.json
+AAAA*.ttf
+Changa-Variable.ttf

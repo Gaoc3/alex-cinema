@@ -130,16 +130,15 @@ export default async function WatchPage({
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative pt-24 animate-fade-in-up overflow-x-clip z-10">
+    <div className="min-h-screen flex flex-col relative pt-24 sm:pt-28 md:pt-32 animate-fade-in-up overflow-x-clip z-10">
       <div 
         className="fixed inset-0 z-[-1] opacity-20 blur-[60px] bg-cover bg-center saturate-150 transform scale-110 pointer-events-none"
         style={{ backgroundImage: `url(${getVideoImageUrl(video, 'poster')})` }}
       ></div>
 
-      <div className="max-w-screen-2xl mx-auto px-0 sm:px-6 lg:px-8 py-0 sm:py-10 w-full z-10 flex-grow relative">
+      <div className="max-w-screen-2xl mx-auto px-0 sm:px-6 lg:px-8 py-3 sm:py-10 w-full z-10 flex-grow relative">
         <WatchContainer video={video} seasons={seasons} episodes={episodes} />
       </div>
     </div>
   );
 }
-

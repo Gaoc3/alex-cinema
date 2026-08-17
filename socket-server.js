@@ -86,7 +86,15 @@ const io = new Server(server, {
 });
 
 function getMembersArray(room) {
-  return room ? Array.from(room.members.values()) : [];
+  if (!room) return [];
+  const unique = new Map();
+  for (const member of room.members.values()) {
+    const key = member.userId || member.identity || member.name || member.id;
+    if (!unique.has(key) || member.isHost) {
+      unique.set(key, member);
+    }
+  }
+  return Array.from(unique.values());
 }
 
 function toISOString(value) {

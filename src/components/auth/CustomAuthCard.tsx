@@ -152,21 +152,16 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 export default function CustomAuthCard({ mode = "sign-in", redirectUrl = "/home" }: CustomAuthCardProps) {
-  const [isTelegramContext, setIsTelegramContext] = useState<boolean>(true);
-  const [isOutsideTelegram, setIsOutsideTelegram] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
+  // Default to standard browser view so normal users never get trapped in a loading/error loop
+  const [isOutsideTelegram, setIsOutsideTelegram] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const authProcessedRef = useRef(false);
   const telegramAuthControllerRef = useRef<AbortController | null>(null);
-  const browserPreparationControllerRef = useRef<AbortController | null>(null);
-  const browserPreparationRef = useRef<Promise<void> | null>(null);
-  const telegramDetectionTimerRef = useRef<number | null>(null);
-  const telegramDetectionAttemptsRef = useRef(0);
 
   const processTelegramAuth = useCallback(async (payload: TelegramAuthPayload) => {
     if (authProcessedRef.current) return;
     authProcessedRef.current = true;
-    setIsTelegramContext(true);
     setIsOutsideTelegram(false);
     setLoading(true);
     setErrorMessage(null);
@@ -195,10 +190,12 @@ export default function CustomAuthCard({ mode = "sign-in", redirectUrl = "/home"
       console.error("[Telegram Login Error]:", error);
 
       setErrorMessage(
-        getErrorMessage(error, "تعذر التحقق من حساب تليجرام الحالي. أعد فتح التطبيق من البوت.")
+        getErrorMessage(error, "تعذر التحقق من حساب تليجرام الحالي. يمكنك المتابعة عبر البريد أو تصفح كزائر.")
       );
       authProcessedRef.current = false;
       setLoading(false);
+      // Fallback to browser auth so user is never locked out
+      setIsOutsideTelegram(true);
     } finally {
       if (telegramAuthControllerRef.current === operationController) {
         telegramAuthControllerRef.current = null;
@@ -208,150 +205,58 @@ export default function CustomAuthCard({ mode = "sign-in", redirectUrl = "/home"
 
   useEffect(() => {
     let disposed = false;
-    const tg = window.Telegram?.WebApp;
-
-    const showBrowserAuth = () => {
-      if (disposed) return;
-
-      setIsOutsideTelegram(true);
-      setIsTelegramContext(false);
-      setLoading(false);
-
-      const callbackError = new URLSearchParams(window.location.search).get("error");
-      if (callbackError) {
-        setErrorMessage("لم يكتمل تسجيل الدخول عبر تليجرام. يمكنك المحاولة مجددًا.");
-      }
-    };
-
-    const prepareBrowserAuth = () => {
-      if (!browserPreparationRef.current) {
-        const operationController = new AbortController();
-        browserPreparationControllerRef.current?.abort();
-        browserPreparationControllerRef.current = operationController;
-        const sessionCheck = fetchWithTimeout("/api/auth/me", {
-          credentials: "same-origin",
-          cache: "no-store",
-          signal: operationController.signal,
-        }, 6_000)
-          .then(async (response) => {
-            if (disposed) return;
-            if (!response.ok) {
-              showBrowserAuth();
-              return;
-            }
-
-            const data = await response.json().catch(() => null);
-            if (data?.authenticated) {
-              window.location.replace("/home");
-              return;
-            }
-
-            showBrowserAuth();
-          })
-          .catch((error) => {
-            console.error("[Existing Session Check Error]:", error);
-            showBrowserAuth();
-          });
-
-        browserPreparationRef.current = sessionCheck.finally(() => {
-          if (browserPreparationControllerRef.current === operationController) {
-            browserPreparationControllerRef.current = null;
-          }
-          browserPreparationRef.current = null;
-        });
-      }
-    };
+    const tg = typeof window !== "undefined" ? window.Telegram?.WebApp : null;
 
     const detectTelegramAccount = () => {
+      if (disposed) return;
       configureTelegramWebApp();
 
       const { initData, unsafeUser } = getTelegramLaunchPayload();
 
-      const isTelegramApp = Boolean(initData || unsafeUser);
-
-      if (isTelegramApp) {
-        telegramDetectionAttemptsRef.current = 0;
+      // Only attempt Telegram auto-auth if there is actual valid initData injected by Telegram
+      if (initData && initData.length > 10) {
         void processTelegramAuth({ initData, telegramData: unsafeUser });
         return;
       }
 
-      // The SDK can appear a few frames before Telegram injects initData.
-      // Never expose an external OAuth surface during that gap.
-      if (isTelegramWebAppContext()) {
-        setIsTelegramContext(true);
-        setIsOutsideTelegram(false);
-
-        if (telegramDetectionAttemptsRef.current < 20) {
-          setLoading(true);
-          telegramDetectionAttemptsRef.current += 1;
-          if (telegramDetectionTimerRef.current !== null) {
-            window.clearTimeout(telegramDetectionTimerRef.current);
-          }
-          telegramDetectionTimerRef.current = window.setTimeout(detectTelegramAccount, 150);
-          return;
-        }
-
-        setLoading(false);
-        setErrorMessage("تعذر قراءة حساب تليجرام الحالي. أغلق الويب آب وافتحه من البوت مجددًا.");
-        return;
+      // If we are in regular desktop/mobile browser:
+      if (typeof window !== "undefined") {
+        // Clear any stale context flag
+        try {
+          sessionStorage.removeItem("alex-tg-webapp-context");
+        } catch {}
       }
 
-      prepareBrowserAuth();
+      setIsOutsideTelegram(true);
+      setLoading(false);
     };
+
+    detectTelegramAccount();
 
     const handleResume = () => detectTelegramAccount();
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") detectTelegramAccount();
-    };
-
     window.addEventListener("focus", handleResume);
     window.addEventListener("pageshow", handleResume);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     try {
       tg?.onEvent?.("activated", handleResume);
-    } catch (error) {
-      console.error("[Telegram Activated Listener Error]:", error);
-    }
-
-    detectTelegramAccount();
+    } catch {}
 
     return () => {
       disposed = true;
       telegramAuthControllerRef.current?.abort();
       telegramAuthControllerRef.current = null;
-      browserPreparationControllerRef.current?.abort();
-      browserPreparationControllerRef.current = null;
-      if (telegramDetectionTimerRef.current !== null) {
-        window.clearTimeout(telegramDetectionTimerRef.current);
-        telegramDetectionTimerRef.current = null;
-      }
       window.removeEventListener("focus", handleResume);
       window.removeEventListener("pageshow", handleResume);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-
-      try {
-        tg?.offEvent?.("activated", handleResume);
-      } catch (error) {
-        console.error("[Telegram Activated Listener Cleanup Error]:", error);
-      }
     };
   }, [processTelegramAuth]);
 
   const startTelegramOidc = () => {
-    if (isTelegramWebAppContext()) {
-      setIsOutsideTelegram(false);
-      setIsTelegramContext(true);
-      setLoading(false);
-      setErrorMessage("تسجيل الدخول داخل تليجرام يتم تلقائيًا. أعد فتح الويب آب من البوت.");
-      return;
-    }
     window.location.assign("/api/auth/telegram/start");
   };
 
   const [clerkMounted, setClerkMounted] = useState(false);
   useEffect(() => {
-    const timer = setTimeout(() => setClerkMounted(true), 350);
+    const timer = setTimeout(() => setClerkMounted(true), 250);
     return () => clearTimeout(timer);
   }, []);
 
@@ -371,128 +276,111 @@ export default function CustomAuthCard({ mode = "sign-in", redirectUrl = "/home"
           <div className="absolute -bottom-28 -left-20 size-64 rounded-full bg-sky-500/10 blur-3xl" />
         </div>
 
-        {isOutsideTelegram ? (
-          <div className="relative">
-            {/* Header Title at VERY TOP of Card */}
-            <div className="mb-5 text-right border-b border-white/10 pb-4">
-              <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-                {mode === "sign-in" ? "تسجيل الدخول" : "إنشاء حساب جديد"}
-              </h2>
-              <p className="mt-1 text-xs font-bold text-slate-300">
-                {mode === "sign-in" ? "مرحباً بك! اختر وسيلة الدخول المناسبة" : "أنشئ حسابك واستمتع بالمشاهدة والدردشة المباشرة"}
-              </p>
-            </div>
+        <div className="relative">
+          {/* Header Title */}
+          <div className="mb-5 text-right border-b border-white/10 pb-4">
+            <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+              {mode === "sign-in" ? "تسجيل الدخول" : "إنشاء حساب جديد"}
+            </h2>
+            <p className="mt-1 text-xs font-bold text-slate-300">
+              {mode === "sign-in"
+                ? "مرحباً بك! اختر وسيلة الدخول المناسبة"
+                : "أنشئ حسابك واستمتع بالمشاهدة والدردشة المباشرة"}
+            </p>
+          </div>
 
-            {errorMessage && (
-              <div role="alert" className="mb-4 flex items-start gap-3 rounded-2xl border border-red-400/25 bg-red-950/35 p-4 text-sm font-bold leading-6 text-red-100">
-                <i className="fa-solid fa-circle-exclamation mt-1 text-red-400" aria-hidden="true" />
-                <p>{errorMessage}</p>
+          {errorMessage && (
+            <div
+              role="alert"
+              className="mb-4 flex items-start gap-3 rounded-2xl border border-red-400/25 bg-red-950/35 p-4 text-sm font-bold leading-6 text-red-100"
+            >
+              <i className="fa-solid fa-circle-exclamation mt-1 text-red-400" aria-hidden="true" />
+              <p>{errorMessage}</p>
+            </div>
+          )}
+
+          {/* Quick Telegram OAuth Button */}
+          <button
+            type="button"
+            onClick={startTelegramOidc}
+            className="group relative flex w-full items-center justify-center gap-3 rounded-2xl border border-sky-400/40 bg-gradient-to-r from-sky-500/20 via-sky-400/15 to-blue-600/20 p-3.5 text-sm font-black text-sky-100 shadow-[0_10px_30px_rgba(14,165,233,0.15)] transition duration-200 hover:border-sky-300/70 hover:bg-sky-500/30 hover:text-white hover:shadow-[0_14px_36px_rgba(14,165,233,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 active:scale-[0.99] cursor-pointer"
+          >
+            <span className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 transition group-hover:opacity-100" />
+            <i className="fa-brands fa-telegram text-lg text-sky-300 transition group-hover:scale-110" aria-hidden="true" />
+            <span>الدخول السريع عبر تليجرام</span>
+          </button>
+
+          {/* Divider */}
+          <div className="my-5 flex items-center gap-3" aria-hidden="true">
+            <span className="h-px flex-1 bg-white/10" />
+            <span className="text-xs font-bold text-slate-300">أو عبر البريد الإلكتروني</span>
+            <span className="h-px flex-1 bg-white/10" />
+          </div>
+
+          {/* Clerk Auth Component */}
+          <div className="relative min-h-[220px] w-full">
+            {!clerkMounted && (
+              <div className="absolute inset-0 z-20 space-y-4 bg-[#102139] pointer-events-none">
+                <div className="h-12 w-full rounded-2xl border border-white/20 bg-slate-800/60 flex items-center justify-center gap-3 px-4 shadow-sm animate-pulse">
+                  <div className="size-5 rounded-full bg-white/20" />
+                  <div className="h-4 w-36 rounded-md bg-white/15" />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-3.5 w-28 rounded bg-white/10 animate-pulse" />
+                  <div className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 animate-pulse" />
+                </div>
+                {mode === "sign-up" && (
+                  <div className="space-y-2">
+                    <div className="h-3.5 w-24 rounded bg-white/10 animate-pulse" />
+                    <div className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 animate-pulse" />
+                  </div>
+                )}
+                <div className="h-12 w-full rounded-2xl bg-red-600/40 border border-red-500/30 animate-pulse" />
               </div>
             )}
 
-            {/* Quick Telegram OAuth Button */}
-            <button
-              type="button"
-              onClick={startTelegramOidc}
-              className="group relative flex w-full items-center justify-center gap-3 rounded-2xl border border-sky-400/40 bg-gradient-to-r from-sky-500/20 via-sky-400/15 to-blue-600/20 p-3.5 text-sm font-black text-sky-100 shadow-[0_10px_30px_rgba(14,165,233,0.15)] transition duration-200 hover:border-sky-300/70 hover:bg-sky-500/30 hover:text-white hover:shadow-[0_14px_36px_rgba(14,165,233,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 active:scale-[0.99]"
-            >
-              <span className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 transition group-hover:opacity-100" />
-              <i className="fa-brands fa-telegram text-lg text-sky-300 transition group-hover:scale-110" aria-hidden="true" />
-              <span>الدخول السريع عبر تليجرام</span>
-            </button>
-
-            {/* Divider */}
-            <div className="my-5 flex items-center gap-3" aria-hidden="true">
-              <span className="h-px flex-1 bg-white/10" />
-              <span className="text-xs font-bold text-slate-300">أو عبر البريد الإلكتروني</span>
-              <span className="h-px flex-1 bg-white/10" />
-            </div>
-
-            {/* Clerk Auth Component with Placeholder Skeleton until Mounted */}
-            <div className="relative min-h-[220px] w-full">
-              {!clerkMounted && (
-                <div className="absolute inset-0 z-20 space-y-4 bg-[#102139] pointer-events-none">
-                  {/* GitHub Social Button Skeleton */}
-                  <div className="h-12 w-full rounded-2xl border border-white/20 bg-slate-800/60 flex items-center justify-center gap-3 px-4 shadow-sm animate-pulse">
-                    <div className="size-5 rounded-full bg-white/20" />
-                    <div className="h-4 w-36 rounded-md bg-white/15" />
-                  </div>
-
-                  {/* Email Input Skeleton */}
-                  <div className="space-y-2">
-                    <div className="h-3.5 w-28 rounded bg-white/10 animate-pulse" />
-                    <div className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 animate-pulse" />
-                  </div>
-                  {mode === 'sign-up' && (
-                    <div className="space-y-2">
-                      <div className="h-3.5 w-24 rounded bg-white/10 animate-pulse" />
-                      <div className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 animate-pulse" />
-                    </div>
-                  )}
-
-                  {/* Submit Button Skeleton */}
-                  <div className="h-12 w-full rounded-2xl bg-red-600/40 border border-red-500/30 animate-pulse" />
-                </div>
+            <div className={clerkMounted ? "opacity-100 transition-opacity duration-300" : "opacity-0"}>
+              {mode === "sign-in" ? (
+                <SignIn
+                  routing="path"
+                  path="/sign-in"
+                  signUpUrl={`/sign-up${redirectUrl !== "/home" ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ""}`}
+                  forceRedirectUrl={redirectUrl}
+                  fallbackRedirectUrl={redirectUrl}
+                  appearance={clerkAppearance}
+                />
+              ) : (
+                <SignUp
+                  routing="path"
+                  path="/sign-up"
+                  signInUrl={`/sign-in${redirectUrl !== "/home" ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ""}`}
+                  forceRedirectUrl={redirectUrl}
+                  fallbackRedirectUrl={redirectUrl}
+                  appearance={clerkAppearance}
+                />
               )}
-
-              <div className={clerkMounted ? 'opacity-100 transition-opacity duration-300' : 'opacity-0'}>
-                {mode === "sign-in" ? (
-                  <SignIn
-                    routing="path"
-                    path="/sign-in"
-                    signUpUrl={`/sign-up${redirectUrl !== '/home' ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ''}`}
-                    forceRedirectUrl={redirectUrl}
-                    fallbackRedirectUrl={redirectUrl}
-                    appearance={clerkAppearance}
-                  />
-                ) : (
-                  <SignUp
-                    routing="path"
-                    path="/sign-up"
-                    signInUrl={`/sign-in${redirectUrl !== '/home' ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ''}`}
-                    forceRedirectUrl={redirectUrl}
-                    fallbackRedirectUrl={redirectUrl}
-                    appearance={clerkAppearance}
-                  />
-                )}
-              </div>
-            </div>
-
-            <div className="mt-4 flex min-w-0 flex-col items-stretch gap-3 rounded-2xl border border-white/15 bg-white/[0.065] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] min-[440px]:flex-row min-[440px]:items-center min-[440px]:justify-between">
-              <div className="min-w-0 text-center min-[440px]:text-right">
-                <p className="text-sm font-black text-slate-100 min-[440px]:whitespace-nowrap">
-                  {mode === "sign-in" ? "ليس لديك حساب بعد؟" : "لديك حساب بالفعل؟"}
-                </p>
-              </div>
-              <Link
-                href={
-                  mode === "sign-in"
-                    ? `/sign-up${redirectUrl !== '/home' ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ''}`
-                    : `/sign-in${redirectUrl !== '/home' ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ''}`
-                }
-                className="inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/12 px-4 py-2 text-sm font-black text-red-200 shadow-[0_8px_22px_rgba(229,9,20,0.12)] transition hover:border-red-300/50 hover:bg-red-500/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/70 min-[440px]:w-auto"
-              >
-                <i className={`fa-solid ${mode === "sign-in" ? "fa-user-plus" : "fa-arrow-right-to-bracket"} text-xs`} aria-hidden="true" />
-                <span>{mode === "sign-in" ? "إنشاء حساب جديد" : "تسجيل الدخول"}</span>
-              </Link>
             </div>
           </div>
-        ) : (
-          <div role="alert" className="relative flex min-h-52 flex-col items-center justify-center gap-4 rounded-3xl border border-red-400/25 bg-red-950/30 p-6 text-center">
-            <i className="fa-solid fa-triangle-exclamation text-3xl text-red-400" aria-hidden="true" />
-            <p className="text-sm font-bold leading-7 text-red-100">
-              {errorMessage || "تعذر التحقق من حساب تليجرام الحالي."}
-            </p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="rounded-xl bg-[#e50914] px-6 py-3 text-sm font-black text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 active:scale-[0.98]"
+
+          <div className="mt-4 flex min-w-0 flex-col items-stretch gap-3 rounded-2xl border border-white/15 bg-white/[0.065] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] min-[440px]:flex-row min-[440px]:items-center min-[440px]:justify-between">
+            <div className="min-w-0 text-center min-[440px]:text-right">
+              <p className="text-sm font-black text-slate-100 min-[440px]:whitespace-nowrap">
+                {mode === "sign-in" ? "ليس لديك حساب بعد؟" : "لديك حساب بالفعل؟"}
+              </p>
+            </div>
+            <Link
+              href={
+                mode === "sign-in"
+                  ? `/sign-up${redirectUrl !== "/home" ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ""}`
+                  : `/sign-in${redirectUrl !== "/home" ? `?redirect_url=${encodeURIComponent(redirectUrl)}` : ""}`
+              }
+              className="inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/12 px-4 py-2 text-sm font-black text-red-200 shadow-[0_8px_22px_rgba(229,9,20,0.12)] transition hover:border-red-300/50 hover:bg-red-500/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/70 min-[440px]:w-auto"
             >
-              إعادة المحاولة
-            </button>
+              <i className={`fa-solid ${mode === "sign-in" ? "fa-user-plus" : "fa-arrow-right-to-bracket"} text-xs`} aria-hidden="true" />
+              <span>{mode === "sign-in" ? "إنشاء حساب جديد" : "تسجيل الدخول"}</span>
+            </Link>
           </div>
-        )}
-
+        </div>
       </div>
     </section>
   );

@@ -21,11 +21,14 @@ export default function Sidebar() {
   // Force re-render on query parameter changes to keep link highlights updated
   const searchParamsString = searchParams ? searchParams.toString() : '';
 
+  // Automatically close mobile drawer when route changes
+  useEffect(() => {
+    closeSidebar();
+  }, [pathname, searchParamsString]);
+
   const handleNav = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     void e;
     void href;
-    // Let Next.js <Link> handle the actual routing so it correctly clears query params
-    closeSidebar();
   };
 
   // Auto-expand submenus based on pathname context (Zero-Legacy Context-Awareness)
@@ -52,10 +55,17 @@ export default function Sidebar() {
         const isMobile = window.innerWidth < 1280;
         const savedState = localStorage.getItem('sidebar-collapsed');
         const defaultCollapsed = savedState === 'false' ? false : true;
-        if (!isMobile && defaultCollapsed && !document.body.classList.contains('sidebar-collapsed')) {
-          document.body.classList.add('sidebar-collapsed');
+        if (!isMobile) {
+          if (defaultCollapsed) {
+            document.body.classList.add('sidebar-collapsed');
+            document.body.classList.remove('sidebar-expanded');
+            setIsCollapsed(true);
+          } else {
+            document.body.classList.remove('sidebar-collapsed');
+            document.body.classList.add('sidebar-expanded');
+            setIsCollapsed(false);
+          }
         }
-        setIsCollapsed(isMobile ? false : document.body.classList.contains('sidebar-collapsed'));
         setIsMobileSidebarOpen(document.body.classList.contains('sidebar-open'));
         setLayout({
           isShortScreen: window.innerHeight < 750
@@ -166,7 +176,9 @@ export default function Sidebar() {
       />
       
       <aside 
-        className="fixed top-0 right-0 w-20 z-[60] flex flex-col bg-[#06070a]/95 backdrop-blur-2xl sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/[0.05] xl:border-l-0 rounded-none shadow-2xl xl:shadow-none h-screen" 
+        className={`fixed top-0 right-0 z-[60] flex flex-col bg-[#06070a]/95 backdrop-blur-2xl sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/[0.05] xl:border-l-0 rounded-none shadow-2xl xl:shadow-none h-screen ${
+          isMobileSidebarOpen ? 'w-72 max-w-[85vw]' : (isCollapsed ? 'w-20 xl:w-20' : 'w-72 xl:w-72')
+        }`} 
       >
 
         {/* Sidebar Header (Zero-Legacy Cinematic Style) */}

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -12,28 +14,29 @@ interface ActionToolbarProps {
   videoId: string;
 }
 
-/* ── Presentational sub-components (Zero-legacy: pure, no side-effects) ── */
-
 const FavoriteButton = ({ active, onClick }: { active: boolean; onClick: () => void }) => (
   <button
+    type="button"
     onClick={onClick}
-    className={`flex items-center gap-2 font-black text-sm px-5 py-2.5 rounded-2xl border transition-all duration-300 cursor-pointer select-none ${
+    className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 font-black text-xs sm:text-sm px-4 py-2.5 rounded-xl sm:rounded-2xl border transition-all duration-300 cursor-pointer select-none active:scale-95 ${
       active
-        ? 'bg-alex-primary text-white border-transparent shadow-[0_0_20px_rgba(229,9,20,0.4)]'
-        : 'bg-white/5 hover:bg-alex-primary/80 text-white border-white/10 hover:border-transparent hover:shadow-[0_0_20px_rgba(229,9,20,0.3)]'
+        ? 'bg-alex-primary text-white border-transparent shadow-[0_0_18px_rgba(229,9,20,0.5)]'
+        : 'bg-white/10 hover:bg-white/20 text-gray-200 hover:text-white border-white/15'
     }`}
   >
-    <i className={`fa-heart text-base ${active ? 'fa-solid' : 'fa-regular'}`}></i>
-    {active ? 'في المفضلة' : 'أضف للمفضلة'}
+    <i className={`fa-heart text-xs sm:text-sm ${active ? 'fa-solid' : 'fa-regular'}`}></i>
+    <span>{active ? 'في المفضلة' : 'أضف للمفضلة'}</span>
   </button>
 );
 
 const ShareButton = ({ onClick }: { onClick: () => void }) => (
   <button
+    type="button"
     onClick={onClick}
-    className="flex items-center gap-2 font-black text-sm px-5 py-2.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white hover:text-black text-white transition-all duration-300 cursor-pointer select-none hover:shadow-md"
+    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 font-black text-xs sm:text-sm px-4 py-2.5 rounded-xl sm:rounded-2xl border border-white/15 bg-white/10 hover:bg-white/20 text-gray-200 hover:text-white transition-all duration-300 cursor-pointer select-none active:scale-95"
   >
-    <i className="fa-solid fa-share-nodes text-base"></i> مشاركة
+    <i className="fa-solid fa-share-nodes text-xs sm:text-sm"></i>
+    <span>مشاركة</span>
   </button>
 );
 
@@ -48,7 +51,13 @@ const WatchWithFriendsButton = ({ videoId }: { videoId: string }) => {
       const res = await createRoom({ title: 'روم مشاهدة جماعية', movieId: videoId });
       if (res.success && res.roomId) {
         toast.success('تم إنشاء روم المشاهدة بنجاح! 🍿');
-        router.push(`/room/${res.roomId}?create=true`);
+        // In Telegram WebApp, dispatch a custom event for in-app room navigation
+        const isTelegramWebApp = typeof window !== 'undefined' && !!(window as any).Telegram?.WebApp?.initDataUnsafe;
+        if (isTelegramWebApp) {
+          window.dispatchEvent(new CustomEvent('telegram:join-room', { detail: { roomId: res.roomId } }));
+        } else {
+          router.push(`/room/${res.roomId}?create=true`);
+        }
       } else {
         toast.error(res.error || 'يجب تسجيل الدخول لإنشاء روم');
       }
@@ -62,48 +71,62 @@ const WatchWithFriendsButton = ({ videoId }: { videoId: string }) => {
 
   return (
     <button
+      type="button"
       onClick={handleWatchWithFriends}
       disabled={isLoading}
-      className="flex items-center gap-2 font-black text-sm px-5 py-2.5 rounded-2xl border border-purple-500 bg-purple-600 hover:bg-purple-500 text-white transition-all duration-300 cursor-pointer select-none shadow-[0_0_15px_rgba(147,51,234,0.4)] hover:shadow-[0_0_25px_rgba(147,51,234,0.6)] disabled:opacity-50 disabled:cursor-not-allowed"
+      className="flex-1 sm:flex-initial flex items-center justify-center gap-2 font-black text-xs sm:text-sm px-4 py-2.5 rounded-xl sm:rounded-2xl border border-purple-500/60 bg-purple-600 hover:bg-purple-500 text-white transition-all duration-300 cursor-pointer select-none shadow-[0_0_15px_rgba(147,51,234,0.4)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {isLoading ? (
-        <i className="fa-solid fa-spinner animate-spin text-base"></i>
+        <i className="fa-solid fa-spinner animate-spin text-xs sm:text-sm"></i>
       ) : (
-        <i className="fa-solid fa-users text-base"></i>
+        <i className="fa-solid fa-users text-xs sm:text-sm"></i>
       )}
-      شاهد مع الأصدقاء
+      <span>شاهد مع الأصدقاء</span>
     </button>
   );
 };
 
-const VoteButton = ({ type, count, active, onClick }: {
+const VoteButton = ({
+  type,
+  count,
+  active,
+  onClick,
+}: {
   type: 'like' | 'dislike';
   count: number;
   active: boolean;
   onClick: () => void;
 }) => {
   const isLike = type === 'like';
-  const baseColor = isLike ? 'green' : 'red';
   return (
     <button
+      type="button"
       onClick={onClick}
       title={isLike ? 'أعجبني' : 'لم يعجبني'}
-      className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-2xl border transition-all duration-300 cursor-pointer select-none ${
+      className={`flex items-center justify-center gap-1.5 text-xs sm:text-sm font-black px-3.5 py-2.5 rounded-xl sm:rounded-2xl border transition-all duration-300 cursor-pointer select-none active:scale-95 ${
         active
-          ? `bg-${baseColor}-600 text-white border-${baseColor}-600 shadow-[0_0_12px_rgba(${isLike ? '22,163,74' : '220,38,38'},0.4)]`
-          : `bg-${baseColor}-500/10 text-${baseColor}-400 border-${baseColor}-500/20 hover:bg-${baseColor}-500/20`
+          ? isLike
+            ? 'bg-green-600 text-white border-green-500 shadow-[0_0_12px_rgba(22,163,74,0.5)]'
+            : 'bg-red-600 text-white border-red-500 shadow-[0_0_12px_rgba(220,38,38,0.5)]'
+          : isLike
+          ? 'bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20'
+          : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20'
       }`}
     >
-      <i className={`fa-solid fa-thumbs-${isLike ? 'up' : 'down'} text-sm`}></i>
+      <i className={`fa-solid fa-thumbs-${isLike ? 'up' : 'down'} text-xs sm:text-sm`}></i>
       <span className="font-en text-xs">{count}</span>
     </button>
   );
 };
 
-/* ── Main toolbar container (Zero-legacy: no border/margin – parent controls spacing) ── */
-
 export default function ActionToolbar({
-  isFavorite, toggleFavorite, likes, dislikes, userVote, handleVote, videoId
+  isFavorite,
+  toggleFavorite,
+  likes,
+  dislikes,
+  userVote,
+  handleVote,
+  videoId,
 }: ActionToolbarProps) {
   const handleShare = () => {
     if (typeof window !== 'undefined') {
@@ -113,18 +136,20 @@ export default function ActionToolbar({
   };
 
   return (
-    <div className="w-full flex flex-wrap items-center justify-between gap-3">
-      {/* Right side: Primary actions */}
-      <div className="flex items-center gap-2.5 flex-wrap">
+    <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-3">
+      {/* Primary Actions Grid on mobile, inline row on desktop */}
+      <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
         <WatchWithFriendsButton videoId={videoId} />
         <FavoriteButton active={isFavorite} onClick={toggleFavorite} />
-        <ShareButton onClick={handleShare} />
       </div>
 
-      {/* Left side: Voting */}
-      <div className="flex items-center gap-2">
-        <VoteButton type="like" count={likes} active={userVote === 'like'} onClick={() => handleVote('like')} />
-        <VoteButton type="dislike" count={dislikes} active={userVote === 'dislike'} onClick={() => handleVote('dislike')} />
+      {/* Secondary Actions Row */}
+      <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
+        <ShareButton onClick={handleShare} />
+        <div className="flex items-center gap-2 shrink-0">
+          <VoteButton type="like" count={likes} active={userVote === 'like'} onClick={() => handleVote('like')} />
+          <VoteButton type="dislike" count={dislikes} active={userVote === 'dislike'} onClick={() => handleVote('dislike')} />
+        </div>
       </div>
     </div>
   );

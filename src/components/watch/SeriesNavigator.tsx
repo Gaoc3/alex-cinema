@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { getImageUrl } from '@/utils/imageHelper';
 
@@ -46,11 +48,11 @@ export default function SeriesNavigator({
   const [canScrollStart, setCanScrollStart] = useState(false);
   const [canScrollEnd, setCanScrollEnd] = useState(false);
 
-  // Format seconds to hh:mm:ss or mm:ss
+  // Format seconds to mm:ss or hh:mm:ss
   const formatDuration = (secondsStr: string | undefined | null) => {
-    if (!secondsStr) return "45:00";
+    if (!secondsStr) return '45:00';
     const seconds = parseInt(secondsStr);
-    if (isNaN(seconds) || seconds <= 0) return "45:00";
+    if (isNaN(seconds) || seconds <= 0) return '45:00';
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
@@ -60,26 +62,22 @@ export default function SeriesNavigator({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Update scroll arrow visibility
+  // Update scroll arrow visibility for desktop carousel
   const updateScrollButtons = useCallback(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
-    // RTL: scrollLeft is negative in RTL containers in some browsers
     const scrollLeft = Math.abs(el.scrollLeft);
     setCanScrollStart(scrollLeft > 8);
     setCanScrollEnd(scrollLeft + el.clientWidth < el.scrollWidth - 8);
   }, []);
 
-  // Scroll the carousel by a full page width
   const scrollBy = useCallback((direction: 'start' | 'end') => {
     const el = scrollContainerRef.current;
     if (!el) return;
-    // RTL scroll: "start" = right (positive), "end" = left (negative)
     const amount = direction === 'end' ? -el.clientWidth : el.clientWidth;
     el.scrollBy({ left: amount, behavior: 'smooth' });
   }, []);
 
-  // Auto-align active episode card into view
   useEffect(() => {
     if (scrollContainerRef.current) {
       const activeCard = scrollContainerRef.current.querySelector('[data-active="true"]');
@@ -87,15 +85,13 @@ export default function SeriesNavigator({
         activeCard.scrollIntoView({
           behavior: 'smooth',
           block: 'nearest',
-          inline: 'center'
+          inline: 'center',
         });
       }
     }
-    // Re-check scroll buttons after content settles
     setTimeout(updateScrollButtons, 300);
   }, [activeEpisode?.nb, updateScrollButtons]);
 
-  // Check scroll buttons on mount and when season changes
   useEffect(() => {
     updateScrollButtons();
     const el = scrollContainerRef.current;
@@ -105,159 +101,168 @@ export default function SeriesNavigator({
   }, [currentSeason, seasonEpisodes, updateScrollButtons]);
 
   return (
-    <div className="flex flex-col gap-5 w-full animate-fade-in-up" dir="rtl">
-      <div className="bg-[#0b101d]/90 backdrop-blur-2xl rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl border border-white/10 relative overflow-hidden w-full flex flex-col gap-5">
+    <div className="flex flex-col gap-4 w-full animate-fade-in-up" dir="rtl">
+      <div className="bg-[#0c1322] rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-xl border border-white/10 relative overflow-hidden w-full flex flex-col gap-4 sm:gap-6">
         
-        {/* Header Area & Season Selector */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4 relative z-10 w-full">
-          
+        {/* ══════ Header Area: Title, Badges & Responsive Season Grid ══════ */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-white/10 pb-4 relative z-10 w-full">
           {/* Title Area */}
-          <div className="flex items-center gap-3">
-            <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2.5">
-              <div className="w-2 h-6 bg-gradient-to-b from-[#E50914] to-rose-600 rounded-full shadow-[0_0_12px_rgba(229,9,20,0.6)] animate-pulse"></div>
-              <span>حلقات المسلسل</span>
-            </h3>
+          <div className="flex items-center gap-3 justify-between sm:justify-start">
+            <div className="flex items-center gap-2.5">
+              <div className="w-1.5 sm:w-2 h-5 sm:h-6 bg-alex-primary rounded-full shadow-[0_0_12px_rgba(229,9,20,0.6)]"></div>
+              <h3 className="text-base sm:text-lg font-black text-white">حلقات المسلسل</h3>
+            </div>
             
-            {/* Badges */}
+            {/* Meta Count Badges */}
             <div className="flex items-center gap-2">
-              <span className="bg-blue-500/15 border border-blue-500/30 text-blue-400 px-2.5 py-0.5 rounded-xl text-[10px] font-extrabold">
+              <span className="bg-blue-500/15 border border-blue-500/30 text-blue-400 px-2.5 py-0.5 rounded-xl text-[11px] font-black">
                 {seasons.length} مواسم
               </span>
-              <span className="bg-amber-500/15 border border-amber-500/30 text-amber-400 px-2.5 py-0.5 rounded-xl text-[10px] font-extrabold">
+              <span className="bg-amber-500/15 border border-amber-500/30 text-amber-400 px-2.5 py-0.5 rounded-xl text-[11px] font-black">
                 {episodes.length} حلقة
               </span>
             </div>
           </div>
 
-          {/* Seasons Selector */}
+          {/* Season Selector - Balanced Grid with Zero Cutoffs */}
           {seasons.length > 0 && (
-            <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1 overflow-x-auto custom-scrollbar max-w-full">
-              {seasons.map((s) => {
-                const isSelected = currentSeason === s.season;
-                return (
-                  <button
-                    key={s.season}
-                    type="button"
-                    onClick={() => setCurrentSeason(s.season)}
-                    className={`min-h-11 cursor-pointer whitespace-nowrap rounded-xl px-4 py-1.5 text-xs font-black transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
-                      isSelected
-                        ? 'bg-gradient-to-r from-red-600 to-rose-700 text-white shadow-[0_2px_12px_rgba(229,9,20,0.4)] border border-white/20 scale-[1.02]'
-                        : 'text-gray-400 hover:text-white bg-transparent hover:bg-white/5'
-                    }`}
-                  >
-                    الموسم {s.season}
-                  </button>
-                );
-              })}
+            <div className="w-full sm:w-auto bg-[#070b14] border border-white/10 rounded-2xl p-1.5 shadow-inner">
+              <div
+                className={`grid gap-1.5 w-full ${
+                  seasons.length <= 2
+                    ? 'grid-cols-2'
+                    : seasons.length === 3
+                    ? 'grid-cols-3'
+                    : seasons.length === 4
+                    ? 'grid-cols-2 xs:grid-cols-4 sm:flex'
+                    : 'grid-cols-3 xs:grid-cols-4 sm:flex sm:flex-wrap'
+                }`}
+              >
+                {seasons.map((s) => {
+                  const isSelected = currentSeason === s.season;
+                  return (
+                    <button
+                      key={s.season}
+                      type="button"
+                      onClick={() => setCurrentSeason(s.season)}
+                      className={`min-h-[40px] sm:min-h-[42px] cursor-pointer rounded-xl px-3 sm:px-4 py-2 text-xs font-black transition-all duration-300 flex items-center justify-center text-center active:scale-95 ${
+                        isSelected
+                          ? 'bg-alex-primary text-white shadow-[0_0_18px_rgba(229,9,20,0.5)] border border-white/20'
+                          : 'text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/5'
+                      }`}
+                    >
+                      <span>الموسم {s.season}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
 
-        {/* ------------------------------------------------------------- */}
-        {/* MOBILE VIEW (SM:HIDDEN): Vertical Episodes List Layout         */}
-        {/* ------------------------------------------------------------- */}
-        <details key={`mobile-${currentSeason}`} className="group w-full rounded-2xl border border-white/10 bg-white/[0.025] sm:hidden">
-          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm font-extrabold text-white marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-400">
-            <span className="flex min-w-0 items-center gap-2">
-              <i className="fa-solid fa-list-ol shrink-0 text-red-400" aria-hidden="true" />
-              <span className="truncate">حلقات الموسم {currentSeason}</span>
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-slate-300">{seasonEpisodes.length}</span>
+        {/* ══════ MOBILE VIEW (sm:hidden): Direct Episodes Stream ══════ */}
+        <div key={`mobile-${currentSeason}`} className="flex flex-col gap-3 sm:hidden w-full">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs font-black text-gray-300 flex items-center gap-2">
+              <i className="fa-solid fa-list-ol text-alex-primary text-xs"></i>
+              حلقات الموسم {currentSeason}
             </span>
-            <i className="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
-          </summary>
+            <span className="text-[11px] font-bold text-gray-400">
+              {seasonEpisodes.length} حلقة متاحة
+            </span>
+          </div>
 
-          <div className="custom-scrollbar max-h-[min(52svh,32rem)] space-y-3 overflow-y-auto border-t border-white/10 p-3">
+          <div className="space-y-2.5 max-h-[520px] overflow-y-auto pr-0.5 custom-scrollbar">
             {seasonEpisodes.map((ep) => {
               const isActiveEp = activeEpisode?.nb === ep.nb;
               return (
-              <button
-                key={ep.nb}
-                type="button"
-                data-active={isActiveEp ? "true" : "false"}
-                onClick={() => setActiveEpisode(ep)}
-                disabled={!canSelectEpisodes}
-                aria-pressed={isActiveEp}
-                className={`flex w-full items-center gap-3.5 rounded-2xl border p-3 text-right transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-65 ${canSelectEpisodes ? 'cursor-pointer' : 'cursor-default'} ${
-                  isActiveEp
-                    ? 'bg-red-950/30 border-red-500/60 shadow-[0_4px_20px_rgba(229,9,20,0.25)]'
-                    : 'bg-white/[0.03] border-white/10 hover:border-white/20 active:scale-[0.98]'
-                }`}
-              >
-                {/* Episode Thumbnail */}
-                <div className="relative w-28 aspect-[16/10] rounded-xl overflow-hidden shrink-0 border border-white/10">
-                  <img
-                    src={getImageUrl(videoImg, 'poster') || '/logo.svg'}
-                    alt={`الحلقة ${ep.episodeNummer}`}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  <div className={`absolute inset-0 bg-black/40 flex items-center justify-center ${isActiveEp ? 'opacity-100' : 'opacity-80'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isActiveEp ? 'bg-red-600 text-white shadow-[0_0_12px_rgba(229,9,20,0.8)]' : 'bg-white/20 text-white'}`}>
-                      <i className="fa-solid fa-play text-xs mr-0.5"></i>
+                <button
+                  key={ep.nb}
+                  type="button"
+                  data-active={isActiveEp ? 'true' : 'false'}
+                  onClick={() => setActiveEpisode(ep)}
+                  disabled={!canSelectEpisodes}
+                  aria-pressed={isActiveEp}
+                  className={`flex w-full items-center justify-between gap-3 rounded-2xl border p-2.5 text-right transition-all duration-300 active:scale-[0.98] ${
+                    isActiveEp
+                      ? 'bg-red-950/40 border-alex-primary shadow-[0_0_20px_rgba(229,9,20,0.3)]'
+                      : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/10'
+                  }`}
+                >
+                  {/* Right side: Thumbnail + Title + Meta */}
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    {/* Thumbnail with duration */}
+                    <div className="relative w-24 xs:w-28 aspect-[16/10] rounded-xl overflow-hidden shrink-0 border border-white/10 bg-[#070b13]">
+                      <img
+                        src={getImageUrl(videoImg, 'poster') || '/icon.svg'}
+                        alt={`الحلقة ${ep.episodeNummer}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-1">
+                        <span className="text-[9px] text-gray-200 font-en font-bold px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm">
+                          {formatDuration(ep.duration || episodes[0]?.duration)}
+                        </span>
+                      </div>
+                      {isActiveEp && (
+                        <div className="absolute inset-0 bg-alex-primary/20 flex items-center justify-center">
+                          <div className="w-7 h-7 rounded-full bg-alex-primary text-white flex items-center justify-center shadow-lg">
+                            <i className="fa-solid fa-play text-[10px]"></i>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Episode details */}
+                    <div className="flex flex-col justify-center min-w-0 flex-1">
+                      <h4 className={`text-xs xs:text-sm font-black truncate ${isActiveEp ? 'text-alex-primary' : 'text-white'}`}>
+                        {ep.ar_title || `الحلقة ${ep.episodeNummer}`}
+                      </h4>
+                      <p className="text-[11px] text-gray-400 truncate mt-0.5">
+                        الموسم {currentSeason} • الحلقة {ep.episodeNummer}
+                      </p>
                     </div>
                   </div>
-                  {isActiveEp && (
-                    <span className="absolute top-1 right-1 bg-red-600 text-white px-1.5 py-0.5 rounded-md text-[8px] font-black animate-pulse">
-                      المشاهدة 🔴
-                    </span>
-                  )}
-                </div>
 
-                {/* Episode Info */}
-                <div className="flex-1 flex flex-col justify-center min-w-0">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <h4 className={`text-sm font-black truncate ${isActiveEp ? 'text-red-400' : 'text-white'}`}>
-                      الحلقة {ep.episodeNummer}
-                    </h4>
-                    <span className="text-[10px] text-gray-400 font-en font-bold">
-                      {formatDuration(ep.duration || episodes[0]?.duration)}
-                    </span>
+                  {/* Left side: Play status icon */}
+                  <div className="shrink-0 pl-1">
+                    {isActiveEp ? (
+                      <span className="px-2.5 py-1 rounded-xl bg-alex-primary text-white text-[10px] font-black shadow-md flex items-center gap-1">
+                        <i className="fa-solid fa-circle-play text-[10px]"></i>
+                        شغّال
+                      </span>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors">
+                        <i className="fa-solid fa-play text-[11px]"></i>
+                      </div>
+                    )}
                   </div>
-
-                  <p className="text-[11px] text-gray-400 line-clamp-1 font-medium mb-2">
-                    الموسم {currentSeason} • {videoTitle}
-                  </p>
-
-                  <div className="flex items-center gap-2">
-                    <span className={`flex min-h-8 items-center gap-1.5 rounded-lg px-3 py-1 text-[10px] font-black transition-all ${
-                      isActiveEp 
-                        ? 'bg-red-600 text-white shadow-md' 
-                        : 'bg-white/10 text-gray-300 hover:text-white'
-                    }`}>
-                      <i className="fa-solid fa-circle-play text-[9px]"></i>
-                      <span>{isActiveEp ? 'شغّال الآن' : 'تشغيل الحلقة'}</span>
-                    </span>
-                  </div>
-                </div>
-              </button>
+                </button>
               );
             })}
           </div>
-        </details>
+        </div>
 
-        {/* ------------------------------------------------------------- */}
-        {/* DESKTOP & TABLET VIEW (HIDDEN SM:FLEX): Horizontal Carousel   */}
-        {/* ------------------------------------------------------------- */}
+        {/* ══════ DESKTOP & TABLET VIEW (hidden sm:block): Horizontal Carousel ══════ */}
         <div className="hidden sm:block relative w-full">
-          {/* Scroll Arrow – Start (right side in RTL) */}
+          {/* Scroll Chevrons */}
           <button
             type="button"
             aria-label="تمرير لليمين"
             onClick={() => scrollBy('start')}
-            className={`absolute right-1 top-[40%] -translate-y-1/2 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 cursor-pointer
-              bg-[#0b101d]/95 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.7)] text-white hover:bg-red-600 hover:border-red-500 hover:shadow-[0_0_20px_rgba(229,9,20,0.6)] hover:scale-110 active:scale-95
+            className={`absolute right-1 top-[40%] -translate-y-1/2 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer
+              bg-[#0b101d]/95 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.7)] text-white hover:bg-alex-primary hover:border-alex-primary hover:scale-110 active:scale-95
               ${canScrollStart ? 'opacity-90 hover:opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           >
             <i className="fa-solid fa-chevron-right text-xs" aria-hidden="true" />
           </button>
 
-          {/* Scroll Arrow – End (left side in RTL) */}
           <button
             type="button"
             aria-label="تمرير لليسار"
             onClick={() => scrollBy('end')}
-            className={`absolute left-1 top-[40%] -translate-y-1/2 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 cursor-pointer
-              bg-[#0b101d]/95 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.7)] text-white hover:bg-red-600 hover:border-red-500 hover:shadow-[0_0_20px_rgba(229,9,20,0.6)] hover:scale-110 active:scale-95
+            className={`absolute left-1 top-[40%] -translate-y-1/2 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer
+              bg-[#0b101d]/95 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.7)] text-white hover:bg-alex-primary hover:border-alex-primary hover:scale-110 active:scale-95
               ${canScrollEnd ? 'opacity-90 hover:opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           >
             <i className="fa-solid fa-chevron-left text-xs" aria-hidden="true" />
@@ -274,38 +279,39 @@ export default function SeriesNavigator({
               return (
                 <div 
                   key={ep.nb} 
-                  data-active={isActiveEp ? "true" : "false"}
+                  data-active={isActiveEp ? 'true' : 'false'}
                   className="flex flex-col shrink-0 w-[calc((100%-1rem)/2)] sm:w-[calc((100%-1.25rem*2)/3)] md:w-[calc((100%-1.25rem*3)/4)] lg:w-[calc((100%-1.25rem*4)/5)] xl:w-[calc((100%-1.25rem*5)/6)] snap-start group"
                 >
                   <button
+                    type="button"
                     onClick={() => setActiveEpisode(ep)}
                     disabled={!canSelectEpisodes}
                     className={`relative aspect-[16/10] w-full rounded-2xl overflow-hidden border transition-all duration-300 cursor-pointer ${
                       isActiveEp 
-                        ? 'border-red-500 shadow-[0_8px_30px_rgba(229,9,20,0.4)] scale-[1.03]' 
-                        : 'border-white/10 hover:border-red-500/50 hover:shadow-[0_6px_20px_rgba(0,0,0,0.6)] group-hover:scale-[1.02]'
+                        ? 'border-alex-primary shadow-[0_8px_30px_rgba(229,9,20,0.4)] scale-[1.03]' 
+                        : 'border-white/10 hover:border-alex-primary/50 hover:shadow-[0_6px_20px_rgba(0,0,0,0.6)] group-hover:scale-[1.02]'
                     }`}
                   >
                     {/* Thumbnail Image */}
                     <img 
-                      src={getImageUrl(videoImg, 'poster') || '/logo.svg'} 
+                      src={getImageUrl(videoImg, 'poster') || '/icon.svg'} 
                       alt={`الحلقة ${ep.episodeNummer}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
                       loading="lazy"
                     />
                     
-                    {/* Gradient & Hover Overlay */}
+                    {/* Hover & Active Overlay */}
                     <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex items-center justify-center transition-all duration-300 ${
                       isActiveEp ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                     }`}>
-                      <div className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-red-600 to-rose-700 text-white text-xs font-black tracking-wide flex items-center gap-1.5 shadow-xl border border-white/20">
+                      <div className="px-3.5 py-1.5 rounded-full bg-alex-primary text-white text-xs font-black tracking-wide flex items-center gap-1.5 shadow-xl border border-white/20">
                         <i className="fa-solid fa-circle-play text-xs text-white"></i>
                         <span>{isActiveEp ? 'جارٍ التشغيل 🔴' : 'تشغيل الحلقة'}</span>
                       </div>
                     </div>
 
                     {isActiveEp && (
-                      <div className="absolute top-2.5 right-2.5 bg-red-600/90 text-white px-2 py-0.5 rounded-lg text-[9px] font-black border border-white/20 backdrop-blur-md flex items-center gap-1 shadow-md">
+                      <div className="absolute top-2.5 right-2.5 bg-alex-primary text-white px-2 py-0.5 rounded-lg text-[9px] font-black border border-white/20 backdrop-blur-md flex items-center gap-1 shadow-md">
                         <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
                         مباشر
                       </div>
@@ -313,9 +319,9 @@ export default function SeriesNavigator({
                   </button>
                   
                   {/* Metadata Row */}
-                  <div className="flex justify-between items-center mt-2.5 px-1 text-xs font-bold">
-                    <span className={`transition-colors truncate max-w-[70%] text-right ${isActiveEp ? 'text-red-400 font-black' : 'text-gray-200 group-hover:text-white'}`}>
-                      الحلقة {ep.episodeNummer}
+                  <div className="flex justify-between items-center mt-2 px-1 text-xs font-bold">
+                    <span className={`transition-colors truncate max-w-[70%] text-right ${isActiveEp ? 'text-alex-primary font-black' : 'text-gray-200 group-hover:text-white'}`}>
+                      {ep.ar_title || `الحلقة ${ep.episodeNummer}`}
                     </span>
                     <span className="text-gray-400 font-en opacity-80 text-[11px]">
                       {formatDuration(ep.duration || episodes[0]?.duration)}
@@ -326,7 +332,6 @@ export default function SeriesNavigator({
             })}
           </div>
         </div>
-
 
       </div>
     </div>

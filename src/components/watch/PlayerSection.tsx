@@ -59,9 +59,15 @@ interface PlayerSectionProps {
   roomHook?: WatchRoomHook;
 }
 
-const toProxyUrl = (url: string | undefined | null) => {
+export const toProxyUrl = (url: string | undefined | null): string | undefined => {
   if (!url) return undefined;
-  return url;
+  const trimmed = url.trim();
+  if (trimmed.startsWith('/tunnel/') || trimmed.startsWith('/api/')) return trimmed;
+  const match = trimmed.match(/^https?:\/\/([a-zA-Z0-9_-]+)\.shabakaty\.com\/(.*)$/i);
+  if (match) {
+    return `/tunnel/${match[1]}/${match[2]}`;
+  }
+  return trimmed;
 };
 
 export default function PlayerSection({
@@ -85,7 +91,7 @@ export default function PlayerSection({
           img: toProxyUrl(video.img),
           ar_title: displayTitle,
           streams: activeEpisodeDetails.streams?.map((stream) => ({ ...stream, videoUrl: toProxyUrl(stream.videoUrl) })) || [],
-          translations: activeEpisodeDetails.translations || [],
+          translations: activeEpisodeDetails.translations?.map((t) => ({ ...t, file: toProxyUrl(t.file) || t.file })) || [],
           introSkipping: activeEpisodeDetails.introSkipping || [],
           skippingDurations: activeEpisodeDetails.skippingDurations || null,
           parent_skipping: activeEpisodeDetails.parent_skipping,
@@ -102,7 +108,7 @@ export default function PlayerSection({
           img: toProxyUrl(video.img),
           ar_title: displayTitle,
           streams: video.streams?.map((stream) => ({ ...stream, videoUrl: toProxyUrl(stream.videoUrl) })) || [],
-          translations: video.translations || [],
+          translations: video.translations?.map((t) => ({ ...t, file: toProxyUrl(t.file) || t.file })) || [],
           introSkipping: video.introSkipping || [],
           skippingDurations: video.skippingDurations || null,
           parent_skipping: video.parent_skipping,

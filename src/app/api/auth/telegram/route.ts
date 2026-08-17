@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const expectedOrigin = new URL(process.env.APP_ORIGIN || request.url).origin;
-    const requestOrigin = request.headers.get("origin");
-    if (!requestOrigin || requestOrigin !== expectedOrigin) {
+    const requestOrigin = request.headers.get("origin") || (request.headers.get("referer") ? new URL(request.headers.get("referer")!).origin : "");
+    if (requestOrigin && requestOrigin !== expectedOrigin && requestOrigin !== request.nextUrl.origin && !requestOrigin.includes("cinax.live") && !requestOrigin.includes("127.0.0.1") && !requestOrigin.includes("localhost")) {
       return errorResponse("مصدر طلب تسجيل الدخول غير مسموح.", 403);
     }
 

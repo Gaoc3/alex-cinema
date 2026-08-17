@@ -358,7 +358,14 @@ export function useWatchRoom(
       setRemoteVideoId(typeof data?.videoId === 'string' ? data.videoId : null);
       setRemoteEpisodeId(typeof data?.episodeId === 'string' ? data.episodeId : null);
       if (data?.state) setRoomState({ ...data.state, receivedAt: Date.now() });
-      if (Array.isArray(data?.members)) setMembers(data.members);
+      if (Array.isArray(data?.members)) {
+        const unique = new Map<string, RoomMember>();
+        for (const m of data.members) {
+          const key = (m as any).userId || (m as any).identity || m.name || m.id;
+          if (!unique.has(key) || m.isHost) unique.set(key, m);
+        }
+        setMembers(Array.from(unique.values()));
+      }
     });
 
     newSocket.on('permissions_updated', (data: { role: 'host' | 'moderator' | 'member'; permissions: MemberPermissions }) => {
@@ -367,7 +374,14 @@ export function useWatchRoom(
     });
 
     newSocket.on('room_members', (updatedMembers: RoomMember[]) => {
-      if (Array.isArray(updatedMembers)) setMembers(updatedMembers);
+      if (Array.isArray(updatedMembers)) {
+        const unique = new Map<string, RoomMember>();
+        for (const m of updatedMembers) {
+          const key = (m as any).userId || (m as any).identity || m.name || m.id;
+          if (!unique.has(key) || m.isHost) unique.set(key, m);
+        }
+        setMembers(Array.from(unique.values()));
+      }
     });
 
     newSocket.on('sync_update', (state: RoomState) => {

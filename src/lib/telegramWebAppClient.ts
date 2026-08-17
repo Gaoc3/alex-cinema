@@ -1,40 +1,29 @@
+import React from 'react';
+
+export interface TelegramWebAppLaunchPayload {
+  initData: string;
+  unsafeUser: TelegramWebAppUser | null;
+}
+
+export const TELEGRAM_CONTEXT_EVENT = "alex:tg-context-ready";
+const STORAGE_KEY = "alex-tg-webapp-context";
 let cachedInitData = "";
 let cachedUnsafeUser: TelegramWebAppUser | null = null;
 
-const TELEGRAM_CONTEXT_KEY = "isTgWebApp";
-export const TELEGRAM_CONTEXT_EVENT = "alex:telegram-context";
-
-function safelyReadSessionFlag(): boolean {
-  try {
-    return window.sessionStorage.getItem(TELEGRAM_CONTEXT_KEY) === "true";
-  } catch {
-    return false;
-  }
+export function isTelegramWebAppContext(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    Boolean(window.Telegram?.WebApp?.initData) ||
+    window.location.hash.includes("tgWebAppData") ||
+    window.location.search.includes("tgWebAppData") ||
+    window.location.search.includes("tgWebApp=true") ||
+    sessionStorage.getItem(STORAGE_KEY) === "true"
+  );
 }
 
 export function markTelegramWebAppContext(): void {
-  document.documentElement.classList.add("is-telegram-webapp");
-  document.body.classList.add("is-telegram-webapp");
-
-  try {
-    window.sessionStorage.setItem(TELEGRAM_CONTEXT_KEY, "true");
-  } catch {
-    // Some embedded browsers disable sessionStorage. The DOM marker is enough
-    // for the current document and the live SDK remains the source of truth.
-  }
-
-  window.dispatchEvent(new Event(TELEGRAM_CONTEXT_EVENT));
-}
-
-export function isTelegramWebAppContext(): boolean {
-  const tg = window.Telegram?.WebApp;
-  return Boolean(
-    tg?.initData
-      || tg?.initDataUnsafe?.user
-      || safelyReadSessionFlag()
-      || new URLSearchParams(window.location.search).has("tgWebApp")
-      || new URLSearchParams(window.location.hash.replace(/^#/, "")).has("tgWebAppData"),
-  );
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(STORAGE_KEY, "true");
 }
 
 export function isLiveTelegramWebApp(): boolean {
@@ -42,51 +31,49 @@ export function isLiveTelegramWebApp(): boolean {
   return Boolean(tg?.initData || tg?.initDataUnsafe?.user);
 }
 
-export function isLargeTelegramViewport(): boolean {
-  const shortSide = Math.min(window.innerWidth, window.innerHeight);
-  const longSide = Math.max(window.innerWidth, window.innerHeight);
-  const hasCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
-
-  // A phone rotated to landscape can be wider than 768px while its usable
-  // height is still phone-sized. Tablets use the short-side threshold, while
-  // desktop clients with a precise pointer can use their wider window.
-  return shortSide >= 600 || (!hasCoarsePointer && longSide >= 768);
-}
-
 export function configureTelegramWebApp(options?: { immersive?: boolean }): boolean {
   const tg = window.Telegram?.WebApp;
   if (!tg || !isTelegramWebAppContext()) return false;
 
-  markTelegramWebAppContext();
-
   try {
-    tg.ready();
-    tg.expand();
+    if (!sessionStorage.getItem("alex-tg-ready-fired")) {
+      tg.ready?.();
+      tg.expand?.();
+      sessionStorage.setItem("alex-tg-ready-fired", "true");
+    }
+
+    // Auto-request fullscreen on Telegram Desktop / macOS / Web / Tablet
+    const platform = (((tg as any).platform as string) || "").toLowerCase();
+    const isDesktopOrWeb =
+      platform === "tdesktop" ||
+      platform === "macos" ||
+      platform === "weba" ||
+      platform === "webk" ||
+      platform === "web" ||
+      platform === "tablet";
+
+    if (isDesktopOrWeb || options?.immersive) {
+      try {
+        if (typeof (tg as any).requestFullscreen === "function") {
+          (tg as any).requestFullscreen();
+        }
+      } catch (e) {
+        console.warn("[Telegram Fullscreen Error]:", e);
+      }
+    }
 
     if (tg.isVersionAtLeast?.("6.1")) {
       tg.setHeaderColor?.("#07111f");
       tg.setBackgroundColor?.("#07111f");
     }
+
     if (tg.isVersionAtLeast?.("7.10")) {
       tg.setBottomBarColor?.("#07111f");
     }
 
-    // Keep vertical gestures inside the application. Re-enabling Telegram's
-    // collapse swipe makes the first content scroll capable of dismissing the
-    // WebView on mobile clients.
+    // Prevent pull down gesture from closing or crashing WebApp during mobile scroll
     if (tg.isVersionAtLeast?.("7.7")) {
       tg.disableVerticalSwipes?.();
-    }
-
-    const wantsFullscreen = isLargeTelegramViewport();
-    if (wantsFullscreen && tg.isVersionAtLeast?.("8.0")) {
-      tg.requestFullscreen?.();
-    }
-
-    if (options?.immersive && tg.isVersionAtLeast?.("6.2")) {
-      tg.enableClosingConfirmation?.();
-    } else if (tg.isVersionAtLeast?.("6.2")) {
-      tg.disableClosingConfirmation?.();
     }
   } catch (error) {
     console.error("[Telegram WebApp Configuration Error]:", error);
@@ -100,20 +87,6 @@ function readLaunchDataFromUrl(): string {
   if (hashData) return hashData;
 
   return new URLSearchParams(window.location.search).get("tgWebAppData") || "";
-}
-
-function removeLaunchDataFromUrl(): void {
-  const url = new URL(window.location.href);
-  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
-  const hadSearchData = url.searchParams.has("tgWebAppData");
-  const hadHashData = hashParams.has("tgWebAppData");
-  if (!hadSearchData && !hadHashData) return;
-
-  url.searchParams.delete("tgWebAppData");
-  hashParams.delete("tgWebAppData");
-  const cleanHash = hashParams.toString();
-  const cleanUrl = `${url.pathname}${url.search}${cleanHash ? `#${cleanHash}` : ""}`;
-  window.history.replaceState(window.history.state, "", cleanUrl);
 }
 
 export function getTelegramLaunchPayload(): {
@@ -130,8 +103,89 @@ export function getTelegramLaunchPayload(): {
     cachedInitData = initData;
     cachedUnsafeUser = unsafeUser;
     markTelegramWebAppContext();
-    removeLaunchDataFromUrl();
   }
 
   return { initData, unsafeUser };
 }
+
+export function safeOpenExternalLink(url: string, e?: React.MouseEvent): void {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  if (typeof window === "undefined" || !url) return;
+  const tg = window.Telegram?.WebApp;
+  if (tg?.openLink) {
+    tg.openLink(url);
+  } else {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+}
+
+export interface TelegramSafeArea {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
+export function useTelegramSafeArea() {
+  const [safeArea, setSafeArea] = React.useState<TelegramSafeArea>({ top: 0, bottom: 0, left: 0, right: 0 });
+  const [contentSafeArea, setContentSafeArea] = React.useState<TelegramSafeArea>({ top: 0, bottom: 0, left: 0, right: 0 });
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const [isDesktopOrWeb, setIsDesktopOrWeb] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const tg = (window as any).Telegram?.WebApp;
+    if (!tg) return;
+
+    const platform = ((tg.platform as string) || "").toLowerCase();
+    const desktopOrWeb =
+      platform === "tdesktop" ||
+      platform === "macos" ||
+      platform === "weba" ||
+      platform === "webk" ||
+      platform === "web" ||
+      platform === "tablet";
+
+    setIsDesktopOrWeb(desktopOrWeb);
+
+    const updateInsets = () => {
+      if (tg.safeAreaInset) {
+        setSafeArea({
+          top: tg.safeAreaInset.top || 0,
+          bottom: tg.safeAreaInset.bottom || 0,
+          left: tg.safeAreaInset.left || 0,
+          right: tg.safeAreaInset.right || 0,
+        });
+      }
+      if (tg.contentSafeAreaInset) {
+        setContentSafeArea({
+          top: tg.contentSafeAreaInset.top || 0,
+          bottom: tg.contentSafeAreaInset.bottom || 0,
+          left: tg.contentSafeAreaInset.left || 0,
+          right: tg.contentSafeAreaInset.right || 0,
+        });
+      }
+      if (typeof tg.isFullscreen === "boolean") {
+        setIsFullscreen(tg.isFullscreen);
+      }
+    };
+
+    updateInsets();
+
+    tg.onEvent?.("safeAreaChanged", updateInsets);
+    tg.onEvent?.("contentSafeAreaChanged", updateInsets);
+    tg.onEvent?.("fullscreenChanged", updateInsets);
+
+    return () => {
+      tg.offEvent?.("safeAreaChanged", updateInsets);
+      tg.offEvent?.("contentSafeAreaChanged", updateInsets);
+      tg.offEvent?.("fullscreenChanged", updateInsets);
+    };
+  }, []);
+
+  return { safeArea, contentSafeArea, isFullscreen, isDesktopOrWeb };
+}
+

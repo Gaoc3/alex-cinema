@@ -3,6 +3,7 @@
 import { getImageUrl } from '@/utils/imageHelper';
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { safeOpenExternalLink } from '@/lib/telegramWebAppClient';
 
 interface MediaPosterProps {
   img: string;
@@ -55,6 +56,7 @@ export default function MediaPoster({ img, imdbUrlRef }: MediaPosterProps) {
           <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/95 via-black/80 to-transparent backdrop-blur-sm border-t border-white/10 flex items-center justify-center rounded-b-2xl z-50 pointer-events-auto">
             <a 
               href={imdbUrlRef} 
+              onClick={(e) => safeOpenExternalLink(imdbUrlRef || '', e)}
               target="_blank" 
               rel="noreferrer" 
               className="flex flex-row items-center justify-center gap-2 w-full bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm hover:bg-yellow-400 transition-all hover-scale shadow-lg relative z-50 pointer-events-auto cursor-pointer"

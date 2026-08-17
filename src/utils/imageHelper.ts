@@ -4,7 +4,7 @@
  */
 
 // Bump when a previously cached proxy failure must be invalidated in browsers/CDNs.
-const IMAGE_CACHE_VERSION = '20260801-99';
+const IMAGE_CACHE_VERSION = '20260814-100';
 
 function withImageCacheVersion(url: string): string {
   if (!url || (!url.startsWith('/api/img') && !url.startsWith('/tunnel/'))) return url;
@@ -28,7 +28,7 @@ export function getImageUrl(
     return withImageCacheVersion(imgField);
   }
   if (imgField.startsWith('http')) {
-      return withImageCacheVersion(`/api/img?type=${type}&file=${encodeURIComponent(imgField.split('/').pop() || imgField)}`);
+    return withImageCacheVersion(`/api/img?type=${type}&file=${encodeURIComponent(imgField.split('/').pop() || imgField)}`);
   }
   // Plain filename — construct the simple proxy URL
   return withImageCacheVersion(`/api/img?type=${type}&file=${encodeURIComponent(imgField)}`);
@@ -40,19 +40,21 @@ export function getVideoImageUrl(
 ): string {
   if (!video) return '';
 
-  // Grid cards must prefer the dedicated thumbnails. Some full poster PNGs are
-  // multiple megabytes while the corresponding medium thumbnail is ~30 KB.
+  // Grid cards must prefer dedicated thumbnails for performance
   if (type === 'poster') {
     const thumbnail = video.imgMediumThumb || video.imgThumb || video.img;
     if (thumbnail) return getImageUrl(thumbnail, type);
   }
 
-  // imgObjUrl is already sanitized by the server to /api/img?ref=...
+  // For covers (HeroCarousel) and backdrops, prefer permanent clean filename `img` over ephemeral signed imgObjUrl
+  if (video.img) {
+    return getImageUrl(video.img, type);
+  }
+
   if (video.imgObjUrl && (video.imgObjUrl.startsWith('/api/') || video.imgObjUrl.startsWith('/tunnel/'))) {
     return withImageCacheVersion(video.imgObjUrl);
   }
 
-  // For covers (like HeroCarousel), prefer high-res
   const img = video.img || video.imgMediumThumb || video.imgThumb;
   return getImageUrl(img, type);
 }

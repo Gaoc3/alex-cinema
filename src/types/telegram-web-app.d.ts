@@ -11,6 +11,7 @@ interface TelegramWebApp {
   initDataUnsafe?: { user?: TelegramWebAppUser };
   ready: () => void;
   expand: () => void;
+  close?: () => void;
   isVersionAtLeast?: (version: string) => boolean;
   setHeaderColor?: (color: string) => void;
   setBackgroundColor?: (color: string) => void;
@@ -22,6 +23,15 @@ interface TelegramWebApp {
   enableClosingConfirmation?: () => void;
   disableClosingConfirmation?: () => void;
   isVerticalSwipesEnabled?: boolean;
+  openLink?: (url: string, options?: { try_instant_view?: boolean }) => void;
+  openTelegramLink?: (url: string) => void;
+  BackButton?: {
+    isVisible: boolean;
+    show: () => void;
+    hide: () => void;
+    onClick: (callback: () => void) => void;
+    offClick: (callback: () => void) => void;
+  };
   onEvent?: (eventType: string, eventHandler: () => void) => void;
   offEvent?: (eventType: string, eventHandler: () => void) => void;
 }

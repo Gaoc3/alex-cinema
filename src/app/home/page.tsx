@@ -1,6 +1,12 @@
 import { getPromoVideos, getLatestMovies, getLatestSeries, getHomeVideos } from '@/lib/api';
 import HeroCarousel from '@/components/HeroCarousel';
 import VideoSlider from '@/components/VideoSlider';
+import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 interface HomeVideo {
   nb: string;
@@ -17,6 +23,12 @@ interface HomeVideo {
 }
 
 export default async function Home() {
+  const headersList = await headers();
+  const userAgent = (headersList.get('user-agent') || '').toLowerCase();
+  if (userAgent.includes('telegram')) {
+    redirect('/tg-app');
+  }
+
   const [promoResult, moviesResult, seriesResult] = await Promise.all([
     getPromoVideos().catch(() => []),
     getLatestMovies(1).catch(() => []),

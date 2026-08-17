@@ -128,6 +128,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
               <Link 
                 key={video.nb} 
                 href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
+                prefetch={false}
                 className="w-[calc((100%-1rem)/2)] sm:w-[calc((100%-1.25rem*3)/4)] md:w-[calc((100%-1.25rem*4)/5)] lg:w-[calc((100%-1.25rem*5)/6)] xl:w-[calc((100%-1.25rem*6)/7)] flex-shrink-0 group/card block relative snap-start transition-transform duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-105"
                 style={{ animationDelay: `${index * 25}ms` }}
               >

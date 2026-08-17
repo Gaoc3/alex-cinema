@@ -73,7 +73,7 @@ export default function WatchLayout({
   };
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto relative z-10">
+    <div className="flex flex-col gap-5 sm:gap-8 w-full max-w-7xl mx-auto relative z-10">
       
       {/* Row 1: Player & Poster */}
       <div className="grid grid-cols-12 gap-4 sm:gap-6 lg:gap-8 items-stretch">
@@ -90,7 +90,7 @@ export default function WatchLayout({
           />
         </div>
         {!roomHook && (
-          <div className="col-span-12 lg:col-span-3 flex flex-col px-4 sm:px-0 mt-4 sm:mt-0">
+          <div className="hidden lg:flex col-span-12 lg:col-span-3 flex-col mt-4 lg:mt-0">
             <MediaPoster img={video.img || ''} imdbUrlRef={video.imdbUrlRef} />
           </div>
         )}
@@ -98,10 +98,11 @@ export default function WatchLayout({
 
       {/* Row 2: Dynamic Full Width Details Panel */}
       {!roomHook && (
-        <div className="px-4 sm:px-0">
+        <div className="px-3 sm:px-0">
           <MediaDetails 
             title={video.ar_title}
             enTitle={video.en_title || video.ar_title}
+            img={video.img || ''}
             episodeNum={isSeries && activeEpisode ? activeEpisode.episodeNummer : undefined}
             seasonNum={isSeries ? currentSeason : undefined}
             year={video.year}
@@ -114,6 +115,7 @@ export default function WatchLayout({
             writersInfo={video.writersInfo}
             kind={video.kind}
             itemDate={video.itemDate || video.mDate}
+            imdbUrlRef={video.imdbUrlRef}
           >
             <ActionToolbar 
               isFavorite={isFavorite}
@@ -130,7 +132,7 @@ export default function WatchLayout({
 
       {/* Row 3: Seasons & Episodes (Series Only) */}
       {isSeries && episodes.length > 0 && (
-        <div className="px-4 sm:px-0 pb-10 sm:pb-0">
+        <div className="px-3 sm:px-0 pb-10 sm:pb-0">
           <SeriesNavigator 
             seasons={seasons}
             episodes={episodes}

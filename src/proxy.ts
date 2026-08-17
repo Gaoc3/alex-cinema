@@ -1,5 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { NextResponse } from 'next/server';
+import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
 import {
   createTelegramSessionToken,
   parseTelegramSessionToken,
@@ -13,7 +13,7 @@ const isProtectedRoute = createRouteMatcher([
   '/profile',
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+const clerkHandler = clerkMiddleware(async (auth, req) => {
   const { pathname } = req.nextUrl;
 
   // API handlers resolve Clerk and Telegram identities through getAuthUser().
@@ -22,47 +22,62 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   const telegramCookie = req.cookies.get(TELEGRAM_SESSION_COOKIE)?.value;
+  let hasValidTelegramSession = false;
+
   if (telegramCookie) {
-    const session = await parseTelegramSessionToken(telegramCookie);
-    if (session) {
-      // Automatic Sliding Session Refresh for Telegram: extends 30 days on every active visit
-      const response = NextResponse.next();
-      try {
-        const freshToken = await createTelegramSessionToken({ clerkId: session.clerkId });
-        response.cookies.set(TELEGRAM_SESSION_COOKIE, freshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          path: '/',
-          maxAge: TELEGRAM_SESSION_MAX_AGE_SECONDS,
-        });
-      } catch (err) {
-        console.error('[Telegram Session Refresh Error]:', err);
+    try {
+      const session = await parseTelegramSessionToken(telegramCookie);
+      if (session?.clerkId) {
+        hasValidTelegramSession = true;
+        const response = NextResponse.next();
+        // Only refresh session cookie on full page document navigations, not on RSC prefetch subrequests
+        if (!req.headers.get('rsc')) {
+          try {
+            const freshToken = await createTelegramSessionToken({ clerkId: session.clerkId });
+            response.cookies.set(TELEGRAM_SESSION_COOKIE, freshToken, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              path: '/',
+              maxAge: TELEGRAM_SESSION_MAX_AGE_SECONDS,
+            });
+          } catch (err) {
+            console.error('[Telegram Session Refresh Error]:', err);
+          }
+        }
+        return response;
       }
-      return response;
+    } catch {
+      hasValidTelegramSession = false;
     }
   }
 
-  if (isProtectedRoute(req)) {
+  // Only protect routes via Clerk if there is NO valid Telegram session
+  if (!hasValidTelegramSession && isProtectedRoute(req)) {
     await auth.protect();
   }
 
-  const response = NextResponse.next();
-  if (telegramCookie) {
-    response.cookies.set(TELEGRAM_SESSION_COOKIE, '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      expires: new Date(0),
-    });
+  return NextResponse.next();
+});
+
+export default async function middleware(req: NextRequest, event: NextFetchEvent) {
+  const { pathname } = req.nextUrl;
+  const userAgent = (req.headers.get('user-agent') || '').toLowerCase();
+
+  // Instant pre-Clerk edge redirect for Telegram WebApp clients hitting root or home
+  if (userAgent.includes('telegram') && (pathname === '/' || pathname === '/home')) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/tg-app';
+    return NextResponse.redirect(url, 307);
   }
 
-  return response;
-});
+  return clerkHandler(req, event);
+}
 
 export const config = {
   matcher: [
+    '/',
+    '/home',
     '/((?!_next|api/tunnel-video|api/img|api/stream|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     '/(api/(?!tunnel-video|img|stream)|trpc)(.*)',
     '/__clerk/:path*',

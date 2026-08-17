@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Hls from 'hls.js';
 import type { WatchRoomHook } from '@/hooks/useWatchRoom';
 import {
@@ -266,7 +267,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     containerRef,
     videoRef,
     isFullscreen,
-    resetKey: `${videoData.stream_url || ''}:${videoData.ar_title || ''}:${isFullscreen}`,
+    resetKey: `${videoData.stream_url || ''}:${videoData.ar_title || ''}`,
     surfaceKey: currentStreamUrl,
     onPinchStart: () => {
       if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
@@ -292,32 +293,8 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     shouldResumePlaybackRef.current = !isPaused;
   }, [isPaused]);
 
-  useLayoutEffect(() => {
-    if (!isInlineFullscreen) return;
-    const container = containerRef.current;
-    const originalParent = container?.parentNode;
-    if (!container || !originalParent) return;
-
-    const placeholder = document.createComment('alex-player-inline-fullscreen');
-    originalParent.insertBefore(placeholder, container);
-    document.body.appendChild(container);
-
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousRootOverscroll = document.documentElement.style.overscrollBehavior;
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overscrollBehavior = 'none';
-    document.documentElement.classList.add('alex-player-inline-fullscreen');
-
-    return () => {
-      if (placeholder.parentNode) {
-        placeholder.parentNode.insertBefore(container, placeholder);
-        placeholder.parentNode.removeChild(placeholder);
-      }
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overscrollBehavior = previousRootOverscroll;
-      document.documentElement.classList.remove('alex-player-inline-fullscreen');
-    };
-  }, [isInlineFullscreen]);
+  // Note: isInlineFullscreen DOM teleportation is handled via createPortal in the render path below.
+  // The useLayoutEffect was removed to avoid React reconciliation conflicts.
 
   useEffect(() => {
     const video = videoRef.current;
@@ -394,7 +371,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const toProxyUrl = (url: string | undefined | null) => {
     if (!url) return null;
     const clean = url.trim();
-    if (clean.startsWith('/api/proxy') || clean.startsWith('/api/stream') || clean.startsWith('/api/img')) return clean;
+    if (clean.startsWith('/tunnel/') || clean.startsWith('/api/')) return clean;
+    const match = clean.match(/^https?:\/\/([a-zA-Z0-9_-]+)\.shabakaty\.com\/(.*)$/i);
+    if (match) {
+      return `/tunnel/${match[1]}/${match[2]}`;
+    }
     return clean;
   };
 
@@ -923,91 +904,106 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   // Fullscreen helper
   const toggleFullscreen = useCallback(async () => {
     const container = containerRef.current;
+    const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null;
     const video = videoRef.current as (HTMLVideoElement & {
+      webkitEnterFullscreen?: () => void;
       webkitExitFullscreen?: () => void;
       webkitDisplayingFullscreen?: boolean;
     }) | null;
-    const webkitDocument = document as Document & {
+    const webkitDocument = typeof document !== 'undefined' ? (document as Document & {
       webkitFullscreenElement?: Element;
       webkitExitFullscreen?: () => Promise<void> | void;
-    };
+    }) : null;
     const webkitContainer = container as (HTMLDivElement & {
       webkitRequestFullscreen?: () => Promise<void> | void;
     }) | null;
+
     if (!container) return;
 
-    const fullscreenElement = document.fullscreenElement || webkitDocument.webkitFullscreenElement;
+    const fullscreenElement = typeof document !== 'undefined' ? (document.fullscreenElement || webkitDocument?.webkitFullscreenElement) : null;
     const ownsFullscreenElement = Boolean(
-      fullscreenElement
-      && (fullscreenElement === container || container.contains(fullscreenElement))
+      fullscreenElement && container && (fullscreenElement === container || container.contains(fullscreenElement))
     );
     const isNativeVideoFullscreen = Boolean(video?.webkitDisplayingFullscreen);
-    const isCurrentlyFullscreen = isInlineFullscreen || ownsFullscreenElement || isNativeVideoFullscreen;
-    const orientation = screen.orientation as LockableScreenOrientation | undefined;
+    const isCurrentlyFullscreen = isFullscreen || isInlineFullscreen || ownsFullscreenElement || isNativeVideoFullscreen;
 
     if (!isCurrentlyFullscreen) {
-      let enteredElementFullscreen = false;
+      // ENTER FULLSCREEN
+      setIsFullscreen(true);
+      setIsInlineFullscreen(true);
+      setShowControls(true);
+
+      // Telegram WebApp Fullscreen Support
+      try {
+        if (tg && typeof tg.requestFullscreen === 'function') {
+          tg.requestFullscreen();
+        }
+      } catch (err) {
+        console.warn('[Telegram requestFullscreen]:', err);
+      }
+
+      // Native Element / iOS WebKit Fullscreen
+      let enteredNative = false;
       try {
         if (container.requestFullscreen) {
           await container.requestFullscreen();
-          enteredElementFullscreen = true;
+          enteredNative = true;
         } else if (webkitContainer?.webkitRequestFullscreen) {
           await webkitContainer.webkitRequestFullscreen();
-          enteredElementFullscreen = true;
+          enteredNative = true;
         }
       } catch {
-        // iPhone commonly rejects element fullscreen. The inline fallback below
-        // keeps custom controls and pinch zoom available instead of switching
-        // to Apple's isolated native video UI.
+        // Fallback to CSS inline full-viewport mode
       }
 
-      setIsInlineFullscreen(!enteredElementFullscreen);
-      setIsFullscreen(true);
-      setShowControls(true);
+      if (enteredNative) {
+        setIsInlineFullscreen(false);
+      }
 
-      const lockLandscape = async () => {
-        try {
-          const orientation = (screen as any).orientation || (screen as any).mozOrientation || (screen as any).msOrientation;
-          if (orientation && typeof orientation.lock === 'function') {
-            await orientation.lock('landscape').catch(async () => {
-              await orientation.lock('landscape-primary').catch(() => {});
-            });
-          } else if ((screen as any).lockOrientation) {
-            (screen as any).lockOrientation('landscape');
-          } else if ((screen as any).mozLockOrientation) {
-            (screen as any).mozLockOrientation('landscape');
-          }
-        } catch {}
-      };
-
-      lockLandscape();
-      setTimeout(lockLandscape, 150);
+      // Safe screen orientation lock (wrap in safe try-catch so it NEVER throws unhandled errors)
+      try {
+        const orientation = (screen as any).orientation || (screen as any).mozOrientation || (screen as any).msOrientation;
+        if (orientation && typeof orientation.lock === 'function') {
+          orientation.lock('landscape').catch(() => {
+            orientation.lock('landscape-primary').catch(() => {});
+          });
+        } else if ((screen as any).lockOrientation) {
+          (screen as any).lockOrientation('landscape');
+        }
+      } catch {}
       return;
     }
 
+    // EXIT FULLSCREEN
+    setIsFullscreen(false);
+    setIsInlineFullscreen(false);
+    setShowControls(true);
+
     try {
-      if (isInlineFullscreen) {
-        setIsInlineFullscreen(false);
-      } else if (isNativeVideoFullscreen && video?.webkitExitFullscreen) {
+      if (tg && typeof tg.exitFullscreen === 'function') {
+        tg.exitFullscreen();
+      }
+    } catch {}
+
+    try {
+      if (isNativeVideoFullscreen && video?.webkitExitFullscreen) {
         video.webkitExitFullscreen();
       } else if (ownsFullscreenElement && document.exitFullscreen) {
         await document.exitFullscreen();
-      } else if (ownsFullscreenElement && webkitDocument.webkitExitFullscreen) {
+      } else if (ownsFullscreenElement && webkitDocument?.webkitExitFullscreen) {
         await webkitDocument.webkitExitFullscreen();
       }
-    } finally {
-      setIsFullscreen(false);
-      setShowControls(true);
-      try {
-        const orientation = (screen as any).orientation || (screen as any).mozOrientation || (screen as any).msOrientation;
-        if (orientation && typeof orientation.unlock === 'function') {
-          orientation.unlock();
-        } else if ((screen as any).unlockOrientation) {
-          (screen as any).unlockOrientation();
-        }
-      } catch {}
-    }
-  }, [isInlineFullscreen]);
+    } catch {}
+
+    try {
+      const orientation = (screen as any).orientation || (screen as any).mozOrientation || (screen as any).msOrientation;
+      if (orientation && typeof orientation.unlock === 'function') {
+        orientation.unlock();
+      } else if ((screen as any).unlockOrientation) {
+        (screen as any).unlockOrientation();
+      }
+    } catch {}
+  }, [isFullscreen, isInlineFullscreen]);
   const toggleFullscreenRef = useRef(toggleFullscreen);
   useEffect(() => {
     toggleFullscreenRef.current = toggleFullscreen;
@@ -1246,34 +1242,34 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const renderSettingsMenu = () => {
     return (
       <div 
-        className="settings-target relative w-[230px] md:w-[260px] h-auto max-h-full overflow-y-auto overscroll-contain bg-[#121212] border border-[#e50914]/60 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.95)] flex flex-col p-2.5 animate-fade-in-up [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/20 hover:[&::-webkit-scrollbar-thumb]:bg-alex-primary"
+        className="settings-target relative w-[205px] xs:w-[220px] sm:w-[250px] h-auto max-h-[165px] sm:max-h-[220px] overflow-y-auto overscroll-contain bg-[#0c1220]/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.95)] flex flex-col p-2 animate-fade-in-up custom-scrollbar"
         onPointerUp={(e) => e.stopPropagation()}
         dir="rtl"
       >
         {/* --- Main Menu --- */}
         {settingsView === 'main' && (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between mb-1 pb-1 border-b border-white/10 shrink-0">
-               <div className="text-sm text-white font-black">الإعدادات</div>
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center justify-between mb-0.5 pb-1 border-b border-white/10 shrink-0">
+               <div className="text-xs text-white font-black">الإعدادات</div>
                <button 
                  onPointerUp={(e) => { e.stopPropagation(); setActiveDropdown(null); }}
-                 className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer outline-none focus:outline-none ring-0"
+                 className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer outline-none focus:outline-none ring-0"
                >
-                 <i className="fa-solid fa-xmark text-xs"></i>
+                 <i className="fa-solid fa-xmark text-[10px]"></i>
                </button>
             </div>
             
             {/* Family Mode Switch */}
-            {(!roomHook || isHost) && <div className="flex flex-row justify-between items-center px-1.5 py-1.5 hover:bg-white/5 rounded-xl transition-colors shrink-0">
+            {(!roomHook || isHost) && <div className="flex flex-row justify-between items-center px-1.5 py-1 hover:bg-white/5 rounded-xl transition-colors shrink-0">
               <div className="flex flex-col text-right">
-                <span className="font-bold text-xs text-white">وضع العائلة</span>
-                <span className="text-[9px] text-gray-400 mt-0.5">تخطي تلقائي للمشاهد المخلة</span>
+                <span className="font-bold text-[11px] text-white leading-tight">وضع العائلة</span>
+                <span className="text-[8px] text-gray-400">تخطي تلقائي للمشاهد المخلة</span>
               </div>
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setIsFamilyMode(!isFamilyMode); }}
-                className={`w-9 h-5 rounded-full relative transition-colors outline-none cursor-pointer ${isFamilyMode ? 'bg-red-600' : 'bg-white/20'}`}
+                className={`w-8 h-4.5 rounded-full relative transition-colors outline-none cursor-pointer ${isFamilyMode ? 'bg-alex-primary' : 'bg-white/20'}`}
               >
-                <div className={`w-3 h-3 bg-white rounded-full absolute top-[4px] transition-transform transform-gpu ${isFamilyMode ? 'left-[2px]' : 'right-[2px]'}`}></div>
+                <div className={`w-3 h-3 bg-white rounded-full absolute top-[3px] transition-transform transform-gpu ${isFamilyMode ? 'left-[2px]' : 'right-[2px]'}`}></div>
               </button>
             </div>}
 
@@ -1281,29 +1277,29 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             {vttTranslations.length > 0 && (
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('subtitles'); }}
-                className="flex flex-row justify-between items-center px-1.5 py-2 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right shrink-0"
+                className="flex flex-row justify-between items-center px-1.5 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right shrink-0"
               >
-                <span className="font-bold text-xs text-white">الترجمة</span>
-                <span className="text-[10px] text-white/50">{selectedLanguage === 'off' ? 'إيقاف' : selectedLanguage === 'ar' ? 'العربية' : 'English'} &lt;</span>
+                <span className="font-bold text-[11px] text-white">الترجمة</span>
+                <span className="text-[9px] text-white/50">{selectedLanguage === 'off' ? 'إيقاف' : selectedLanguage === 'ar' ? 'العربية' : 'English'} &lt;</span>
               </button>
             )}
 
             {/* Quality Button */}
             <button 
               onPointerUp={(e) => { e.stopPropagation(); setSettingsView('quality'); }}
-              className="flex flex-row justify-between items-center px-1.5 py-2 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right shrink-0"
+              className="flex flex-row justify-between items-center px-1.5 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right shrink-0"
             >
-              <span className="font-bold text-xs text-white">الجودة</span>
-              <span className="text-[10px] text-white/50">{selectedResolution} &lt;</span>
+              <span className="font-bold text-[11px] text-white">الجودة</span>
+              <span className="text-[9px] text-white/50">{selectedResolution} &lt;</span>
             </button>
 
             {/* Speed Button */}
             {!roomHook && <button
               onPointerUp={(e) => { e.stopPropagation(); setSettingsView('speed'); }}
-              className="flex flex-row justify-between items-center px-1.5 py-2 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right shrink-0"
+              className="flex flex-row justify-between items-center px-1.5 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right shrink-0"
             >
-              <span className="font-bold text-xs text-white">سرعة التشغيل</span>
-              <span className="text-[10px] text-white/50">{playbackRate}x &lt;</span>
+              <span className="font-bold text-[11px] text-white">سرعة التشغيل</span>
+              <span className="text-[9px] text-white/50">{playbackRate}x &lt;</span>
             </button>}
           </div>
         )}
@@ -1730,14 +1726,14 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           </div>
         )}
 
-        {/* FLOATING SETTINGS MENU (EXACT FIT SOLID CARD) */}
+        {/* FLOATING SETTINGS MENU (COMPACT FIT INSIDE 16:9) */}
         {activeDropdown === 'settings' && (
           <div 
             className="absolute z-[9999] pointer-events-auto"
             style={{ 
-              bottom: isFullscreen ? '18%' : '56px',
-              right: isFullscreen ? '2%' : '8px',
-              maxHeight: isFullscreen ? '75%' : '320px',
+              bottom: isFullscreen ? '16%' : '44px',
+              right: isFullscreen ? '2%' : '6px',
+              maxHeight: isFullscreen ? '75%' : '170px',
             }}
           >
             {renderSettingsMenu()}
@@ -1893,6 +1889,13 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
       </div>
     );
+
+    // When fullscreen (inline or native), portal to document.body to escape
+    // any parent stacking context (overflow:hidden, transforms, etc.)
+    if ((isFullscreen || isInlineFullscreen) && typeof document !== 'undefined') {
+      return createPortal(playerContent, document.body);
+    }
+    return playerContent;
   }
 
   // Loading skeleton while stream is initializing

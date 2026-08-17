@@ -1,6 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/getAuthUser';
 import { prisma } from '@/lib/prisma';
+import { getVideoDetails, getSeriesSeasons, getSeriesEpisodes } from '@/lib/api';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ roomId: string }> }
+) {
+  try {
+    const { roomId } = await params;
+    if (!roomId) {
+      return NextResponse.json({ success: false, error: 'معرف الغرفة مطلوب' }, { status: 400 });
+    }
+
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+      include: {
+        host: {
+          select: {
+            id: true,
+            name: true,
+            imageUrl: true,
+          },
+        },
+      },
+    });
+
+    if (!room) {
+      return NextResponse.json({ success: false, error: 'الغرفة غير موجودة' }, { status: 404 });
+    }
+
+    const authUser = await getAuthUser().catch(() => null);
+    const currentUserId = authUser?.id || null;
+    const isHostUser = Boolean(currentUserId && currentUserId === room.hostId);
+
+    let video: any = null;
+    let seasons: any[] = [];
+    let episodes: any[] = [];
+
+    if (room.movieId) {
+      video = await getVideoDetails(room.movieId).catch(() => null);
+      if (video && (video.kind === '2' || video.seriesId)) {
+        const targetSeriesId = String(video.seriesId || video.fatherId || room.movieId);
+        const [s, e] = await Promise.allSettled([
+          getSeriesSeasons(targetSeriesId),
+          getSeriesEpisodes(targetSeriesId),
+        ]);
+        if (s.status === 'fulfilled' && Array.isArray(s.value)) seasons = s.value;
+        if (e.status === 'fulfilled' && Array.isArray(e.value)) episodes = e.value;
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      room,
+      currentUserId,
+      isHostUser,
+      video,
+      seasons,
+      episodes,
+    });
+  } catch (error) {
+    console.error('Error fetching room via API:', error);
+    return NextResponse.json(
+      { success: false, error: 'حدث خطأ أثناء جلب بيانات الغرفة' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function DELETE(
   req: NextRequest,

@@ -14,6 +14,7 @@ import { getVideoImageUrl } from '@/utils/imageHelper';
 import { updateRoomTitle } from '@/app/actions/room.actions';
 import LobbySearch from './LobbySearch';
 import UserAvatar from '@/components/UserAvatar';
+import { isTelegramWebAppContext } from '@/lib/telegramWebAppClient';
 
 interface RoomClientWrapperProps {
   roomId: string;
@@ -28,6 +29,7 @@ interface RoomClientWrapperProps {
   video: RoomVideoData | null;
   seasons: SeriesSeason[];
   episodes: SeriesEpisode[];
+  onExit?: () => void;
 }
 
 function RoomStateScreen({
@@ -92,6 +94,7 @@ export default function RoomClientWrapper({
   video,
   seasons,
   episodes,
+  onExit,
 }: RoomClientWrapperProps) {
   const { user, isLoaded } = useUser();
   const { user: unifiedUser } = useUnifiedAuth();
@@ -159,6 +162,40 @@ export default function RoomClientWrapper({
     });
   };
 
+  const handleExitRoom = () => {
+    if (onExit) {
+      onExit();
+      return;
+    }
+    if (isTelegramWebAppContext()) {
+      router.push('/tg-app');
+    } else {
+      router.push('/rooms');
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const tg = (window as any).Telegram?.WebApp;
+    if (!tg?.BackButton) return;
+
+    if (isTelegramWebAppContext()) {
+      const handleTgBack = () => {
+        handleExitRoom();
+      };
+      try {
+        tg.BackButton.show();
+        tg.BackButton.onClick(handleTgBack);
+      } catch {}
+
+      return () => {
+        try {
+          tg.BackButton.offClick(handleTgBack);
+        } catch {}
+      };
+    }
+  }, []);
+
   if (!isLoaded) {
     return (
       <div className="flex min-h-[100svh] items-center justify-center bg-[#070a11]" role="status" aria-label="جارٍ تحميل الغرفة">
@@ -173,8 +210,8 @@ export default function RoomClientWrapper({
         icon="fa-solid fa-user-slash"
         title="تم حظرك نهائياً من الغرفة"
         description={roomHook.banReason || 'حُظرت من المشاركة في هذه الغرفة مستقبلاً.'}
-        actionLabel="تصفح الغرف الأخرى"
-        onAction={() => router.push('/rooms')}
+        actionLabel="العودة"
+        onAction={handleExitRoom}
       />
     );
   }
@@ -185,8 +222,8 @@ export default function RoomClientWrapper({
         icon="fa-solid fa-ban"
         title="تم إخراجك من الغرفة"
         description="أنهى المضيف مشاركتك في جلسة المشاهدة الحالية."
-        actionLabel="تصفح المحتوى"
-        onAction={() => router.push('/movies')}
+        actionLabel="العودة"
+        onAction={handleExitRoom}
       />
     );
   }
@@ -197,16 +234,28 @@ export default function RoomClientWrapper({
         icon="fa-solid fa-door-closed"
         title="انتهت جلسة المشاهدة"
         description="أغلق المضيف هذه الغرفة. يمكنك الانضمام إلى جلسة أخرى من صفحة الغرف."
-        actionLabel="عرض الغرف النشطة"
-        onAction={() => router.push('/rooms')}
+        actionLabel="العودة للغرف"
+        onAction={handleExitRoom}
       />
     );
   }
 
   const bgImage = video ? getVideoImageUrl(video) : null;
-  const visibleMembers = roomHook.members.slice(0, 3);
-  const memberCount = Math.max(roomHook.members.length, 1);
+  const uniqueMembers = React.useMemo(() => {
+    const seen = new Map<string, typeof roomHook.members[0]>();
+    for (const m of roomHook.members) {
+      const key = (m as any).userId || (m as any).identity || m.name || m.id;
+      if (!seen.has(key) || m.isHost) {
+        seen.set(key, m);
+      }
+    }
+    return Array.from(seen.values());
+  }, [roomHook.members]);
+
+  const visibleMembers = uniqueMembers.slice(0, 3);
+  const memberCount = Math.max(uniqueMembers.length, 1);
   const canChangeMedia = isHostUser || roomHook.userPermissions.canChangeMedia;
+
 
   const handleSaveTitle = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -250,13 +299,14 @@ export default function RoomClientWrapper({
         <header className="mb-3 flex min-h-14 items-center gap-2 overflow-hidden rounded-2xl border border-white/10 bg-[#0b101a]/95 p-2 shadow-xl sm:mb-4 sm:p-2.5">
           <button
             type="button"
-            onClick={() => router.push('/rooms')}
+            onClick={handleExitRoom}
             className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-slate-200 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
             aria-label="العودة إلى الغرف"
             title="العودة إلى الغرف"
           >
             <i className="fa-solid fa-arrow-right" aria-hidden="true" />
           </button>
+
 
           <div className="min-w-0 flex-1 px-1">
             <div className="flex min-w-0 items-center gap-2">
@@ -434,8 +484,9 @@ export default function RoomClientWrapper({
               closeRoom={roomHook.closeRoom}
               activeTab={activeRoomTab}
               onActiveTabChange={setActiveRoomTab}
-              onLeaveRoom={() => router.push('/rooms')}
+              onLeaveRoom={handleExitRoom}
             />
+
           </aside>
         </div>
       </div>

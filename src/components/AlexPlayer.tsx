@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Hls from 'hls.js';
 import type { WatchRoomHook } from '@/hooks/useWatchRoom';
 import {
@@ -286,7 +287,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     containerRef,
     videoRef,
     isFullscreen,
-    resetKey: `${videoData.stream_url || ''}:${videoData.ar_title || ''}:${isFullscreen}`,
+    resetKey: `${videoData.stream_url || ''}:${videoData.ar_title || ''}`,
     surfaceKey: currentStreamUrl,
     onPinchStart: () => {
       if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
@@ -386,11 +387,15 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     };
   }, [currentStreamUrl, youtubeFallback]);
 
-  // Helper to proxy stream URLs — simplified since URLs are now pre-sanitized by the server
+  // Helper to proxy stream URLs — route through universal tunnel proxy
   const toProxyUrl = (url: string | undefined | null) => {
     if (!url) return null;
     const clean = url.trim();
-    if (clean.startsWith('/api/proxy') || clean.startsWith('/api/stream') || clean.startsWith('/api/img')) return clean;
+    if (clean.startsWith('/tunnel/') || clean.startsWith('/api/')) return clean;
+    const match = clean.match(/^https?:\/\/([a-zA-Z0-9_-]+)\.shabakaty\.com\/(.*)$/i);
+    if (match) {
+      return `/tunnel/${match[1]}/${match[2]}`;
+    }
     return clean;
   };
 
@@ -1422,7 +1427,8 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   // HTML5 Cinema Player with Custom UI Controls
   if (currentStreamUrl && !showStreamError) {
-    return (
+    // Core player content — shared between normal and fullscreen portal modes
+    const playerContent = (
       <div 
         ref={containerRef}
         tabIndex={0}
@@ -1799,7 +1805,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 </button>
 
                 {activeDropdown === 'settings' && (
-                  <div className="absolute bottom-full right-0 mb-4 z-50 origin-bottom-right scale-90 sm:scale-100 lg:scale-110">
+                  <div className="absolute bottom-full right-0 mb-2 z-50 origin-bottom-right scale-90 sm:scale-100">
                     {renderSettingsMenu()}
                   </div>
                 )}
@@ -1822,6 +1828,13 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
       </div>
     );
+
+    // When fullscreen, portal the player to document.body to escape any
+    // parent stacking context (e.g. Telegram overlay with overflow/transform).
+    if (isFullscreen && typeof document !== 'undefined') {
+      return createPortal(playerContent, document.body);
+    }
+    return playerContent;
   }
 
   // Loading skeleton while stream is initializing

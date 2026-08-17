@@ -7,8 +7,14 @@ import { createPortal } from 'react-dom';
 import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
 import { toast } from 'react-hot-toast';
 import { DEFAULT_ROOM_TITLE, MAX_ROOM_TITLE_LENGTH, normalizeRoomTitle } from '@/lib/roomTitle';
+import { isTelegramWebAppContext } from '@/lib/telegramWebAppClient';
 
-export default function CreateRoomButton({ className }: { className?: string }) {
+interface CreateRoomButtonProps {
+  className?: string;
+  onCreated?: (roomId: string) => void;
+}
+
+export default function CreateRoomButton({ className, onCreated }: CreateRoomButtonProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [roomName, setRoomName] = useState('');
@@ -142,7 +148,13 @@ export default function CreateRoomButton({ className }: { className?: string }) 
         setRoomName('');
         toast.success('تم إنشاء الغرفة بنجاح! 🍿');
         const roomId = data.room?.id || data.roomId;
-        router.push(`/room/${roomId}?create=true`);
+        if (onCreated) {
+          onCreated(roomId);
+        } else if (isTelegramWebAppContext()) {
+          window.dispatchEvent(new CustomEvent('telegram:join-room', { detail: { roomId } }));
+        } else {
+          router.push(`/room/${roomId}?create=true`);
+        }
       } else {
         toast.error(data.error || 'حدث خطأ أثناء إنشاء الغرفة');
       }

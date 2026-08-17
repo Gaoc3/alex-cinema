@@ -64,3 +64,69 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'حدث خطأ أثناء إنشاء الروم' }, { status: 500 });
   }
 }
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = req.nextUrl;
+    const type = searchParams.get('type') || 'active';
+
+    if (type === 'user') {
+      const authUser = await getAuthUser().catch(() => null);
+      if (!authUser) {
+        return NextResponse.json(
+          { success: false, error: 'يجب تسجيل الدخول لجلب روماتك' },
+          { status: 401 }
+        );
+      }
+
+      const rooms = await prisma.room.findMany({
+        where: {
+          hostId: authUser.id,
+        },
+        include: {
+          host: {
+            select: {
+              name: true,
+              imageUrl: true,
+            },
+          },
+        },
+        orderBy: {
+          updatedAt: 'desc',
+        },
+      });
+
+      return NextResponse.json({ success: true, rooms });
+    }
+
+    // Default: fetch public active rooms
+    const rooms = await prisma.room.findMany({
+      where: {
+        isPrivate: false,
+      },
+      include: {
+        host: {
+          select: {
+            name: true,
+            imageUrl: true,
+          },
+        },
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      take: 40,
+    });
+
+    return NextResponse.json({ success: true, rooms });
+  } catch (error) {
+    console.error('Error fetching rooms API:', error);
+    return NextResponse.json(
+      { success: false, error: 'حدث خطأ أثناء جلب الغرف' },
+      { status: 500 }
+    );
+  }
+}

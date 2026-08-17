@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 interface Category {
   nb: string | number;
+  title?: string;
   ar_title?: string;
 }
 
@@ -31,13 +32,12 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
 
   let categoryName = 'أفلام التصنيف';
   const matchedCategory = categories.find((category) => String(category.nb) === resolvedParams.id);
-  if (matchedCategory?.ar_title) {
-    categoryName = matchedCategory.ar_title;
+  if (matchedCategory?.title || matchedCategory?.ar_title) {
+    categoryName = matchedCategory.title || matchedCategory.ar_title || 'أفلام التصنيف';
   }
 
   return (
     <div className="min-h-screen pt-32 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-      
       <div className="flex items-center gap-4 mb-10">
         <div className="w-1.5 h-8 bg-alex-primary rounded-full shadow-[0_0_10px_rgba(229,9,20,0.5)]"></div>
         <h1 className="text-3xl font-black text-white drop-shadow-md tracking-wide">
