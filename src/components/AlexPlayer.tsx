@@ -896,26 +896,44 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   };
 
   // Fullscreen helper
+  // In Telegram WebApp: use tg.requestFullscreen() (Bot API 8.0) which makes the
+  // entire mini app fullscreen. The player then uses CSS fixed overlay.
+  // In regular browsers: use element.requestFullscreen() native API.
   const toggleFullscreen = async () => {
     const container = containerRef.current;
+    if (!container) return;
+
+    const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null;
+    const isTelegramCtx = !!(tg?.initData || tg?.initDataUnsafe?.user);
+
     const video = videoRef.current as (HTMLVideoElement & {
       webkitEnterFullscreen?: () => void;
-      webkitExitFullscreen?: () => void;
       webkitDisplayingFullscreen?: boolean;
     }) | null;
-    const webkitDocument = document as Document & {
+    const webkitDoc = document as Document & {
       webkitFullscreenElement?: Element;
       webkitExitFullscreen?: () => Promise<void> | void;
     };
-    const webkitContainer = container as (HTMLDivElement & {
+    const webkitContainer = container as HTMLDivElement & {
       webkitRequestFullscreen?: () => Promise<void> | void;
-    }) | null;
-    if (container) {
-      if (!document.fullscreenElement && !webkitDocument.webkitFullscreenElement && !video?.webkitDisplayingFullscreen) {
+    };
+
+    const isNativelyFullscreen = !!(document.fullscreenElement || webkitDoc.webkitFullscreenElement || video?.webkitDisplayingFullscreen);
+
+    if (!isFullscreen) {
+      // --- ENTER FULLSCREEN ---
+      if (isTelegramCtx) {
+        // Telegram Mini App fullscreen (Bot API 8.0)
+        try { tg.requestFullscreen?.(); } catch {}
+        // Lock orientation via Telegram API
+        try { tg.lockOrientation?.(); } catch {}
+        setIsFullscreen(true);
+      } else {
+        // Regular browser fullscreen
         try {
           if (container.requestFullscreen) {
             await container.requestFullscreen();
-          } else if (webkitContainer?.webkitRequestFullscreen) {
+          } else if (webkitContainer.webkitRequestFullscreen) {
             await webkitContainer.webkitRequestFullscreen();
           } else if (video?.webkitEnterFullscreen) {
             video.webkitEnterFullscreen();
@@ -923,48 +941,33 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             return;
           }
           setIsFullscreen(true);
-          
-          // Try to lock orientation to landscape on mobile devices
-          const lockLandscape = async () => {
-            try {
-              const orientation = (screen as any).orientation || (screen as any).mozOrientation || (screen as any).msOrientation;
-              if (orientation && typeof orientation.lock === 'function') {
-                await orientation.lock('landscape').catch(async () => {
-                  await orientation.lock('landscape-primary').catch(() => {});
-                });
-              } else if ((screen as any).lockOrientation) {
-                (screen as any).lockOrientation('landscape');
-              } else if ((screen as any).mozLockOrientation) {
-                (screen as any).mozLockOrientation('landscape');
-              }
-            } catch {}
-          };
-          lockLandscape();
-          setTimeout(lockLandscape, 150);
+          // Lock orientation in regular browsers
+          try {
+            const ori = (screen as any).orientation;
+            if (ori?.lock) await ori.lock('landscape').catch(() => {});
+          } catch {}
         } catch (err) {
-          console.error("Fullscreen failed:", err);
+          console.error('Fullscreen failed:', err);
           setIsFullscreen(false);
         }
+      }
+    } else {
+      // --- EXIT FULLSCREEN ---
+      if (isTelegramCtx) {
+        try { tg.exitFullscreen?.(); } catch {}
+        try { tg.unlockOrientation?.(); } catch {}
+        setIsFullscreen(false);
       } else {
         try {
-          if (document.exitFullscreen) {
-            await document.exitFullscreen();
-          } else if (webkitDocument.webkitExitFullscreen) {
-            await webkitDocument.webkitExitFullscreen();
-          } else if (video?.webkitDisplayingFullscreen && video.webkitExitFullscreen) {
-            video.webkitExitFullscreen();
-          } else {
-            return;
+          if (isNativelyFullscreen) {
+            if (document.exitFullscreen) await document.exitFullscreen();
+            else if (webkitDoc.webkitExitFullscreen) await webkitDoc.webkitExitFullscreen();
+            else if (video?.webkitDisplayingFullscreen && (video as any).webkitExitFullscreen) (video as any).webkitExitFullscreen();
           }
           setIsFullscreen(false);
-          
-          // Unlock orientation
-          const orientation = screen.orientation as LockableScreenOrientation | undefined;
-          if (orientation?.unlock) {
-            orientation.unlock();
-          }
+          try { (screen.orientation as any)?.unlock?.(); } catch {}
         } catch (err) {
-          console.error("Exit fullscreen failed:", err);
+          console.error('Exit fullscreen failed:', err);
           setIsFullscreen(false);
         }
       }
@@ -1170,7 +1173,22 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [youtubeFallback, volume, isMuted, roomHook, isHost, roomState]);
 
-  // Sync fullscreen state change (e.g. Esc button pressed)
+  // Control body overflow when in CSS fullscreen (Telegram context)
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overscrollBehavior = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overscrollBehavior = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overscrollBehavior = '';
+    };
+  }, [isFullscreen]);
+
+  // Sync fullscreen state change (e.g. Esc button pressed, or Telegram fullscreenChanged)
   useEffect(() => {
     const handleFullscreenChange = () => {
       const webkitDocument = document as Document & { webkitFullscreenElement?: Element };
@@ -1182,11 +1200,27 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     const video = videoRef.current;
     video?.addEventListener('webkitbeginfullscreen', handleFullscreenChange);
     video?.addEventListener('webkitendfullscreen', handleFullscreenChange);
+
+    // Telegram WebApp fullscreenChanged event (Bot API 8.0)
+    const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null;
+    const handleTgFullscreenChanged = () => {
+      setIsFullscreen(Boolean(tg?.isFullscreen));
+    };
+    const handleTgFullscreenFailed = () => {
+      // If Telegram fullscreen request failed, keep CSS fullscreen active
+      // (the player is already showing as fixed overlay, so no action needed)
+      console.warn('[Telegram] fullscreenFailed - CSS overlay remains active');
+    };
+    tg?.onEvent?.('fullscreenChanged', handleTgFullscreenChanged);
+    tg?.onEvent?.('fullscreenFailed', handleTgFullscreenFailed);
+
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
       video?.removeEventListener('webkitbeginfullscreen', handleFullscreenChange);
       video?.removeEventListener('webkitendfullscreen', handleFullscreenChange);
+      tg?.offEvent?.('fullscreenChanged', handleTgFullscreenChanged);
+      tg?.offEvent?.('fullscreenFailed', handleTgFullscreenFailed);
     };
   }, [currentStreamUrl, youtubeFallback]);
 
