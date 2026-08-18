@@ -937,8 +937,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
       if (isTelegramCtx) {
         // Telegram Mini App fullscreen (Bot API 8.0)
+        // Note: requestFullscreen() makes the entire mini app fullscreen.
+        // Note: Do NOT call lockOrientation() here — it locks the CURRENT orientation
+        // (which may be portrait). Let the user rotate naturally after entering fullscreen.
         try { tg.requestFullscreen?.(); } catch {}
-        try { tg.lockOrientation?.(); } catch {}
       } else {
         // Regular browser / iOS WebKit fullscreen
         try {
@@ -1217,8 +1219,12 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       if (!tg?.isFullscreen) setIsInlineFullscreen(false);
     };
     tg?.onEvent?.('fullscreenChanged', handleTgFullscreenChanged);
-    tg?.onEvent?.('fullscreenFailed', () => {
-      console.warn('[Telegram] fullscreenFailed - CSS overlay remains active');
+    tg?.onEvent?.('fullscreenFailed', (event: { error: 'UNSUPPORTED' | 'ALREADY_FULLSCREEN' }) => {
+      if (event?.error === 'ALREADY_FULLSCREEN') {
+        setIsFullscreen(true);
+      } else {
+        console.warn('[Telegram] fullscreenFailed:', event?.error);
+      }
     });
 
     return () => {

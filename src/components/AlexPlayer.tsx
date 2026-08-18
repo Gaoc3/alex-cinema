@@ -924,9 +924,13 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       // --- ENTER FULLSCREEN ---
       if (isTelegramCtx) {
         // Telegram Mini App fullscreen (Bot API 8.0)
-        try { tg.requestFullscreen?.(); } catch {}
-        // Lock orientation via Telegram API
-        try { tg.lockOrientation?.(); } catch {}
+        // Note: requestFullscreen() makes the entire mini app fullscreen.
+        // The header becomes transparent — recommend calling setHeaderColor first.
+        // Note: Do NOT call lockOrientation() here — it locks the CURRENT orientation
+        // (which may be portrait). Let the user rotate naturally after entering fullscreen.
+        try {
+          tg.requestFullscreen?.();
+        } catch {}
         setIsFullscreen(true);
       } else {
         // Regular browser fullscreen
@@ -1204,12 +1208,18 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     // Telegram WebApp fullscreenChanged event (Bot API 8.0)
     const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null;
     const handleTgFullscreenChanged = () => {
+      // fullscreenChanged event has no parameters — read tg.isFullscreen
       setIsFullscreen(Boolean(tg?.isFullscreen));
     };
-    const handleTgFullscreenFailed = () => {
-      // If Telegram fullscreen request failed, keep CSS fullscreen active
-      // (the player is already showing as fixed overlay, so no action needed)
-      console.warn('[Telegram] fullscreenFailed - CSS overlay remains active');
+    const handleTgFullscreenFailed = (event: { error: 'UNSUPPORTED' | 'ALREADY_FULLSCREEN' }) => {
+      if (event?.error === 'ALREADY_FULLSCREEN') {
+        // App is already fullscreen — ensure our state reflects this
+        setIsFullscreen(true);
+      } else {
+        // UNSUPPORTED: device/platform does not support fullscreen
+        // CSS overlay (fixed inset-0) remains active as a fallback
+        console.warn('[Telegram] fullscreenFailed:', event?.error);
+      }
     };
     tg?.onEvent?.('fullscreenChanged', handleTgFullscreenChanged);
     tg?.onEvent?.('fullscreenFailed', handleTgFullscreenFailed);
