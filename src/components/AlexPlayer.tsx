@@ -210,6 +210,18 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTapRef = useRef<{ time: number; x: number; y: number }>({ time: 0, x: 0, y: 0 });
 
+  // Cinematic Fullscreen Switching Transition State (Entering / Exiting)
+  const [fullscreenTransition, setFullscreenTransition] = useState<'entering' | 'exiting' | null>(null);
+  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerFullscreenTransition = (mode: 'entering' | 'exiting') => {
+    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    setFullscreenTransition(mode);
+    transitionTimerRef.current = setTimeout(() => {
+      setFullscreenTransition(null);
+    }, 450);
+  };
+
   // Subtitle custom sizing state with localstorage persistence
   const [subtitleSize, setSubtitleSize] = useState<number>(() => {
     if (typeof window !== 'undefined') {
@@ -922,6 +934,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     );
 
     if (!isNativelyFullscreen) {
+      triggerFullscreenTransition('entering');
       try {
         if (container.requestFullscreen) {
           await container.requestFullscreen();
@@ -934,6 +947,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         console.error('Fullscreen request failed:', err);
       }
     } else {
+      triggerFullscreenTransition('exiting');
       try {
         if (document.exitFullscreen) {
           await document.exitFullscreen();
@@ -1167,7 +1181,13 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     const handleFullscreenChange = () => {
       const webkitDocument = document as Document & { webkitFullscreenElement?: Element };
       const webkitVideo = videoRef.current as (HTMLVideoElement & { webkitDisplayingFullscreen?: boolean }) | null;
-      setIsFullscreen(Boolean(document.fullscreenElement || webkitDocument.webkitFullscreenElement || webkitVideo?.webkitDisplayingFullscreen));
+      const nextFs = Boolean(document.fullscreenElement || webkitDocument.webkitFullscreenElement || webkitVideo?.webkitDisplayingFullscreen);
+      setIsFullscreen((prev) => {
+        if (prev !== nextFs) {
+          triggerFullscreenTransition(nextFs ? 'entering' : 'exiting');
+        }
+        return nextFs;
+      });
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
@@ -1487,8 +1507,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           </div>
         )}
 
-        {/* The Native HTML5 Video Element */}
-        <div className={`absolute inset-0 w-full h-full ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
+        {/* The Native HTML5 Video Element with dynamic cinematic switch animation */}
+        <div className={`absolute inset-0 w-full h-full ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'} ${
+          fullscreenTransition === 'entering' ? 'animate-cinematic-enter' : fullscreenTransition === 'exiting' ? 'animate-cinematic-exit' : ''
+        }`}>
           <style>{`
             video {
               object-fit: cover !important;
@@ -1505,6 +1527,38 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               background: transparent !important;
               opacity: 0 !important;
               text-shadow: none !important;
+            }
+            @keyframes cinematicSwitchEnter {
+              0% {
+                opacity: 0.4;
+                transform: scale(0.96);
+                filter: brightness(1.2) contrast(1.05);
+              }
+              60% {
+                opacity: 0.95;
+                filter: brightness(1.06);
+              }
+              100% {
+                opacity: 1;
+                transform: scale(1);
+                filter: brightness(1) contrast(1);
+              }
+            }
+            @keyframes cinematicSwitchExit {
+              0% {
+                opacity: 0.7;
+                transform: scale(1.03);
+              }
+              100% {
+                opacity: 1;
+                transform: scale(1);
+              }
+            }
+            .animate-cinematic-enter {
+              animation: cinematicSwitchEnter 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+            .animate-cinematic-exit {
+              animation: cinematicSwitchExit 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
             }
           `}</style>
           <video
@@ -1638,6 +1692,22 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 {line}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* Cinematic Fullscreen Switching Flash & Ambient Lens Effect */}
+        {fullscreenTransition && (
+          <div 
+            className={`absolute inset-0 pointer-events-none z-30 transition-all duration-400 flex items-center justify-center overflow-hidden ${
+              fullscreenTransition === 'entering'
+                ? 'bg-black/30 backdrop-blur-[1px]'
+                : 'bg-black/20'
+            }`}
+          >
+            {/* Center Dynamic Aperture Glow */}
+            <div className={`w-40 h-40 md:w-64 md:h-64 rounded-full bg-alex-primary/25 blur-3xl transition-transform duration-400 transform ${
+              fullscreenTransition === 'entering' ? 'scale-150 opacity-100' : 'scale-50 opacity-0'
+            }`} />
           </div>
         )}
 
