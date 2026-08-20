@@ -1441,16 +1441,16 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   // HTML5 Cinema Player with Custom UI Controls
   if (currentStreamUrl && !showStreamError) {
-    // Core player content — shared between normal and fullscreen portal modes
+    // Core player content — shared between normal and fullscreen modes
     const playerContent = (
       <div 
         ref={containerRef}
         tabIndex={0}
         aria-label="مشغل الفيديو"
-        className={`relative select-none group/player transition-all duration-300 min-h-[200px] ${
+        className={`relative select-none group/player transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] min-h-[200px] w-full bg-black ${
           isFullscreen 
-            ? 'fixed inset-0 w-screen h-[100dvh] z-[9999] rounded-none border-none bg-black'
-            : 'w-full rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 bg-black aspect-video'
+            ? 'h-full rounded-none border-none shadow-none'
+            : 'rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 aspect-video'
         }`}
         style={{ aspectRatio: isFullscreen ? 'auto' : 16/9 }}
         dir="ltr"
@@ -1826,12 +1826,12 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               </div>
 
               {/* Fullscreen Toggle */}
-                <button
-                  onClick={toggleFullscreen}
-                  aria-label={isFullscreen ? 'الخروج من ملء الشاشة' : 'ملء الشاشة'}
-                className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-white/5 text-sm text-white transition-colors hover:border-white/15 hover:bg-white/5 hover:text-alex-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 md:h-10 md:w-10 md:rounded-xl md:text-base"
+              <button
+                onClick={toggleFullscreen}
+                aria-label={isFullscreen ? 'الخروج من ملء الشاشة' : 'ملء الشاشة'}
+                className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-white/5 text-sm text-white transition-all duration-200 hover:scale-110 active:scale-90 hover:border-white/15 hover:bg-white/5 hover:text-alex-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 md:h-10 md:w-10 md:rounded-xl md:text-base"
               >
-                <i className={`fa-solid ${isFullscreen ? 'fa-minimize' : 'fa-maximize'}`}></i>
+                <i className={`fa-solid ${isFullscreen ? 'fa-minimize' : 'fa-maximize'} transition-transform duration-200 transform ${isFullscreen ? 'scale-105' : 'scale-100'}`}></i>
               </button>
 
             </div>
