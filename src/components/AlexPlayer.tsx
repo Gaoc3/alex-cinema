@@ -219,7 +219,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     setFullscreenTransition(mode);
     transitionTimerRef.current = setTimeout(() => {
       setFullscreenTransition(null);
-    }, 450);
+    }, 1200);
   };
 
   // Subtitle custom sizing state with localstorage persistence
@@ -1530,35 +1530,76 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             }
             @keyframes cinematicSwitchEnter {
               0% {
-                opacity: 0.4;
-                transform: scale(0.96);
-                filter: brightness(1.2) contrast(1.05);
+                opacity: 0;
+                transform: scale(0.85);
+                filter: blur(8px) brightness(1.3);
               }
               60% {
                 opacity: 0.95;
-                filter: brightness(1.06);
+                transform: scale(0.98);
+                filter: blur(2px) brightness(1.08);
               }
               100% {
                 opacity: 1;
                 transform: scale(1);
-                filter: brightness(1) contrast(1);
+                filter: blur(0px) brightness(1);
               }
             }
             @keyframes cinematicSwitchExit {
               0% {
-                opacity: 0.7;
-                transform: scale(1.03);
+                opacity: 0.5;
+                transform: scale(1.08);
+                filter: blur(4px);
               }
               100% {
                 opacity: 1;
                 transform: scale(1);
+                filter: blur(0px);
+              }
+            }
+            @keyframes ringPulse {
+              0% {
+                transform: scale(0.3);
+                opacity: 0.9;
+                border-width: 4px;
+              }
+              100% {
+                transform: scale(2.6);
+                opacity: 0;
+                border-width: 1px;
+              }
+            }
+            @keyframes hudToast {
+              0% {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.9);
+              }
+              20% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+              }
+              80% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+              }
+              100% {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.95);
               }
             }
             .animate-cinematic-enter {
-              animation: cinematicSwitchEnter 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+              animation: cinematicSwitchEnter 650ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+              will-change: transform, filter, opacity;
             }
             .animate-cinematic-exit {
-              animation: cinematicSwitchExit 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+              animation: cinematicSwitchExit 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+              will-change: transform, filter, opacity;
+            }
+            .animate-ring-pulse {
+              animation: ringPulse 650ms ease-out forwards;
+            }
+            .animate-hud-toast {
+              animation: hudToast 1100ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
             }
           `}</style>
           <video
@@ -1695,19 +1736,32 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           </div>
         )}
 
-        {/* Cinematic Fullscreen Switching Flash & Ambient Lens Effect */}
+        {/* Cinematic Fullscreen Switching Flash, Aperture Ring & HUD Toast */}
         {fullscreenTransition && (
           <div 
-            className={`absolute inset-0 pointer-events-none z-30 transition-all duration-400 flex items-center justify-center overflow-hidden ${
+            className={`absolute inset-0 pointer-events-none z-40 transition-all duration-500 flex flex-col items-center justify-center overflow-hidden ${
               fullscreenTransition === 'entering'
-                ? 'bg-black/30 backdrop-blur-[1px]'
-                : 'bg-black/20'
+                ? 'bg-black/40 backdrop-blur-[2px]'
+                : 'bg-black/30'
             }`}
           >
-            {/* Center Dynamic Aperture Glow */}
-            <div className={`w-40 h-40 md:w-64 md:h-64 rounded-full bg-alex-primary/25 blur-3xl transition-transform duration-400 transform ${
+            {/* Center Luminous Ring Pulse */}
+            <div className={`w-48 h-48 md:w-80 md:h-80 rounded-full border border-alex-primary/80 shadow-[0_0_60px_rgba(229,9,20,0.8)] ${
+              fullscreenTransition === 'entering' ? 'animate-ring-pulse' : 'opacity-0'
+            }`} />
+
+            {/* Ambient Background Glow */}
+            <div className={`absolute w-40 h-40 md:w-72 md:h-72 rounded-full bg-alex-primary/30 blur-3xl transition-transform duration-500 transform ${
               fullscreenTransition === 'entering' ? 'scale-150 opacity-100' : 'scale-50 opacity-0'
             }`} />
+
+            {/* Floating Glassy HUD Toast */}
+            <div className="absolute top-8 left-1/2 -translate-x-1/2 animate-hud-toast flex items-center gap-2.5 px-4 py-2 rounded-full bg-black/85 backdrop-blur-xl border border-white/20 text-white text-xs md:text-sm font-black shadow-[0_10px_30px_rgba(0,0,0,0.8)]" dir="rtl">
+              <i className={`fa-solid ${fullscreenTransition === 'entering' ? 'fa-expand text-alex-primary' : 'fa-compress text-gray-400'} text-xs md:text-sm`}></i>
+              <span className="tracking-wide">
+                {fullscreenTransition === 'entering' ? 'وضع ملء الشاشة' : 'الوضع الافتراضي'}
+              </span>
+            </div>
           </div>
         )}
 
