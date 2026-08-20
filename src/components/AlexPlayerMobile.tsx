@@ -952,9 +952,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             console.warn('[Telegram] requestFullscreen error:', err);
           }
         }
+        // 3. Unlock orientation in Telegram so it can rotate to landscape
+        try { tg.unlockOrientation?.(); } catch {}
       }
 
-      // 3. Request DOM Fullscreen on container (Android / Desktop browsers & WebView)
+      // 4. Request DOM Fullscreen on container (Android / Desktop browsers & WebView)
       try {
         if (container.requestFullscreen) {
           await container.requestFullscreen().catch(() => {});
@@ -965,15 +967,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         }
       } catch {}
 
-      // 4. Force screen orientation to Landscape (Screen Orientation API on Android / Chrome)
+      // 5. Force screen orientation to Landscape (Screen Orientation API on Android / Chrome)
       try {
         const ori = (screen as any).orientation;
         if (ori && typeof ori.lock === 'function') {
           await ori.lock('landscape').catch(() => {});
-          // If inside Telegram and orientation rotated, lock orientation
-          if (isTelegramCtx && tg && typeof tg.lockOrientation === 'function') {
-            try { tg.lockOrientation(); } catch {}
-          }
         } else if ((screen as any).lockOrientation) {
           (screen as any).lockOrientation('landscape');
         } else if ((screen as any).mozLockOrientation) {
