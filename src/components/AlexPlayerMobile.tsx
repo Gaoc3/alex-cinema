@@ -186,21 +186,41 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Device orientation detection for auto-landscape in fullscreen
-  const [isDevicePortrait, setIsDevicePortrait] = useState(true);
+  // Pocket Cinema 90-degree Rotation State for True Fullscreen Landscape
+  const [rotation, setRotation] = useState<0 | 90>(0);
   useEffect(() => {
-    const updateOrientation = () => {
-      if (typeof window === 'undefined') return;
-      setIsDevicePortrait(window.innerHeight >= window.innerWidth);
+    const handleResize = () => {
+      if (typeof window !== 'undefined' && window.innerWidth > window.innerHeight) {
+        setRotation(0);
+      }
     };
-    updateOrientation();
-    window.addEventListener('resize', updateOrientation);
-    window.addEventListener('orientationchange', updateOrientation);
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
     return () => {
-      window.removeEventListener('resize', updateOrientation);
-      window.removeEventListener('orientationchange', updateOrientation);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
     };
   }, []);
+
+  const getRotationStyles = (rot: number): React.CSSProperties | undefined => {
+    if (rot === 90) {
+      return {
+        position: 'fixed',
+        inset: 0,
+        width: '100dvh',
+        height: '100vw',
+        marginTop: '-100vw',
+        transform: 'rotate(90deg)',
+        transformOrigin: 'bottom left',
+        overflow: 'hidden',
+        zIndex: 99999,
+        borderRadius: 0,
+        backgroundColor: '#000',
+        touchAction: 'manipulation',
+      };
+    }
+    return undefined;
+  };
 
   // Gesture State
   const [showSeekAnimation, setShowSeekAnimation] = useState<'forward' | 'backward' | null>(null);
@@ -935,10 +955,15 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       video?.webkitDisplayingFullscreen
     );
 
-    if (!isFullscreen) {
-      // ENTER FULLSCREEN + AUTO-ROTATE TO LANDSCAPE
+    if (!isFullscreen && rotation === 0) {
+      // ENTER FULLSCREEN + POCKET CINEMA AUTO-ROTATE TO LANDSCAPE
       setIsFullscreen(true);
       setShowControls(true);
+
+      const isPortrait = typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
+      if (isPortrait) {
+        setRotation(90);
+      }
 
       if (isTelegramCtx && tg) {
         // 1. Expand WebApp bottom sheet
@@ -978,9 +1003,6 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           (screen as any).mozLockOrientation('landscape');
         } else if ((screen as any).msLockOrientation) {
           (screen as any).msLockOrientation('landscape');
-        } else if (video?.webkitEnterFullscreen) {
-          // iOS WebKit native video player automatically takes full landscape screen
-          video.webkitEnterFullscreen();
         }
       } catch (err) {
         console.warn('Orientation lock failed:', err);
@@ -988,6 +1010,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     } else {
       // EXIT FULLSCREEN & UNLOCK ORIENTATION
       setIsFullscreen(false);
+      setRotation(0);
       setIsInlineFullscreen(false);
       setShowControls(true);
 
@@ -1023,7 +1046,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         console.error('Exit fullscreen failed:', err);
       }
     }
-  }, [isFullscreen, isInlineFullscreen]);
+  }, [isFullscreen, isInlineFullscreen, rotation]);
   const toggleFullscreenRef = useRef(toggleFullscreen);
   useEffect(() => {
     toggleFullscreenRef.current = toggleFullscreen;
@@ -1518,7 +1541,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   // HTML5 Cinema Player with Custom UI Controls
   if (currentStreamUrl && !showStreamError) {
-    const isForcedLandscape = isFullscreen && isDevicePortrait;
+    const rotationStyle = getRotationStyles(rotation);
 
     const playerContent = (
       <div 
@@ -1526,28 +1549,14 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         tabIndex={0}
         aria-label="مشغل الفيديو"
         className={`relative select-none group/player transition-all duration-300 min-h-[200px] ${
-          isFullscreen 
-            ? isForcedLandscape
+          isFullscreen || rotation === 90
+            ? rotation === 90
               ? 'fixed bg-black overflow-hidden'
               : 'fixed inset-0 w-screen h-[100dvh] z-[9999] rounded-none border-none bg-black'
             : 'w-full rounded-3xl bg-black aspect-video'
         }`}
         style={
-          isForcedLandscape
-            ? {
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100vh',
-                height: '100vw',
-                transform: 'rotate(90deg) translateY(-100%)',
-                transformOrigin: 'top left',
-                zIndex: 99999,
-                backgroundColor: '#000',
-                aspectRatio: 'auto',
-                touchAction: 'manipulation',
-              }
-            : { aspectRatio: isFullscreen ? 'auto' : 16/9, touchAction: 'manipulation' }
+          rotationStyle || (isFullscreen ? { aspectRatio: 'auto', touchAction: 'manipulation' } : { aspectRatio: 16/9, touchAction: 'manipulation' })
         }
         dir="ltr"
       >
@@ -1974,7 +1983,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
     // When fullscreen (inline or native), portal to document.body to escape
     // any parent stacking context (overflow:hidden, transforms, etc.)
-    if ((isFullscreen || isInlineFullscreen) && typeof document !== 'undefined') {
+    if ((isFullscreen || isInlineFullscreen || rotation === 90) && typeof document !== 'undefined') {
       return createPortal(playerContent, document.body);
     }
     return playerContent;
