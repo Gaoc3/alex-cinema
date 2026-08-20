@@ -116,7 +116,7 @@ export default function RoomSidebar({
   const uniqueMembers = React.useMemo(() => {
     const seen = new Map<string, RoomMember>();
     for (const member of members) {
-      const key = member.userId || (member as any).identity || member.name || member.id;
+      const key = (member as any).userId || (member as any).identity || member.name || member.id;
       if (!seen.has(key) || member.isHost) {
         seen.set(key, member);
       }
