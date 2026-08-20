@@ -205,42 +205,6 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Pocket Cinema 90-degree Rotation State for True Fullscreen Landscape
-  const [rotation, setRotation] = useState<0 | 90>(0);
-  useEffect(() => {
-    const handleResize = () => {
-      if (typeof window !== 'undefined' && window.innerWidth > window.innerHeight) {
-        setRotation(0);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
-    };
-  }, []);
-
-  const getRotationStyles = (rot: number): React.CSSProperties | undefined => {
-    if (rot === 90) {
-      return {
-        position: 'fixed',
-        inset: 0,
-        width: '100dvh',
-        height: '100vw',
-        marginTop: '-100vw',
-        transform: 'rotate(90deg)',
-        transformOrigin: 'bottom left',
-        overflow: 'hidden',
-        zIndex: 99999,
-        borderRadius: 0,
-        backgroundColor: '#000',
-        touchAction: 'manipulation',
-      };
-    }
-    return undefined;
-  };
-
   // Gesture State
   const [showSeekAnimation, setShowSeekAnimation] = useState<'forward' | 'backward' | null>(null);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -708,7 +672,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     }
   };
 
-  const handleVideoPointerUp = (e: React.PointerEvent<HTMLElement>) => {
+  const handleVideoPointerUp = (e: React.PointerEvent<HTMLVideoElement>) => {
     if (shouldSuppressTap()) {
       if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
       lastTapRef.current = { time: 0, x: 0, y: 0 };
@@ -747,22 +711,8 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       if (isTouch) {
         // Delay slightly so double tap can intercept, otherwise toggle controls UI
         tapTimeoutRef.current = setTimeout(() => {
-          setShowControls((prev) => {
-            const next = !prev;
-            if (next) {
-              if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-              if (!videoRef.current?.paused) {
-                controlsTimeoutRef.current = setTimeout(() => {
-                  setShowControls(false);
-                  setActiveDropdown(null);
-                }, 4000);
-              }
-            } else {
-              setActiveDropdown(null);
-            }
-            return next;
-          });
-        }, 200);
+          setShowControls(prev => !prev);
+        }, 320);
       } else {
         // Desktop mouse click: Toggle play/pause instantly
         togglePlay();
@@ -946,21 +896,15 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   };
 
   // Fullscreen helper
-  // In Telegram WebApp: use tg.requestFullscreen() (Bot API 8.0+) which makes the
-  // Fullscreen helper with Auto-Landscape Rotation
-  // In Telegram WebApp: use tg.requestFullscreen() (Bot API 8.0+) and screen.orientation.lock('landscape')
-  // which makes the entire mini app fullscreen and automatically rotates to landscape mode.
-  // In regular browsers: use element.requestFullscreen() + screen.orientation.lock('landscape').
+  // In Telegram WebApp: use tg.requestFullscreen() (Bot API 8.0) which makes the
+  // entire mini app fullscreen. The player then uses CSS fixed overlay.
+  // In regular browsers: use element.requestFullscreen() native API.
   const toggleFullscreen = async () => {
     const container = containerRef.current;
     if (!container) return;
 
     const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null;
-    const isTelegramCtx = typeof window !== 'undefined' && Boolean(
-      (window as any).Telegram?.WebApp?.version ||
-      (window as any).Telegram?.WebApp?.initData ||
-      (window as any).Telegram?.WebApp?.initDataUnsafe?.user
-    );
+    const isTelegramCtx = !!(tg?.initData || tg?.initDataUnsafe?.user);
 
     const video = videoRef.current as (HTMLVideoElement & {
       webkitEnterFullscreen?: () => void;
@@ -976,94 +920,60 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
     const isNativelyFullscreen = !!(document.fullscreenElement || webkitDoc.webkitFullscreenElement || video?.webkitDisplayingFullscreen);
 
-    if (!isFullscreen && rotation === 0) {
-      // --- ENTER FULLSCREEN + POCKET CINEMA AUTO-ROTATE TO LANDSCAPE ---
-      setIsFullscreen(true);
-      setShowControls(true);
-
-      const isPortrait = typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
-      if (isPortrait) {
-        setRotation(90);
-      }
-
-      if (isTelegramCtx && tg) {
-        // 1. Ensure WebApp sheet is expanded
-        try { tg.expand?.(); } catch {}
-
-        // 2. Telegram Mini App native fullscreen (Bot API 8.0+)
-        if (typeof tg.requestFullscreen === 'function' && (tg.isVersionAtLeast?.('8.0') ?? true)) {
-          try {
-            tg.requestFullscreen();
-          } catch (err) {
-            console.warn('[Telegram] requestFullscreen error:', err);
+    if (!isFullscreen) {
+      // --- ENTER FULLSCREEN ---
+      if (isTelegramCtx) {
+        // Telegram Mini App fullscreen (Bot API 8.0)
+        // Note: requestFullscreen() makes the entire mini app fullscreen.
+        // The header becomes transparent — recommend calling setHeaderColor first.
+        // Note: Do NOT call lockOrientation() here — it locks the CURRENT orientation
+        // (which may be portrait). Let the user rotate naturally after entering fullscreen.
+        try {
+          tg.requestFullscreen?.();
+        } catch {}
+        setIsFullscreen(true);
+      } else {
+        // Regular browser fullscreen
+        try {
+          if (container.requestFullscreen) {
+            await container.requestFullscreen();
+          } else if (webkitContainer.webkitRequestFullscreen) {
+            await webkitContainer.webkitRequestFullscreen();
+          } else if (video?.webkitEnterFullscreen) {
+            video.webkitEnterFullscreen();
+          } else {
+            return;
           }
+          setIsFullscreen(true);
+          // Lock orientation in regular browsers
+          try {
+            const ori = (screen as any).orientation;
+            if (ori?.lock) await ori.lock('landscape').catch(() => {});
+          } catch {}
+        } catch (err) {
+          console.error('Fullscreen failed:', err);
+          setIsFullscreen(false);
         }
-        // 3. Unlock orientation in Telegram so it can rotate to landscape
-        try { tg.unlockOrientation?.(); } catch {}
-      }
-
-      // 4. Request DOM Fullscreen on container (Android / Desktop browsers & WebView)
-      try {
-        if (container.requestFullscreen) {
-          await container.requestFullscreen().catch(() => {});
-        } else if (webkitContainer.webkitRequestFullscreen) {
-          await webkitContainer.webkitRequestFullscreen();
-        } else if (video?.webkitEnterFullscreen) {
-          video.webkitEnterFullscreen();
-        }
-      } catch {}
-
-      // 5. Force screen orientation to Landscape (Screen Orientation API on Android / Chrome)
-      try {
-        const ori = (screen as any).orientation;
-        if (ori && typeof ori.lock === 'function') {
-          await ori.lock('landscape').catch(() => {});
-        } else if ((screen as any).lockOrientation) {
-          (screen as any).lockOrientation('landscape');
-        } else if ((screen as any).mozLockOrientation) {
-          (screen as any).mozLockOrientation('landscape');
-        } else if ((screen as any).msLockOrientation) {
-          (screen as any).msLockOrientation('landscape');
-        }
-      } catch (err) {
-        console.warn('Orientation lock failed:', err);
       }
     } else {
-      // --- EXIT FULLSCREEN & UNLOCK ORIENTATION ---
-      setIsFullscreen(false);
-      setRotation(0);
-      setShowControls(true);
-
-      if (isTelegramCtx && tg) {
+      // --- EXIT FULLSCREEN ---
+      if (isTelegramCtx) {
+        try { tg.exitFullscreen?.(); } catch {}
+        try { tg.unlockOrientation?.(); } catch {}
+        setIsFullscreen(false);
+      } else {
         try {
-          if (tg.isOrientationLocked && typeof tg.unlockOrientation === 'function') {
-            tg.unlockOrientation();
+          if (isNativelyFullscreen) {
+            if (document.exitFullscreen) await document.exitFullscreen();
+            else if (webkitDoc.webkitExitFullscreen) await webkitDoc.webkitExitFullscreen();
+            else if (video?.webkitDisplayingFullscreen && (video as any).webkitExitFullscreen) (video as any).webkitExitFullscreen();
           }
-          if (tg.isFullscreen && typeof tg.exitFullscreen === 'function') {
-            tg.exitFullscreen();
-          }
-        } catch {}
-      }
-
-      // Unlock screen orientation back to normal
-      try {
-        const ori = (screen as any).orientation;
-        if (ori && typeof ori.unlock === 'function') {
-          ori.unlock();
-        } else if ((screen as any).unlockOrientation) {
-          (screen as any).unlockOrientation();
+          setIsFullscreen(false);
+          try { (screen.orientation as any)?.unlock?.(); } catch {}
+        } catch (err) {
+          console.error('Exit fullscreen failed:', err);
+          setIsFullscreen(false);
         }
-      } catch {}
-
-      // Exit DOM Fullscreen
-      try {
-        if (isNativelyFullscreen) {
-          if (document.exitFullscreen) await document.exitFullscreen().catch(() => {});
-          else if (webkitDoc.webkitExitFullscreen) await webkitDoc.webkitExitFullscreen();
-          else if (video?.webkitDisplayingFullscreen && (video as any).webkitExitFullscreen) (video as any).webkitExitFullscreen();
-        }
-      } catch (err) {
-        console.error('Exit fullscreen failed:', err);
       }
     }
   };
@@ -1287,49 +1197,42 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     const handleFullscreenChange = () => {
       const webkitDocument = document as Document & { webkitFullscreenElement?: Element };
       const webkitVideo = videoRef.current as (HTMLVideoElement & { webkitDisplayingFullscreen?: boolean }) | null;
-      const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null;
-      const isTgFs = Boolean(tg?.isFullscreen);
-      const isNative = Boolean(document.fullscreenElement || webkitDocument.webkitFullscreenElement || webkitVideo?.webkitDisplayingFullscreen);
-      
-      setIsFullscreen(isNative || isTgFs);
+      setIsFullscreen(Boolean(document.fullscreenElement || webkitDocument.webkitFullscreenElement || webkitVideo?.webkitDisplayingFullscreen));
     };
-
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
     const video = videoRef.current;
-    video?.addEventListener('webkitbeginfullscreen', () => setIsFullscreen(true));
-    video?.addEventListener('webkitendfullscreen', () => setIsFullscreen(false));
+    video?.addEventListener('webkitbeginfullscreen', handleFullscreenChange);
+    video?.addEventListener('webkitendfullscreen', handleFullscreenChange);
 
-    // Telegram WebApp fullscreenChanged event (Bot API 8.0+)
+    // Telegram WebApp fullscreenChanged event (Bot API 8.0)
     const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null;
     const handleTgFullscreenChanged = () => {
-      const isTgFs = Boolean(tg?.isFullscreen);
-      setIsFullscreen(isTgFs);
-      if (!isTgFs) {
-        try { tg?.unlockOrientation?.(); } catch {}
-      }
+      // fullscreenChanged event has no parameters — read tg.isFullscreen
+      setIsFullscreen(Boolean(tg?.isFullscreen));
     };
     const handleTgFullscreenFailed = (event: { error: 'UNSUPPORTED' | 'ALREADY_FULLSCREEN' }) => {
       if (event?.error === 'ALREADY_FULLSCREEN') {
+        // App is already fullscreen — ensure our state reflects this
         setIsFullscreen(true);
       } else {
+        // UNSUPPORTED: device/platform does not support fullscreen
+        // CSS overlay (fixed inset-0) remains active as a fallback
         console.warn('[Telegram] fullscreenFailed:', event?.error);
-        setIsFullscreen(true);
       }
     };
-
     tg?.onEvent?.('fullscreenChanged', handleTgFullscreenChanged);
     tg?.onEvent?.('fullscreenFailed', handleTgFullscreenFailed);
 
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-      video?.removeEventListener('webkitbeginfullscreen', () => setIsFullscreen(true));
-      video?.removeEventListener('webkitendfullscreen', () => setIsFullscreen(false));
+      video?.removeEventListener('webkitbeginfullscreen', handleFullscreenChange);
+      video?.removeEventListener('webkitendfullscreen', handleFullscreenChange);
       tg?.offEvent?.('fullscreenChanged', handleTgFullscreenChanged);
       tg?.offEvent?.('fullscreenFailed', handleTgFullscreenFailed);
     };
-  }, []);
+  }, [currentStreamUrl, youtubeFallback]);
 
   const sortedStreams = [...streams].sort((a, b) => {
     const resA = parseInt(a.resolution) || 0;
@@ -1568,8 +1471,6 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   // HTML5 Cinema Player with Custom UI Controls
   if (currentStreamUrl && !showStreamError) {
-    const rotationStyle = getRotationStyles(rotation);
-
     // Core player content — shared between normal and fullscreen portal modes
     const playerContent = (
       <div 
@@ -1577,15 +1478,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         tabIndex={0}
         aria-label="مشغل الفيديو"
         className={`relative select-none group/player transition-all duration-300 min-h-[200px] ${
-          isFullscreen || rotation === 90
-            ? rotation === 90
-              ? 'fixed bg-black overflow-hidden'
-              : 'fixed inset-0 w-screen h-[100dvh] z-[9999] rounded-none border-none bg-black'
+          isFullscreen 
+            ? 'fixed inset-0 w-screen h-[100dvh] z-[9999] rounded-none border-none bg-black'
             : 'w-full rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 bg-black aspect-video'
         }`}
-        style={
-          rotationStyle || (isFullscreen ? { aspectRatio: 'auto', touchAction: 'manipulation' } : { aspectRatio: 16/9, touchAction: 'manipulation' })
-        }
+        style={{ aspectRatio: isFullscreen ? 'auto' : 16/9 }}
         dir="ltr"
       >
         {/* Inner wrapper for rounded corners and overflow clipping to not affect dropdowns */}
@@ -1624,7 +1521,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         <div className={`absolute inset-0 w-full h-full ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
           <style>{`
             video {
-              object-fit: contain !important;
+              object-fit: cover !important;
               width: 100% !important;
               height: 100% !important;
             }
@@ -1718,13 +1615,6 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             ))}
           </video>
         </div>
-
-        {/* Dedicated Tap & Gesture Layer */}
-        <div 
-          className="absolute inset-0 z-10 cursor-pointer"
-          onPointerUp={handleVideoPointerUp}
-          onPointerCancel={handleVideoPointerCancel}
-        />
 
         {/* Loading Spinner */}
         {isWaiting && (
@@ -1985,7 +1875,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
     // When fullscreen, portal the player to document.body to escape any
     // parent stacking context (e.g. Telegram overlay with overflow/transform).
-    if ((isFullscreen || rotation === 90) && typeof document !== 'undefined') {
+    if (isFullscreen && typeof document !== 'undefined') {
       return createPortal(playerContent, document.body);
     }
     return playerContent;

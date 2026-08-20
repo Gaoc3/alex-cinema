@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Hls from 'hls.js';
 import type { WatchRoomHook } from '@/hooks/useWatchRoom';
@@ -38,7 +38,30 @@ type LockableScreenOrientation = ScreenOrientation & {
   unlock?: () => void;
 };
 
-const getCueText = (cue: TextTrackCue) => (cue as TextCueWithContent).text || '';
+/**
+ * Strip formatting artifacts from subtitle cue text:
+ * 1. ASS/SSA override tags: {\an8}, {\pos(...)}, etc.
+ * 2. HTML tags: <i>, <b>, <font color="...">, etc.
+ * 3. Leading/trailing whitespace per line.
+ */
+const cleanSubtitleText = (text: string): string => {
+  return text
+    // Remove ASS/SSA override blocks: {...}
+    .replace(/\{[^}]*\}/g, '')
+    // Remove HTML tags
+    .replace(/<[^>]+>/g, '')
+    // Decode common HTML entities
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#?\w+;/g, '')
+    // Trim each line
+    .split('\n').map(l => l.trim()).filter(Boolean).join('\n')
+    .trim();
+};
+
+const getCueText = (cue: TextTrackCue) => cleanSubtitleText((cue as TextCueWithContent).text || '');
 
 interface AlexPlayerProps {
   videoData: {
@@ -71,6 +94,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const youtubeId = extractYouTubeId(videoData.trailer || '');
   const streams = videoData.streams || EMPTY_STREAMS;
   const translations = videoData.translations || [];
+
   const isHost = roomHook?.isHost;
   const roomState = roomHook?.roomState;
   const sendSyncUpdate = roomHook?.sendSyncUpdate;
@@ -133,12 +157,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const [selectedLanguage, setSelectedLanguage] = useState<string>('ar'); // Default to Arabic subtitles if available
   const [activeSkipKind, setActiveSkipKind] = useState<SkipSegmentKind | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isInlineFullscreen, setIsInlineFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
-
-  // مراجع لحفظ حالة الفيديو الدقيقة عند تغيير الجودة لتجنب الرجوع للصفر
-  const isSwitchingQuality = useRef(false);
-  const switchState = useRef({ time: 0, wasPlaying: false });
 
   // Family Mode State (Explicit scene skip)
   const [isFamilyMode, setIsFamilyMode] = useState<boolean>(() => {
@@ -185,42 +204,6 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  // Pocket Cinema 90-degree Rotation State for True Fullscreen Landscape
-  const [rotation, setRotation] = useState<0 | 90>(0);
-  useEffect(() => {
-    const handleResize = () => {
-      if (typeof window !== 'undefined' && window.innerWidth > window.innerHeight) {
-        setRotation(0);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
-    };
-  }, []);
-
-  const getRotationStyles = (rot: number): React.CSSProperties | undefined => {
-    if (rot === 90) {
-      return {
-        position: 'fixed',
-        inset: 0,
-        width: '100dvh',
-        height: '100vw',
-        marginTop: '-100vw',
-        transform: 'rotate(90deg)',
-        transformOrigin: 'bottom left',
-        overflow: 'hidden',
-        zIndex: 99999,
-        borderRadius: 0,
-        backgroundColor: '#000',
-        touchAction: 'manipulation',
-      };
-    }
-    return undefined;
-  };
 
   // Gesture State
   const [showSeekAnimation, setShowSeekAnimation] = useState<'forward' | 'backward' | null>(null);
@@ -276,8 +259,8 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     const handleDocumentClick = (e: MouseEvent) => {
       if (!activeDropdown) return;
       const target = e.target as HTMLElement;
-      // Close only if click is not inside a settings-target block
-      if (target.closest('.settings-target')) {
+      // Close only if click is not inside a dropdown-container block
+      if (target.closest('.dropdown-container')) {
         return;
       }
       setActiveDropdown(null);
@@ -292,6 +275,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const controlsBarRef = useRef<HTMLDivElement>(null);
   const [controlsBarHeight, setControlsBarHeight] = useState(0);
+  const qualityRestoreRef = useRef<(() => void) | null>(null);
   const {
     isZoomed,
     showZoomIndicator,
@@ -329,9 +313,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     shouldResumePlaybackRef.current = !isPaused;
   }, [isPaused]);
 
-  // Note: isInlineFullscreen DOM teleportation is handled via createPortal in the render path below.
-  // The useLayoutEffect was removed to avoid React reconciliation conflicts.
-
+  // Keep a guest synchronized with the host after all media refs exist.
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !roomState || isHost || !roomHook) return;
@@ -340,10 +322,12 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       ? Math.max(0, (Date.now() - (roomState.receivedAt || Date.now())) / 1000)
       : 0;
     const targetTime = Math.max(0, roomState.time + elapsed);
-    if (Math.abs(video.currentTime - targetTime) > 1.5) video.currentTime = targetTime;
+    if (Math.abs(video.currentTime - targetTime) > 2) {
+      video.currentTime = targetTime;
+    }
 
     if (roomState.playing && video.paused) {
-      video.play().catch(() => setIsPaused(true));
+      video.play().catch(error => console.log('Autoplay prevented', error));
     } else if (!roomState.playing && !video.paused) {
       video.pause();
     }
@@ -403,7 +387,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     };
   }, [currentStreamUrl, youtubeFallback]);
 
-  // Helper to proxy stream URLs
+  // Helper to proxy stream URLs — route through universal tunnel proxy
   const toProxyUrl = (url: string | undefined | null) => {
     if (!url) return null;
     const clean = url.trim();
@@ -457,25 +441,12 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     }
   }, [(videoData as any)?.nb, (videoData as any)?.id, videoData?.ar_title, streams, useTunnelFallback]);
 
-  // HLS stream logic & Quality Restore
+  // HLS stream logic
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !currentStreamUrl) return;
 
     let hls: Hls | null = null;
-
-    // دالة لاسترجاع التوقيت وحالة التشغيل بعد اكتمال تحميل الجودة الجديدة
-    const restorePlaybackState = () => {
-      if (isSwitchingQuality.current) {
-        video.currentTime = switchState.current.time;
-        if (switchState.current.wasPlaying) {
-          video.play().catch(() => setIsPaused(true));
-        }
-        isSwitchingQuality.current = false;
-      } else if (shouldResumePlaybackRef.current) {
-        video.play().catch(() => {});
-      }
-    };
 
     const isHlsStream = currentStreamUrl.includes('.m3u8') || currentStreamUrl.startsWith('/api/hls?');
     let fatalRecoveryAttempts = 0;
@@ -485,6 +456,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         hls = new Hls({
           startLevel: -1,
           capLevelToPlayerSize: true,
+          // Make HLS much more tolerant of slow VPS speeds
           fragLoadingTimeOut: 30000,
           manifestLoadingTimeOut: 30000,
           levelLoadingTimeOut: 30000,
@@ -497,7 +469,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         });
         hls.loadSource(currentStreamUrl);
         hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, restorePlaybackState);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          if (shouldResumePlaybackRef.current) {
+            video.play().catch(() => {});
+          }
+        });
         hls.on(Hls.Events.ERROR, (event, data) => {
           if (data.fatal) {
             console.error("HLS error:", data);
@@ -530,20 +506,17 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = currentStreamUrl;
-        video.addEventListener('loadedmetadata', restorePlaybackState, { once: true });
       }
     } else {
       video.src = currentStreamUrl;
-      video.addEventListener('loadedmetadata', restorePlaybackState, { once: true });
     }
 
     return () => {
       if (hls) {
         hls.destroy();
       }
-      video.removeEventListener('loadedmetadata', restorePlaybackState);
     };
-  }, [currentStreamUrl, youtubeId]);
+  }, [currentStreamUrl, youtubeId, useTunnelFallback]);
 
   // Sync volume and mute states
   useEffect(() => {
@@ -577,6 +550,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           track.mode = 'disabled';
         } else if (track.language === selectedLanguage) {
           track.mode = 'hidden'; // 'hidden' guarantees native cues aren't rendered, but activeCues is populated
+          // Extract cue text
           if (track.activeCues && track.activeCues.length > 0) {
             newActiveText = Array.from(track.activeCues)
               .map(getCueText).join('\n');
@@ -608,6 +582,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     video.addEventListener('loadeddata', syncTracks);
     video.textTracks.addEventListener('change', syncTracks);
     video.textTracks.addEventListener('addtrack', () => {
+      // New track added — re-attach cuechange and sync
       for (let i = 0; i < video.textTracks.length; i++) {
         video.textTracks[i].removeEventListener('cuechange', onCueChange);
         video.textTracks[i].addEventListener('cuechange', onCueChange);
@@ -625,6 +600,8 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       video.textTracks.removeEventListener('change', syncTracks);
     };
   }, [selectedLanguage, currentStreamUrl]);
+
+  // Subtitle styles are now applied via CSS Variables on the video element in globals.css
 
   // Control bar auto-hide logic
   useEffect(() => {
@@ -672,7 +649,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         video.pause();
       }
     }
-  }
+  };
 
   // Gesture Handlers
   const handleSeekForward = (seconds: number = 10) => {
@@ -695,8 +672,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     }
   };
 
-  // المنطق الذكي للمسات المتتابعة على الشاشة
-  const handleVideoPointerUp = (e: React.PointerEvent<HTMLElement>) => {
+  const handleVideoPointerUp = (e: React.PointerEvent<HTMLVideoElement>) => {
     if (shouldSuppressTap()) {
       if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
       lastTapRef.current = { time: 0, x: 0, y: 0 };
@@ -716,7 +692,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     const isNearbyTap = Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 64;
 
     if (now - lastTap.time < 300 && isNearbyTap) {
-      // ضغطة مزدوجة (Double tap)
+      // Double tap!
       if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
       lastTapRef.current = { time: 0, x: 0, y: 0 };
       
@@ -728,27 +704,19 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         toggleFullscreen();
       }
     } else {
-      // ضغطة واحدة (Single tap)
+      // Single tap
       lastTapRef.current = { time: now, x: e.clientX, y: e.clientY };
       if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
       
-      tapTimeoutRef.current = setTimeout(() => {
-        setShowControls((prev) => {
-          const next = !prev;
-          if (next) {
-            if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-            if (!videoRef.current?.paused) {
-              controlsTimeoutRef.current = setTimeout(() => {
-                setShowControls(false);
-                setActiveDropdown(null);
-              }, 4000);
-            }
-          } else {
-            setActiveDropdown(null);
-          }
-          return next;
-        });
-      }, 200);
+      if (isTouch) {
+        // Delay slightly so double tap can intercept, otherwise toggle controls UI
+        tapTimeoutRef.current = setTimeout(() => {
+          setShowControls(prev => !prev);
+        }, 320);
+      } else {
+        // Desktop mouse click: Toggle play/pause instantly
+        togglePlay();
+      }
     }
   };
 
@@ -829,6 +797,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         streamRetryTimeoutRef.current = null;
         setCurrentStreamUrl((prev) => {
           if (!prev || prev !== failedUrl) return prev;
+          // Clean up old retry params to prevent infinite query string growth
           const cleanUrl = prev.replace(/(&|\?)_retry=\d+_\d+/g, '');
           const separator = cleanUrl.includes('?') ? '&' : '?';
           return `${cleanUrl}${separator}_retry=${nextRetry}_${Date.now()}`;
@@ -909,6 +878,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const handleLoadedMetadata = () => {
     const video = videoRef.current;
     if (video) {
+      if (video.videoWidth && video.videoHeight) {
+        // Removed dynamic aspect ratio to prevent layout shift
+      }
+      
       if (videoData.duration) {
         const parsed = parseFloat(String(videoData.duration));
         if (!isNaN(parsed) && parsed > 0) {
@@ -926,131 +899,84 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   // In Telegram WebApp: use tg.requestFullscreen() (Bot API 8.0) which makes the
   // entire mini app fullscreen. The player then uses CSS fixed overlay.
   // In regular browsers: use element.requestFullscreen() native API.
-  const toggleFullscreen = useCallback(async () => {
+  const toggleFullscreen = async () => {
     const container = containerRef.current;
     if (!container) return;
 
     const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null;
-    const isTelegramCtx = typeof window !== 'undefined' && Boolean(
-      (window as any).Telegram?.WebApp?.version ||
-      (window as any).Telegram?.WebApp?.initData ||
-      (window as any).Telegram?.WebApp?.initDataUnsafe?.user
-    );
+    const isTelegramCtx = !!(tg?.initData || tg?.initDataUnsafe?.user);
 
     const video = videoRef.current as (HTMLVideoElement & {
       webkitEnterFullscreen?: () => void;
       webkitDisplayingFullscreen?: boolean;
     }) | null;
-    const webkitDoc = typeof document !== 'undefined' ? (document as Document & {
+    const webkitDoc = document as Document & {
       webkitFullscreenElement?: Element;
       webkitExitFullscreen?: () => Promise<void> | void;
-    }) : null;
+    };
     const webkitContainer = container as HTMLDivElement & {
       webkitRequestFullscreen?: () => Promise<void> | void;
     };
 
-    const isNativelyFullscreen = !!(
-      (typeof document !== 'undefined' && document.fullscreenElement) ||
-      webkitDoc?.webkitFullscreenElement ||
-      video?.webkitDisplayingFullscreen
-    );
+    const isNativelyFullscreen = !!(document.fullscreenElement || webkitDoc.webkitFullscreenElement || video?.webkitDisplayingFullscreen);
 
-    if (!isFullscreen && rotation === 0) {
-      // ENTER FULLSCREEN + POCKET CINEMA AUTO-ROTATE TO LANDSCAPE
-      setIsFullscreen(true);
-      setShowControls(true);
-
-      const isPortrait = typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
-      if (isPortrait) {
-        setRotation(90);
-      }
-
-      if (isTelegramCtx && tg) {
-        // 1. Expand WebApp bottom sheet
-        try { tg.expand?.(); } catch {}
-
-        // 2. Telegram Mini App native fullscreen (Bot API 8.0+)
-        if (typeof tg.requestFullscreen === 'function' && (tg.isVersionAtLeast?.('8.0') ?? true)) {
-          try {
-            tg.requestFullscreen();
-          } catch (err) {
-            console.warn('[Telegram] requestFullscreen error:', err);
+    if (!isFullscreen) {
+      // --- ENTER FULLSCREEN ---
+      if (isTelegramCtx) {
+        // Telegram Mini App fullscreen (Bot API 8.0)
+        // Note: requestFullscreen() makes the entire mini app fullscreen.
+        // The header becomes transparent — recommend calling setHeaderColor first.
+        // Note: Do NOT call lockOrientation() here — it locks the CURRENT orientation
+        // (which may be portrait). Let the user rotate naturally after entering fullscreen.
+        try {
+          tg.requestFullscreen?.();
+        } catch {}
+        setIsFullscreen(true);
+      } else {
+        // Regular browser fullscreen
+        try {
+          if (container.requestFullscreen) {
+            await container.requestFullscreen();
+          } else if (webkitContainer.webkitRequestFullscreen) {
+            await webkitContainer.webkitRequestFullscreen();
+          } else if (video?.webkitEnterFullscreen) {
+            video.webkitEnterFullscreen();
+          } else {
+            return;
           }
+          setIsFullscreen(true);
+          // Lock orientation in regular browsers
+          try {
+            const ori = (screen as any).orientation;
+            if (ori?.lock) await ori.lock('landscape').catch(() => {});
+          } catch {}
+        } catch (err) {
+          console.error('Fullscreen failed:', err);
+          setIsFullscreen(false);
         }
-        // 3. Unlock orientation in Telegram so it can rotate to landscape
-        try { tg.unlockOrientation?.(); } catch {}
-      }
-
-      // 4. Request DOM Fullscreen on container (Android / Desktop browsers & WebView)
-      try {
-        if (container.requestFullscreen) {
-          await container.requestFullscreen().catch(() => {});
-        } else if (webkitContainer.webkitRequestFullscreen) {
-          await webkitContainer.webkitRequestFullscreen();
-        } else if (video?.webkitEnterFullscreen) {
-          video.webkitEnterFullscreen();
-        }
-      } catch {}
-
-      // 5. Force screen orientation to Landscape (Screen Orientation API on Android / Chrome)
-      try {
-        const ori = (screen as any).orientation;
-        if (ori && typeof ori.lock === 'function') {
-          await ori.lock('landscape').catch(() => {});
-        } else if ((screen as any).lockOrientation) {
-          (screen as any).lockOrientation('landscape');
-        } else if ((screen as any).mozLockOrientation) {
-          (screen as any).mozLockOrientation('landscape');
-        } else if ((screen as any).msLockOrientation) {
-          (screen as any).msLockOrientation('landscape');
-        }
-      } catch (err) {
-        console.warn('Orientation lock failed:', err);
       }
     } else {
-      // EXIT FULLSCREEN & UNLOCK ORIENTATION
-      setIsFullscreen(false);
-      setRotation(0);
-      setIsInlineFullscreen(false);
-      setShowControls(true);
-
-      if (isTelegramCtx && tg) {
+      // --- EXIT FULLSCREEN ---
+      if (isTelegramCtx) {
+        try { tg.exitFullscreen?.(); } catch {}
+        try { tg.unlockOrientation?.(); } catch {}
+        setIsFullscreen(false);
+      } else {
         try {
-          if (tg.isOrientationLocked && typeof tg.unlockOrientation === 'function') {
-            tg.unlockOrientation();
+          if (isNativelyFullscreen) {
+            if (document.exitFullscreen) await document.exitFullscreen();
+            else if (webkitDoc.webkitExitFullscreen) await webkitDoc.webkitExitFullscreen();
+            else if (video?.webkitDisplayingFullscreen && (video as any).webkitExitFullscreen) (video as any).webkitExitFullscreen();
           }
-          if (tg.isFullscreen && typeof tg.exitFullscreen === 'function') {
-            tg.exitFullscreen();
-          }
-        } catch {}
-      }
-
-      // Unlock screen orientation back to normal
-      try {
-        const ori = (screen as any).orientation;
-        if (ori && typeof ori.unlock === 'function') {
-          ori.unlock();
-        } else if ((screen as any).unlockOrientation) {
-          (screen as any).unlockOrientation();
+          setIsFullscreen(false);
+          try { (screen.orientation as any)?.unlock?.(); } catch {}
+        } catch (err) {
+          console.error('Exit fullscreen failed:', err);
+          setIsFullscreen(false);
         }
-      } catch {}
-
-      // Exit DOM Fullscreen
-      try {
-        if (isNativelyFullscreen) {
-          if (typeof document !== 'undefined' && document.exitFullscreen) await document.exitFullscreen().catch(() => {});
-          else if (webkitDoc?.webkitExitFullscreen) await webkitDoc.webkitExitFullscreen();
-          else if (video?.webkitDisplayingFullscreen && (video as any).webkitExitFullscreen) (video as any).webkitExitFullscreen();
-        }
-      } catch (err) {
-        console.error('Exit fullscreen failed:', err);
       }
     }
-  }, [isFullscreen, isInlineFullscreen, rotation]);
-  const toggleFullscreenRef = useRef(toggleFullscreen);
-  useEffect(() => {
-    toggleFullscreenRef.current = toggleFullscreen;
-  }, [toggleFullscreen]);
+  };
 
   // Format seconds to HH:MM:SS or MM:SS
   const formatTime = (seconds: number) => {
@@ -1078,26 +1004,49 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       return;
     }
 
+    if (qualityRestoreRef.current) {
+      video.removeEventListener('loadedmetadata', qualityRestoreRef.current);
+      qualityRestoreRef.current = null;
+    }
+
     if (video) {
-      isSwitchingQuality.current = true;
-      switchState.current = {
-        time: video.currentTime,
-        wasPlaying: !video.paused
-      };
+      const savedTime = video.currentTime;
+      const wasPlaying = !video.paused;
 
       setSelectedResolution(stream.resolution);
-      setCurrentStreamUrl(nextStreamUrl);
       setActiveDropdown(null);
+
+      const resumeSeek = () => {
+        video.currentTime = savedTime;
+        if (wasPlaying) {
+          video.play().catch(() => {});
+        }
+        video.removeEventListener('loadedmetadata', resumeSeek);
+        if (qualityRestoreRef.current === resumeSeek) qualityRestoreRef.current = null;
+      };
+      qualityRestoreRef.current = resumeSeek;
+      video.addEventListener('loadedmetadata', resumeSeek);
+      setCurrentStreamUrl(nextStreamUrl);
     }
   };
+
+  useEffect(() => () => {
+    const video = videoRef.current;
+    if (video && qualityRestoreRef.current) {
+      video.removeEventListener('loadedmetadata', qualityRestoreRef.current);
+    }
+    qualityRestoreRef.current = null;
+  }, []);
 
   // Get Subtitle Track Files (Mapped to proxy and deduplicated)
   const getVttTracks = () => {
     const tracksMap = new Map<string, { id: string | number; name: string; type: string; file: string }>();
     
+    // 1. Process translations array
     if (translations && translations.length > 0) {
       translations.forEach((t) => {
         const fileUrl = t.file;
+        // Prefer native vtt over converted srt if both exist in API response
         const isVtt = t.extention === 'vtt' || fileUrl.includes('.vtt');
         const existing = tracksMap.get(t.type);
         if (!existing || isVtt) {
@@ -1111,6 +1060,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       });
     }
 
+    // 2. Fallback to individual file paths
     if (tracksMap.size === 0) {
       if (videoData.arTranslationFilePath) {
         tracksMap.set('ar', {
@@ -1216,13 +1166,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         case 'f':
         case 'F':
           e.preventDefault();
-          toggleFullscreenRef.current();
-          break;
-        case 'Escape':
-          if (isInlineFullscreen) {
-            e.preventDefault();
-            toggleFullscreenRef.current();
-          }
+          toggleFullscreen();
           break;
         default:
           break;
@@ -1231,9 +1175,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [youtubeFallback, volume, isMuted, roomHook, isHost, roomState, isInlineFullscreen]);
+  }, [youtubeFallback, volume, isMuted, roomHook, isHost, roomState]);
 
-  // Control body overflow when in CSS fullscreen
+  // Control body overflow when in CSS fullscreen (Telegram context)
   useEffect(() => {
     if (isFullscreen) {
       document.body.style.overflow = 'hidden';
@@ -1248,31 +1192,12 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     };
   }, [isFullscreen]);
 
-  // Sync fullscreen state change (native browser events + Telegram Bot API 8.0 events)
+  // Sync fullscreen state change (e.g. Esc button pressed, or Telegram fullscreenChanged)
   useEffect(() => {
     const handleFullscreenChange = () => {
       const webkitDocument = document as Document & { webkitFullscreenElement?: Element };
       const webkitVideo = videoRef.current as (HTMLVideoElement & { webkitDisplayingFullscreen?: boolean }) | null;
-      const fullscreenElement = document.fullscreenElement || webkitDocument.webkitFullscreenElement;
-      const container = containerRef.current;
-      const ownsFullscreenElement = Boolean(
-        fullscreenElement
-        && container
-        && (fullscreenElement === container || container.contains(fullscreenElement))
-      );
-      // Only update if native browser fullscreen changed (not Telegram CSS fullscreen)
-      if (ownsFullscreenElement || Boolean(webkitVideo?.webkitDisplayingFullscreen)) {
-        setIsFullscreen(true);
-      } else if (!ownsFullscreenElement && !Boolean(webkitVideo?.webkitDisplayingFullscreen)) {
-        // Native fullscreen exited — only update if we were in native fullscreen
-        const tg = (window as any)?.Telegram?.WebApp;
-        const isTelegramCtx = !!(tg?.initData || tg?.initDataUnsafe?.user);
-        if (!isTelegramCtx) {
-          setIsFullscreen(false);
-          setIsInlineFullscreen(false);
-          try { (screen.orientation as any)?.unlock?.(); } catch {}
-        }
-      }
+      setIsFullscreen(Boolean(document.fullscreenElement || webkitDocument.webkitFullscreenElement || webkitVideo?.webkitDisplayingFullscreen));
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
@@ -1283,17 +1208,21 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     // Telegram WebApp fullscreenChanged event (Bot API 8.0)
     const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null;
     const handleTgFullscreenChanged = () => {
+      // fullscreenChanged event has no parameters — read tg.isFullscreen
       setIsFullscreen(Boolean(tg?.isFullscreen));
-      if (!tg?.isFullscreen) setIsInlineFullscreen(false);
     };
-    tg?.onEvent?.('fullscreenChanged', handleTgFullscreenChanged);
-    tg?.onEvent?.('fullscreenFailed', (event: { error: 'UNSUPPORTED' | 'ALREADY_FULLSCREEN' }) => {
+    const handleTgFullscreenFailed = (event: { error: 'UNSUPPORTED' | 'ALREADY_FULLSCREEN' }) => {
       if (event?.error === 'ALREADY_FULLSCREEN') {
+        // App is already fullscreen — ensure our state reflects this
         setIsFullscreen(true);
       } else {
+        // UNSUPPORTED: device/platform does not support fullscreen
+        // CSS overlay (fixed inset-0) remains active as a fallback
         console.warn('[Telegram] fullscreenFailed:', event?.error);
       }
-    });
+    };
+    tg?.onEvent?.('fullscreenChanged', handleTgFullscreenChanged);
+    tg?.onEvent?.('fullscreenFailed', handleTgFullscreenFailed);
 
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -1301,8 +1230,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       video?.removeEventListener('webkitbeginfullscreen', handleFullscreenChange);
       video?.removeEventListener('webkitendfullscreen', handleFullscreenChange);
       tg?.offEvent?.('fullscreenChanged', handleTgFullscreenChanged);
+      tg?.offEvent?.('fullscreenFailed', handleTgFullscreenFailed);
     };
-  }, [currentStreamUrl, isInlineFullscreen, youtubeFallback]);
+  }, [currentStreamUrl, youtubeFallback]);
 
   const sortedStreams = [...streams].sort((a, b) => {
     const resA = parseInt(a.resolution) || 0;
@@ -1316,38 +1246,38 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     boxShadow: '0 0 10px rgba(229,9,20,0.5), 0 0 20px rgba(229,9,20,0.3)'
   };
 
-  // Render Helpers for Dropdown Menus
+  // Render Helpers for Dropdown Menus (Mobile Portal vs Desktop Absolute)
   const renderSettingsMenu = () => {
     return (
       <div 
-        className="settings-target relative w-[205px] xs:w-[220px] sm:w-[250px] h-auto max-h-[165px] sm:max-h-[220px] overflow-y-auto overscroll-contain bg-[#0c1220]/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.95)] flex flex-col p-2 animate-fade-in-up custom-scrollbar"
+        className="relative w-full max-w-[280px] md:w-64 max-h-[80vh] md:max-h-[60vh] overflow-y-auto bg-[#121212] border border-[#e50914]/60 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.95)] flex flex-col p-4 md:p-3 animate-fade-in-up"
         onPointerUp={(e) => e.stopPropagation()}
         dir="rtl"
       >
         {/* --- Main Menu --- */}
         {settingsView === 'main' && (
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center justify-between mb-0.5 pb-1 border-b border-white/10 shrink-0">
-               <div className="text-xs text-white font-black">الإعدادات</div>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
+               <div className="text-base md:text-sm text-white font-black">الإعدادات</div>
                <button 
                  onPointerUp={(e) => { e.stopPropagation(); setActiveDropdown(null); }}
-                 className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer outline-none focus:outline-none ring-0"
+                 className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer outline-none focus:outline-none ring-0"
                >
-                 <i className="fa-solid fa-xmark text-[10px]"></i>
+                 <i className="fa-solid fa-xmark md:text-xs"></i>
                </button>
             </div>
             
             {/* Family Mode Switch */}
-            {(!roomHook || isHost) && <div className="flex flex-row justify-between items-center px-1.5 py-1 hover:bg-white/5 rounded-xl transition-colors shrink-0">
+            {(!roomHook || isHost) && <div className="flex flex-row justify-between items-center px-2 py-2 hover:bg-white/5 rounded-xl transition-colors">
               <div className="flex flex-col text-right">
-                <span className="font-bold text-[11px] text-white leading-tight">وضع العائلة</span>
-                <span className="text-[8px] text-gray-400">تخطي تلقائي للمشاهد المخلة</span>
+                <span className="font-bold text-xs text-white">وضع العائلة</span>
+                <span className="text-[9px] text-gray-500 font-normal mt-0.5">تخطي تلقائي للمشاهد المخلة</span>
               </div>
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setIsFamilyMode(!isFamilyMode); }}
-                className={`w-8 h-4.5 rounded-full relative transition-colors outline-none cursor-pointer ${isFamilyMode ? 'bg-alex-primary' : 'bg-white/20'}`}
+                className={`w-10 h-5 rounded-full relative transition-colors outline-none cursor-pointer ${isFamilyMode ? 'bg-red-600' : 'bg-white/20'}`}
               >
-                <div className={`w-3 h-3 bg-white rounded-full absolute top-[3px] transition-transform transform-gpu ${isFamilyMode ? 'left-[2px]' : 'right-[2px]'}`}></div>
+                <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-transform transform-gpu ${isFamilyMode ? 'left-[2px]' : 'right-[2px]'}`}></div>
               </button>
             </div>}
 
@@ -1355,51 +1285,51 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             {vttTranslations.length > 0 && (
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('subtitles'); }}
-                className="flex flex-row justify-between items-center px-1.5 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right shrink-0"
+                className="flex flex-row justify-between items-center px-2 py-2 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
               >
-                <span className="font-bold text-[11px] text-white">الترجمة</span>
-                <span className="text-[9px] text-white/50">{selectedLanguage === 'off' ? 'إيقاف' : selectedLanguage === 'ar' ? 'العربية' : 'English'} &lt;</span>
+                <span className="font-bold text-xs text-white">الترجمة</span>
+                <span className="text-xs text-white/50">{selectedLanguage === 'off' ? 'إيقاف' : selectedLanguage === 'ar' ? 'العربية' : 'English'} &lt;</span>
               </button>
             )}
 
             {/* Quality Button */}
             <button 
               onPointerUp={(e) => { e.stopPropagation(); setSettingsView('quality'); }}
-              className="flex flex-row justify-between items-center px-1.5 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right shrink-0"
+              className="flex flex-row justify-between items-center px-2 py-2 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
             >
-              <span className="font-bold text-[11px] text-white">الجودة</span>
-              <span className="text-[9px] text-white/50">{selectedResolution} &lt;</span>
+              <span className="font-bold text-xs text-white">الجودة</span>
+              <span className="text-xs text-white/50">{selectedResolution} &lt;</span>
             </button>
 
             {/* Speed Button */}
             {!roomHook && <button
               onPointerUp={(e) => { e.stopPropagation(); setSettingsView('speed'); }}
-              className="flex flex-row justify-between items-center px-1.5 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right shrink-0"
+              className="flex flex-row justify-between items-center px-2 py-2 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
             >
-              <span className="font-bold text-[11px] text-white">سرعة التشغيل</span>
-              <span className="text-[9px] text-white/50">{playbackRate}x &lt;</span>
+              <span className="font-bold text-xs text-white">سرعة التشغيل</span>
+              <span className="text-xs text-white/50">{playbackRate}x &lt;</span>
             </button>}
           </div>
         )}
 
         {/* --- Subtitles Sub-menu --- */}
         {settingsView === 'subtitles' && (
-          <div className="flex flex-col animate-fade-in-up">
-            <div className="flex items-center gap-2 mb-1.5 pb-1.5 border-b border-white/10 shrink-0">
+          <div className="flex flex-col gap-1 animate-fade-in-up">
+            <div className="flex items-center gap-2 mb-3 border-b border-white/10 pb-2">
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
-                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+                className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
               >
-                <i className="fa-solid fa-chevron-right text-[10px]"></i>
+                <i className="fa-solid fa-chevron-right text-xs"></i>
               </button>
-              <div className="text-sm text-white font-black">الترجمة</div>
+              <div className="text-base md:text-sm text-white font-black">الترجمة</div>
             </div>
             
-            <div className="text-[10px] text-gray-400 font-bold mb-1 shrink-0">لغة الترجمة</div>
-            <div className="grid grid-cols-3 gap-1 mb-1.5 shrink-0">
+            <div className="text-[10px] text-gray-400 font-bold mb-1">لغة الترجمة</div>
+            <div className="grid grid-cols-2 gap-1.5 mb-3">
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSelectedLanguage('off'); }}
-                className={`py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === 'off' ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                className={`px-2 py-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === 'off' ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
               >
                 إيقاف
               </button>
@@ -1407,15 +1337,15 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 <button 
                   key={track.id}
                   onPointerUp={(e) => { e.stopPropagation(); setSelectedLanguage(track.type); }}
-                  className={`py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === track.type ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                  className={`px-2 py-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === track.type ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
                 >
                   {track.name === 'arabic' ? 'العربية' : 'English'}
                 </button>
               ))}
             </div>
 
-            <div className="text-[10px] text-gray-400 font-bold mb-1 shrink-0">نوع الخط</div>
-            <div className="grid grid-cols-3 gap-1 mb-1.5 shrink-0">
+            <div className="text-[10px] text-gray-400 font-bold mb-1">نوع الخط</div>
+            <div className="grid grid-cols-3 gap-1 mb-3">
               {[
                 { name: 'Tajawal', label: 'تجول' },
                 { name: 'Cairo', label: 'القاهرة' },
@@ -1432,34 +1362,34 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               ))}
             </div>
 
-            <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-white/10 mb-1.5 shrink-0">
-              <span className="text-[10px] text-gray-300 font-bold">حجم الخط</span>
-              <div className="flex items-center gap-1.5">
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10 mb-2">
+              <span className="text-[11px] text-gray-300 font-bold">حجم الخط</span>
+              <div className="flex items-center gap-2.5">
                 <button 
                   onPointerUp={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
-                  className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none"
+                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none"
                 >
-                  <i className="fa-solid fa-plus text-[10px]"></i>
+                  <i className="fa-solid fa-plus text-xs"></i>
                 </button>
-                <span className="text-[11px] font-en font-bold text-white min-w-[32px] text-center">{subtitleSize}%</span>
+                <span className="text-xs font-en font-bold text-white min-w-[36px] text-center">{subtitleSize}%</span>
                 <button 
                   onPointerUp={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
-                  className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none"
+                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none"
                 >
-                  <i className="fa-solid fa-minus text-[10px]"></i>
+                  <i className="fa-solid fa-minus text-xs"></i>
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-white/10 shrink-0">
-              <span className="text-[10px] text-gray-300 font-bold">خلفية سوداء</span>
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
+              <span className="text-[11px] text-gray-300 font-bold">خلفية سوداء</span>
               <button
                 onPointerUp={(e) => { e.stopPropagation(); setShowSubtitleBg(prev => !prev); }}
-                className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-300 outline-none flex items-center cursor-pointer ${
+                className={`w-10 h-5 rounded-full p-0.5 transition-colors duration-300 outline-none flex items-center cursor-pointer ${
                   showSubtitleBg ? 'bg-alex-primary justify-end' : 'bg-white/20 justify-start'
                 }`}
               >
-                <span className="w-4 h-4 rounded-full bg-white shadow-md transform will-change-transform"></span>
+                <span className="w-4 h-4 rounded-full bg-white shadow shadow-md transform will-change-transform"></span>
               </button>
             </div>
           </div>
@@ -1467,22 +1397,22 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
         {/* --- Quality Sub-menu --- */}
         {settingsView === 'quality' && (
-          <div className="flex flex-col animate-fade-in-up">
-            <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-white/10 shrink-0">
+          <div className="flex flex-col gap-1 animate-fade-in-up">
+            <div className="flex items-center gap-2 mb-3 border-b border-white/10 pb-2">
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
-                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+                className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
               >
-                <i className="fa-solid fa-chevron-right text-[10px]"></i>
+                <i className="fa-solid fa-chevron-right text-xs"></i>
               </button>
-              <div className="text-sm text-white font-black">الجودة</div>
+              <div className="text-base md:text-sm text-white font-black">الجودة</div>
             </div>
-            <div className="flex flex-col gap-1 shrink-0">
+            <div className="flex flex-col max-h-[30vh] overflow-y-auto gap-1">
               {sortedStreams.map((stream) => (
                 <button 
                   key={stream.name}
                   onPointerUp={(e) => { e.stopPropagation(); handleQualityChange(stream); setActiveDropdown(null); }}
-                  className={`w-full text-center py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedResolution === stream.resolution ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                  className={`w-full text-center py-2 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedResolution === stream.resolution ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
                 >
                   {stream.resolution}
                 </button>
@@ -1493,22 +1423,22 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
         {/* --- Speed Sub-menu --- */}
         {settingsView === 'speed' && (
-          <div className="flex flex-col animate-fade-in-up font-en">
-            <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-white/10 font-ar shrink-0" dir="rtl">
+          <div className="flex flex-col gap-1 animate-fade-in-up font-en">
+            <div className="flex items-center gap-2 mb-3 border-b border-white/10 pb-2 font-ar" dir="rtl">
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
-                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+                className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
               >
-                <i className="fa-solid fa-chevron-right text-[10px]"></i>
+                <i className="fa-solid fa-chevron-right text-xs"></i>
               </button>
-              <div className="text-sm text-white font-black">سرعة التشغيل</div>
+              <div className="text-base md:text-sm text-white font-black">سرعة التشغيل</div>
             </div>
-            <div className="grid grid-cols-2 gap-1.5 shrink-0">
+            <div className="grid grid-cols-2 gap-1.5">
               {[0.5, 1, 1.25, 1.5, 2].map((rate) => (
                 <button 
                   key={rate}
                   onPointerUp={(e) => { e.stopPropagation(); if (!roomHook) setPlaybackRate(rate); setActiveDropdown(null); }}
-                  className={`w-full text-center py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${playbackRate === rate ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                  className={`w-full text-center py-2 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${playbackRate === rate ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
                 >
                   {rate}x
                 </button>
@@ -1541,27 +1471,22 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   // HTML5 Cinema Player with Custom UI Controls
   if (currentStreamUrl && !showStreamError) {
-    const rotationStyle = getRotationStyles(rotation);
-
+    // Core player content — shared between normal and fullscreen portal modes
     const playerContent = (
       <div 
         ref={containerRef}
         tabIndex={0}
         aria-label="مشغل الفيديو"
         className={`relative select-none group/player transition-all duration-300 min-h-[200px] ${
-          isFullscreen || rotation === 90
-            ? rotation === 90
-              ? 'fixed bg-black overflow-hidden'
-              : 'fixed inset-0 w-screen h-[100dvh] z-[9999] rounded-none border-none bg-black'
-            : 'w-full rounded-3xl bg-black aspect-video'
+          isFullscreen 
+            ? 'fixed inset-0 w-screen h-[100dvh] z-[9999] rounded-none border-none bg-black'
+            : 'w-full rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 bg-black aspect-video'
         }`}
-        style={
-          rotationStyle || (isFullscreen ? { aspectRatio: 'auto', touchAction: 'manipulation' } : { aspectRatio: 16/9, touchAction: 'manipulation' })
-        }
+        style={{ aspectRatio: isFullscreen ? 'auto' : 16/9 }}
         dir="ltr"
       >
-        {/* Inner wrapper for rounded corners and 16:9 border clipping */}
-        <div className={`absolute inset-0 w-full h-full pointer-events-none ${isFullscreen ? 'rounded-none' : 'rounded-3xl border border-white/10 overflow-hidden shadow-[0_0_50px_rgba(229,9,20,0.15)]'}`}>
+        {/* Inner wrapper for rounded corners and overflow clipping to not affect dropdowns */}
+        <div className={`absolute inset-0 w-full h-full pointer-events-none ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
           {/* Adaptive Ambient Light Canvas */}
           <canvas
             ref={canvasRef}
@@ -1596,7 +1521,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         <div className={`absolute inset-0 w-full h-full ${isFullscreen ? 'rounded-none' : 'rounded-3xl overflow-hidden'}`}>
           <style>{`
             video {
-              object-fit: contain !important;
+              object-fit: cover !important;
               width: 100% !important;
               height: 100% !important;
             }
@@ -1618,11 +1543,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             style={videoZoomStyle}
             onPointerUp={handleVideoPointerUp}
             onPointerCancel={handleVideoPointerCancel}
-            onTimeUpdate={() => {
-              // منع تحديث التوقيت للصفر أثناء تبديل الجودة
-              if (isSwitchingQuality.current) return;
-              handleTimeUpdate();
-            }}
+            onTimeUpdate={handleTimeUpdate}
             onEnded={() => setIsPaused(true)}
             onLoadedMetadata={handleLoadedMetadata}
             onError={handleStreamError}
@@ -1695,13 +1616,6 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           </video>
         </div>
 
-        {/* Dedicated Tap & Gesture Layer */}
-        <div 
-          className="absolute inset-0 z-10 cursor-pointer"
-          onPointerUp={handleVideoPointerUp}
-          onPointerCancel={handleVideoPointerCancel}
-        />
-
         {/* Loading Spinner */}
         {isWaiting && (
           <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
@@ -1728,12 +1642,8 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             className="absolute left-1/2 -translate-x-1/2 w-full max-w-[92%] text-center pointer-events-none flex flex-col items-center justify-end z-20 transition-all duration-300 px-4"
             style={{ 
                bottom: controlsVisible
-                 ? isFullscreen
-                   ? `calc(${controlsBarHeight || 70}px + 0.25rem)`
-                   : `calc(${controlsBarHeight || 80}px + 0.5rem)`
-                 : isFullscreen
-                   ? 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)'
-                   : 'calc(env(safe-area-inset-bottom, 0px) + 1.25rem)',
+                 ? `calc(${controlsBarHeight || (isMobile ? 80 : 136)}px + 0.5rem)`
+                 : 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
                paddingLeft: '0px',
                paddingRight: '0px'
             }}
@@ -1766,10 +1676,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           <button 
             onClick={(e) => { e.stopPropagation(); togglePlay(); }}
             aria-label="استئناف تشغيل الفيديو"
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-alex-primary/95 text-white shadow-[0_0_30px_rgba(229,9,20,0.6)] hover:scale-105 active:scale-95 transition-all duration-300 z-20 cursor-pointer outline-none focus:outline-none ring-0"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[72px] h-[72px] rounded-full bg-alex-primary/95 text-white shadow-[0_0_36px_rgba(229,9,20,0.6)] hover:scale-105 active:scale-95 transition-all duration-300 z-20 cursor-pointer outline-none focus:outline-none ring-0"
           >
             <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center">
-              <i className="fa-solid fa-play text-2xl"></i>
+              <i className="fa-solid fa-play text-[30px]"></i>
             </span>
           </button>
         )}
@@ -1789,9 +1699,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             style={{
               bottom: controlsVisible
                 ? isFullscreen
-                  ? `calc(clamp(6.25rem, 15vh, 7.25rem) + env(safe-area-inset-bottom, 0px))`
-                  : `calc(clamp(4.25rem, 9vh, 4.75rem) + env(safe-area-inset-bottom, 0px))`
-                : `calc(clamp(1.25rem, 4vh, 1.75rem) + env(safe-area-inset-bottom, 0px))`,
+                  ? `calc(clamp(6.75rem, 9.5vw, 7.75rem) + env(safe-area-inset-bottom, 0px))`
+                  : `calc(clamp(5.75rem, 8.5vw, 6.5rem) + env(safe-area-inset-bottom, 0px))`
+                : `calc(clamp(2rem, 4vw, 2.5rem) + env(safe-area-inset-bottom, 0px))`,
               paddingLeft: 'max(clamp(0.15rem, 0.8vw, 0.5rem), env(safe-area-inset-left, 0px))',
               paddingRight: 'max(clamp(0.15rem, 0.8vw, 0.5rem), env(safe-area-inset-right, 0px))',
             }}
@@ -1802,11 +1712,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               onClick={activeSkipKind === 'intro' ? handleSkipIntro : handleSkipOutro}
               aria-label={activeSkipKind === 'intro' ? 'تخطي المقدمة' : onNextEpisode ? 'الانتقال إلى الحلقة التالية' : 'تخطي الخاتمة'}
               dir="rtl"
-              className="pointer-events-auto flex min-h-[28px] max-w-full origin-right touch-manipulation items-center justify-center gap-1 rounded-md border border-white/10 bg-black/85 px-2 py-0.5 text-[10px] font-bold text-white shadow-xl backdrop-blur-md transition-all duration-200 hover:border-white hover:bg-white hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white active:scale-95 md:min-h-[32px] md:px-3 md:text-xs cursor-pointer"
+              className="pointer-events-auto flex min-h-[30px] max-w-full origin-right touch-manipulation items-center justify-center gap-1 rounded-md border border-white/10 bg-black/85 px-2.5 py-1 text-[11px] font-bold text-white shadow-xl backdrop-blur-md transition-all duration-200 hover:border-white hover:bg-white hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white active:scale-95 md:min-h-[32px] md:px-3 md:text-xs cursor-pointer"
             >
               <i 
                 aria-hidden="true" 
-                className={`fa-solid ${activeSkipKind === 'intro' ? 'fa-forward-step' : 'fa-forward'} text-[9px] md:text-xs leading-none`}
+                className={`fa-solid ${activeSkipKind === 'intro' ? 'fa-forward-step' : 'fa-forward'} text-[10px] md:text-xs leading-none`}
               />
               <span className="leading-none tracking-normal font-bold">
                 {activeSkipKind === 'intro'
@@ -1814,20 +1724,6 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                   : onNextEpisode ? 'الحلقة التالية' : 'تخطي الخاتمة'}
               </span>
             </button>
-          </div>
-        )}
-
-        {/* FLOATING SETTINGS MENU (COMPACT FIT INSIDE 16:9) */}
-        {activeDropdown === 'settings' && (
-          <div 
-            className="absolute z-[9999] pointer-events-auto"
-            style={{ 
-              bottom: isFullscreen ? '16%' : '44px',
-              right: isFullscreen ? '2%' : '6px',
-              maxHeight: isFullscreen ? '75%' : '170px',
-            }}
-          >
-            {renderSettingsMenu()}
           </div>
         )}
 
@@ -1922,13 +1818,6 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 onClick={(event) => {
                   event.stopPropagation();
                   toggleZoom();
-                  if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-                  if (!videoRef.current?.paused) {
-                    controlsTimeoutRef.current = setTimeout(() => {
-                      setShowControls(false);
-                      setActiveDropdown(null);
-                    }, 3000);
-                  }
                 }}
                 aria-label={isZoomed ? 'إعادة الفيديو إلى الحجم الملائم' : 'تكبير الفيديو لملء الإطار'}
                 aria-pressed={isZoomed}
@@ -1944,14 +1833,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 </span>
               </button>
               
-              {/* Settings Menu Toggle Button */}
-              <div className="static md:relative">
+              {/* Settings Menu */}
+              <div className="static md:relative dropdown-container">
                 <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveDropdown(activeDropdown === 'settings' ? null : 'settings');
-                  }}
-                  className={`settings-target flex items-center justify-center gap-1.5 h-8 md:h-10 px-2 md:px-3 rounded-lg md:rounded-xl border text-[10px] md:text-xs font-black transition-all cursor-pointer outline-none focus:outline-none ring-0 min-w-[32px] md:min-w-[40px] ${
+                  onClick={() => setActiveDropdown(activeDropdown === 'settings' ? null : 'settings')}
+                  className={`flex items-center justify-center gap-1.5 h-8 md:h-10 px-2 md:px-3 rounded-lg md:rounded-xl border text-[10px] md:text-xs font-black transition-all cursor-pointer outline-none focus:outline-none ring-0 min-w-[32px] md:min-w-[40px] ${
                     activeDropdown === 'settings'
                       ? 'bg-alex-primary/20 text-alex-primary border-alex-primary/30 shadow' 
                       : 'ios-button text-gray-300 border-white/5 hover:ios-active'
@@ -1961,12 +1847,18 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                   <i className="fa-solid fa-cog text-sm md:text-base"></i>
                   <span className="hidden md:inline">الإعدادات</span>
                 </button>
+
+                {activeDropdown === 'settings' && (
+                  <div className="absolute bottom-full right-0 mb-2 z-50 origin-bottom-right scale-90 sm:scale-100">
+                    {renderSettingsMenu()}
+                  </div>
+                )}
               </div>
 
               {/* Fullscreen Toggle */}
-              <button 
-                onClick={toggleFullscreen} 
-                aria-label={isFullscreen ? 'الخروج من ملء الشاشة' : 'ملء الشاشة'}
+                <button
+                  onClick={toggleFullscreen}
+                  aria-label={isFullscreen ? 'الخروج من ملء الشاشة' : 'ملء الشاشة'}
                 className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-white/5 text-sm text-white transition-colors hover:border-white/15 hover:bg-white/5 hover:text-alex-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 md:h-10 md:w-10 md:rounded-xl md:text-base"
               >
                 <i className={`fa-solid ${isFullscreen ? 'fa-minimize' : 'fa-maximize'}`}></i>
@@ -1981,9 +1873,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       </div>
     );
 
-    // When fullscreen (inline or native), portal to document.body to escape
-    // any parent stacking context (overflow:hidden, transforms, etc.)
-    if ((isFullscreen || isInlineFullscreen || rotation === 90) && typeof document !== 'undefined') {
+    // When fullscreen, portal the player to document.body to escape any
+    // parent stacking context (e.g. Telegram overlay with overflow/transform).
+    if (isFullscreen && typeof document !== 'undefined') {
       return createPortal(playerContent, document.body);
     }
     return playerContent;
