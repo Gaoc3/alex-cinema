@@ -219,9 +219,9 @@ export default function SearchBar() {
           dir="rtl"
         >
           {/* Top Bar / Search Input Area */}
-          <div className="shrink-0 pt-3 pb-3 px-4 border-b border-white/10 bg-black/40 backdrop-blur-2xl">
+          <div className="shrink-0 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 px-4 border-b border-white/10 bg-black/40 backdrop-blur-2xl">
             <div className="flex items-center gap-3 max-w-lg mx-auto">
-              {/* Back / Exit Button */}
+              {/* Back / Exit Button (44x44px for optimal touch target) */}
               <button
                 type="button"
                 aria-label="رجوع"
@@ -231,7 +231,7 @@ export default function SearchBar() {
                   setQuery('');
                   setResults([]);
                 }}
-                className="w-10 h-10 shrink-0 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer outline-none"
+                className="w-11 h-11 shrink-0 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer outline-none"
               >
                 <i className="fa-solid fa-arrow-right text-sm"></i>
               </button>
@@ -424,7 +424,7 @@ export default function SearchBar() {
 
           {/* Bottom Floating CTA Button */}
           {query.trim().length >= 1 && (
-            <div className="shrink-0 p-4 border-t border-white/10 bg-black/60 backdrop-blur-2xl">
+            <div className="shrink-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/10 bg-black/60 backdrop-blur-2xl">
               <div className="max-w-lg mx-auto">
                 <button
                   type="button"
