@@ -1303,11 +1303,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     boxShadow: '0 0 10px rgba(229,9,20,0.5), 0 0 20px rgba(229,9,20,0.3)'
   };
 
-  // Render Helpers for Dropdown Menus (Desktop Full-Size Luxury Design)
+  // Render Helpers for Dropdown Menus (Pure Translucent Frosted Glass Luxury Design)
   const renderSettingsMenu = () => {
     return (
       <div 
-        className="relative w-64 sm:w-72 scrollbar-none no-scrollbar [&::-webkit-scrollbar]:hidden bg-[#121212]/95 backdrop-blur-2xl border border-[#e50914]/60 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.95)] flex flex-col p-3.5 animate-fade-in-up z-[100]"
+        className="relative w-64 sm:w-72 scrollbar-none no-scrollbar [&::-webkit-scrollbar]:hidden bg-[#0b0c10]/80 backdrop-blur-xl border border-[#e50914]/40 rounded-2xl shadow-[0_15px_35px_rgba(0,0,0,0.8),0_0_25px_rgba(229,9,20,0.15)] flex flex-col p-3.5 animate-fade-in-up z-[100]"
         onPointerUp={(e) => { e.stopPropagation(); lastTouchTimeRef.current = Date.now(); resetControlsTimer(); }}
         onTouchStart={(e) => { e.stopPropagation(); lastTouchTimeRef.current = Date.now(); }}
         onClick={(e) => { e.stopPropagation(); lastTouchTimeRef.current = Date.now(); }}
