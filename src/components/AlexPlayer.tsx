@@ -1303,226 +1303,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     boxShadow: '0 0 10px rgba(229,9,20,0.5), 0 0 20px rgba(229,9,20,0.3)'
   };
 
-  // Render Helpers for Dropdown Menus (Dual-Mode: Spacious in Fullscreen, Ultra-Compact outside)
+  // Render Helpers for Dropdown Menus (Desktop Full-Size Luxury Design)
   const renderSettingsMenu = () => {
-    if (isFullscreen) {
-      // ═══════════════════════════════════════════════════════════════
-      // FULLSCREEN MODE: Original Luxury Design with Glowing Red Borders & Zero Scrollbar
-      // ═══════════════════════════════════════════════════════════════
-      return (
-        <div 
-          className="relative w-64 sm:w-72 scrollbar-none no-scrollbar [&::-webkit-scrollbar]:hidden bg-[#121212] border border-[#e50914]/60 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.95)] flex flex-col p-3.5 animate-fade-in-up z-[100]"
-          onPointerUp={(e) => { e.stopPropagation(); lastTouchTimeRef.current = Date.now(); resetControlsTimer(); }}
-          onTouchStart={(e) => { e.stopPropagation(); lastTouchTimeRef.current = Date.now(); }}
-          onClick={(e) => { e.stopPropagation(); lastTouchTimeRef.current = Date.now(); }}
-          dir="rtl"
-        >
-          {/* --- Main Menu --- */}
-          {settingsView === 'main' && (
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between mb-2.5 border-b border-white/10 pb-2">
-                 <div className="text-sm text-white font-black">الإعدادات</div>
-                 <button 
-                   onPointerUp={(e) => { e.stopPropagation(); setActiveDropdown(null); }}
-                   className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer outline-none focus:outline-none ring-0"
-                 >
-                   <i className="fa-solid fa-xmark text-xs"></i>
-                 </button>
-              </div>
-              
-              {/* Family Mode Switch */}
-              {(!roomHook || isHost) && (
-                <div className="flex flex-row justify-between items-center px-2 py-1.5 hover:bg-white/5 rounded-xl transition-colors">
-                  <div className="flex flex-col text-right">
-                    <span className="font-bold text-xs text-white">وضع العائلة</span>
-                    <span className="text-[9px] text-gray-500 font-normal">تخطي تلقائي للمشاهد المخلة</span>
-                  </div>
-                  <button 
-                    onPointerUp={(e) => { e.stopPropagation(); setIsFamilyMode(!isFamilyMode); }}
-                    className={`w-9 h-5 rounded-full relative transition-colors outline-none cursor-pointer ${isFamilyMode ? 'bg-red-600' : 'bg-white/20'}`}
-                  >
-                    <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-transform transform-gpu ${isFamilyMode ? 'left-[2px]' : 'right-[2px]'}`}></div>
-                  </button>
-                </div>
-              )}
-
-              {/* Subtitles Button */}
-              {vttTranslations.length > 0 && (
-                <button 
-                  onPointerUp={(e) => { e.stopPropagation(); setSettingsView('subtitles'); }}
-                  className="flex flex-row justify-between items-center px-2 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
-                >
-                  <span className="font-bold text-xs text-white">الترجمة</span>
-                  <span className="text-xs text-white/50">{selectedLanguage === 'off' ? 'إيقاف' : selectedLanguage === 'ar' ? 'العربية' : 'English'} &lt;</span>
-                </button>
-              )}
-
-              {/* Quality Button */}
-              <button 
-                onPointerUp={(e) => { e.stopPropagation(); setSettingsView('quality'); }}
-                className="flex flex-row justify-between items-center px-2 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
-              >
-                <span className="font-bold text-xs text-white">الجودة</span>
-                <span className="text-xs text-white/50">{selectedResolution} &lt;</span>
-              </button>
-
-              {/* Speed Button */}
-              {!roomHook && (
-                <button 
-                  onPointerUp={(e) => { e.stopPropagation(); setSettingsView('speed'); }}
-                  className="flex flex-row justify-between items-center px-2 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
-                >
-                  <span className="font-bold text-xs text-white">سرعة التشغيل</span>
-                  <span className="text-xs text-white/50">{playbackRate}x &lt;</span>
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* --- Subtitles Sub-menu --- */}
-          {settingsView === 'subtitles' && (
-            <div className="flex flex-col gap-1 animate-fade-in-up">
-              <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-1.5">
-                <button 
-                  onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
-                  className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
-                >
-                  <i className="fa-solid fa-chevron-right text-[10px]"></i>
-                </button>
-                <div className="text-sm text-white font-black">الترجمة</div>
-              </div>
-              
-              <div className="text-[10px] text-gray-400 font-bold">لغة الترجمة</div>
-              <div className="grid grid-cols-2 gap-1.5 mb-1.5">
-                <button 
-                  onPointerUp={(e) => { e.stopPropagation(); setSelectedLanguage('off'); }}
-                  className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === 'off' ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
-                >
-                  إيقاف
-                </button>
-                {vttTranslations.map((track) => (
-                  <button 
-                    key={track.id}
-                    onPointerUp={(e) => { e.stopPropagation(); setSelectedLanguage(track.type); }}
-                    className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === track.type ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
-                  >
-                    {track.name === 'arabic' ? 'العربية' : 'English'}
-                  </button>
-                ))}
-              </div>
-
-              <div className="text-[10px] text-gray-400 font-bold">نوع الخط</div>
-              <div className="grid grid-cols-3 gap-1 mb-1.5">
-                {[
-                  { name: 'Tajawal', label: 'تجول' },
-                  { name: 'Cairo', label: 'القاهرة' },
-                  { name: 'Amiri', label: 'أميري' }
-                ].map((f) => (
-                  <button
-                    key={f.name}
-                    onPointerUp={(e) => { e.stopPropagation(); setSelectedFont(f.name); }}
-                    className={`py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedFont === f.name ? 'bg-white text-black' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
-                    style={{ fontFamily: f.name }}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-between pt-1.5 border-t border-white/10 mb-1">
-                <span className="text-[11px] text-gray-300 font-bold">حجم الخط</span>
-                <div className="flex items-center gap-2">
-                  <button 
-                    onPointerUp={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
-                    className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none"
-                  >
-                    <i className="fa-solid fa-plus text-[10px]"></i>
-                  </button>
-                  <span className="text-xs font-en font-bold text-white min-w-[32px] text-center">{subtitleSize}%</span>
-                  <button 
-                    onPointerUp={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
-                    className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none"
-                  >
-                    <i className="fa-solid fa-minus text-[10px]"></i>
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-1.5 border-t border-white/10">
-                <span className="text-[11px] text-gray-300 font-bold">خلفية سوداء</span>
-                <button
-                  onPointerUp={(e) => { e.stopPropagation(); setShowSubtitleBg(prev => !prev); }}
-                  className={`w-9 h-4.5 rounded-full p-0.5 transition-colors duration-300 outline-none flex items-center cursor-pointer ${
-                    showSubtitleBg ? 'bg-alex-primary justify-end' : 'bg-white/20 justify-start'
-                  }`}
-                >
-                  <span className="w-3.5 h-3.5 rounded-full bg-white shadow transform will-change-transform"></span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* --- Quality Sub-menu --- */}
-          {settingsView === 'quality' && (
-            <div className="flex flex-col gap-1 animate-fade-in-up">
-              <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-1.5">
-                <button 
-                  onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
-                  className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
-                >
-                  <i className="fa-solid fa-chevron-right text-[10px]"></i>
-                </button>
-                <div className="text-sm text-white font-black">الجودة</div>
-              </div>
-              <div className="grid grid-cols-1 gap-1">
-                {sortedStreams.map((stream) => (
-                  <button 
-                    key={stream.name}
-                    onPointerUp={(e) => { e.stopPropagation(); handleQualityChange(stream); setActiveDropdown(null); }}
-                    className={`w-full text-center py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedResolution === stream.resolution ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
-                  >
-                    {stream.resolution}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* --- Speed Sub-menu --- */}
-          {settingsView === 'speed' && (
-            <div className="flex flex-col gap-1 animate-fade-in-up font-en">
-              <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-1.5 font-ar" dir="rtl">
-                <button 
-                  onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
-                  className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
-                >
-                  <i className="fa-solid fa-chevron-right text-[10px]"></i>
-                </button>
-                <div className="text-sm text-white font-black">سرعة التشغيل</div>
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                {[0.5, 1, 1.25, 1.5, 2].map((rate) => (
-                  <button 
-                    key={rate}
-                    onPointerUp={(e) => { e.stopPropagation(); if (!roomHook) setPlaybackRate(rate); setActiveDropdown(null); }}
-                    className={`w-full text-center py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${playbackRate === rate ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
-                  >
-                    {rate}x
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // OUTSIDE FULLSCREEN MODE: Ultra-Compact, Low-Profile & Zero Scrollbar Flash
-    // ═══════════════════════════════════════════════════════════════
     return (
       <div 
-        className="relative w-48 sm:w-52 max-h-[275px] overflow-y-auto no-scrollbar scrollbar-none [&::-webkit-scrollbar]:hidden bg-[#0d0f18]/98 backdrop-blur-2xl border border-white/15 rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.95)] flex flex-col p-2 animate-fade-in-up z-[100]"
+        className="relative w-64 sm:w-72 scrollbar-none no-scrollbar [&::-webkit-scrollbar]:hidden bg-[#121212]/95 backdrop-blur-2xl border border-[#e50914]/60 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.95)] flex flex-col p-3.5 animate-fade-in-up z-[100]"
         onPointerUp={(e) => { e.stopPropagation(); lastTouchTimeRef.current = Date.now(); resetControlsTimer(); }}
         onTouchStart={(e) => { e.stopPropagation(); lastTouchTimeRef.current = Date.now(); }}
         onClick={(e) => { e.stopPropagation(); lastTouchTimeRef.current = Date.now(); }}
@@ -1530,29 +1315,39 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       >
         {/* --- Main Menu --- */}
         {settingsView === 'main' && (
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center justify-between mb-1 border-b border-white/10 pb-1">
-               <div className="text-[11px] text-white font-black">الإعدادات</div>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between mb-2.5 border-b border-white/10 pb-2">
+               <div className="text-sm text-white font-black">الإعدادات</div>
                <button 
                  onPointerUp={(e) => { e.stopPropagation(); setActiveDropdown(null); }}
-                 className="w-4 h-4 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer"
+                 className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer outline-none focus:outline-none ring-0"
                >
-                 <i className="fa-solid fa-xmark text-[9px]"></i>
+                 <i className="fa-solid fa-xmark text-xs"></i>
                </button>
             </div>
             
             {/* Family Mode Switch */}
             {(!roomHook || isHost) && (
-              <div className="flex flex-row justify-between items-center px-1.5 py-1 hover:bg-white/5 rounded-lg transition-colors">
+              <div className="flex flex-row justify-between items-center px-2 py-1.5 hover:bg-white/5 rounded-xl transition-colors">
                 <div className="flex flex-col text-right">
-                  <span className="font-bold text-[10px] text-white">وضع العائلة</span>
-                  <span className="text-[8px] text-gray-400 font-normal">تخطي المشاهد المخلة</span>
+                  <span className="font-bold text-xs text-white">وضع العائلة</span>
+                  <span className="text-[9px] text-gray-400 font-normal">تخطي تلقائي للمشاهد المخلة</span>
                 </div>
                 <button 
+                  type="button"
+                  role="switch"
+                  dir="ltr"
+                  aria-checked={isFamilyMode}
                   onPointerUp={(e) => { e.stopPropagation(); setIsFamilyMode(!isFamilyMode); }}
-                  className={`w-6 h-3.5 rounded-full relative transition-colors cursor-pointer ${isFamilyMode ? 'bg-red-600' : 'bg-white/20'}`}
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    isFamilyMode ? 'bg-[#e50914]' : 'bg-white/20'
+                  }`}
                 >
-                  <div className={`w-2.5 h-2.5 bg-white rounded-full absolute top-[2px] transition-transform ${isFamilyMode ? 'left-[2px]' : 'right-[2px]'}`}></div>
+                  <span
+                    className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                      isFamilyMode ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
                 </button>
               </div>
             )}
@@ -1561,30 +1356,30 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             {vttTranslations.length > 0 && (
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('subtitles'); }}
-                className="flex flex-row justify-between items-center px-1.5 py-1 hover:bg-white/5 rounded-lg transition-colors w-full cursor-pointer text-right"
+                className="flex flex-row justify-between items-center px-2 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
               >
-                <span className="font-bold text-[10px] text-white">الترجمة</span>
-                <span className="text-[9px] text-white/50">{selectedLanguage === 'off' ? 'إيقاف' : selectedLanguage === 'ar' ? 'العربية' : 'English'} &lt;</span>
+                <span className="font-bold text-xs text-white">الترجمة</span>
+                <span className="text-xs text-white/50">{selectedLanguage === 'off' ? 'إيقاف' : selectedLanguage === 'ar' ? 'العربية' : 'English'} &lt;</span>
               </button>
             )}
 
             {/* Quality Button */}
             <button 
               onPointerUp={(e) => { e.stopPropagation(); setSettingsView('quality'); }}
-              className="flex flex-row justify-between items-center px-1.5 py-1 hover:bg-white/5 rounded-lg transition-colors w-full cursor-pointer text-right"
+              className="flex flex-row justify-between items-center px-2 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
             >
-              <span className="font-bold text-[10px] text-white">الجودة</span>
-              <span className="text-[9px] text-white/50">{selectedResolution} &lt;</span>
+              <span className="font-bold text-xs text-white">الجودة</span>
+              <span className="text-xs text-white/50">{selectedResolution} &lt;</span>
             </button>
 
             {/* Speed Button */}
             {!roomHook && (
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('speed'); }}
-                className="flex flex-row justify-between items-center px-1.5 py-1 hover:bg-white/5 rounded-lg transition-colors w-full cursor-pointer text-right"
+                className="flex flex-row justify-between items-center px-2 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
               >
-                <span className="font-bold text-[10px] text-white">سرعة التشغيل</span>
-                <span className="text-[9px] text-white/50">{playbackRate}x &lt;</span>
+                <span className="font-bold text-xs text-white">سرعة التشغيل</span>
+                <span className="text-xs text-white/50">{playbackRate}x &lt;</span>
               </button>
             )}
           </div>
@@ -1593,21 +1388,21 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         {/* --- Subtitles Sub-menu --- */}
         {settingsView === 'subtitles' && (
           <div className="flex flex-col gap-1 animate-fade-in-up">
-            <div className="flex items-center gap-1.5 mb-1 border-b border-white/10 pb-1">
+            <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-1.5">
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
-                className="w-4 h-4 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
               >
-                <i className="fa-solid fa-chevron-right text-[9px]"></i>
+                <i className="fa-solid fa-chevron-right text-[10px]"></i>
               </button>
-              <div className="text-[11px] text-white font-black">الترجمة</div>
+              <div className="text-sm text-white font-black">الترجمة</div>
             </div>
             
-            <div className="text-[8px] text-gray-400 font-bold">اللغة</div>
-            <div className="grid grid-cols-2 gap-1 mb-0.5">
+            <div className="text-[10px] text-gray-400 font-bold">لغة الترجمة</div>
+            <div className="grid grid-cols-2 gap-1.5 mb-1.5">
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSelectedLanguage('off'); }}
-                className={`px-1 py-1 rounded text-[9px] font-bold cursor-pointer ${selectedLanguage === 'off' ? 'bg-alex-primary text-white' : 'text-gray-300 bg-white/5'}`}
+                className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === 'off' ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
               >
                 إيقاف
               </button>
@@ -1615,15 +1410,15 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 <button 
                   key={track.id}
                   onPointerUp={(e) => { e.stopPropagation(); setSelectedLanguage(track.type); }}
-                  className={`px-1 py-1 rounded text-[9px] font-bold cursor-pointer ${selectedLanguage === track.type ? 'bg-alex-primary text-white' : 'text-gray-300 bg-white/5'}`}
+                  className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === track.type ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
                 >
                   {track.name === 'arabic' ? 'العربية' : 'English'}
                 </button>
               ))}
             </div>
 
-            <div className="text-[8px] text-gray-400 font-bold">الخط</div>
-            <div className="grid grid-cols-3 gap-1 mb-0.5">
+            <div className="text-[10px] text-gray-400 font-bold">نوع الخط</div>
+            <div className="grid grid-cols-3 gap-1 mb-1.5">
               {[
                 { name: 'Tajawal', label: 'تجول' },
                 { name: 'Cairo', label: 'القاهرة' },
@@ -1632,7 +1427,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 <button
                   key={f.name}
                   onPointerUp={(e) => { e.stopPropagation(); setSelectedFont(f.name); }}
-                  className={`py-0.5 rounded text-[8px] font-bold cursor-pointer ${selectedFont === f.name ? 'bg-white text-black' : 'text-gray-300 bg-white/5'}`}
+                  className={`py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedFont === f.name ? 'bg-white text-black' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
                   style={{ fontFamily: f.name }}
                 >
                   {f.label}
@@ -1640,23 +1435,43 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               ))}
             </div>
 
-            <div className="flex items-center justify-between pt-1 border-t border-white/10">
-              <span className="text-[9px] text-gray-300 font-bold">الحجم</span>
-              <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between pt-1.5 border-t border-white/10 mb-1">
+              <span className="text-[11px] text-gray-300 font-bold">حجم الخط</span>
+              <div className="flex items-center gap-2">
                 <button 
                   onPointerUp={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
-                  className="w-4 h-4 flex items-center justify-center rounded bg-white/10 text-white cursor-pointer"
+                  className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none"
                 >
-                  <i className="fa-solid fa-plus text-[8px]"></i>
+                  <i className="fa-solid fa-plus text-[10px]"></i>
                 </button>
-                <span className="text-[9px] font-en font-bold text-white min-w-[24px] text-center">{subtitleSize}%</span>
+                <span className="text-xs font-en font-bold text-white min-w-[32px] text-center">{subtitleSize}%</span>
                 <button 
                   onPointerUp={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
-                  className="w-4 h-4 flex items-center justify-center rounded bg-white/10 text-white cursor-pointer"
+                  className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none"
                 >
-                  <i className="fa-solid fa-minus text-[8px]"></i>
+                  <i className="fa-solid fa-minus text-[10px]"></i>
                 </button>
               </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1.5 border-t border-white/10">
+              <span className="text-[11px] text-gray-300 font-bold">خلفية سوداء</span>
+              <button
+                type="button"
+                role="switch"
+                dir="ltr"
+                aria-checked={showSubtitleBg}
+                onPointerUp={(e) => { e.stopPropagation(); setShowSubtitleBg(prev => !prev); }}
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  showSubtitleBg ? 'bg-[#e50914]' : 'bg-white/20'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                    showSubtitleBg ? 'translate-x-4' : 'translate-x-0'
+                  }`}
+                />
+              </button>
             </div>
           </div>
         )}
@@ -1664,21 +1479,21 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         {/* --- Quality Sub-menu --- */}
         {settingsView === 'quality' && (
           <div className="flex flex-col gap-1 animate-fade-in-up">
-            <div className="flex items-center gap-1.5 mb-1 border-b border-white/10 pb-1">
+            <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-1.5">
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
-                className="w-4 h-4 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
               >
-                <i className="fa-solid fa-chevron-right text-[9px]"></i>
+                <i className="fa-solid fa-chevron-right text-[10px]"></i>
               </button>
-              <div className="text-[11px] text-white font-black">الجودة</div>
+              <div className="text-sm text-white font-black">الجودة</div>
             </div>
-            <div className="flex flex-col max-h-[160px] overflow-y-auto gap-0.5 no-scrollbar scrollbar-none [&::-webkit-scrollbar]:hidden">
+            <div className="grid grid-cols-1 gap-1">
               {sortedStreams.map((stream) => (
                 <button 
                   key={stream.name}
                   onPointerUp={(e) => { e.stopPropagation(); handleQualityChange(stream); setActiveDropdown(null); }}
-                  className={`w-full text-center py-1 rounded text-[10px] font-bold cursor-pointer ${selectedResolution === stream.resolution ? 'bg-alex-primary text-white shadow-sm' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                  className={`w-full text-center py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedResolution === stream.resolution ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
                 >
                   {stream.resolution}
                 </button>
@@ -1690,21 +1505,21 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         {/* --- Speed Sub-menu --- */}
         {settingsView === 'speed' && (
           <div className="flex flex-col gap-1 animate-fade-in-up font-en">
-            <div className="flex items-center gap-1.5 mb-1 border-b border-white/10 pb-1 font-ar" dir="rtl">
+            <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-1.5 font-ar" dir="rtl">
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
-                className="w-4 h-4 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
               >
-                <i className="fa-solid fa-chevron-right text-[9px]"></i>
+                <i className="fa-solid fa-chevron-right text-[10px]"></i>
               </button>
-              <div className="text-[11px] text-white font-black">سرعة التشغيل</div>
+              <div className="text-sm text-white font-black">سرعة التشغيل</div>
             </div>
-            <div className="grid grid-cols-2 gap-1">
+            <div className="grid grid-cols-2 gap-1.5">
               {[0.5, 1, 1.25, 1.5, 2].map((rate) => (
                 <button 
                   key={rate}
                   onPointerUp={(e) => { e.stopPropagation(); if (!roomHook) setPlaybackRate(rate); setActiveDropdown(null); }}
-                  className={`w-full text-center py-1 rounded text-[10px] font-bold cursor-pointer ${playbackRate === rate ? 'bg-alex-primary text-white shadow-sm' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                  className={`w-full text-center py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${playbackRate === rate ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
                 >
                   {rate}x
                 </button>
