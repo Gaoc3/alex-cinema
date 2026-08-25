@@ -23,20 +23,24 @@ interface SearchResult {
 const allYearsRange = `1900,${new Date().getFullYear()}`;
 
 const TRENDING_SEARCHES = [
-  { label: 'أفلام 2026', query: '2026' },
-  { label: 'أكشن ومغامرات', query: 'اكشن' },
-  { label: 'أنمي مترجم', query: 'انمي' },
-  { label: 'مسلسلات تركية', query: 'تركي' },
-  { label: 'أفلام رعب', query: 'رعب' },
-  { label: 'كوميديا', query: 'كوميدي' },
-  { label: 'جريمة وغموض', query: 'جريمة' },
-  { label: 'خيال علمي', query: 'خيال' },
+  { label: '🔥 باتمان', query: 'باتمان' },
+  { label: '⚔️ ون بيس', query: 'ون بيس' },
+  { label: '🕷️ سبايدرمان', query: 'سبايدر مان' },
+  { label: '🔫 جون ويك', query: 'جون ويك' },
+  { label: '👑 الهيبة', query: 'الهيبة' },
+  { label: '🧙‍♂️ هاري بوتر', query: 'هاري بوتر' },
+  { label: '🃏 الجوكر', query: 'الجوكر' },
+  { label: '🌌 أفاتار', query: 'افاتار' },
+  { label: '🩸 Attack on Titan', query: 'Attack on Titan' },
+  { label: '🧟 Stranger Things', query: 'Stranger Things' },
 ];
 
 const QUICK_CATEGORIES = [
   { title: 'الأفلام', href: '/movies', icon: 'fa-film', color: 'from-red-600/20 to-red-950/40 border-red-500/30' },
   { title: 'المسلسلات', href: '/series', icon: 'fa-tv', color: 'from-blue-600/20 to-blue-950/40 border-blue-500/30' },
-  { title: 'الإصدارات الجديدة', href: '/new-releases', icon: 'fa-fire', color: 'from-amber-600/20 to-amber-950/40 border-amber-500/30' },
+  { title: 'أنمي مترجم', href: '/movies?category=anime', icon: 'fa-dragon', color: 'from-pink-600/20 to-pink-950/40 border-pink-500/30' },
+  { title: 'مسلسلات تركية', href: '/series?category=turkish', icon: 'fa-star-and-crescent', color: 'from-amber-600/20 to-amber-950/40 border-amber-500/30' },
+  { title: 'الإصدارات الجديدة', href: '/new-releases', icon: 'fa-fire', color: 'from-orange-600/20 to-orange-950/40 border-orange-500/30' },
   { title: 'الرومات النشطة', href: '/rooms', icon: 'fa-users', color: 'from-purple-600/20 to-purple-950/40 border-purple-500/30' },
 ];
 

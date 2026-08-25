@@ -29,16 +29,23 @@ interface VideoItem {
 const GENRES = [
   { nb: '', title: 'كل التصنيفات' },
   { nb: '84', title: 'أكشن' },
-  { nb: '62', title: 'دراما' },
-  { nb: '70', title: 'رعب' },
   { nb: '59', title: 'كوميدي' },
+  { nb: '70', title: 'رعب' },
+  { nb: '62', title: 'دراما' },
   { nb: '78', title: 'خيال علمي' },
   { nb: '60', title: 'جريمة' },
-  { nb: '56', title: 'مغامرة' },
-  { nb: '77', title: 'رومانسي' },
-  { nb: '80', title: 'إثارة' },
   { nb: '76', title: 'غموض' },
-  { nb: '61', title: 'وثائقي' }
+  { nb: '77', title: 'رومانسي' },
+  { nb: '56', title: 'مغامرة' },
+  { nb: '57', title: 'رسوم متحركة' },
+  { nb: '67', title: 'خيالي' },
+  { nb: '80', title: 'إثارة' },
+  { nb: '79', title: 'رياضي' },
+  { nb: '89', title: 'حياة الغرب' },
+  { nb: '61', title: 'وثائقي' },
+  { nb: '68', title: 'تاريخي' },
+  { nb: '81', title: 'حروب' },
+  { nb: '65', title: 'عائلي' },
 ];
 
 const currentYear = new Date().getFullYear();

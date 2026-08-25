@@ -24,22 +24,27 @@ interface VideoItem {
 
 const CATEGORIES = [
   { id: '', title: 'كل التصنيفات' },
-  { id: '23', title: 'أنمي' },
+  { id: 'anime', title: 'أنمي (Anime)' },
   { id: '84', title: 'أكشن' },
-  { id: '60', title: 'جريمة' },
-  { id: '89', title: 'حياة الغرب' },
-  { id: '78', title: 'خيال علمي' },
-  { id: '67', title: 'خيالي' },
-  { id: '62', title: 'دراما' },
-  { id: '57', title: 'رسوم متحركة' },
-  { id: '70', title: 'رعب' },
-  { id: '77', title: 'رومانسي' },
-  { id: '79', title: 'رياضي' },
-  { id: '76', title: 'غموض' },
   { id: '59', title: 'كوميدي' },
+  { id: '70', title: 'رعب' },
+  { id: '62', title: 'دراما' },
+  { id: '78', title: 'خيال علمي' },
+  { id: '60', title: 'جريمة' },
+  { id: '76', title: 'غموض' },
+  { id: '77', title: 'رومانسي' },
   { id: '56', title: 'مغامرة' },
-  { id: '63', title: 'مصارعة حرة' },
-  { id: '61', title: 'وثائقي' }
+  { id: '57', title: 'رسوم متحركة' },
+  { id: '67', title: 'خيالي' },
+  { id: '80', title: 'إثارة' },
+  { id: '79', title: 'رياضي' },
+  { id: '89', title: 'حياة الغرب' },
+  { id: '61', title: 'وثائقي' },
+  { id: '68', title: 'تاريخي' },
+  { id: '81', title: 'حروب' },
+  { id: '65', title: 'عائلي' },
+  { id: 'korean', title: 'كوري (K-Movie)' },
+  { id: 'indian', title: 'هندي / بوليوود' },
 ];
 
 const currentYear = new Date().getFullYear();
@@ -75,7 +80,7 @@ function MoviesContent() {
 
   const selectedCategory = searchParams.get('category') || '';
   const selectedSort = searchParams.get('sort') || 'recent';
-  const selectedYear = searchParams.get('year') || '1900,2026';
+  const selectedYear = searchParams.get('year') || `1900,${currentYear}`;
   const selectedRating = searchParams.get('rating') || '';
   const page = parseInt(searchParams.get('page') || '1', 10);
 
@@ -105,43 +110,98 @@ function MoviesContent() {
       setLoading(true);
       try {
         const yearRange = selectedYear;
-        const hasFilters = Boolean(selectedCategory || selectedRating || (selectedYear && selectedYear !== '1900,2026'));
+        const hasFilters = Boolean(selectedCategory || selectedRating || (selectedYear && selectedYear !== `1900,${currentYear}`));
+        let list: VideoItem[] = [];
 
-        if (!hasFilters) {
+        if (selectedCategory === 'anime') {
+          // Official Shabakaty Anime: Animation (57) + Japanese Language (22)
+          const offset = (page - 1) * 30;
+          const url = `/api/proxy?endpoint=videosByCategoryAndLanguage&category_id=57&language_id=22&orderby=desc&videoKind=1&offset=${offset}&level=2`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const d = await res.json();
+            const payload = decryptData<any>(d.payload);
+            list = Array.isArray(payload) ? payload : (payload?.info || []);
+          }
+        } else if (selectedCategory === 'korean') {
+          const offset = (page - 1) * 30;
+          const url = `/api/proxy?endpoint=videosByCategoryAndLanguage&language_id=23&orderby=desc&videoKind=1&offset=${offset}&level=2`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const d = await res.json();
+            const payload = decryptData<any>(d.payload);
+            list = Array.isArray(payload) ? payload : (payload?.info || []);
+          }
+        } else if (selectedCategory === 'indian') {
+          const offset = (page - 1) * 30;
+          const url = `/api/proxy?endpoint=videosByCategoryAndLanguage&language_id=10&orderby=desc&videoKind=1&offset=${offset}&level=2`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const d = await res.json();
+            const payload = decryptData<any>(d.payload);
+            list = Array.isArray(payload) ? payload : (payload?.info || []);
+          }
+        } else if (selectedCategory && !selectedRating && (!selectedYear || selectedYear === `1900,${currentYear}`)) {
+          // Direct category endpoint
+          const offset = (page - 1) * 30;
+          const url = `/api/proxy?endpoint=videosByCategory&categoryID=${selectedCategory}&videoKind=1&offset=${offset}&level=2&orderby=desc`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const d = await res.json();
+            const payload = decryptData<any>(d.payload);
+            list = Array.isArray(payload) ? payload : (payload?.info || []);
+          }
+        } else if (!hasFilters) {
           const url = `/api/proxy?endpoint=latestMovies/level/2/itemsPerPage/30/page/${page}/`;
           const res = await fetch(url);
           if (res.ok) {
             const d = await res.json();
-            let list = decryptData<VideoItem[]>(d.payload) || [];
-            if (Array.isArray(list)) {
-              if (selectedSort === 'recent') {
-                list = [...list].sort((a, b) => parseInt(b.nb) - parseInt(a.nb));
-              } else if (selectedSort === 'popular' || selectedSort === 'stars') {
-                list = [...list].sort((a, b) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0'));
-              } else if (selectedSort === 'year') {
-                list = [...list].sort((a, b) => parseInt(b.year || '0') - parseInt(a.year || '0'));
-              }
-              setMovies(list);
-              return;
-            }
+            const payload = decryptData<VideoItem[]>(d.payload);
+            list = Array.isArray(payload) ? payload : [];
+          }
+        } else {
+          const catParam = selectedCategory ? `&category_id=${selectedCategory}` : '';
+          const starParam = selectedRating ? `&star=${selectedRating}` : '';
+          const url = `/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=&staffTitle=&page=${page - 1}&year=${yearRange}&type=movies${catParam}${starParam}`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const d = await res.json();
+            const payload = decryptData<VideoItem[]>(d.payload);
+            list = Array.isArray(payload) ? payload : [];
           }
         }
 
-        const catParam = selectedCategory ? `&category_id=${selectedCategory}` : '';
-        const starParam = selectedRating ? `&star=${selectedRating}` : '';
-        const url = `/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=&staffTitle=&page=${page - 1}&year=${yearRange}&type=movies${catParam}${starParam}`;
-        const res = await fetch(url);
-        if (res.ok) {
-          const d = await res.json();
-          const list = decryptData<VideoItem[]>(d.payload) || [];
-          if (Array.isArray(list)) {
-            setMovies(list);
-          } else {
-            setMovies([]);
-          }
-        } else {
-          setMovies([]);
+        // Apply rating filter client-side when using category endpoint
+        if (selectedRating && Array.isArray(list) && list.length > 0) {
+          const minStar = parseFloat(selectedRating);
+          list = list.filter(item => parseFloat(item.stars || '0') >= minStar);
         }
+
+        // Apply year filter client-side when using category endpoint
+        if (selectedYear && selectedYear !== `1900,${currentYear}` && Array.isArray(list) && list.length > 0) {
+          const [startYear, endYear] = selectedYear.split(',').map(y => parseInt(y, 10));
+          if (!isNaN(startYear) && !isNaN(endYear)) {
+            list = list.filter(item => {
+              const y = parseInt(item.year || '0', 10);
+              return y >= startYear && y <= endYear;
+            });
+          }
+        }
+
+        // Apply sorting
+        if (Array.isArray(list)) {
+          if (selectedSort === 'recent') {
+            list = [...list].sort((a, b) => parseInt(b.nb || '0') - parseInt(a.nb || '0'));
+          } else if (selectedSort === 'popular' || selectedSort === 'stars') {
+            list = [...list].sort((a, b) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0'));
+          } else if (selectedSort === 'year') {
+            list = [...list].sort((a, b) => parseInt(b.year || '0') - parseInt(a.year || '0'));
+          } else if (selectedSort === 'name') {
+            list = [...list].sort((a, b) => (a.ar_title || a.en_title || '').localeCompare(b.ar_title || b.en_title || '', 'ar'));
+          }
+        }
+
+        setMovies(list);
       } catch (error) {
         console.error('Failed to load movies:', error);
         setMovies([]);
