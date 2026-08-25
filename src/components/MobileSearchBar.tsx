@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { decryptData } from '@/utils/cryptoHelper';
@@ -65,11 +66,16 @@ function SearchResultPoster({ item }: { item: SearchResult }) {
 }
 
 export default function SearchBar() {
+  const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -284,10 +290,11 @@ export default function SearchBar() {
       {/* ------------------------------------------------------------- */}
       {/* MOBILE FULLSCREEN IMMERSIVE SEARCH MODAL (Ultra-Luxury iOS UI) */}
       {/* ------------------------------------------------------------- */}
-      {isMobileExpanded && (
+      {mounted && isMobileExpanded && createPortal(
         <div 
-          className="xl:hidden fixed inset-0 z-[200] bg-[#06070a]/98 backdrop-blur-3xl flex flex-col animate-fade-in text-white" 
+          className="xl:hidden fixed inset-0 z-[99999] bg-[#06070a]/98 backdrop-blur-3xl flex flex-col animate-fade-in text-white w-screen h-screen min-h-[100dvh] max-h-[100dvh]" 
           dir="rtl"
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, width: '100vw', height: '100dvh' }}
         >
           {/* Top Bar / Search Input Area */}
           <div className="shrink-0 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 px-4 border-b border-white/10 bg-black/40 backdrop-blur-2xl">
@@ -448,24 +455,33 @@ export default function SearchBar() {
                           {item.ar_title}
                         </h4>
                         {item.en_title && item.en_title !== item.ar_title && (
-                          <p className="text-xs text-gray-400 font-en font-medium truncate mt-0.5">{item.en_title}</p>
+                          <p className="text-[11px] text-gray-400 font-en truncate leading-tight mt-0.5">
+                            {item.en_title}
+                          </p>
                         )}
-                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                          <span className="text-[9px] font-black text-[#e50914] bg-[#e50914]/15 border border-[#e50914]/25 px-2 py-0.5 rounded-md">
-                            {item.kind === '1' ? 'فيلم' : 'مسلسل'}
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          {item.year && (
+                            <span className="px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-bold text-gray-300">
+                              {item.year}
+                            </span>
+                          )}
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                            item.kind === '2' ? 'bg-blue-500/20 text-blue-300' : 'bg-red-500/20 text-red-300'
+                          }`}>
+                            {item.kind === '2' ? 'مسلسل' : 'فيلم'}
                           </span>
-                          <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md flex items-center gap-1 font-en">
-                            <i className="fa-solid fa-star text-[8px]"></i> {item.stars}
-                          </span>
-                          <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-md font-en">
-                            {item.year}
-                          </span>
+                          {item.stars && parseFloat(item.stars) > 0 && (
+                            <span className="flex items-center gap-1 text-[10px] text-amber-400 font-bold">
+                              <i className="fa-solid fa-star text-[9px]"></i>
+                              {parseFloat(item.stars).toFixed(1)}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    <div className="shrink-0 text-gray-400 group-hover/card:text-[#e50914] pl-2">
-                      <i className="fa-solid fa-chevron-left text-sm"></i>
+                    <div className="w-8 h-8 rounded-full bg-white/5 group-hover/card:bg-[#e50914] flex items-center justify-center text-gray-400 group-hover/card:text-white transition-colors shrink-0">
+                      <i className="fa-solid fa-play text-xs"></i>
                     </div>
                   </Link>
                 ))}
@@ -474,9 +490,9 @@ export default function SearchBar() {
 
             {/* --- STATE 4: No Results Found --- */}
             {!isLoading && query.trim().length >= 2 && results.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-                <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 text-2xl mb-3">
-                  <i className="fa-solid fa-magnifying-glass"></i>
+              <div className="text-center py-12 flex flex-col items-center justify-center animate-fade-in">
+                <div className="w-16 h-16 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 text-2xl mb-4">
+                  <i className="fa-solid fa-film"></i>
                 </div>
                 <h4 className="text-base font-black text-white mb-1">لم نجد نتائج مطابقة</h4>
                 <p className="text-xs text-gray-400 max-w-xs mb-4">
@@ -508,7 +524,8 @@ export default function SearchBar() {
               </div>
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
