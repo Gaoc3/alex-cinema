@@ -287,6 +287,8 @@ button:disabled,
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+  touch-action: pan-y;
+  overscroll-behavior-y: auto;
 }
 
 .custom-scrollbar::-webkit-scrollbar {

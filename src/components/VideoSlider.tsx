@@ -120,7 +120,8 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
         {/* Horizontal Card Rail - Clean Grid Fit without Cut-off Cards or Dark Edge Gradients */}
         <div 
           ref={scrollRef}
-          className="flex gap-4 sm:gap-5 overflow-x-auto hide-scrollbar scroll-smooth py-2 px-1 snap-x snap-mandatory"
+          style={{ touchAction: 'pan-y', overscrollBehaviorY: 'auto' }}
+          className="flex gap-4 sm:gap-5 overflow-x-auto hide-scrollbar scroll-smooth py-2 px-1"
         >
           {videos.map((video, index) => {
             const displayCategory = video.categories && video.categories.length > 0 
@@ -132,7 +133,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
                 key={video.nb} 
                 href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
                 prefetch={false}
-                className="w-[calc((100%-1rem)/2)] sm:w-[calc((100%-1.25rem*3)/4)] md:w-[calc((100%-1.25rem*4)/5)] lg:w-[calc((100%-1.25rem*5)/6)] xl:w-[calc((100%-1.25rem*6)/7)] flex-shrink-0 group/card block relative snap-start transition-transform duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-105"
+                className="w-[calc((100%-1rem)/2)] sm:w-[calc((100%-1.25rem*3)/4)] md:w-[calc((100%-1.25rem*4)/5)] lg:w-[calc((100%-1.25rem*5)/6)] xl:w-[calc((100%-1.25rem*6)/7)] flex-shrink-0 group/card block relative transition-transform duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-105"
                 style={{ animationDelay: `${index * 25}ms` }}
               >
                 {/* Poster Wrapper */}

@@ -260,7 +260,8 @@ export default function SeriesNavigator({
           <div 
             key={`desktop-${currentSeason}`}
             ref={scrollContainerRef}
-            className="flex w-full overflow-x-auto hide-scrollbar scroll-smooth py-2 px-1 relative z-10 flex-row gap-4 sm:gap-5 select-none snap-x snap-mandatory animate-fade-in-up" 
+            style={{ touchAction: 'pan-y', overscrollBehaviorY: 'auto' }}
+            className="flex w-full overflow-x-auto hide-scrollbar scroll-smooth py-2 px-1 relative z-10 flex-row gap-4 sm:gap-5 select-none animate-fade-in-up" 
             dir="rtl"
           >
             {seasonEpisodes.map((ep) => {
@@ -269,7 +270,7 @@ export default function SeriesNavigator({
                 <div 
                   key={ep.nb} 
                   data-active={isActiveEp ? 'true' : 'false'}
-                  className="flex flex-col shrink-0 w-[calc((100%-1rem)/2)] sm:w-[calc((100%-1.25rem*2)/3)] md:w-[calc((100%-1.25rem*3)/4)] lg:w-[calc((100%-1.25rem*4)/5)] xl:w-[calc((100%-1.25rem*5)/6)] snap-start group"
+                  className="flex flex-col shrink-0 w-[calc((100%-1rem)/2)] sm:w-[calc((100%-1.25rem*2)/3)] md:w-[calc((100%-1.25rem*3)/4)] lg:w-[calc((100%-1.25rem*4)/5)] xl:w-[calc((100%-1.25rem*5)/6)] group"
                 >
                   <button
                     type="button"
