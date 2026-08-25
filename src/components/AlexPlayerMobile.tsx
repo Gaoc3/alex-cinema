@@ -1302,8 +1302,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
   const progressStyle = {
-    background: `linear-gradient(to right, #e50914 ${progressPercent}%, rgba(255, 255, 255, 0.2) ${progressPercent}%)`,
-    boxShadow: '0 0 10px rgba(229,9,20,0.5), 0 0 20px rgba(229,9,20,0.3)'
+    background: `linear-gradient(to right, #e50914 0%, #e50914 ${progressPercent}%, rgba(255, 255, 255, 0.25) ${progressPercent}%, rgba(255, 255, 255, 0.25) 100%)`,
   };
 
   // Render Helpers for Dropdown Menus (Dual-Mode: Spacious in Fullscreen, Ultra-Compact outside)
@@ -2022,7 +2021,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         >
           
           {/* Custom Timeline Progress Slider */}
-          <div className="flex items-center gap-2 md:gap-4 w-full">
+          <div className="flex items-center gap-2 md:gap-4 w-full" dir="ltr">
             <span className="text-[10px] md:text-xs font-en font-bold text-gray-300 min-w-[32px] md:min-w-[45px] text-left">
               {formatTime(currentTime)}
             </span>
@@ -2034,7 +2033,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               onChange={handleProgressChange}
               aria-label="موضع تشغيل الفيديو"
               style={progressStyle}
-              className="flex-grow h-1 md:h-1.5 rounded-lg appearance-none cursor-pointer accent-alex-primary hover:h-1.5 md:hover:h-2 transition-all outline-none border border-[#e50914]/30"
+              className="flex-grow h-1 md:h-1.5 rounded-full appearance-none cursor-pointer accent-alex-primary hover:h-1.5 md:hover:h-2 transition-all outline-none border-0 shadow-none bg-transparent"
             />
             <span className="text-[10px] md:text-xs font-en font-bold text-gray-300 min-w-[32px] md:min-w-[45px] text-right">
               {formatTime(duration)}

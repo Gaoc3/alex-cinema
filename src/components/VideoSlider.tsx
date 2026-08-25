@@ -54,10 +54,24 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
     updateScrollButtons();
     const el = scrollRef.current;
     if (!el) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // If pure vertical scroll without Shift key, pass scroll directly to page/window
+      if (!e.shiftKey && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        window.scrollBy({
+          top: e.deltaY,
+          left: 0,
+          behavior: 'auto'
+        });
+      }
+    };
+
     el.addEventListener('scroll', updateScrollButtons, { passive: true });
+    el.addEventListener('wheel', handleWheel, { passive: true });
     window.addEventListener('resize', updateScrollButtons, { passive: true });
     return () => {
       el.removeEventListener('scroll', updateScrollButtons);
+      el.removeEventListener('wheel', handleWheel);
       window.removeEventListener('resize', updateScrollButtons);
     };
   }, [videos, updateScrollButtons]);
