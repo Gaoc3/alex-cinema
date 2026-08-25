@@ -22,17 +22,26 @@ interface SearchResult {
 
 const allYearsRange = `1900,${new Date().getFullYear()}`;
 
-const TRENDING_SEARCHES = [
-  { label: '🔥 باتمان', query: 'باتمان' },
-  { label: '⚔️ ون بيس', query: 'ون بيس' },
-  { label: '🕷️ سبايدرمان', query: 'سبايدر مان' },
-  { label: '🔫 جون ويك', query: 'جون ويك' },
-  { label: '👑 الهيبة', query: 'الهيبة' },
-  { label: '🧙‍♂️ هاري بوتر', query: 'هاري بوتر' },
-  { label: '🃏 الجوكر', query: 'الجوكر' },
-  { label: '🌌 أفاتار', query: 'افاتار' },
-  { label: '🩸 Attack on Titan', query: 'Attack on Titan' },
-  { label: '🧟 Stranger Things', query: 'Stranger Things' },
+interface SearchTag {
+  label: string;
+  query: string;
+  type: 'anime' | 'turkish' | 'category' | 'new' | 'query';
+  categoryId?: string;
+}
+
+const TRENDING_SEARCHES: SearchTag[] = [
+  { label: '🔥 أفلام 2026', query: 'أفلام 2026', type: 'new' },
+  { label: '🎌 أنمي مترجم', query: 'أنمي', type: 'anime' },
+  { label: '🇹🇷 مسلسلات تركية', query: 'مسلسلات تركية', type: 'turkish' },
+  { label: '💥 أكشن ومغامرات', query: 'أكشن', type: 'category', categoryId: '84' },
+  { label: '👻 أفلام رعب', query: 'رعب', type: 'category', categoryId: '70' },
+  { label: '😂 كوميديا', query: 'كوميديا', type: 'category', categoryId: '59' },
+  { label: '🕵️ جريمة وغموض', query: 'جريمة', type: 'category', categoryId: '60' },
+  { label: '🚀 خيال علمي', query: 'خيال علمي', type: 'category', categoryId: '78' },
+  { label: '🦇 باتمان', query: 'باتمان', type: 'query' },
+  { label: '⚔️ ون بيس', query: 'ون بيس', type: 'query' },
+  { label: '🕷️ سبايدرمان', query: 'سبايدر مان', type: 'query' },
+  { label: '🔫 جون ويك', query: 'جون ويك', type: 'query' },
 ];
 
 const QUICK_CATEGORIES = [
@@ -169,7 +178,27 @@ export default function SearchBar() {
       setIsMobileExpanded(false);
       inputRef.current?.blur();
       mobileInputRef.current?.blur();
-      router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+
+      // Smart routing for categories
+      if (trimmed === 'أنمي' || trimmed === 'انمي') {
+        router.push('/movies?category=anime');
+      } else if (trimmed === 'مسلسلات تركية' || trimmed === 'تركي') {
+        router.push('/series?category=turkish');
+      } else if (trimmed === 'أفلام 2026' || trimmed === '2026') {
+        router.push('/new-releases');
+      } else if (trimmed === 'أكشن' || trimmed === 'اكشن') {
+        router.push('/movies?category=84');
+      } else if (trimmed === 'رعب') {
+        router.push('/movies?category=70');
+      } else if (trimmed === 'كوميديا' || trimmed === 'كوميدي') {
+        router.push('/movies?category=59');
+      } else if (trimmed === 'خيال علمي') {
+        router.push('/movies?category=78');
+      } else if (trimmed === 'جريمة') {
+        router.push('/movies?category=60');
+      } else {
+        router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+      }
     }
   };
 
@@ -181,12 +210,50 @@ export default function SearchBar() {
     setIsMobileExpanded(false);
   };
 
-  const handleTagClick = (tagQuery: string) => {
-    setQuery(tagQuery);
+  const handleTagClick = async (tag: SearchTag) => {
+    setQuery(tag.query);
     setIsLoading(true);
     setShowDropdown(true);
-    mobileInputRef.current?.focus();
-    inputRef.current?.focus();
+
+    try {
+      let fetchedResults: SearchResult[] = [];
+
+      if (tag.type === 'anime') {
+        const [resMovies, resSeries] = await Promise.all([
+          fetch(`/api/proxy?endpoint=videosByCategoryAndLanguage&category_id=57&language_id=22&orderby=desc&videoKind=1&offset=0&level=2`),
+          fetch(`/api/proxy?endpoint=videosByCategoryAndLanguage&category_id=57&language_id=22&orderby=desc&videoKind=2&offset=0&level=2`)
+        ]);
+        const [dM, dS] = await Promise.all([resMovies.json(), resSeries.json()]);
+        const listM = (decryptData<any>(dM?.payload)?.info || []).map((x: any) => ({ ...x, kind: '1' }));
+        const listS = (decryptData<any>(dS?.payload)?.info || []).map((x: any) => ({ ...x, kind: '2' }));
+        fetchedResults = [...listM, ...listS];
+      } else if (tag.type === 'turkish') {
+        const res = await fetch(`/api/proxy?endpoint=videosByCategoryAndLanguage&category_id=62&language_id=25&orderby=desc&videoKind=2&offset=0&level=2`);
+        const d = await res.json();
+        fetchedResults = (decryptData<any>(d?.payload)?.info || []).map((x: any) => ({ ...x, kind: '2' }));
+      } else if (tag.type === 'category' && tag.categoryId) {
+        const [resM, resS] = await Promise.all([
+          fetch(`/api/proxy?endpoint=videosByCategory&categoryID=${tag.categoryId}&videoKind=1&offset=0&level=2&orderby=desc`),
+          fetch(`/api/proxy?endpoint=videosByCategory&categoryID=${tag.categoryId}&videoKind=2&offset=0&level=2&orderby=desc`)
+        ]);
+        const [dM, dS] = await Promise.all([resM.json(), resS.json()]);
+        const listM = (decryptData<any>(dM?.payload)?.info || []).map((x: any) => ({ ...x, kind: '1' }));
+        const listS = (decryptData<any>(dS?.payload)?.info || []).map((x: any) => ({ ...x, kind: '2' }));
+        fetchedResults = [...listM, ...listS];
+      } else if (tag.type === 'new') {
+        const res = await fetch(`/api/proxy?endpoint=latestMovies/level/2/itemsPerPage/24/page/1/`);
+        const d = await res.json();
+        fetchedResults = decryptData<SearchResult[]>(d?.payload) || [];
+      }
+
+      if (fetchedResults.length > 0) {
+        setResults(dedupeMediaById(fetchedResults).slice(0, 15));
+        setIsLoading(false);
+        return;
+      }
+    } catch {
+      // Live search useEffect will run as fallback
+    }
   };
 
   const handleClear = () => {
@@ -301,7 +368,7 @@ export default function SearchBar() {
                       <button
                         key={item.label}
                         type="button"
-                        onClick={() => handleTagClick(item.query)}
+                        onClick={() => handleTagClick(item)}
                         className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/5 hover:bg-[#e50914]/20 border border-white/10 hover:border-[#e50914]/40 text-gray-300 hover:text-white transition-all duration-200 active:scale-95 cursor-pointer shadow-sm"
                       >
                         {item.label}
