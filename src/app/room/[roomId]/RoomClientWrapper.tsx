@@ -167,7 +167,7 @@ export default function RoomClientWrapper({
       onExit();
       return;
     }
-    if (isTelegramWebAppContext()) {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/tg-app')) {
       router.push('/tg-app');
     } else {
       router.push('/rooms');

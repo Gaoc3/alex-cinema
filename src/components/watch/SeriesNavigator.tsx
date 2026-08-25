@@ -104,17 +104,17 @@ export default function SeriesNavigator({
     <div className="flex flex-col gap-4 w-full animate-fade-in-up" dir="rtl">
       <div className="bg-[#0c1322] rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-xl border border-white/10 relative overflow-hidden w-full flex flex-col gap-4 sm:gap-6">
         
-        {/* ══════ Header Area: Title, Badges & Responsive Season Grid ══════ */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-white/10 pb-4 relative z-10 w-full">
-          {/* Title Area */}
-          <div className="flex items-center gap-3 justify-between sm:justify-start">
+        {/* ══════ Header Area: Title, Badges & Fully Dynamic Season Selector ══════ */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 border-b border-white/10 pb-4 relative z-10 w-full">
+          {/* Title Area + Badges */}
+          <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
             <div className="flex items-center gap-2.5">
               <div className="w-1.5 sm:w-2 h-5 sm:h-6 bg-alex-primary rounded-full shadow-[0_0_12px_rgba(229,9,20,0.6)]"></div>
-              <h3 className="text-base sm:text-lg font-black text-white">حلقات المسلسل</h3>
+              <h3 className="text-base sm:text-lg font-black text-white whitespace-nowrap">حلقات المسلسل</h3>
             </div>
             
             {/* Meta Count Badges */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <span className="bg-blue-500/15 border border-blue-500/30 text-blue-400 px-2.5 py-0.5 rounded-xl text-[11px] font-black">
                 {seasons.length} مواسم
               </span>
@@ -124,38 +124,26 @@ export default function SeriesNavigator({
             </div>
           </div>
 
-          {/* Season Selector - Balanced Grid with Zero Cutoffs */}
+          {/* Season Selector - Fully Dynamic Adaptive Horizontal Track (No rigid dead-space box) */}
           {seasons.length > 0 && (
-            <div className="w-full sm:w-auto bg-[#070b14] border border-white/10 rounded-2xl p-1.5 shadow-inner">
-              <div
-                className={`grid gap-1.5 w-full ${
-                  seasons.length <= 2
-                    ? 'grid-cols-2'
-                    : seasons.length === 3
-                    ? 'grid-cols-3'
-                    : seasons.length === 4
-                    ? 'grid-cols-2 xs:grid-cols-4 sm:flex'
-                    : 'grid-cols-3 xs:grid-cols-4 sm:flex sm:flex-wrap'
-                }`}
-              >
-                {seasons.map((s) => {
-                  const isSelected = currentSeason === s.season;
-                  return (
-                    <button
-                      key={s.season}
-                      type="button"
-                      onClick={() => setCurrentSeason(s.season)}
-                      className={`min-h-[40px] sm:min-h-[42px] cursor-pointer rounded-xl px-3 sm:px-4 py-2 text-xs font-black transition-all duration-300 flex items-center justify-center text-center active:scale-95 ${
-                        isSelected
-                          ? 'bg-alex-primary text-white shadow-[0_0_18px_rgba(229,9,20,0.5)] border border-white/20'
-                          : 'text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/5'
-                      }`}
-                    >
-                      <span>الموسم {s.season}</span>
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth w-full sm:w-auto py-1 max-w-full">
+              {seasons.map((s) => {
+                const isSelected = currentSeason === s.season;
+                return (
+                  <button
+                    key={s.season}
+                    type="button"
+                    onClick={() => setCurrentSeason(s.season)}
+                    className={`min-h-[38px] px-4 py-1.5 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 flex items-center justify-center cursor-pointer select-none active:scale-95 shrink-0 ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-alex-primary to-red-700 text-white shadow-[0_0_18px_rgba(229,9,20,0.5)] border border-red-500/40'
+                        : 'text-gray-300 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] border border-white/10'
+                    }`}
+                  >
+                    <span>الموسم {s.season}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -172,7 +160,8 @@ export default function SeriesNavigator({
             </span>
           </div>
 
-          <div className="space-y-2.5 max-h-[520px] overflow-y-auto pr-0.5 custom-scrollbar">
+          {/* Episode List with Left Padding to Prevent Scrollbar Collision in RTL */}
+          <div className="space-y-2.5 max-h-[520px] overflow-y-auto pl-3.5 pr-1 py-1 custom-scrollbar">
             {seasonEpisodes.map((ep) => {
               const isActiveEp = activeEpisode?.nb === ep.nb;
               return (

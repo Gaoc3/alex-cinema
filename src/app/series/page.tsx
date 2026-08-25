@@ -1,6 +1,7 @@
 'use client';
 import { getVideoImageUrl } from '@/utils/imageHelper';
 import { decryptData } from '@/utils/cryptoHelper';
+import MediaPosterImage from '@/components/MediaPosterImage';
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import Link from 'next/link';
@@ -15,6 +16,9 @@ interface VideoItem {
   year: string;
   stars: string;
   img: string;
+  imgMediumThumb?: string;
+  imgThumb?: string;
+  imgObjUrl?: string;
   categories?: { ar_title: string }[];
 }
 
@@ -435,10 +439,11 @@ function SeriesContent() {
                   >
                     {/* Poster Wrapper */}
                     <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden bg-[#141722]/50 border border-white/5 transition-all duration-300 ease-out group-hover/card:scale-[1.03] group-hover/card:shadow-[0_15px_35px_rgba(0,0,0,0.6)] group-hover/card:border-white/20">
-                      <img 
-                        src={getVideoImageUrl(video, 'poster')}
-                        alt={video.ar_title} 
-                        className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-105"
+                      <MediaPosterImage 
+                        video={video}
+                        type="poster"
+                        sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
+                        className="movie-card-img transition-transform duration-700 group-hover/card:scale-105"
                         loading="lazy"
                       />
                       

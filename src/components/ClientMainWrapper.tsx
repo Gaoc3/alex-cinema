@@ -13,7 +13,7 @@ export default function ClientMainWrapper({ children }: { children: ReactNode })
   return (
     <main
       className={isAuthPage
-        ? 'auth-main flex-grow'
+        ? 'auth-main w-full flex-grow p-0 m-0'
         : isRoomPage
           ? 'min-w-0 flex-grow'
         : 'flex-grow pt-16 sm:pt-20 xl:pt-0 xl:pr-20'}

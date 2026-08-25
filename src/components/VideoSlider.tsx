@@ -3,13 +3,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getVideoImageUrl } from '@/utils/imageHelper';
+import MediaPosterImage from '@/components/MediaPosterImage';
 
 interface Video {
   nb: string;
   ar_title: string;
   en_title?: string;
   img: string;
+  imgMediumThumb?: string;
+  imgThumb?: string;
+  imgObjUrl?: string;
   stars: string;
   year: string;
   kind?: string;
@@ -134,12 +137,11 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
               >
                 {/* Poster Wrapper */}
                 <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
-                  <Image 
-                    src={getVideoImageUrl(video, 'poster')}
-                    alt={video.ar_title} 
-                    fill
-                    unoptimized
-                    className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
+                  <MediaPosterImage 
+                    video={video}
+                    type="poster"
+                    sizes="(max-width: 639px) 50vw, (max-width: 1023px) 25vw, 15vw"
+                    className="movie-card-img transition-transform duration-700 group-hover/card:scale-110"
                     loading="lazy"
                   />
                   <div className="movie-card-overlay"></div>

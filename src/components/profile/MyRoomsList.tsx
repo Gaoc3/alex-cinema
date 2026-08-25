@@ -41,23 +41,33 @@ export default function MyRoomsList() {
     window.location.href = '/movies';
   };
 
-  useEffect(() => {
-    async function fetchRooms() {
-      try {
-        const res = await getUserRooms();
-        if (res.success && res.rooms) {
-          setRooms(res.rooms);
-        } else {
-          setError(true);
-        }
-      } catch (err) {
-        console.error(err);
+  const fetchRooms = async () => {
+    try {
+      const res = await getUserRooms();
+      if (res.success && res.rooms) {
+        setRooms(res.rooms);
+      } else {
         setError(true);
-      } finally {
-        setLoading(false);
       }
+    } catch (err) {
+      console.error(err);
+      setError(true);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchRooms();
+  }, []);
+
+  // Real-time synchronization
+  useEffect(() => {
+    const handleRoomsUpdate = () => {
+      fetchRooms();
+    };
+    window.addEventListener('rooms-updated', handleRoomsUpdate);
+    return () => window.removeEventListener('rooms-updated', handleRoomsUpdate);
   }, []);
 
   const handleCopyLink = (roomId: string, e: React.MouseEvent) => {
@@ -78,6 +88,7 @@ export default function MyRoomsList() {
       const res = await deleteRoom(roomId);
       if (res.success) {
         setRooms((prev) => prev.filter((r) => r.id !== roomId));
+        window.dispatchEvent(new CustomEvent('rooms-updated'));
         toast.success('تم حذف الغرفة نهائياً 🗑️');
       } else {
         toast.error(res.error || 'حدث خطأ أثناء حذف الغرفة');
@@ -153,53 +164,43 @@ export default function MyRoomsList() {
               </span>
             </div>
 
-            <div className="absolute bottom-0 left-0 w-full p-3">
-              <h4 className="text-white font-bold text-sm line-clamp-1 drop-shadow-md">
-                {room.title}
-              </h4>
-              <p className="text-gray-300 text-[10px] mt-1 line-clamp-1">
-                {room.movieTitle || 'فيلم / مسلسل'}
-              </p>
+            <div className="absolute bottom-2 right-2 left-2">
+              <h4 className="text-white font-bold text-sm truncate drop-shadow-md">{room.title}</h4>
+              <p className="text-gray-300 text-xs truncate mt-0.5">{room.movieTitle || 'لم يتم اختيار محتوى بعد'}</p>
             </div>
           </Link>
 
-          {/* Action Toolbar */}
-          <div className="bg-[#0a0a0f] p-3 flex justify-between items-center border-t border-white/5">
-             <button 
-                onClick={(e) => handleCopyLink(room.id, e)}
-                className="text-xs text-gray-300 hover:text-white font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-             >
-                <i className="fa-solid fa-link text-red-500"></i> نسخ الرابط
-             </button>
-             
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setDeleteTargetId(room.id);
-                }}
-                disabled={deletingId === room.id}
-                className="text-xs text-red-500 hover:text-red-400 font-extrabold flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                {deletingId === room.id ? (
-                  <span className="animate-pulse">جاري الحذف...</span>
-                ) : (
-                  <>
-                    <i className="fa-solid fa-trash-can"></i> حذف الغرفة 🗑️
-                  </>
-                )}
-              </button>
+          <div className="p-3 bg-[#161616] flex items-center justify-between border-t border-white/5">
+            <button
+              onClick={(e) => handleCopyLink(room.id, e)}
+              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <i className="fa-solid fa-link text-[10px]"></i>
+              نسخ الرابط
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDeleteTargetId(room.id);
+              }}
+              disabled={deletingId === room.id}
+              className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-400 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <i className="fa-solid fa-trash text-[10px]"></i>
+              {deletingId === room.id ? 'جاري الحذف...' : 'حذف'}
+            </button>
           </div>
         </div>
       ))}
 
       <ConfirmModal
-        isOpen={Boolean(deleteTargetId)}
-        title="حذف الغرفة نهائياً 🗑️"
-        message="هل أنت متأكد من إغلاق وحذف هذه الغرفة من قائمة غرفك؟"
-        confirmText="حذف الآن"
+        isOpen={!!deleteTargetId}
+        title="حذف غرفة المشاهدة"
+        description="هل أنت متأكد من رغبتك في حذف هذه الغرفة نهائياً؟ سيتم إلغاء الرابط ولن تتمكن من استعادتها."
+        confirmText="حذف الغرفة"
         cancelText="إلغاء"
-        isDangerous={true}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteTargetId(null)}
       />

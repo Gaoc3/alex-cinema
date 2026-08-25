@@ -34,27 +34,33 @@ export function getImageUrl(
   return withImageCacheVersion(`/api/img?type=${type}&file=${encodeURIComponent(imgField)}`);
 }
 
+export function getVideoImageCandidates(
+  video: { img?: string; imgObjUrl?: string; imgMediumThumb?: string; imgThumb?: string } | undefined | null,
+  type: 'poster' | 'cover' | 'backdrop' = 'poster'
+): string[] {
+  if (!video) return [];
+  const results: string[] = [];
+
+  if (type === 'poster') {
+    if (video.imgMediumThumb) results.push(getImageUrl(video.imgMediumThumb, 'poster'));
+    if (video.img) results.push(getImageUrl(video.img, 'poster'));
+    if (video.imgThumb) results.push(getImageUrl(video.imgThumb, 'poster'));
+    if (video.imgObjUrl) results.push(getImageUrl(video.imgObjUrl, 'poster'));
+  } else {
+    if (video.img) results.push(getImageUrl(video.img, type));
+    if (video.imgObjUrl) results.push(getImageUrl(video.imgObjUrl, type));
+    if (video.imgMediumThumb) results.push(getImageUrl(video.imgMediumThumb, type));
+    if (video.imgThumb) results.push(getImageUrl(video.imgThumb, type));
+  }
+
+  // Deduplicate while preserving priority order
+  return Array.from(new Set(results.filter(Boolean)));
+}
+
 export function getVideoImageUrl(
-  video: { img?: string; imgObjUrl?: string; imgMediumThumb?: string; imgThumb?: string },
+  video: { img?: string; imgObjUrl?: string; imgMediumThumb?: string; imgThumb?: string } | undefined | null,
   type: 'poster' | 'cover' | 'backdrop' = 'poster'
 ): string {
-  if (!video) return '';
-
-  // Grid cards must prefer dedicated thumbnails for performance
-  if (type === 'poster') {
-    const thumbnail = video.imgMediumThumb || video.imgThumb || video.img;
-    if (thumbnail) return getImageUrl(thumbnail, type);
-  }
-
-  // For covers (HeroCarousel) and backdrops, prefer permanent clean filename `img` over ephemeral signed imgObjUrl
-  if (video.img) {
-    return getImageUrl(video.img, type);
-  }
-
-  if (video.imgObjUrl && (video.imgObjUrl.startsWith('/api/') || video.imgObjUrl.startsWith('/tunnel/'))) {
-    return withImageCacheVersion(video.imgObjUrl);
-  }
-
-  const img = video.img || video.imgMediumThumb || video.imgThumb;
-  return getImageUrl(img, type);
+  const candidates = getVideoImageCandidates(video, type);
+  return candidates[0] || '';
 }

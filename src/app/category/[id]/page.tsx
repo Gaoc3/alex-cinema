@@ -1,4 +1,5 @@
 import { getVideoImageUrl } from '@/utils/imageHelper';
+import MediaPosterImage from '@/components/MediaPosterImage';
 import { getMoviesByCategory, getCategories } from '@/lib/api';
 import Link from 'next/link';
 
@@ -56,10 +57,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
             >
               {/* Poster Wrapper */}
               <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
-                <img 
-                  src={getVideoImageUrl(video, 'poster')}
-                  alt={video.ar_title} 
-                  className="object-cover w-full h-full movie-card-img transition-transform duration-700 group-hover/card:scale-110"
+                <MediaPosterImage 
+                  video={video}
+                  type="poster"
+                  sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
+                  className="movie-card-img transition-transform duration-700 group-hover/card:scale-110"
                   loading="lazy"
                 />
                 <div className="movie-card-overlay"></div>

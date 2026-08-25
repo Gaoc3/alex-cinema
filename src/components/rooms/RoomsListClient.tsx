@@ -44,6 +44,18 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const fetchActiveRooms = async () => {
+    try {
+      const res = await fetch('/api/rooms?type=active', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.rooms) setActiveRooms(data.rooms);
+      }
+    } catch (err) {
+      console.error('Error fetching active rooms:', err);
+    }
+  };
+
   const fetchUserRooms = async () => {
     if (!isSignedIn && !user) return;
     try {
@@ -64,6 +76,18 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
     if (isSignedIn || user) {
       fetchUserRooms();
     }
+  }, [isSignedIn, user]);
+
+  // Real-time synchronization listener
+  useEffect(() => {
+    const handleRoomsUpdate = () => {
+      fetchActiveRooms();
+      if (isSignedIn || user) {
+        fetchUserRooms();
+      }
+    };
+    window.addEventListener('rooms-updated', handleRoomsUpdate);
+    return () => window.removeEventListener('rooms-updated', handleRoomsUpdate);
   }, [isSignedIn, user]);
 
   const allUserRoomIds = userRooms.map((r) => r.id);
@@ -87,26 +111,37 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
     if (selectedRoomIds.length === 0 || isDeleting) return;
     setIsDeleting(true);
 
+    const deletedIds = [...selectedRoomIds];
+    // Immediate optimistic update for real-time UI response
+    setUserRooms((prev) => prev.filter((r) => !deletedIds.includes(r.id)));
+    setActiveRooms((prev) => prev.filter((r) => !deletedIds.includes(r.id)));
+
     try {
       const response = await fetch('/api/rooms/batch-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomIds: selectedRoomIds }),
+        body: JSON.stringify({ roomIds: deletedIds }),
       });
 
       const result = await response.json();
       if (result.success) {
-        toast.success(result.message || `تم حذف ${selectedRoomIds.length} غرفة بنجاح 🗑️`);
-        setUserRooms((prev) => prev.filter((r) => !selectedRoomIds.includes(r.id)));
+        toast.success(result.message || `تم حذف ${deletedIds.length} غرفة بنجاح 🗑️`);
         setSelectedRoomIds([]);
         setIsSelectionMode(false);
         setShowConfirmModal(false);
+        window.dispatchEvent(new CustomEvent('rooms-updated'));
+        fetchActiveRooms();
+        fetchUserRooms();
         router.refresh();
       } else {
         toast.error(result.error || 'تعذر حذف الغرف المحددة');
+        fetchActiveRooms();
+        fetchUserRooms();
       }
     } catch {
       toast.error('حدث خطأ في الاتصال أثناء حذف الغرف');
+      fetchActiveRooms();
+      fetchUserRooms();
     } finally {
       setIsDeleting(false);
     }
@@ -115,6 +150,10 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
   const handleDeleteSingleRoom = async (roomId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    // Immediate optimistic update for real-time UI response
+    setUserRooms((prev) => prev.filter((r) => r.id !== roomId));
+    setActiveRooms((prev) => prev.filter((r) => r.id !== roomId));
+
     try {
       const res = await fetch(`/api/rooms/${encodeURIComponent(roomId)}`, {
         method: 'DELETE',
@@ -122,13 +161,19 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
       const data = await res.json();
       if (data.success) {
         toast.success('تم حذف الغرفة بنجاح 🗑️');
-        setUserRooms((prev) => prev.filter((r) => r.id !== roomId));
+        window.dispatchEvent(new CustomEvent('rooms-updated'));
+        fetchActiveRooms();
+        fetchUserRooms();
         router.refresh();
       } else {
         toast.error(data.error || 'تعذر حذف الغرفة');
+        fetchActiveRooms();
+        fetchUserRooms();
       }
     } catch {
       toast.error('حدث خطأ أثناء حذف الغرفة');
+      fetchActiveRooms();
+      fetchUserRooms();
     }
   };
 
@@ -147,7 +192,7 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="flex items-center gap-3 text-2xl font-black text-white drop-shadow-md sm:text-3xl">
-              <i className="fa-solid fa-users text-[#E50914] drop-shadow-[0_0_15px_rgba(229,9,20,0.6)]" aria-hidden="true" />
+              <i className="fa-solid fa-fire text-blue-500 drop-shadow-[0_0_15px_rgba(59,130,246,0.7)]" aria-hidden="true" />
               غرف المشاهدة الجماعية
             </h1>
           </div>

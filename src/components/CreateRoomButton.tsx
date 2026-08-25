@@ -150,7 +150,7 @@ export default function CreateRoomButton({ className, onCreated }: CreateRoomBut
         const roomId = data.room?.id || data.roomId;
         if (onCreated) {
           onCreated(roomId);
-        } else if (isTelegramWebAppContext()) {
+        } else if (typeof window !== 'undefined' && window.location.pathname.startsWith('/tg-app')) {
           window.dispatchEvent(new CustomEvent('telegram:join-room', { detail: { roomId } }));
         } else {
           router.push(`/room/${roomId}?create=true`);

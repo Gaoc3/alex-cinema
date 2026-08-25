@@ -17,8 +17,8 @@ const ALLOWED_IMAGE_TYPES = new Set([
 ]);
 const MAX_IMAGE_BYTES = 32 * 1024 * 1024;
 const MAX_CACHE_BYTES = 64 * 1024 * 1024;
-const MAX_CACHE_ITEMS = 256;
-const RETRY_DELAYS_MS = [0, 150, 500];
+const MAX_CACHE_ITEMS = 512;
+const RETRY_DELAYS_MS = [0];
 
 interface CachedImage {
   body: ArrayBuffer;
@@ -114,28 +114,25 @@ function cacheImage(key: string, image: CachedImage) {
   }
 }
 
-function hasValidImageSignature(bytes: Uint8Array, contentType: string) {
-  if (bytes.length < 12) return false;
-  if (contentType === 'image/jpeg') return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-  if (contentType === 'image/png') return bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
-  if (contentType === 'image/gif') return String.fromCharCode(...bytes.slice(0, 3)) === 'GIF';
-  if (contentType === 'image/webp') {
-    return String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF'
-      && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP';
-  }
-  if (contentType === 'image/avif') {
-    return String.fromCharCode(...bytes.slice(4, 8)) === 'ftyp'
-      && String.fromCharCode(...bytes.slice(8, 12)).startsWith('avi');
-  }
-  return false;
+function detectImageType(bytes: Uint8Array): string | null {
+  if (bytes.length < 4) return null;
+  // JPEG: FF D8 FF
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
+  // PNG: 89 50 4E 47
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png';
+  // GIF: GIF
+  if (String.fromCharCode(...bytes.slice(0, 3)) === 'GIF') return 'image/gif';
+  // WEBP: RIFF ... WEBP
+  if (bytes.length >= 12 && String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP') return 'image/webp';
+  // AVIF: ftyp...
+  if (bytes.length >= 12 && String.fromCharCode(...bytes.slice(4, 8)) === 'ftyp') return 'image/avif';
+  return null;
 }
 
 async function readValidImage(response: Response): Promise<CachedImage | null> {
-  const contentType = (response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
   const declaredSize = Number(response.headers.get('content-length') || 0);
   if (
     !response.ok
-    || !ALLOWED_IMAGE_TYPES.has(contentType)
     || (Number.isFinite(declaredSize) && declaredSize > MAX_IMAGE_BYTES)
   ) {
     await response.body?.cancel().catch(() => undefined);
@@ -144,8 +141,11 @@ async function readValidImage(response: Response): Promise<CachedImage | null> {
 
   const body = await response.arrayBuffer();
   if (body.byteLength === 0 || body.byteLength > MAX_IMAGE_BYTES) return null;
-  if (!hasValidImageSignature(new Uint8Array(body), contentType)) return null;
-  return { body, contentType, cachedAt: Date.now() };
+  
+  const detectedType = detectImageType(new Uint8Array(body));
+  if (!detectedType) return null;
+
+  return { body, contentType: detectedType, cachedAt: Date.now() };
 }
 
 function placeholderResponse() {
@@ -194,50 +194,50 @@ function buildImageCandidates(initialTarget: URL | null, fileParam: string | nul
   const cleanName = sanitizeFilename(rawFileName);
 
   if (cleanName) {
+    // Only verified, responsive Shabakaty CDN nodes
     const baseHosts = [
       'cnth2.shabakaty.com',
-      'cnth1.shabakaty.com',
-      'cnth3.shabakaty.com',
-      'cnth4.shabakaty.com',
-      'cdn.shabakaty.com',
       'cinemana.shabakaty.com',
     ];
 
     const dirs = [
       'vascin-poster-images',
       'vascin-cover-images',
-      'vascin-staff-poster',
-      'vascin-poster',
-      'vascin-images',
       'vascin-photos',
+      'vascin-staff-poster',
+      'vascin-images',
+      'vascin-poster',
     ];
 
-    const fileVariants = new Set<string>([cleanName]);
+    const fileVariants = [cleanName];
     if (cleanName.includes('_poster_medium_thumb.')) {
-      fileVariants.add(cleanName.replace('_poster_medium_thumb.', '_poster.'));
-      fileVariants.add(cleanName.replace('_poster_medium_thumb.', '_poster_thumb.'));
+      fileVariants.push(cleanName.replace('_poster_medium_thumb.', '_poster.'));
+      fileVariants.push(cleanName.replace('_poster_medium_thumb.', '_poster_thumb.'));
     } else if (cleanName.includes('_poster_thumb.')) {
-      fileVariants.add(cleanName.replace('_poster_thumb.', '_poster.'));
-      fileVariants.add(cleanName.replace('_poster_thumb.', '_poster_medium_thumb.'));
+      fileVariants.push(cleanName.replace('_poster_thumb.', '_poster.'));
+      fileVariants.push(cleanName.replace('_poster_thumb.', '_poster_medium_thumb.'));
     } else if (cleanName.includes('_poster.')) {
-      fileVariants.add(cleanName.replace('_poster.', '_poster_medium_thumb.'));
-      fileVariants.add(cleanName.replace('_poster.', '_poster_thumb.'));
+      fileVariants.push(cleanName.replace('_poster.', '_poster_medium_thumb.'));
+      fileVariants.push(cleanName.replace('_poster.', '_poster_thumb.'));
     }
 
-    const extVariants = new Set<string>();
+    const extVariants: string[] = [];
     fileVariants.forEach((fn) => {
-      extVariants.add(fn);
+      if (!extVariants.includes(fn)) extVariants.push(fn);
       if (fn.endsWith('.png')) {
-        extVariants.add(fn.replace(/\.png$/i, '.jpg'));
-        extVariants.add(fn.replace(/\.png$/i, '.jpeg'));
+        const jpg = fn.replace(/\.png$/i, '.jpg');
+        const jpeg = fn.replace(/\.png$/i, '.jpeg');
+        if (!extVariants.includes(jpg)) extVariants.push(jpg);
+        if (!extVariants.includes(jpeg)) extVariants.push(jpeg);
       } else if (fn.endsWith('.jpg') || fn.endsWith('.jpeg')) {
-        extVariants.add(fn.replace(/\.jpe?g$/i, '.png'));
+        const png = fn.replace(/\.jpe?g$/i, '.png');
+        if (!extVariants.includes(png)) extVariants.push(png);
       }
     });
 
     for (const host of baseHosts) {
-      for (const dir of dirs) {
-        for (const fn of extVariants) {
+      for (const fn of extVariants) {
+        for (const dir of dirs) {
           addUrl(`https://${host}/${dir}/${fn}`);
         }
       }
@@ -279,7 +279,7 @@ export async function GET(req: NextRequest) {
     'User-Agent': req.headers.get('user-agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
   });
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30_000);
+  const timeout = setTimeout(() => controller.abort(), 12_000);
 
   try {
     for (const candidate of candidates) {
@@ -292,7 +292,10 @@ export async function GET(req: NextRequest) {
       await waitForRetry(delayMs, controller.signal);
       for (const candidate of candidates) {
         try {
-          const response = await fetchWithRedirects(candidate.href, headers, 5, controller.signal);
+          const reqSignal = AbortSignal.any 
+            ? AbortSignal.any([controller.signal, AbortSignal.timeout(3500)])
+            : controller.signal;
+          const response = await fetchWithRedirects(candidate.href, headers, 3, reqSignal);
           const image = await readValidImage(response);
           if (!image) continue;
           cacheImage(candidate.href, image);

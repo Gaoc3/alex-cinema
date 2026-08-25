@@ -28,20 +28,15 @@ interface LobbySearchProps {
 
 const allYearsRange = `1900,${new Date().getFullYear()}`;
 
-function LobbyPoster({ item }: { item: SearchResult }) {
-  const [imgFailed, setImgFailed] = useState(false);
-  const poster = getVideoImageUrl(item, 'poster');
-  const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.ar_title || item.en_title || '?')}`;
+import MediaPosterImage from '@/components/MediaPosterImage';
 
+function LobbyPoster({ item }: { item: SearchResult }) {
   return (
-    <Image
-      src={!imgFailed && poster ? poster : fallback}
-      alt={item.ar_title || item.en_title || 'ملصق المحتوى'}
-      fill
+    <MediaPosterImage
+      video={item}
+      type="poster"
       sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
-      unoptimized
-      className="absolute inset-0 block h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-      onError={() => setImgFailed(true)}
+      className="transition-transform duration-500 group-hover:scale-105"
     />
   );
 }

@@ -462,7 +462,7 @@ body.preload nav#navbar {
     transition: right 0.5s cubic-bezier(0.16, 1, 0.3, 1), padding-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
   
-  main, nav, footer {
+  main:not(.auth-main), nav:not(.auth-nav), footer:not(.auth-footer) {
     padding-right: 5rem !important; /* 80px gap by default */
   }
 
@@ -474,10 +474,21 @@ body.preload nav#navbar {
     right: 5rem !important;
   }
 
-  body.sidebar-collapsed main,
-  body.sidebar-collapsed nav,
-  body.sidebar-collapsed footer {
+  body.sidebar-collapsed main:not(.auth-main),
+  body.sidebar-collapsed nav:not(.auth-nav),
+  body.sidebar-collapsed footer:not(.auth-footer) {
     padding-right: 5rem !important;
+  }
+  
+  /* Reset padding on auth pages */
+  main.auth-main,
+  .auth-main,
+  .auth-page-shell {
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
   }
   
   /* Hide labels, brand name, and submenus by default when collapsed */
@@ -539,9 +550,9 @@ body.preload nav#navbar {
     right: 18rem !important;
   }
 
-  body.sidebar-expanded main,
-  body.sidebar-expanded nav,
-  body.sidebar-expanded footer {
+  body.sidebar-expanded main:not(.auth-main),
+  body.sidebar-expanded nav:not(.auth-nav),
+  body.sidebar-expanded footer:not(.auth-footer) {
     padding-right: 18rem !important;
   }
 
@@ -613,11 +624,13 @@ body.sidebar-open .sidebar-overlay {
 
 /* Custom Scrollbar for results dropdown and lists */
 .custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 /* Hide scrollbar arrow buttons globally and locally */
@@ -635,11 +648,10 @@ body.sidebar-open .sidebar-overlay {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.12);
   border-radius: 9999px;
-  border: 1px solid transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(229, 9, 20, 0.8);
+  background: rgba(229, 9, 20, 0.7);
 }
 
 /* Subtitle Settings (Controlled via CSS Variables from React) */

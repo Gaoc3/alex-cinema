@@ -20,18 +20,9 @@ interface TelegramMovieCardProps {
   size?: 'normal' | 'slider';
 }
 
+import MediaPosterImage from '@/components/MediaPosterImage';
+
 export default function TelegramMovieCard({ item, onClick, size = 'normal' }: TelegramMovieCardProps) {
-  const rawImage = item.imgUrl || item.img || item.posterPath || '';
-  const resolvedSrc = getImageUrl(rawImage, 'poster') || '/icon.svg';
-  const [imgSrc, setImgSrc] = useState(resolvedSrc);
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    const nextSrc = getImageUrl(item.imgUrl || item.img || item.posterPath || '', 'poster') || '/icon.svg';
-    setImgSrc(nextSrc);
-    setHasError(false);
-  }, [item.imgUrl, item.img, item.posterPath]);
-
   const isSeries = item.kind === '2';
 
   return (
@@ -42,18 +33,11 @@ export default function TelegramMovieCard({ item, onClick, size = 'normal' }: Te
       }`}
     >
       <div className="relative aspect-[2/3] w-full rounded-2xl sm:rounded-3xl overflow-hidden bg-[#131a2a] border border-white/15 shadow-lg group-hover:border-alex-primary/70 group-hover:shadow-[0_0_24px_rgba(229,9,20,0.45)] transition-all">
-        <Image
-          src={hasError ? '/icon.svg' : imgSrc}
-          alt={item.ar_title || 'عمل فني'}
-          fill
+        <MediaPosterImage
+          video={item}
+          type="poster"
+          sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
-          onError={() => {
-            if (!hasError) {
-              setHasError(true);
-              setImgSrc('/icon.svg');
-            }
-          }}
-          unoptimized
         />
 
         {/* Rating Badge */}

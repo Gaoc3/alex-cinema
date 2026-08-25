@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 
+import MediaPosterImage from '@/components/MediaPosterImage';
+
 interface SearchResult {
   nb: string;
   ar_title: string;
@@ -14,26 +16,21 @@ interface SearchResult {
   year: string;
   stars: string;
   img?: string;
+  imgMediumThumb?: string;
+  imgThumb?: string;
+  imgObjUrl?: string;
   kind?: string;
 }
 
 const allYearsRange = `1900,${new Date().getFullYear()}`;
 
 function SearchResultPoster({ item }: { item: SearchResult }) {
-  const [imgFailed, setImgFailed] = useState(false);
-  const poster = getVideoImageUrl(item, 'poster');
-  const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.ar_title || item.en_title || '?')}`;
-
   return (
-    <Image
-      src={!imgFailed && poster ? poster : fallback}
-      alt={item.ar_title || item.en_title || 'ملصق المحتوى'}
-      width={64}
-      height={96}
+    <MediaPosterImage
+      video={item}
+      type="poster"
       sizes="64px"
-      unoptimized
-      onError={() => setImgFailed(true)}
-      className="w-full h-full object-cover movie-card-img transition-transform duration-500 group-hover/item:scale-110"
+      className="movie-card-img transition-transform duration-500 group-hover/item:scale-110"
     />
   );
 }
@@ -128,11 +125,14 @@ export default function SearchBar() {
     setShowDropdown(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) {
+  const handleSubmit = (e?: React.FormEvent | React.KeyboardEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = query.trim();
+    if (trimmed) {
       setShowDropdown(false);
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+      setIsMobileExpanded(false);
+      inputRef.current?.blur();
+      router.push(`/search?q=${encodeURIComponent(trimmed)}`);
     }
   };
 
@@ -174,11 +174,18 @@ export default function SearchBar() {
           <div className="relative flex-1">
             <input
               ref={inputRef}
-              type="text"
+              type="search"
+              enterKeyHint="search"
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }
+              }}
               onFocus={() => query.trim().length >= 2 && setShowDropdown(true)}
-              className="bg-black/60 focus:bg-black/85 backdrop-blur-xl border border-white/20 focus:border-alex-primary/80 text-white pr-10 pl-4 py-2 h-auto rounded-2xl w-full xl:w-64 focus:w-full xl:focus:w-80 transition-all duration-300 outline-none text-sm font-medium shadow-[0_4px_15px_rgba(0,0,0,0.5)] focus:shadow-[0_0_20px_rgba(229,9,20,0.3)] placeholder:text-gray-200 block"
+              className="bg-black/60 focus:bg-black/85 backdrop-blur-xl border border-white/20 focus:border-alex-primary/80 text-white pr-10 pl-4 py-2 h-auto rounded-2xl w-full xl:w-64 focus:w-full xl:focus:w-80 transition-all duration-300 outline-none text-sm font-medium shadow-[0_4px_15px_rgba(0,0,0,0.5)] focus:shadow-[0_0_20px_rgba(229,9,20,0.3)] placeholder:text-gray-200 block [&::-webkit-search-cancel-button]:hidden"
               placeholder="ابحث..."
               aria-label="البحث عن فيلم أو مسلسل"
             />
@@ -273,7 +280,19 @@ export default function SearchBar() {
               )}
             </div>
 
-
+            {/* View Full Search Page Button */}
+            {query.trim().length >= 1 && (
+              <div className="pt-2 px-3 pb-1 border-t border-white/[0.06] mt-1">
+                <button
+                  type="button"
+                  onClick={() => handleSubmit()}
+                  className="w-full py-2.5 px-4 rounded-xl bg-alex-primary/15 hover:bg-alex-primary/25 border border-alex-primary/30 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer"
+                >
+                  <span>عرض كل نتائج البحث لـ &ldquo;{query.trim()}&rdquo;</span>
+                  <i className="fa-solid fa-arrow-left text-xs text-alex-primary"></i>
+                </button>
+              </div>
+            )}
           </div>
         )}
         </div>
