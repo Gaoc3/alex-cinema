@@ -3,7 +3,7 @@ import MediaPosterImage from '@/components/MediaPosterImage';
 import React from 'react';
 import Link from 'next/link';
 import NewReleasesPagination from '@/components/NewReleasesPagination';
-import { fetchCinemana } from '@/lib/api';
+import { getNewlyVideos, getLatestMovies, getLatestSeries } from '@/lib/api';
 
 interface VideoItem {
   nb: string;
@@ -25,18 +25,28 @@ interface PageProps {
 export default async function NewReleasesPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
   const page = parseInt(resolvedSearchParams.page || '1', 10);
+  const offset = (page - 1) * 30;
 
-  const [moviesRaw, seriesRaw] = await Promise.all([
-    fetchCinemana(`latestMovies/level/2/itemsPerPage/30/page/${page}/`),
-    fetchCinemana(`latestSeries/level/2/itemsPerPage/30/page/${page}/`)
+  const [newlyRaw, moviesRaw, seriesRaw] = await Promise.all([
+    getNewlyVideos(offset).catch(() => []),
+    getLatestMovies(page, 30).catch(() => []),
+    getLatestSeries(page, 30).catch(() => [])
   ]);
 
+  const newly = Array.isArray(newlyRaw) ? newlyRaw : [];
   const movies = Array.isArray(moviesRaw) ? moviesRaw : [];
   const series = Array.isArray(seriesRaw) ? seriesRaw : [];
 
-  // Merge both lists and sort by sequential ID (nb) descending
-  const merged = [...movies, ...series].sort(
-    (a, b) => parseInt(b.nb) - parseInt(a.nb)
+  // Merge and deduplicate by ID (nb)
+  const map = new Map<string, VideoItem>();
+  [...newly, ...movies, ...series].forEach((item) => {
+    if (item && item.nb && !map.has(item.nb)) {
+      map.set(item.nb, item);
+    }
+  });
+
+  const merged = Array.from(map.values()).sort(
+    (a, b) => parseInt(b.nb || '0') - parseInt(a.nb || '0')
   );
 
   return (

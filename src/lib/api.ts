@@ -124,13 +124,45 @@ export async function fetchCinemana(endpoint: string, params: Record<string, str
   }
 }
 
+export async function getHeroBanner() {
+  const data = await fetchCinemana('banner/level/0');
+  if (Array.isArray(data) && data.length > 0) return data;
+  return fetchCinemana('banner/level/1');
+}
+
+export async function getVideoGroups() {
+  return fetchCinemana('videoGroups/lang/ar/level/0');
+}
+
+export async function getNewlyVideos(offset = 0) {
+  const data = await fetchCinemana(`newlyVideosItems/level/0/offset/${offset}/`);
+  return Array.isArray(data) ? data : [];
+}
+
 export async function getHomeVideos() { return fetchCinemana('latestMovies/level/2/itemsPerPage/24/page/1/'); }
-export async function getPromoVideos() { return fetchCinemana('banner/level/1'); }
-export async function getLatestMovies(page = 1) { return fetchCinemana(`latestMovies/level/2/itemsPerPage/24/page/${page}/`); }
-export async function getLatestSeries(page = 1) { return fetchCinemana(`latestSeries/level/2/itemsPerPage/24/page/${page}/`); }
-export async function getCategories() { return fetchCinemana('mainCategories', { lang: 'ar' }); }
-export async function getMoviesByCategory(categoryId: string, kind = '1', offset = 0) {
+export async function getPromoVideos() { return getHeroBanner(); }
+export async function getLatestMovies(page = 1, limit = 24) { return fetchCinemana(`latestMovies/level/2/itemsPerPage/${limit}/page/${page}/`); }
+export async function getLatestSeries(page = 1, limit = 24) { return fetchCinemana(`latestSeries/level/2/itemsPerPage/${limit}/page/${page}/`); }
+export async function getMainCategories() { return fetchCinemana('mainCategories', { lang: 'ar' }); }
+export async function getSubCategories() { return fetchCinemana('subCategories', { lang: 'ar' }); }
+export async function getCategories() { return getMainCategories(); }
+
+export async function getVideosByCategory(categoryId: string, kind = '1', offset = 0) {
   const data = await fetchCinemana('videosByCategory', { categoryID: categoryId, orderby: 'desc', videoKind: kind, offset: offset.toString(), level: '2' });
+  return data?.info || [];
+}
+export const getMoviesByCategory = getVideosByCategory;
+
+export async function getVideosByCategoryAndLanguage(categoryId: string, languageId: string, kind = '1', offset = 0) {
+  const params: Record<string, string> = {
+    orderby: 'desc',
+    videoKind: kind,
+    offset: offset.toString(),
+    level: '2',
+  };
+  if (categoryId) params.category_id = categoryId;
+  if (languageId) params.language_id = languageId;
+  const data = await fetchCinemana('videosByCategoryAndLanguage', params);
   return data?.info || [];
 }
 

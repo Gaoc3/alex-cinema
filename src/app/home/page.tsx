@@ -1,4 +1,4 @@
-import { getPromoVideos, getLatestMovies, getLatestSeries, getHomeVideos } from '@/lib/api';
+import { getHeroBanner, getVideoGroups, getNewlyVideos, getLatestMovies, getLatestSeries, getHomeVideos } from '@/lib/api';
 import HeroCarousel from '@/components/HeroCarousel';
 import VideoSlider from '@/components/VideoSlider';
 import { redirect } from 'next/navigation';
@@ -12,7 +12,7 @@ interface HomeVideo {
   nb: string;
   ar_title: string;
   en_title?: string;
-  ar_content: string;
+  ar_content?: string;
   img: string;
   imgObjUrl?: string;
   stars: string;
@@ -22,6 +22,11 @@ interface HomeVideo {
   categories?: { ar_title: string }[];
 }
 
+interface VideoGroup {
+  title: string;
+  content: HomeVideo[];
+}
+
 export default async function Home() {
   const headersList = await headers();
   const userAgent = (headersList.get('user-agent') || '').toLowerCase();
@@ -29,13 +34,17 @@ export default async function Home() {
     redirect('/tg-app');
   }
 
-  const [promoResult, moviesResult, seriesResult] = await Promise.all([
-    getPromoVideos().catch(() => []),
-    getLatestMovies(1).catch(() => []),
-    getLatestSeries(1).catch(() => []),
+  const [bannerResult, newlyResult, groupsResult, moviesResult, seriesResult] = await Promise.all([
+    getHeroBanner().catch(() => []),
+    getNewlyVideos(0).catch(() => []),
+    getVideoGroups().catch(() => null),
+    getLatestMovies(1, 24).catch(() => []),
+    getLatestSeries(1, 24).catch(() => []),
   ]);
 
-  let promoVideos: HomeVideo[] = Array.isArray(promoResult) ? promoResult : [];
+  let promoVideos: HomeVideo[] = Array.isArray(bannerResult) ? bannerResult : [];
+  const newlyVideos: HomeVideo[] = Array.isArray(newlyResult) ? newlyResult : [];
+  const videoGroups: VideoGroup[] = Array.isArray(groupsResult?.groups) ? groupsResult.groups : [];
   let latestMovies: HomeVideo[] = Array.isArray(moviesResult) ? moviesResult : [];
   const latestSeries: HomeVideo[] = Array.isArray(seriesResult) ? seriesResult : [];
 
@@ -47,19 +56,15 @@ export default async function Home() {
     }
   }
 
-  if (promoVideos.length === 0 && latestMovies.length > 0) {
-    promoVideos = latestMovies.slice(0, 5);
+  if (promoVideos.length === 0) {
+    if (newlyVideos.length > 0) {
+      promoVideos = newlyVideos.slice(0, 6);
+    } else if (latestMovies.length > 0) {
+      promoVideos = latestMovies.slice(0, 6);
+    }
   }
 
-  // Sort movies by rating to get "Featured Movies"
-  const featuredMovies = [...latestMovies]
-    .sort((a, b) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0'));
-
-  // Sort series by rating to get "Featured Series"
-  const featuredSeries = [...latestSeries]
-    .sort((a, b) => parseFloat(b.stars || '0') - parseFloat(a.stars || '0'));
-
-  const hasAnyContent = promoVideos.length > 0 || latestMovies.length > 0 || latestSeries.length > 0;
+  const hasAnyContent = promoVideos.length > 0 || newlyVideos.length > 0 || videoGroups.length > 0 || latestMovies.length > 0 || latestSeries.length > 0;
 
   return (
     <div className="animate-fade-in-up pb-20">
@@ -89,33 +94,50 @@ export default async function Home() {
         </div>
       ) : (
         /* Row Sliders */
-        <div className="mt-4 sm:mt-6">
-          {/* الإصدارات الجديدة */}
+        <div className="mt-4 sm:mt-6 space-y-2">
+          {/* أحدث الإصدارات المضافة */}
+          {newlyVideos && newlyVideos.length > 0 && (
+            <VideoSlider 
+              title="الإصدارات الجديدة الحصرية" 
+              subtitle="أحدث الأفلام والمسلسلات المضافة مؤخراً بجودة عالية"
+              videos={newlyVideos} 
+              accentColor="red"
+            />
+          )}
+
+          {/* المجموعات السينمائية المنسقة (Curated Video Groups) */}
+          {videoGroups.map((group, idx) => {
+            if (!group.content || group.content.length === 0) return null;
+            // Alternate colors for variety
+            const colors: ('red' | 'blue' | 'purple')[] = ['red', 'blue', 'purple'];
+            const accent = colors[idx % colors.length];
+            return (
+              <VideoSlider 
+                key={group.title + idx}
+                title={group.title} 
+                subtitle="مختارات سينمائية منتقاة خصيصاً للمشاهدة"
+                videos={group.content} 
+                accentColor={accent}
+              />
+            );
+          })}
+
+          {/* أحدث الأفلام */}
           {latestMovies && latestMovies.length > 0 && (
             <VideoSlider 
-              title="الإصدارات الجديدة" 
-              subtitle="أحدث الإضافات الفنية المضافة مؤخراً للمشاهدة"
+              title="أحدث الأفلام" 
+              subtitle="أحدث الأفلام السينمائية العالمية والعربية"
               videos={latestMovies} 
               accentColor="red"
             />
           )}
 
-          {/* الأفلام المميزة */}
-          {featuredMovies.length > 0 && (
+          {/* أحدث المسلسلات */}
+          {latestSeries && latestSeries.length > 0 && (
             <VideoSlider 
-              title="الأفلام المميزة" 
-              subtitle="الأفلام الأعلى تقييماً ونسب مشاهدة من قبل الجمهور"
-              videos={featuredMovies} 
-              accentColor="red"
-            />
-          )}
-
-          {/* المسلسلات المميزة */}
-          {featuredSeries.length > 0 && (
-            <VideoSlider 
-              title="المسلسلات المميزة" 
-              subtitle="مجموعة من أفضل وأقوى المسلسلات الحائزة على التقييمات الأعلى"
-              videos={featuredSeries} 
+              title="أحدث المسلسلات والحلقات" 
+              subtitle="مجموعة من أحدث المسلسلات التلفزيونية والحلقات المتجددة"
+              videos={latestSeries} 
               accentColor="blue"
             />
           )}
