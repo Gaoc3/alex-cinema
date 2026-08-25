@@ -1307,7 +1307,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const renderSettingsMenu = () => {
     return (
       <div 
-        className="relative w-64 sm:w-72 scrollbar-none no-scrollbar [&::-webkit-scrollbar]:hidden bg-[#0b0c10]/80 backdrop-blur-xl border border-[#e50914]/40 rounded-2xl shadow-[0_15px_35px_rgba(0,0,0,0.8),0_0_25px_rgba(229,9,20,0.15)] flex flex-col p-3.5 animate-fade-in-up z-[100]"
+        className={`relative scrollbar-none no-scrollbar [&::-webkit-scrollbar]:hidden bg-[#0b0c10]/80 backdrop-blur-xl border border-[#e50914]/40 rounded-2xl shadow-[0_15px_35px_rgba(0,0,0,0.8),0_0_25px_rgba(229,9,20,0.15)] flex flex-col animate-fade-in-up z-[100] ${
+          isFullscreen 
+            ? 'w-[320px] md:w-[350px] p-5 mb-2' 
+            : 'w-64 sm:w-72 p-3.5'
+        }`}
         onPointerUp={(e) => { e.stopPropagation(); lastTouchTimeRef.current = Date.now(); resetControlsTimer(); }}
         onTouchStart={(e) => { e.stopPropagation(); lastTouchTimeRef.current = Date.now(); }}
         onClick={(e) => { e.stopPropagation(); lastTouchTimeRef.current = Date.now(); }}
@@ -1315,23 +1319,27 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       >
         {/* --- Main Menu --- */}
         {settingsView === 'main' && (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between mb-2.5 border-b border-white/10 pb-2">
-               <div className="text-sm text-white font-black">الإعدادات</div>
+          <div className={`flex flex-col ${isFullscreen ? 'gap-2' : 'gap-1'}`}>
+            <div className={`flex items-center justify-between border-b border-white/10 ${isFullscreen ? 'mb-3 pb-2.5' : 'mb-2.5 pb-2'}`}>
+               <div className={`text-white font-black ${isFullscreen ? 'text-base' : 'text-sm'}`}>الإعدادات</div>
                <button 
                  onPointerUp={(e) => { e.stopPropagation(); setActiveDropdown(null); }}
-                 className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer outline-none focus:outline-none ring-0"
+                 className={`flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer outline-none focus:outline-none ring-0 ${
+                   isFullscreen ? 'w-7 h-7 text-sm' : 'w-6 h-6 text-xs'
+                 }`}
                >
-                 <i className="fa-solid fa-xmark text-xs"></i>
+                 <i className="fa-solid fa-xmark"></i>
                </button>
             </div>
             
             {/* Family Mode Switch */}
             {(!roomHook || isHost) && (
-              <div className="flex flex-row justify-between items-center px-2 py-1.5 hover:bg-white/5 rounded-xl transition-colors">
+              <div className={`flex flex-row justify-between items-center hover:bg-white/5 rounded-xl transition-colors ${
+                isFullscreen ? 'px-3 py-2' : 'px-2 py-1.5'
+              }`}>
                 <div className="flex flex-col text-right">
-                  <span className="font-bold text-xs text-white">وضع العائلة</span>
-                  <span className="text-[9px] text-gray-400 font-normal">تخطي تلقائي للمشاهد المخلة</span>
+                  <span className={`font-bold text-white ${isFullscreen ? 'text-sm' : 'text-xs'}`}>وضع العائلة</span>
+                  <span className={`text-gray-400 font-normal ${isFullscreen ? 'text-xs' : 'text-[9px]'}`}>تخطي تلقائي للمشاهد المخلة</span>
                 </div>
                 <button 
                   type="button"
@@ -1339,13 +1347,15 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                   dir="ltr"
                   aria-checked={isFamilyMode}
                   onPointerUp={(e) => { e.stopPropagation(); setIsFamilyMode(!isFamilyMode); }}
-                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    isFamilyMode ? 'bg-[#e50914]' : 'bg-white/20'
-                  }`}
+                  className={`relative inline-flex shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    isFullscreen ? 'h-6 w-11' : 'h-5 w-9'
+                  } ${isFamilyMode ? 'bg-[#e50914]' : 'bg-white/20'}`}
                 >
                   <span
-                    className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
-                      isFamilyMode ? 'translate-x-4' : 'translate-x-0'
+                    className={`pointer-events-none inline-block transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                      isFullscreen 
+                        ? `size-5 ${isFamilyMode ? 'translate-x-5' : 'translate-x-0'}`
+                        : `size-4 ${isFamilyMode ? 'translate-x-4' : 'translate-x-0'}`
                     }`}
                   />
                 </button>
@@ -1356,30 +1366,36 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             {vttTranslations.length > 0 && (
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('subtitles'); }}
-                className="flex flex-row justify-between items-center px-2 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
+                className={`flex flex-row justify-between items-center hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right ${
+                  isFullscreen ? 'px-3 py-2.5' : 'px-2 py-1.5'
+                }`}
               >
-                <span className="font-bold text-xs text-white">الترجمة</span>
-                <span className="text-xs text-white/50">{selectedLanguage === 'off' ? 'إيقاف' : selectedLanguage === 'ar' ? 'العربية' : 'English'} &lt;</span>
+                <span className={`font-bold text-white ${isFullscreen ? 'text-sm' : 'text-xs'}`}>الترجمة</span>
+                <span className={`text-white/50 ${isFullscreen ? 'text-sm' : 'text-xs'}`}>{selectedLanguage === 'off' ? 'إيقاف' : selectedLanguage === 'ar' ? 'العربية' : 'English'} &lt;</span>
               </button>
             )}
 
             {/* Quality Button */}
             <button 
               onPointerUp={(e) => { e.stopPropagation(); setSettingsView('quality'); }}
-              className="flex flex-row justify-between items-center px-2 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
+              className={`flex flex-row justify-between items-center hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right ${
+                isFullscreen ? 'px-3 py-2.5' : 'px-2 py-1.5'
+              }`}
             >
-              <span className="font-bold text-xs text-white">الجودة</span>
-              <span className="text-xs text-white/50">{selectedResolution} &lt;</span>
+              <span className={`font-bold text-white ${isFullscreen ? 'text-sm' : 'text-xs'}`}>الجودة</span>
+              <span className={`text-white/50 ${isFullscreen ? 'text-sm' : 'text-xs'}`}>{selectedResolution} &lt;</span>
             </button>
 
             {/* Speed Button */}
             {!roomHook && (
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('speed'); }}
-                className="flex flex-row justify-between items-center px-2 py-1.5 hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right"
+                className={`flex flex-row justify-between items-center hover:bg-white/5 rounded-xl transition-colors outline-none w-full cursor-pointer text-right ${
+                  isFullscreen ? 'px-3 py-2.5' : 'px-2 py-1.5'
+                }`}
               >
-                <span className="font-bold text-xs text-white">سرعة التشغيل</span>
-                <span className="text-xs text-white/50">{playbackRate}x &lt;</span>
+                <span className={`font-bold text-white ${isFullscreen ? 'text-sm' : 'text-xs'}`}>سرعة التشغيل</span>
+                <span className={`text-white/50 ${isFullscreen ? 'text-sm' : 'text-xs'}`}>{playbackRate}x &lt;</span>
               </button>
             )}
           </div>
@@ -1387,22 +1403,26 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
         {/* --- Subtitles Sub-menu --- */}
         {settingsView === 'subtitles' && (
-          <div className="flex flex-col gap-1 animate-fade-in-up">
-            <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-1.5">
+          <div className={`flex flex-col animate-fade-in-up ${isFullscreen ? 'gap-2' : 'gap-1'}`}>
+            <div className={`flex items-center gap-2 border-b border-white/10 ${isFullscreen ? 'mb-3 pb-2' : 'mb-2 pb-1.5'}`}>
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
-                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+                className={`flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white ${
+                  isFullscreen ? 'w-6 h-6 text-xs' : 'w-5 h-5 text-[10px]'
+                }`}
               >
-                <i className="fa-solid fa-chevron-right text-[10px]"></i>
+                <i className="fa-solid fa-chevron-right"></i>
               </button>
-              <div className="text-sm text-white font-black">الترجمة</div>
+              <div className={`text-white font-black ${isFullscreen ? 'text-base' : 'text-sm'}`}>الترجمة</div>
             </div>
             
-            <div className="text-[10px] text-gray-400 font-bold">لغة الترجمة</div>
-            <div className="grid grid-cols-2 gap-1.5 mb-1.5">
+            <div className={`text-gray-400 font-bold ${isFullscreen ? 'text-xs' : 'text-[10px]'}`}>لغة الترجمة</div>
+            <div className={`grid grid-cols-2 ${isFullscreen ? 'gap-2 mb-2' : 'gap-1.5 mb-1.5'}`}>
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSelectedLanguage('off'); }}
-                className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === 'off' ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                className={`rounded-lg font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${
+                  isFullscreen ? 'px-3 py-2 text-sm' : 'px-2 py-1.5 text-xs'
+                } ${selectedLanguage === 'off' ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
               >
                 إيقاف
               </button>
@@ -1410,15 +1430,17 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 <button 
                   key={track.id}
                   onPointerUp={(e) => { e.stopPropagation(); setSelectedLanguage(track.type); }}
-                  className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedLanguage === track.type ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                  className={`rounded-lg font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${
+                    isFullscreen ? 'px-3 py-2 text-sm' : 'px-2 py-1.5 text-xs'
+                  } ${selectedLanguage === track.type ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
                 >
                   {track.name === 'arabic' ? 'العربية' : 'English'}
                 </button>
               ))}
             </div>
 
-            <div className="text-[10px] text-gray-400 font-bold">نوع الخط</div>
-            <div className="grid grid-cols-3 gap-1 mb-1.5">
+            <div className={`text-gray-400 font-bold ${isFullscreen ? 'text-xs' : 'text-[10px]'}`}>نوع الخط</div>
+            <div className={`grid grid-cols-3 ${isFullscreen ? 'gap-2 mb-2' : 'gap-1 mb-1.5'}`}>
               {[
                 { name: 'Tajawal', label: 'تجول' },
                 { name: 'Cairo', label: 'القاهرة' },
@@ -1427,7 +1449,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 <button
                   key={f.name}
                   onPointerUp={(e) => { e.stopPropagation(); setSelectedFont(f.name); }}
-                  className={`py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedFont === f.name ? 'bg-white text-black' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                  className={`rounded-lg font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${
+                    isFullscreen ? 'py-2 text-xs' : 'py-1 text-[11px]'
+                  } ${selectedFont === f.name ? 'bg-white text-black' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
                   style={{ fontFamily: f.name }}
                 >
                   {f.label}
@@ -1435,40 +1459,48 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               ))}
             </div>
 
-            <div className="flex items-center justify-between pt-1.5 border-t border-white/10 mb-1">
-              <span className="text-[11px] text-gray-300 font-bold">حجم الخط</span>
-              <div className="flex items-center gap-2">
+            <div className={`flex items-center justify-between border-t border-white/10 ${isFullscreen ? 'pt-2.5 mb-1.5' : 'pt-1.5 mb-1'}`}>
+              <span className={`text-gray-300 font-bold ${isFullscreen ? 'text-xs' : 'text-[11px]'}`}>حجم الخط</span>
+              <div className={`flex items-center ${isFullscreen ? 'gap-2.5' : 'gap-2'}`}>
                 <button 
                   onPointerUp={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.min(220, prev + 10)); }}
-                  className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none"
+                  className={`flex items-center justify-center rounded-lg bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none ${
+                    isFullscreen ? 'w-7 h-7 text-xs' : 'w-6 h-6 text-[10px]'
+                  }`}
                 >
-                  <i className="fa-solid fa-plus text-[10px]"></i>
+                  <i className="fa-solid fa-plus"></i>
                 </button>
-                <span className="text-xs font-en font-bold text-white min-w-[32px] text-center">{subtitleSize}%</span>
+                <span className={`font-en font-bold text-white text-center ${
+                  isFullscreen ? 'text-sm min-w-[38px]' : 'text-xs min-w-[32px]'
+                }`}>{subtitleSize}%</span>
                 <button 
                   onPointerUp={(e) => { e.stopPropagation(); setSubtitleSize(prev => Math.max(60, prev - 10)); }}
-                  className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none"
+                  className={`flex items-center justify-center rounded-lg bg-white/10 hover:bg-alex-primary text-white transition-all cursor-pointer outline-none ${
+                    isFullscreen ? 'w-7 h-7 text-xs' : 'w-6 h-6 text-[10px]'
+                  }`}
                 >
-                  <i className="fa-solid fa-minus text-[10px]"></i>
+                  <i className="fa-solid fa-minus"></i>
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1.5 border-t border-white/10">
-              <span className="text-[11px] text-gray-300 font-bold">خلفية سوداء</span>
-              <button
+            <div className={`flex items-center justify-between border-t border-white/10 ${isFullscreen ? 'pt-2.5' : 'pt-1.5'}`}>
+              <span className={`text-gray-300 font-bold ${isFullscreen ? 'text-xs' : 'text-[11px]'}`}>خلفية سوداء</span>
+              <button 
                 type="button"
                 role="switch"
                 dir="ltr"
                 aria-checked={showSubtitleBg}
                 onPointerUp={(e) => { e.stopPropagation(); setShowSubtitleBg(prev => !prev); }}
-                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  showSubtitleBg ? 'bg-[#e50914]' : 'bg-white/20'
-                }`}
+                className={`relative inline-flex shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  isFullscreen ? 'h-6 w-11' : 'h-5 w-9'
+                } ${showSubtitleBg ? 'bg-[#e50914]' : 'bg-white/20'}`}
               >
                 <span
-                  className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
-                    showSubtitleBg ? 'translate-x-4' : 'translate-x-0'
+                  className={`pointer-events-none inline-block transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                    isFullscreen 
+                      ? `size-5 ${showSubtitleBg ? 'translate-x-5' : 'translate-x-0'}`
+                      : `size-4 ${showSubtitleBg ? 'translate-x-4' : 'translate-x-0'}`
                   }`}
                 />
               </button>
@@ -1478,22 +1510,26 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
         {/* --- Quality Sub-menu --- */}
         {settingsView === 'quality' && (
-          <div className="flex flex-col gap-1 animate-fade-in-up">
-            <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-1.5">
+          <div className={`flex flex-col animate-fade-in-up ${isFullscreen ? 'gap-2' : 'gap-1'}`}>
+            <div className={`flex items-center gap-2 border-b border-white/10 ${isFullscreen ? 'mb-3 pb-2' : 'mb-2 pb-1.5'}`}>
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
-                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+                className={`flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white ${
+                  isFullscreen ? 'w-6 h-6 text-xs' : 'w-5 h-5 text-[10px]'
+                }`}
               >
-                <i className="fa-solid fa-chevron-right text-[10px]"></i>
+                <i className="fa-solid fa-chevron-right"></i>
               </button>
-              <div className="text-sm text-white font-black">الجودة</div>
+              <div className={`text-white font-black ${isFullscreen ? 'text-base' : 'text-sm'}`}>الجودة</div>
             </div>
-            <div className="grid grid-cols-1 gap-1">
+            <div className={`grid grid-cols-1 ${isFullscreen ? 'gap-1.5' : 'gap-1'}`}>
               {sortedStreams.map((stream) => (
                 <button 
                   key={stream.name}
                   onPointerUp={(e) => { e.stopPropagation(); handleQualityChange(stream); setActiveDropdown(null); }}
-                  className={`w-full text-center py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${selectedResolution === stream.resolution ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                  className={`w-full text-center rounded-lg font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${
+                    isFullscreen ? 'py-2.5 text-sm' : 'py-1.5 text-xs'
+                  } ${selectedResolution === stream.resolution ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
                 >
                   {stream.resolution}
                 </button>
@@ -1504,22 +1540,26 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
         {/* --- Speed Sub-menu --- */}
         {settingsView === 'speed' && (
-          <div className="flex flex-col gap-1 animate-fade-in-up font-en">
-            <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-1.5 font-ar" dir="rtl">
+          <div className={`flex flex-col animate-fade-in-up font-en ${isFullscreen ? 'gap-2' : 'gap-1'}`}>
+            <div className={`flex items-center gap-2 border-b border-white/10 font-ar ${isFullscreen ? 'mb-3 pb-2' : 'mb-2 pb-1.5'}`} dir="rtl">
               <button 
                 onPointerUp={(e) => { e.stopPropagation(); setSettingsView('main'); }}
-                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+                className={`flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white ${
+                  isFullscreen ? 'w-6 h-6 text-xs' : 'w-5 h-5 text-[10px]'
+                }`}
               >
-                <i className="fa-solid fa-chevron-right text-[10px]"></i>
+                <i className="fa-solid fa-chevron-right"></i>
               </button>
-              <div className="text-sm text-white font-black">سرعة التشغيل</div>
+              <div className={`text-white font-black ${isFullscreen ? 'text-base' : 'text-sm'}`}>سرعة التشغيل</div>
             </div>
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className={`grid grid-cols-2 ${isFullscreen ? 'gap-2' : 'gap-1.5'}`}>
               {[0.5, 1, 1.25, 1.5, 2].map((rate) => (
                 <button 
                   key={rate}
                   onPointerUp={(e) => { e.stopPropagation(); if (!roomHook) setPlaybackRate(rate); setActiveDropdown(null); }}
-                  className={`w-full text-center py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${playbackRate === rate ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
+                  className={`w-full text-center rounded-lg font-bold transition-all cursor-pointer outline-none focus:outline-none ring-0 ${
+                    isFullscreen ? 'py-2.5 text-sm' : 'py-1.5 text-xs'
+                  } ${playbackRate === rate ? 'bg-alex-primary text-white shadow' : 'text-gray-300 bg-white/5 hover:bg-white/10'}`}
                 >
                   {rate}x
                 </button>
