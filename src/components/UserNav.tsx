@@ -136,26 +136,24 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
               <span>غرف المشاهدة الخاصة بي</span>
             </button>
 
-            {!isTelegramWebApp && (
-              <button
-                type="button"
-                disabled={isSigningOut}
-                onClick={async () => {
-                  if (isSigningOut) return;
-                  setIsSigningOut(true);
-                  try {
-                    await signOut();
-                  } catch (error) {
-                    setIsSigningOut(false);
-                    toast.error(error instanceof Error ? error.message : "تعذر تسجيل الخروج.");
-                  }
-                }}
-                className="flex items-center gap-3 w-full text-right px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all mt-2 border-t border-white/10 pt-2.5 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <LogOutIcon />
-                <span>{isSigningOut ? "جاري تسجيل الخروج..." : "تسجيل الخروج"}</span>
-              </button>
-            )}
+            <button
+              type="button"
+              disabled={isSigningOut}
+              onClick={async () => {
+                if (isSigningOut) return;
+                setIsSigningOut(true);
+                try {
+                  await signOut();
+                } catch (error) {
+                  setIsSigningOut(false);
+                  toast.error(error instanceof Error ? error.message : "تعذر تسجيل الخروج.");
+                }
+              }}
+              className="flex items-center gap-3 w-full text-right px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all mt-2 border-t border-white/10 pt-2.5 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <LogOutIcon />
+              <span>{isSigningOut ? "جاري تسجيل الخروج..." : "تسجيل الخروج"}</span>
+            </button>
           </div>
         </div>
       )}

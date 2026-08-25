@@ -106,6 +106,13 @@ export function UnifiedAuthProvider({ children }: { children: React.ReactNode })
 
   const signOut = useCallback(async () => {
     try {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("alex-tg-webapp-context");
+        sessionStorage.removeItem("alex-tg-ready-fired");
+      }
+    } catch {}
+
+    try {
       await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "same-origin",
