@@ -1,12 +1,10 @@
 'use client';
-import { decryptData } from '@/utils/cryptoHelper';
-import { getVideoImageUrl } from '@/utils/imageHelper';
-import { dedupeMediaById, getMediaSearchQueryVariants, rankMediaResults } from '@/lib/mediaSearch';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
-
+import { decryptData } from '@/utils/cryptoHelper';
+import { dedupeMediaById, getMediaSearchQueryVariants, rankMediaResults } from '@/lib/mediaSearch';
 import MediaPosterImage from '@/components/MediaPosterImage';
 
 interface SearchResult {
@@ -24,12 +22,30 @@ interface SearchResult {
 
 const allYearsRange = `1900,${new Date().getFullYear()}`;
 
+const TRENDING_SEARCHES = [
+  { label: 'أفلام 2026', query: '2026' },
+  { label: 'أكشن ومغامرات', query: 'اكشن' },
+  { label: 'أنمي مترجم', query: 'انمي' },
+  { label: 'مسلسلات تركية', query: 'تركي' },
+  { label: 'أفلام رعب', query: 'رعب' },
+  { label: 'كوميديا', query: 'كوميدي' },
+  { label: 'جريمة وغموض', query: 'جريمة' },
+  { label: 'خيال علمي', query: 'خيال' },
+];
+
+const QUICK_CATEGORIES = [
+  { title: 'الأفلام', href: '/movies', icon: 'fa-film', color: 'from-red-600/20 to-red-950/40 border-red-500/30' },
+  { title: 'المسلسلات', href: '/series', icon: 'fa-tv', color: 'from-blue-600/20 to-blue-950/40 border-blue-500/30' },
+  { title: 'الإصدارات الجديدة', href: '/new-releases', icon: 'fa-fire', color: 'from-amber-600/20 to-amber-950/40 border-amber-500/30' },
+  { title: 'الرومات النشطة', href: '/rooms', icon: 'fa-users', color: 'from-purple-600/20 to-purple-950/40 border-purple-500/30' },
+];
+
 function SearchResultPoster({ item }: { item: SearchResult }) {
   return (
     <MediaPosterImage
       video={item}
       type="poster"
-      sizes="64px"
+      sizes="(max-width: 640px) 70px, 80px"
       className="movie-card-img transition-transform duration-500 group-hover/item:scale-110"
     />
   );
@@ -40,30 +56,45 @@ export default function SearchBar() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
-  const router = useRouter();
+  const mobileInputRef = useRef<HTMLInputElement>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const router = useRouter();
 
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // FIXED: Changed from 'mousedown' to 'click' to prevent Race Condition with Links
+  // Close desktop dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowDropdown(false);
       }
     }
-    // Using click ensures the Link's navigation event fires BEFORE the dropdown unmounts
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
+  // Prevent body scroll when mobile search modal is open
+  useEffect(() => {
+    if (isMobileExpanded) {
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => mobileInputRef.current?.focus(), 80);
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileExpanded]);
+
+  // Live search debounced fetch
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
     if (query.trim().length < 2) {
+      setResults([]);
+      setIsLoading(false);
       return;
     }
 
@@ -71,6 +102,7 @@ export default function SearchBar() {
     const { signal } = controller;
 
     debounceTimer.current = setTimeout(async () => {
+      setIsLoading(true);
       try {
         const variants = getMediaSearchQueryVariants(query);
         const responses = await Promise.all(
@@ -80,22 +112,24 @@ export default function SearchBar() {
               fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=${allYearsRange}&type=movies`, { signal }),
               fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=0&year=${allYearsRange}&type=series`, { signal }),
             ];
-          }),
+          })
         );
 
-        const lists = await Promise.all(responses.map(async (response, index) => {
-          if (!response.ok) return [];
-          const encrypted = await response.json();
-          if (!encrypted?.payload) return [];
-          const data = decryptData<SearchResult[]>(encrypted.payload);
-          const fallbackKind = index % 2 === 0 ? '1' : '2';
-          return Array.isArray(data) ? data.map((item) => ({ ...item, kind: item.kind || fallbackKind })) : [];
-        }));
+        const lists = await Promise.all(
+          responses.map(async (response, index) => {
+            if (!response.ok) return [];
+            const encrypted = await response.json();
+            if (!encrypted?.payload) return [];
+            const data = decryptData<SearchResult[]>(encrypted.payload);
+            const fallbackKind = index % 2 === 0 ? '1' : '2';
+            return Array.isArray(data) ? data.map((item) => ({ ...item, kind: item.kind || fallbackKind })) : [];
+          })
+        );
 
         const sorted = rankMediaResults(dedupeMediaById(lists.flat()), query);
 
         if (!signal.aborted) {
-          setResults(sorted.slice(0, 8));
+          setResults(sorted.slice(0, 10));
         }
       } catch (error: unknown) {
         if (error instanceof DOMException && error.name === 'AbortError') return;
@@ -113,14 +147,12 @@ export default function SearchBar() {
 
   const handleQueryChange = (value: string) => {
     setQuery(value);
-
     if (value.trim().length < 2) {
       setResults([]);
       setIsLoading(false);
       setShowDropdown(false);
       return;
     }
-
     setIsLoading(true);
     setShowDropdown(true);
   };
@@ -132,6 +164,7 @@ export default function SearchBar() {
       setShowDropdown(false);
       setIsMobileExpanded(false);
       inputRef.current?.blur();
+      mobileInputRef.current?.blur();
       router.push(`/search?q=${encodeURIComponent(trimmed)}`);
     }
   };
@@ -144,37 +177,54 @@ export default function SearchBar() {
     setIsMobileExpanded(false);
   };
 
+  const handleTagClick = (tagQuery: string) => {
+    setQuery(tagQuery);
+    setIsLoading(true);
+    setShowDropdown(true);
+    mobileInputRef.current?.focus();
+    inputRef.current?.focus();
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    setResults([]);
+    setIsLoading(false);
+    setShowDropdown(false);
+    mobileInputRef.current?.focus();
+    inputRef.current?.focus();
+  };
+
   return (
-    <div className="relative group w-full xl:w-auto flex-1 xl:flex-none" ref={dropdownRef}>
-      {/* Mobile Search Icon Button */}
-      <div className="xl:hidden flex justify-end w-full">
+    <div className="relative w-full xl:w-auto" ref={dropdownRef}>
+      {/* ------------------------------------------------------------- */}
+      {/* MOBILE TRIGGER BUTTON (Sleek Glass Cinema Style)             */}
+      {/* ------------------------------------------------------------- */}
+      <div className="xl:hidden flex items-center justify-end">
         <button
           type="button"
-          aria-label="فتح البحث"
-          onClick={() => {
-            setIsMobileExpanded(true);
-            setTimeout(() => inputRef.current?.focus(), 100);
-          }}
-          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:border-alex-primary/60 cursor-pointer transition-all duration-300 shadow-[0_4px_10px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(229,9,20,0.4)] hover:-translate-y-1"
+          aria-label="فتح شريط البحث"
+          onClick={() => setIsMobileExpanded(true)}
+          className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-black/40 backdrop-blur-xl border border-white/15 text-gray-200 hover:text-white hover:border-[#e50914]/60 hover:bg-[#e50914]/15 active:scale-95 transition-all duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.5)] cursor-pointer outline-none"
         >
-          <i className="fa-solid fa-search text-sm sm:text-base"></i>
+          <i className="fa-solid fa-magnifying-glass text-sm sm:text-base"></i>
         </button>
       </div>
 
-      {/* The Search Bar (always visible on desktop, absolute overlay on mobile when expanded) */}
-      <div className={`
-        xl:block xl:relative xl:h-auto xl:w-auto xl:bg-transparent xl:z-auto xl:inset-auto xl:p-0
-        ${isMobileExpanded ? 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex justify-center pt-6 sm:pt-12 px-4 sm:px-8 animate-fade-in' : 'hidden'}
-      `}>
-        <div className={`
-          w-full xl:w-auto
-          ${isMobileExpanded ? 'max-w-2xl w-full mx-auto bg-[#0f111a]/95 backdrop-blur-3xl rounded-[32px] border border-white/10 shadow-[0_30px_100px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-fade-in-up h-max max-h-[85vh]' : ''}
-        `}>
-          <form onSubmit={handleSubmit} className={`relative w-full flex items-center shrink-0 gap-2 xl:gap-3 ${isMobileExpanded ? 'p-2 border-b border-white/[0.05]' : ''}`}>
-          <div className="relative flex-1">
+      {/* ------------------------------------------------------------- */}
+      {/* DESKTOP SEARCH BAR (Luxury Glass Navbar Input)                */}
+      {/* ------------------------------------------------------------- */}
+      <div className="hidden xl:block relative">
+        <form onSubmit={handleSubmit} className="relative flex items-center">
+          <div className="relative group/search flex items-center w-64 focus-within:w-80 transition-all duration-300">
+            {/* Search Icon */}
+            <div className="absolute right-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within/search:text-[#e50914] transition-colors">
+              <i className="fa-solid fa-magnifying-glass text-xs"></i>
+            </div>
+
+            {/* Input Field */}
             <input
               ref={inputRef}
-              type="search"
+              type="text"
               enterKeyHint="search"
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
@@ -182,135 +232,340 @@ export default function SearchBar() {
                 if (e.key === 'Enter') {
                   e.preventDefault();
                   handleSubmit(e);
+                } else if (e.key === 'Escape') {
+                  setShowDropdown(false);
                 }
               }}
               onFocus={() => query.trim().length >= 2 && setShowDropdown(true)}
-              className="bg-black/60 focus:bg-black/85 backdrop-blur-xl border border-white/20 focus:border-alex-primary/80 text-white pr-10 pl-4 py-2 h-auto rounded-2xl w-full xl:w-64 focus:w-full xl:focus:w-80 transition-all duration-300 outline-none text-sm font-medium shadow-[0_4px_15px_rgba(0,0,0,0.5)] focus:shadow-[0_0_20px_rgba(229,9,20,0.3)] placeholder:text-gray-200 block [&::-webkit-search-cancel-button]:hidden"
-              placeholder="ابحث..."
-              aria-label="البحث عن فيلم أو مسلسل"
+              className="w-full h-10 pr-9 pl-9 rounded-xl bg-black/40 hover:bg-black/60 focus:bg-[#07090e]/95 text-white text-xs font-medium placeholder:text-gray-400 border border-white/15 hover:border-white/25 focus:border-[#e50914]/70 outline-none backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.4)] focus:shadow-[0_0_25px_rgba(229,9,20,0.25)] transition-all duration-300 block"
+              placeholder="ابحث عن فيلم، مسلسل..."
+              aria-label="البحث"
             />
-            <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-200 group-focus-within:text-alex-primary transition-colors">
-              <i className="fa-solid fa-search text-sm drop-shadow-md"></i>
-            </div>
-            
-            {isLoading && (
-              <div className="absolute inset-y-0 left-3 flex items-center">
-                <div className="w-4 h-4 border-2 border-alex-primary border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            )}
-          </div>
 
-          {/* Close button for mobile inside palette */}
-          <button 
-            type="button" 
-            aria-label="إغلاق البحث"
-            onClick={() => {
-                setIsMobileExpanded(false);
-                setShowDropdown(false);
-                setQuery('');
-                setResults([]);
-                setIsLoading(false);
-            }} 
-            className="xl:hidden w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-gray-400 hover:text-white bg-transparent hover:bg-white/5 transition-colors"
-          >
-            <i className="fa-solid fa-xmark text-xl"></i>
-          </button>
+            {/* Spinner or Clear Button */}
+            {isLoading ? (
+              <div className="absolute left-3 flex items-center">
+                <div className="w-3.5 h-3.5 border-2 border-[#e50914] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : query.length > 0 ? (
+              <button
+                type="button"
+                onClick={handleClear}
+                aria-label="مسح البحث"
+                className="absolute left-3 w-4 h-4 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <i className="fa-solid fa-xmark text-[10px]"></i>
+              </button>
+            ) : null}
+          </div>
         </form>
 
-        {showDropdown && query.trim().length >= 2 && (results.length > 0 || !isLoading) && (
-          <div className={`
-            xl:absolute xl:top-full xl:left-0 xl:right-auto xl:w-[450px] lg:w-[500px] xl:mt-4 xl:bg-[#06070a]/80 xl:backdrop-blur-3xl xl:border xl:border-white/[0.05] xl:shadow-[0_30px_60px_rgba(0,0,0,0.7)] xl:rounded-[24px] xl:animate-fade-in-up xl:py-3
-            ${isMobileExpanded ? 'w-full bg-transparent flex-1 min-h-0 flex flex-col overflow-hidden' : 'hidden xl:block'}
-          `}>
-            
-            <div 
-              ref={containerRef}
-              className={`overflow-y-auto custom-scrollbar divide-y divide-white/[0.03] overscroll-contain pr-1 pl-1 ${isMobileExpanded ? 'flex-1' : 'max-h-[476px]'}`}
-            >
+        {/* Desktop Live Results Popover */}
+        {showDropdown && query.trim().length >= 2 && (
+          <div className="absolute top-full right-0 mt-3 w-[420px] bg-[#07090e]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_30px_rgba(229,9,20,0.15)] overflow-hidden z-[150] animate-fade-in-up flex flex-col" dir="rtl">
+            {/* Header summary */}
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 bg-white/[0.02]">
+              <span className="text-[11px] font-bold text-gray-400">
+                نتائج البحث عن <span className="text-white font-extrabold">&ldquo;{query.trim()}&rdquo;</span>
+              </span>
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#e50914]/20 text-[#e50914] border border-[#e50914]/30">
+                {results.length} نتائج
+              </span>
+            </div>
+
+            {/* List */}
+            <div className="overflow-y-auto max-h-[460px] custom-scrollbar divide-y divide-white/[0.04]">
               {results.length > 0 ? (
                 results.map((item) => (
                   <Link
                     key={item.nb}
                     href={`/watch/${item.nb}?title=${encodeURIComponent(item.ar_title || item.en_title || '')}`}
                     onClick={handleItemClick}
-                    className="flex items-center justify-between gap-4 pr-4 py-4 pl-6 hover:bg-white/[0.04] transition-all duration-300 group/item relative overflow-hidden"
+                    className="flex items-center justify-between gap-3.5 p-3 hover:bg-white/[0.06] transition-all duration-200 group/item relative overflow-hidden"
                   >
-                    <div className="absolute right-0 top-0 bottom-0 w-1 bg-alex-primary transform scale-y-0 group-hover/item:scale-y-100 transition-transform duration-300 origin-center"></div>
-
-                    <div className="flex items-center gap-4 flex-grow min-w-0">
-                      <div className="w-16 h-24 rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-md relative movie-card-img-wrapper group-hover/item:border-alex-primary/30 transition-colors duration-300">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-12 h-16 rounded-lg overflow-hidden shrink-0 border border-white/10 shadow-md relative bg-slate-900 group-hover/item:border-[#e50914]/50 transition-colors">
                         <SearchResultPoster item={item} />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity duration-300"></div>
                       </div>
 
-                      <div className="flex-grow min-w-0 flex flex-col justify-center">
-                        <h4 className="text-sm font-black text-gray-100 group-hover/item:text-white transition-colors truncate text-right leading-tight">
+                      <div className="min-w-0 flex-1 flex flex-col justify-center text-right">
+                        <h4 className="text-xs font-black text-gray-100 group-hover/item:text-white transition-colors truncate">
                           {item.ar_title}
                         </h4>
                         {item.en_title && item.en_title !== item.ar_title && (
-                          <p className="text-xs text-gray-400 font-en font-semibold truncate mt-1 text-right">{item.en_title}</p>
+                          <p className="text-[10px] text-gray-400 font-en font-medium truncate mt-0.5">{item.en_title}</p>
                         )}
-                        
-                        <div className="flex items-center gap-2 mt-3 flex-wrap justify-end">
-                          <span className="text-[10px] font-black text-alex-primary bg-alex-primary/10 border border-alex-primary/20 px-2 py-0.5 rounded-md">
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <span className="text-[9px] font-black text-[#e50914] bg-[#e50914]/15 border border-[#e50914]/25 px-1.5 py-0.2 rounded">
                             {item.kind === '1' ? 'فيلم' : 'مسلسل'}
                           </span>
-                          <span className="text-[10px] font-black text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded-md flex items-center gap-1 font-en">
-                            <i className="fa-solid fa-star text-[8px]"></i> {item.stars}
+                          <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded flex items-center gap-1 font-en">
+                            <i className="fa-solid fa-star text-[7px]"></i> {item.stars}
                           </span>
-                          <span className="text-[10px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-md font-en">
+                          <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-1.5 py-0.2 rounded font-en">
                             {item.year}
                           </span>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="shrink-0 pl-2 opacity-0 group-hover/item:opacity-100 transition-all duration-300 transform translate-x-2 group-hover/item:translate-x-0 text-alex-primary">
-                      <i className="fa-solid fa-chevron-left text-sm"></i>
+
+                    <div className="shrink-0 text-gray-400 group-hover/item:text-[#e50914] group-hover/item:translate-x-[-2px] transition-all">
+                      <i className="fa-solid fa-chevron-left text-xs"></i>
                     </div>
                   </Link>
                 ))
-              ) : (
-                !isLoading && (
-                  <div className="flex flex-col items-center justify-center py-12 text-center opacity-60">
-                    <i className="fa-solid fa-magnifying-glass text-3xl text-gray-500 mb-2"></i>
-                    <p className="text-sm text-gray-400 font-bold">لا توجد نتائج مطابقة</p>
-                  </div>
-                )
-              )}
+              ) : !isLoading ? (
+                <div className="flex flex-col items-center justify-center py-10 text-center text-gray-400">
+                  <i className="fa-solid fa-magnifying-glass text-2xl text-gray-500 mb-2"></i>
+                  <p className="text-xs font-bold">لا توجد نتائج مطابقة</p>
+                </div>
+              ) : null}
             </div>
 
-            {/* View Full Search Page Button */}
-            {query.trim().length >= 1 && (
-              <div className="pt-2 px-3 pb-1 border-t border-white/[0.06] mt-1">
+            {/* Bottom Full Search Page Link */}
+            <div className="p-2.5 border-t border-white/10 bg-white/[0.02]">
+              <button
+                type="button"
+                onClick={() => handleSubmit()}
+                className="w-full py-2 px-3 rounded-xl bg-[#e50914]/15 hover:bg-[#e50914]/25 border border-[#e50914]/40 text-white font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <span>عرض جميع النتائج لـ &ldquo;{query.trim()}&rdquo;</span>
+                <i className="fa-solid fa-arrow-left text-[11px] text-[#e50914]"></i>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* MOBILE FULLSCREEN IMMERSIVE SEARCH MODAL (Ultra-Luxury iOS UI) */}
+      {/* ------------------------------------------------------------- */}
+      {isMobileExpanded && (
+        <div 
+          className="xl:hidden fixed inset-0 z-[200] bg-[#06070a]/98 backdrop-blur-3xl flex flex-col animate-fade-in text-white" 
+          dir="rtl"
+        >
+          {/* Top Bar / Search Input Area */}
+          <div className="shrink-0 pt-3 pb-3 px-4 border-b border-white/10 bg-black/40 backdrop-blur-2xl">
+            <div className="flex items-center gap-3 max-w-lg mx-auto">
+              {/* Back / Exit Button */}
+              <button
+                type="button"
+                aria-label="رجوع"
+                onClick={() => {
+                  setIsMobileExpanded(false);
+                  setShowDropdown(false);
+                  setQuery('');
+                  setResults([]);
+                }}
+                className="w-10 h-10 shrink-0 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer outline-none"
+              >
+                <i className="fa-solid fa-arrow-right text-sm"></i>
+              </button>
+
+              {/* Main Search Input */}
+              <form onSubmit={handleSubmit} className="flex-1 relative flex items-center">
+                <div className="absolute right-3.5 flex items-center pointer-events-none text-gray-400">
+                  <i className="fa-solid fa-magnifying-glass text-xs"></i>
+                </div>
+
+                <input
+                  ref={mobileInputRef}
+                  type="text"
+                  enterKeyHint="search"
+                  value={query}
+                  onChange={(e) => handleQueryChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSubmit(e);
+                    }
+                  }}
+                  className="w-full h-11 pr-10 pl-10 rounded-2xl bg-white/5 border border-white/15 focus:border-[#e50914]/80 focus:bg-white/10 text-white text-sm font-bold placeholder:text-gray-400 outline-none transition-all shadow-[0_4px_20px_rgba(0,0,0,0.5)] block"
+                  placeholder="ابحث عن فيلم، مسلسل، أنمي..."
+                  aria-label="حقل البحث"
+                />
+
+                {/* Clear / Spinner Action */}
+                {isLoading ? (
+                  <div className="absolute left-3.5 flex items-center">
+                    <div className="w-4 h-4 border-2 border-[#e50914] border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : query.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    aria-label="مسح النص"
+                    className="absolute left-3.5 w-5 h-5 rounded-full bg-white/15 text-gray-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <i className="fa-solid fa-xmark text-xs"></i>
+                  </button>
+                ) : null}
+              </form>
+            </div>
+          </div>
+
+          {/* Scrollable Body Content */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 max-w-lg mx-auto w-full">
+            {/* --- STATE 1: Empty Query - Show Trending Tags & Categories --- */}
+            {query.trim().length < 2 && (
+              <div className="space-y-6 animate-fade-in-up">
+                {/* Trending Tags Section */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xs">
+                      <i className="fa-solid fa-fire"></i>
+                    </span>
+                    <h3 className="text-sm font-black text-gray-200">الأكثر بحثاً</h3>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {TRENDING_SEARCHES.map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => handleTagClick(item.query)}
+                        className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/5 hover:bg-[#e50914]/20 border border-white/10 hover:border-[#e50914]/40 text-gray-300 hover:text-white transition-all duration-200 active:scale-95 cursor-pointer shadow-sm"
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Navigation Cards */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-6 h-6 rounded-lg bg-[#e50914]/10 border border-[#e50914]/20 flex items-center justify-center text-[#e50914] text-xs">
+                      <i className="fa-solid fa-compass"></i>
+                    </span>
+                    <h3 className="text-sm font-black text-gray-200">استكشف الأقسام</h3>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {QUICK_CATEGORIES.map((cat) => (
+                      <Link
+                        key={cat.title}
+                        href={cat.href}
+                        onClick={() => setIsMobileExpanded(false)}
+                        className={`p-3.5 rounded-2xl bg-gradient-to-br ${cat.color} border backdrop-blur-md flex items-center gap-3 transition-transform active:scale-95 shadow-md`}
+                      >
+                        <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white text-sm">
+                          <i className={`fa-solid ${cat.icon}`}></i>
+                        </div>
+                        <span className="text-xs font-black text-white">{cat.title}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* --- STATE 2: Loading Skeletons --- */}
+            {isLoading && query.trim().length >= 2 && results.length === 0 && (
+              <div className="space-y-3 animate-pulse">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5">
+                    <div className="w-14 h-20 rounded-xl bg-white/10 shrink-0"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-white/10 rounded-md w-3/4"></div>
+                      <div className="h-3 bg-white/5 rounded-md w-1/2"></div>
+                      <div className="h-3 bg-white/5 rounded-md w-1/4"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* --- STATE 3: Results Found --- */}
+            {results.length > 0 && query.trim().length >= 2 && (
+              <div className="space-y-2.5 pb-20">
+                <div className="flex items-center justify-between pb-2 mb-1 border-b border-white/10">
+                  <span className="text-xs font-bold text-gray-400">
+                    النتائج المباشرة ({results.length})
+                  </span>
+                  <span className="text-[10px] text-gray-500 font-bold">اضغط للمشاهدة فوراً</span>
+                </div>
+
+                {results.map((item) => (
+                  <Link
+                    key={item.nb}
+                    href={`/watch/${item.nb}?title=${encodeURIComponent(item.ar_title || item.en_title || '')}`}
+                    onClick={handleItemClick}
+                    className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 active:scale-[0.98] transition-all duration-200 group/card relative overflow-hidden"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-14 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-md relative bg-slate-900 group-hover/card:border-[#e50914]/50">
+                        <SearchResultPoster item={item} />
+                      </div>
+
+                      <div className="min-w-0 flex-1 flex flex-col justify-center text-right">
+                        <h4 className="text-sm font-black text-white group-hover/card:text-[#e50914] transition-colors truncate leading-snug">
+                          {item.ar_title}
+                        </h4>
+                        {item.en_title && item.en_title !== item.ar_title && (
+                          <p className="text-xs text-gray-400 font-en font-medium truncate mt-0.5">{item.en_title}</p>
+                        )}
+                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                          <span className="text-[9px] font-black text-[#e50914] bg-[#e50914]/15 border border-[#e50914]/25 px-2 py-0.5 rounded-md">
+                            {item.kind === '1' ? 'فيلم' : 'مسلسل'}
+                          </span>
+                          <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md flex items-center gap-1 font-en">
+                            <i className="fa-solid fa-star text-[8px]"></i> {item.stars}
+                          </span>
+                          <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-md font-en">
+                            {item.year}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 text-gray-400 group-hover/card:text-[#e50914] pl-2">
+                      <i className="fa-solid fa-chevron-left text-sm"></i>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* --- STATE 4: No Results Found --- */}
+            {!isLoading && query.trim().length >= 2 && results.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+                <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 text-2xl mb-3">
+                  <i className="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <h4 className="text-base font-black text-white mb-1">لم نجد نتائج مطابقة</h4>
+                <p className="text-xs text-gray-400 max-w-xs mb-4">
+                  تأكد من كتابة الاسم بشكل صحيح أو جرب البحث بكلمات أبسط.
+                </p>
                 <button
                   type="button"
                   onClick={() => handleSubmit()}
-                  className="w-full py-2.5 px-4 rounded-xl bg-alex-primary/15 hover:bg-alex-primary/25 border border-alex-primary/30 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all"
                 >
-                  <span>عرض كل نتائج البحث لـ &ldquo;{query.trim()}&rdquo;</span>
-                  <i className="fa-solid fa-arrow-left text-xs text-alex-primary"></i>
+                  البحث في الأرشيف المتقدم
                 </button>
               </div>
             )}
           </div>
-        )}
-        </div>
 
-        {/* Mobile close overlay background click handler */}
-        {isMobileExpanded && (
-          <div 
-            className="xl:hidden fixed inset-0 z-[-1]" 
-            onClick={() => {
-              setIsMobileExpanded(false);
-              setShowDropdown(false);
-              setQuery('');
-              setResults([]);
-              setIsLoading(false);
-            }}
-          />
-        )}
-      </div>
+          {/* Bottom Floating CTA Button */}
+          {query.trim().length >= 1 && (
+            <div className="shrink-0 p-4 border-t border-white/10 bg-black/60 backdrop-blur-2xl">
+              <div className="max-w-lg mx-auto">
+                <button
+                  type="button"
+                  onClick={() => handleSubmit()}
+                  className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#e50914] to-[#b8070f] text-white font-black text-sm flex items-center justify-center gap-2 shadow-[0_4px_25px_rgba(229,9,20,0.5)] active:scale-98 transition-all cursor-pointer"
+                >
+                  <span>عرض جميع نتائج البحث لـ &ldquo;{query.trim()}&rdquo;</span>
+                  <i className="fa-solid fa-arrow-left text-xs"></i>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

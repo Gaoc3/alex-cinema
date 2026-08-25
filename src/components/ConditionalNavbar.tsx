@@ -48,9 +48,9 @@ export default function ConditionalNavbar() {
               <div className="hidden xl:block flex-grow"></div>
 
               {/* Left side (RTL End): Search Input & User Actions */}
-              <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-4 xl:flex-none">
-                  <div className="w-10 shrink-0 sm:w-auto sm:flex-initial sm:max-w-xs md:max-w-sm">
-                      <Suspense fallback={<div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/5 animate-pulse"></div>}>
+              <div className="flex items-center justify-end gap-2 sm:gap-4">
+                  <div className="flex items-center shrink-0">
+                      <Suspense fallback={<div className="w-10 h-10 rounded-xl bg-white/5 animate-pulse"></div>}>
                           <SearchBar />
                       </Suspense>
                   </div>
