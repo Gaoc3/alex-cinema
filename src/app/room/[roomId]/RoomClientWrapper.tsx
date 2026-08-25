@@ -196,6 +196,22 @@ export default function RoomClientWrapper({
     }
   }, []);
 
+  const bgImage = video ? getVideoImageUrl(video) : null;
+  const uniqueMembers = React.useMemo(() => {
+    const seen = new Map<string, typeof roomHook.members[0]>();
+    for (const m of roomHook.members) {
+      const key = (m as any).userId || (m as any).identity || m.name || m.id;
+      if (!seen.has(key) || m.isHost) {
+        seen.set(key, m);
+      }
+    }
+    return Array.from(seen.values());
+  }, [roomHook.members]);
+
+  const visibleMembers = uniqueMembers.slice(0, 3);
+  const memberCount = Math.max(uniqueMembers.length, 1);
+  const canChangeMedia = isHostUser || roomHook.userPermissions.canChangeMedia;
+
   if (!isLoaded) {
     return (
       <div className="flex min-h-[100svh] items-center justify-center bg-[#070a11]" role="status" aria-label="جارٍ تحميل الغرفة">
@@ -239,22 +255,6 @@ export default function RoomClientWrapper({
       />
     );
   }
-
-  const bgImage = video ? getVideoImageUrl(video) : null;
-  const uniqueMembers = React.useMemo(() => {
-    const seen = new Map<string, typeof roomHook.members[0]>();
-    for (const m of roomHook.members) {
-      const key = (m as any).userId || (m as any).identity || m.name || m.id;
-      if (!seen.has(key) || m.isHost) {
-        seen.set(key, m);
-      }
-    }
-    return Array.from(seen.values());
-  }, [roomHook.members]);
-
-  const visibleMembers = uniqueMembers.slice(0, 3);
-  const memberCount = Math.max(uniqueMembers.length, 1);
-  const canChangeMedia = isHostUser || roomHook.userPermissions.canChangeMedia;
 
 
   const handleSaveTitle = async (e: React.FormEvent) => {
