@@ -225,6 +225,7 @@ export default function SearchBar() {
             <input
               ref={inputRef}
               type="text"
+              dir="rtl"
               enterKeyHint="search"
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
@@ -237,7 +238,7 @@ export default function SearchBar() {
                 }
               }}
               onFocus={() => query.trim().length >= 2 && setShowDropdown(true)}
-              className="w-full h-10 pr-9 pl-9 rounded-xl bg-black/40 hover:bg-black/60 focus:bg-[#07090e]/95 text-white text-xs font-medium placeholder:text-gray-400 border border-white/15 hover:border-white/25 focus:border-[#e50914]/70 outline-none backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.4)] focus:shadow-[0_0_25px_rgba(229,9,20,0.25)] transition-all duration-300 block"
+              className="w-full h-10 pr-9 pl-9 rounded-xl bg-black/40 hover:bg-black/60 focus:bg-[#07090e]/95 text-white text-xs font-medium placeholder:text-gray-400 border border-white/15 hover:border-white/25 focus:border-[#e50914]/70 outline-none backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.4)] focus:shadow-[0_0_25px_rgba(229,9,20,0.25)] transition-all duration-300 block text-right"
               placeholder="ابحث عن فيلم، مسلسل..."
               aria-label="البحث"
             />
