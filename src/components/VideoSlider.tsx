@@ -55,23 +55,10 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
     const el = scrollRef.current;
     if (!el) return;
 
-    const handleWheel = (e: WheelEvent) => {
-      // If pure vertical scroll without Shift key, pass scroll directly to page/window
-      if (!e.shiftKey && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        window.scrollBy({
-          top: e.deltaY,
-          left: 0,
-          behavior: 'auto'
-        });
-      }
-    };
-
     el.addEventListener('scroll', updateScrollButtons, { passive: true });
-    el.addEventListener('wheel', handleWheel, { passive: true });
     window.addEventListener('resize', updateScrollButtons, { passive: true });
     return () => {
       el.removeEventListener('scroll', updateScrollButtons);
-      el.removeEventListener('wheel', handleWheel);
       window.removeEventListener('resize', updateScrollButtons);
     };
   }, [videos, updateScrollButtons]);
@@ -135,7 +122,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
         <div 
           ref={scrollRef}
           style={{ touchAction: 'pan-y', overscrollBehaviorY: 'auto' }}
-          className="flex gap-4 sm:gap-5 overflow-x-auto hide-scrollbar scroll-smooth py-2 px-1"
+          className="flex gap-4 sm:gap-5 overflow-x-auto hide-scrollbar py-2 px-1"
         >
           {videos.map((video, index) => {
             const displayCategory = video.categories && video.categories.length > 0 
@@ -147,8 +134,8 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
                 key={video.nb} 
                 href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
                 prefetch={false}
-                className="w-[calc((100%-1rem)/2)] sm:w-[calc((100%-1.25rem*3)/4)] md:w-[calc((100%-1.25rem*4)/5)] lg:w-[calc((100%-1.25rem*5)/6)] xl:w-[calc((100%-1.25rem*6)/7)] flex-shrink-0 group/card block relative transition-transform duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-105"
-                style={{ animationDelay: `${index * 25}ms` }}
+                className="w-[calc((100%-1rem)/2)] sm:w-[calc((100%-1.25rem*3)/4)] md:w-[calc((100%-1.25rem*4)/5)] lg:w-[calc((100%-1.25rem*5)/6)] xl:w-[calc((100%-1.25rem*6)/7)] flex-shrink-0 group/card block relative transition-transform duration-200 ease-out hover:scale-[1.03]"
+                style={{ animationDelay: `${index * 25}ms`, contain: 'paint' }}
               >
                 {/* Poster Wrapper */}
                 <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">

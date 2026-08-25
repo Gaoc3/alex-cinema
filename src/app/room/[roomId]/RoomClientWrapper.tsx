@@ -295,7 +295,7 @@ export default function RoomClientWrapper({
         <div className="absolute -left-32 bottom-10 size-96 rounded-full bg-blue-700/10 blur-[130px]" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-[1920px] flex-col px-3 pb-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 lg:px-6">
+      <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-7xl 2xl:max-w-[1560px] flex-col px-3 pb-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 lg:px-6">
         <header className="mb-3 flex min-h-14 items-center gap-2 overflow-hidden rounded-2xl border border-white/10 bg-[#0b101a]/95 p-2 shadow-xl sm:mb-4 sm:p-2.5">
           <button
             type="button"
@@ -306,7 +306,6 @@ export default function RoomClientWrapper({
           >
             <i className="fa-solid fa-arrow-right" aria-hidden="true" />
           </button>
-
 
           <div className="min-w-0 flex-1 px-1">
             <div className="flex min-w-0 items-center gap-2">
@@ -408,7 +407,7 @@ export default function RoomClientWrapper({
           </button>
         </header>
 
-        <div className="grid min-h-0 flex-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]" dir="ltr">
+        <div className="grid min-h-0 flex-1 items-start gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1fr)_21rem] xl:grid-cols-[minmax(0,1fr)_23rem]" dir="rtl">
           <section className="min-w-0" dir="rtl">
             {!video ? (
               <div className="flex min-h-[min(46svh,26rem)] items-center justify-center rounded-2xl border border-white/10 bg-[#0b101a]/90 p-5 shadow-2xl sm:min-h-[min(56svh,34rem)] sm:p-9 lg:min-h-[min(68svh,42rem)]">
