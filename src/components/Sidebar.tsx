@@ -75,18 +75,14 @@ export default function Sidebar() {
 
     const initialFrame = window.requestAnimationFrame(checkState);
 
-    window.addEventListener('sidebar-state-change', checkState);
-    window.addEventListener('resize', checkState);
-    window.addEventListener('orientationchange', checkState);
-
-    // Periodic check to ensure state is synchronized even if class changes without events
-    const interval = setInterval(checkState, 250);
+    window.addEventListener('sidebar-state-change', checkState, { passive: true });
+    window.addEventListener('resize', checkState, { passive: true });
+    window.addEventListener('orientationchange', checkState, { passive: true });
 
     return () => {
       window.removeEventListener('sidebar-state-change', checkState);
       window.removeEventListener('resize', checkState);
       window.removeEventListener('orientationchange', checkState);
-      clearInterval(interval);
       window.cancelAnimationFrame(initialFrame);
     };
   }, []);
@@ -176,7 +172,7 @@ export default function Sidebar() {
       />
       
       <aside 
-        className={`fixed top-0 right-0 z-[60] flex flex-col bg-[#06070a]/95 backdrop-blur-2xl sidebar overflow-hidden transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r-0 border-y-0 border-l border-white/[0.05] xl:border-l-0 rounded-none shadow-2xl xl:shadow-none h-screen ${
+        className={`fixed top-0 right-0 z-[60] flex flex-col bg-[#070a13] sidebar overflow-hidden border-r-0 border-y-0 border-l border-white/[0.06] xl:border-l-0 rounded-none shadow-2xl xl:shadow-none h-screen ${
           isMobileSidebarOpen ? 'w-72 max-w-[85vw]' : (isCollapsed ? 'w-20 xl:w-20' : 'w-72 xl:w-72')
         }`} 
       >

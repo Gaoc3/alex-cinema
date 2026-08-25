@@ -392,24 +392,32 @@ button:disabled,
   opacity: 0.85;
 }
 
-/* Sidebar Navigation & Layout Transitions */
+/* ------------------------------------------------------------- */
+/* 120 FPS ULTRA-SMOOTH SIDEBAR & HARDWARE-ACCELERATED TRANSITIONS */
+/* ------------------------------------------------------------- */
+
 .sidebar {
-  transform: translateX(100%); /* Hidden by default on mobile/tablet */
+  transform: translate3d(100%, 0, 0); /* Hidden by default on mobile/tablet */
   width: 18rem; /* Default wide width */
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, width;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.2, 1), width 0.28s cubic-bezier(0.2, 0.9, 0.2, 1);
+  contain: paint layout;
 }
 
 main, nav, footer {
-  transition: padding-right 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: padding-right 0.28s cubic-bezier(0.2, 0.9, 0.2, 1);
+  will-change: padding-right;
 }
 
 .sidebar-label {
   display: inline-block;
   opacity: 1;
-  max-width: 200px;
   white-space: nowrap;
-  transform: translateX(0) scale(1);
-  transition: opacity 0.3s ease 0.2s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate3d(0, 0, 0);
+  will-change: opacity, transform;
+  transition: opacity 0.2s cubic-bezier(0.2, 0.9, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
 .sidebar-brand-name {
@@ -417,24 +425,26 @@ main, nav, footer {
   align-items: center;
   gap: 0.75rem;
   opacity: 1;
-  max-width: 300px;
   white-space: nowrap;
-  transform: translateX(0);
-  transition: opacity 0.3s ease 0.2s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate3d(0, 0, 0);
+  will-change: opacity, transform;
+  transition: opacity 0.2s cubic-bezier(0.2, 0.9, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
 .sidebar-submenu {
-  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: max-height 0.25s cubic-bezier(0.2, 0.9, 0.2, 1), opacity 0.2s ease;
+  will-change: max-height, opacity;
 }
 
 .sidebar-collapsed-logo {
   display: flex;
   opacity: 0;
-  max-width: 0;
   pointer-events: none;
-  overflow: hidden;
-  transform: scale(0.8);
-  transition: opacity 0.1s ease 0s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: absolute;
+  visibility: hidden;
+  transform: scale(0.85) translate3d(0, 0, 0);
+  will-change: opacity, transform;
+  transition: opacity 0.2s cubic-bezier(0.2, 0.9, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
 /* Disable all transitions during initial page load to prevent reload animation glitch */
@@ -451,7 +461,7 @@ body.preload nav#navbar {
   /* Default Desktop Sidebar State: 80px (5rem) Collapsed */
   .sidebar {
     width: 5rem !important; /* 80px by default */
-    transform: translateX(0) !important;
+    transform: translate3d(0, 0, 0) !important;
   }
   
   /* Prevent navbar from stretching over the sidebar and blocking click events */
@@ -461,7 +471,8 @@ body.preload nav#navbar {
     right: 5rem !important; /* 80px by default */
     width: auto !important;
     padding-right: 0 !important;
-    transition: right 0.5s cubic-bezier(0.16, 1, 0.3, 1), padding-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: right 0.28s cubic-bezier(0.2, 0.9, 0.2, 1), padding-right 0.28s cubic-bezier(0.2, 0.9, 0.2, 1) !important;
+    will-change: right, padding-right;
   }
   
   main:not(.auth-main), nav:not(.auth-nav), footer:not(.auth-footer) {
@@ -502,15 +513,15 @@ body.preload nav#navbar {
     max-width: 100vw !important;
   }
   
-  /* Hide labels, brand name, and submenus ONLY when collapsed */
+  /* Hide labels, brand name, and submenus ONLY when collapsed (Zero Layout Reflow) */
   body.sidebar-collapsed .sidebar-label,
   body.sidebar-collapsed .sidebar-brand-name {
     opacity: 0 !important;
-    max-width: 0 !important;
-    transform: translateX(20px) !important;
+    transform: translate3d(15px, 0, 0) !important;
     pointer-events: none !important;
-    overflow: hidden !important;
-    transition: opacity 0.1s ease 0s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    position: absolute !important;
+    visibility: hidden !important;
+    transition: opacity 0.15s ease, transform 0.15s ease !important;
   }
 
   body.sidebar-collapsed .sidebar-submenu {
@@ -523,11 +534,10 @@ body.preload nav#navbar {
   /* Show centered logo ONLY when collapsed */
   body.sidebar-collapsed .sidebar-collapsed-logo {
     opacity: 1 !important;
-    max-width: 200px !important;
+    position: relative !important;
+    visibility: visible !important;
     pointer-events: auto !important;
-    overflow: visible !important;
-    transform: scale(1) !important;
-    transition: opacity 0.3s ease 0.2s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transform: scale(1) translate3d(0, 0, 0) !important;
   }
   
   /* Center menu items and icons ONLY when collapsed */
@@ -536,14 +546,14 @@ body.preload nav#navbar {
     padding-left: 0 !important;
     padding-right: 0 !important;
     gap: 0 !important;
-    transition: justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1), gap 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: justify-content 0.2s cubic-bezier(0.2, 0.9, 0.2, 1), gap 0.2s cubic-bezier(0.2, 0.9, 0.2, 1);
   }
   
   body.sidebar-collapsed .sidebar-link-btn {
     padding-left: 0 !important;
     padding-right: 0 !important;
     justify-content: center !important;
-    transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: padding 0.2s cubic-bezier(0.2, 0.9, 0.2, 1);
   }
 
   /* EXPANDED STATE: Only when body has .sidebar-expanded */
@@ -564,19 +574,19 @@ body.preload nav#navbar {
   body.sidebar-expanded .sidebar-label,
   body.sidebar-expanded .sidebar-brand-name {
     opacity: 1 !important;
-    max-width: 300px !important;
-    transform: translateX(0) !important;
+    transform: translate3d(0, 0, 0) !important;
     pointer-events: auto !important;
-    overflow: visible !important;
+    position: relative !important;
+    visibility: visible !important;
     white-space: nowrap !important;
   }
 
   body.sidebar-expanded .sidebar-collapsed-logo {
     opacity: 0 !important;
-    max-width: 0 !important;
     pointer-events: none !important;
-    overflow: hidden !important;
-    transform: scale(0.8) !important;
+    position: absolute !important;
+    visibility: hidden !important;
+    transform: scale(0.85) translate3d(0, 0, 0) !important;
   }
 
   body.sidebar-expanded .sidebar-item-content,
@@ -591,24 +601,25 @@ body.sidebar-open {
 }
 
 body.sidebar-open .sidebar {
-  transform: translateX(0) !important;
+  transform: translate3d(0, 0, 0) !important;
   width: 18rem !important;
 }
 
 body.sidebar-open .sidebar-label,
 body.sidebar-open .sidebar-brand-name {
   opacity: 1 !important;
-  max-width: 300px !important;
-  transform: translateX(0) !important;
+  transform: translate3d(0, 0, 0) !important;
   pointer-events: auto !important;
-  overflow: visible !important;
+  position: relative !important;
+  visibility: visible !important;
   white-space: nowrap !important;
 }
 
 body.sidebar-open .sidebar-collapsed-logo {
   opacity: 0 !important;
-  max-width: 0 !important;
   pointer-events: none !important;
+  position: absolute !important;
+  visibility: hidden !important;
 }
 
 body.sidebar-open .sidebar-item-content,
@@ -619,7 +630,8 @@ body.sidebar-open .sidebar-link-btn {
 
 /* Glassmorphic backdrop overlay when mobile drawer is open */
 .sidebar-overlay {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s ease;
+  will-change: opacity;
 }
 body.sidebar-open .sidebar-overlay {
   opacity: 1 !important;
