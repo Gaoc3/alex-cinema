@@ -17,8 +17,8 @@ export default function AuthPageShell({ mode, children }: AuthPageShellProps) {
 
       <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_75%_12%,rgba(229,9,20,0.18),transparent_34%),radial-gradient(circle_at_18%_82%,rgba(14,165,233,0.15),transparent_38%),linear-gradient(135deg,rgba(9,22,40,0.08),rgba(5,12,24,0.34))]" />
 
-      {/* Full Width Top Header (Spans edge-to-edge across entire screen) */}
-      <header className="relative z-20 flex w-full items-center justify-between px-4 py-4 sm:px-8 sm:py-6 lg:px-12">
+      {/* Top Header (Floating overlay at the top edges) */}
+      <header className="absolute top-0 left-0 right-0 z-20 flex w-full items-center justify-between px-4 py-4 sm:px-8 sm:py-6 lg:px-12 pointer-events-auto">
         <Link href="/" className="group inline-flex min-w-0 items-center gap-2 sm:gap-3" aria-label="AleX Cinema">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-red-400/30 bg-red-500/15 text-red-300 shadow-[0_0_25px_rgba(229,9,20,0.2)] transition group-hover:scale-105 sm:size-10">
             <i className="fa-solid fa-play text-sm" aria-hidden="true" />
@@ -38,9 +38,9 @@ export default function AuthPageShell({ mode, children }: AuthPageShellProps) {
         </Link>
       </header>
 
-      {/* Perfectly Centered Content Area */}
-      <div className="relative z-10 flex min-h-0 flex-1 w-full items-center justify-center px-4 py-6 sm:py-10 animate-fade-in-up">
-        <div className="flex w-full max-w-[29rem] items-center justify-center">
+      {/* Exactly Centered Content Area (True mathematical viewport center on desktop) */}
+      <div className="relative z-10 flex min-h-[100svh] w-full items-center justify-center px-4 pt-20 pb-8 sm:pt-0 sm:pb-0 animate-fade-in-up">
+        <div className="flex w-full max-w-[29rem] items-center justify-center my-auto">
           {children}
         </div>
       </div>
