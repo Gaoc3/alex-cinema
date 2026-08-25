@@ -491,9 +491,7 @@ body.preload nav#navbar {
     width: 100% !important;
   }
   
-  /* Hide labels, brand name, and submenus by default when collapsed */
-  .sidebar-label,
-  .sidebar-brand-name,
+  /* Hide labels, brand name, and submenus ONLY when collapsed */
   body.sidebar-collapsed .sidebar-label,
   body.sidebar-collapsed .sidebar-brand-name {
     opacity: 0 !important;
@@ -504,7 +502,6 @@ body.preload nav#navbar {
     transition: opacity 0.1s ease 0s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
 
-  .sidebar-submenu,
   body.sidebar-collapsed .sidebar-submenu {
     max-height: 0 !important;
     opacity: 0 !important;
@@ -512,8 +509,7 @@ body.preload nav#navbar {
     overflow: hidden !important;
   }
   
-  /* Show centered logo by default when collapsed */
-  .sidebar-collapsed-logo,
+  /* Show centered logo ONLY when collapsed */
   body.sidebar-collapsed .sidebar-collapsed-logo {
     opacity: 1 !important;
     max-width: 200px !important;
@@ -523,8 +519,7 @@ body.preload nav#navbar {
     transition: opacity 0.3s ease 0.2s, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
   
-  /* Center menu items and icons by default when collapsed */
-  .sidebar-item-content,
+  /* Center menu items and icons ONLY when collapsed */
   body.sidebar-collapsed .sidebar-item-content {
     justify-content: center !important;
     padding-left: 0 !important;
@@ -533,7 +528,6 @@ body.preload nav#navbar {
     transition: justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1), gap 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
-  .sidebar-link-btn,
   body.sidebar-collapsed .sidebar-link-btn {
     padding-left: 0 !important;
     padding-right: 0 !important;
@@ -563,6 +557,7 @@ body.preload nav#navbar {
     transform: translateX(0) !important;
     pointer-events: auto !important;
     overflow: visible !important;
+    white-space: nowrap !important;
   }
 
   body.sidebar-expanded .sidebar-collapsed-logo {
@@ -576,6 +571,7 @@ body.preload nav#navbar {
   body.sidebar-expanded .sidebar-item-content,
   body.sidebar-expanded .sidebar-link-btn {
     justify-content: flex-start !important;
+    gap: 0.875rem !important;
   }
 }
 
@@ -595,6 +591,7 @@ body.sidebar-open .sidebar-brand-name {
   transform: translateX(0) !important;
   pointer-events: auto !important;
   overflow: visible !important;
+  white-space: nowrap !important;
 }
 
 body.sidebar-open .sidebar-collapsed-logo {
@@ -606,6 +603,7 @@ body.sidebar-open .sidebar-collapsed-logo {
 body.sidebar-open .sidebar-item-content,
 body.sidebar-open .sidebar-link-btn {
   justify-content: flex-start !important;
+  gap: 0.875rem !important;
 }
 
 /* Glassmorphic backdrop overlay when mobile drawer is open */
