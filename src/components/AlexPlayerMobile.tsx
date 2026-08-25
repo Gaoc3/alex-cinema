@@ -230,9 +230,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const [showSubtitleBg, setShowSubtitleBg] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('alex_show_subtitle_bg');
-      return saved !== 'false';
+      return saved === 'true';
     }
-    return true;
+    return false;
   });
 
   useEffect(() => {

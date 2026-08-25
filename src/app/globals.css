@@ -655,10 +655,10 @@ body.sidebar-open .sidebar-overlay {
 /* Subtitle Settings (Controlled via CSS Variables from React) */
 video.alex-video-cue::cue {
   font-size: var(--sub-size, 100%) !important;
-  background: var(--sub-bg, rgba(0, 0, 0, 0.65)) !important;
-  background-color: var(--sub-bg, rgba(0, 0, 0, 0.65)) !important;
+  background: var(--sub-bg, transparent) !important;
+  background-color: var(--sub-bg, transparent) !important;
   color: #ffffff !important;
-  text-shadow: var(--sub-shadow, none) !important;
+  text-shadow: var(--sub-shadow, 0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)) !important;
   font-family: var(--sub-font, 'Tajawal', sans-serif) !important;
 }
 video.alex-video-cue::cue(span),
@@ -668,10 +668,10 @@ video.alex-video-cue::cue(i),
 video.alex-video-cue::cue(u),
 video.alex-video-cue::cue(c),
 video.alex-video-cue::cue(font) {
-  background: var(--sub-bg, rgba(0, 0, 0, 0.65)) !important;
-  background-color: var(--sub-bg, rgba(0, 0, 0, 0.65)) !important;
+  background: var(--sub-bg, transparent) !important;
+  background-color: var(--sub-bg, transparent) !important;
   color: #ffffff !important;
-  text-shadow: var(--sub-shadow, none) !important;
+  text-shadow: var(--sub-shadow, 0 2px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.95)) !important;
   font-family: var(--sub-font, 'Tajawal', sans-serif) !important;
 }
 video.alex-video-cue::-webkit-media-text-track-container {
