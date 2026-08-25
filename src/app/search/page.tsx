@@ -119,41 +119,50 @@ function SearchPageContent() {
       const starParam = starRating ? `&star=${starRating}` : '';
 
       try {
-        const allFetchedMovies: VideoItem[] = [];
-        const allFetchedSeries: VideoItem[] = [];
+        const startPage = (pageParam - 1) * 2;
+        const pageIndices = [startPage, startPage + 1];
 
-        for (const qTerm of queriesToTry) {
+        const moviePromises = queriesToTry.flatMap((qTerm) => {
           const queryEncoded = encodeURIComponent(qTerm);
+          return pageIndices.map((p) =>
+            fetch(
+              `/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=${p}&year=${yearRange}&type=movies${categoryParam}${starParam}`,
+              { signal }
+            )
+              .then((res) => (res.ok ? res.json() : null))
+              .then((encrypted) => {
+                if (!encrypted || !encrypted.payload) return [];
+                const data = decryptData<VideoItem[]>(encrypted.payload);
+                return Array.isArray(data) ? data : [];
+              })
+              .catch(() => [])
+          );
+        });
 
-          const moviesPromise = fetch(
-            `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=movies${categoryParam}${starParam}`,
-            { signal }
-          )
-            .then((res) => (res.ok ? res.json() : null))
-            .then((encrypted) => {
-              if (!encrypted || !encrypted.payload) return [];
-              const data = decryptData<VideoItem[]>(encrypted.payload);
-              return Array.isArray(data) ? data : [];
-            });
+        const seriesPromises = queriesToTry.flatMap((qTerm) => {
+          const queryEncoded = encodeURIComponent(qTerm);
+          return pageIndices.map((p) =>
+            fetch(
+              `/api/proxy?endpoint=AdvancedSearch&level=2&videoTitle=${queryEncoded}&staffTitle=&page=${p}&year=${yearRange}&type=series${categoryParam}${starParam}`,
+              { signal }
+            )
+              .then((res) => (res.ok ? res.json() : null))
+              .then((encrypted) => {
+                if (!encrypted || !encrypted.payload) return [];
+                const data = decryptData<VideoItem[]>(encrypted.payload);
+                return Array.isArray(data) ? data : [];
+              })
+              .catch(() => [])
+          );
+        });
 
-          const seriesPromise = fetch(
-            `/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=${queryEncoded}&staffTitle=&page=${pageParam - 1}&year=${yearRange}&type=series${categoryParam}${starParam}`,
-            { signal }
-          )
-            .then((res) => (res.ok ? res.json() : null))
-            .then((encrypted) => {
-              if (!encrypted || !encrypted.payload) return [];
-              const data = decryptData<VideoItem[]>(encrypted.payload);
-              return Array.isArray(data) ? data : [];
-            });
+        const [movieLists, seriesLists] = await Promise.all([
+          Promise.all(moviePromises),
+          Promise.all(seriesPromises),
+        ]);
 
-          const [mList, sList] = await Promise.all([moviesPromise, seriesPromise]);
-          allFetchedMovies.push(...mList);
-          allFetchedSeries.push(...sList);
-        }
-
-        const uniqueMovies = rankMediaResults(dedupeMediaById(allFetchedMovies), query);
-        const uniqueSeries = rankMediaResults(dedupeMediaById(allFetchedSeries), query);
+        const uniqueMovies = rankMediaResults(dedupeMediaById(movieLists.flat()), query);
+        const uniqueSeries = rankMediaResults(dedupeMediaById(seriesLists.flat()), query);
 
         if (!signal.aborted) {
           setRawMovies(uniqueMovies);
@@ -207,7 +216,7 @@ function SearchPageContent() {
     setActiveTab('all');
   };
 
-  const hasNextPage = rawMovies.length >= 12 || rawSeries.length >= 12;
+  const hasNextPage = rawMovies.length >= 20 || rawSeries.length >= 20;
 
   const setPage = (pageNum: number) => {
     if (typeof window !== 'undefined') {
@@ -453,8 +462,8 @@ function SearchPageContent() {
       {/* RESULTS DISPLAY */}
       {isLoading ? (
         /* Loading Skeleton */
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-          {Array.from({ length: 10 }).map((_, i) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4 sm:gap-6">
+          {Array.from({ length: 15 }).map((_, i) => (
             <CardSkeleton key={i} />
           ))}
         </div>
@@ -506,7 +515,7 @@ function SearchPageContent() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-3 sm:gap-5">
                 {rawMovies.map((video) => (
                   <Link 
                     key={video.nb} 
@@ -574,7 +583,7 @@ function SearchPageContent() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-3 sm:gap-5">
                 {rawSeries.map((video) => (
                   <Link 
                     key={video.nb} 
