@@ -620,59 +620,83 @@ export default function RoomSidebar({
             </header>
 
             <div className="space-y-3 py-2">
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 transition hover:bg-white/10 select-none">
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5 transition hover:bg-white/10 select-none">
                 <span className="text-xs font-bold text-slate-200">صلاحية طرد الأعضاء (Kick)</span>
                 <button
                   type="button"
                   role="switch"
+                  dir="ltr"
                   aria-checked={permissionsState.canKick}
                   onClick={() => setPermissionsState((prev) => ({ ...prev, canKick: !prev.canKick }))}
-                  className="relative h-6 w-11 shrink-0 rounded-full border border-white/10 transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                  style={{ backgroundColor: permissionsState.canKick ? '#e50914' : '#334155' }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                    permissionsState.canKick ? 'bg-[#e50914]' : 'bg-slate-700'
+                  }`}
                 >
-                  <span className={`block size-4 rounded-full bg-white shadow transition-transform duration-200 ${permissionsState.canKick ? 'translate-x-5' : 'translate-x-1'}`} />
+                  <span
+                    className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                      permissionsState.canKick ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
                 </button>
               </label>
 
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 transition hover:bg-white/10 select-none">
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5 transition hover:bg-white/10 select-none">
                 <span className="text-xs font-bold text-slate-200">صلاحية حظر الأعضاء أبداً (Ban Forever)</span>
                 <button
                   type="button"
                   role="switch"
+                  dir="ltr"
                   aria-checked={permissionsState.canBan}
                   onClick={() => setPermissionsState((prev) => ({ ...prev, canBan: !prev.canBan }))}
-                  className="relative h-6 w-11 shrink-0 rounded-full border border-white/10 transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                  style={{ backgroundColor: permissionsState.canBan ? '#e50914' : '#334155' }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                    permissionsState.canBan ? 'bg-[#e50914]' : 'bg-slate-700'
+                  }`}
                 >
-                  <span className={`block size-4 rounded-full bg-white shadow transition-transform duration-200 ${permissionsState.canBan ? 'translate-x-5' : 'translate-x-1'}`} />
+                  <span
+                    className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                      permissionsState.canBan ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
                 </button>
               </label>
 
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 transition hover:bg-white/10 select-none">
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5 transition hover:bg-white/10 select-none">
                 <span className="text-xs font-bold text-slate-200">التحكم بالتقديم والتأخير (Seek / Playback)</span>
                 <button
                   type="button"
                   role="switch"
+                  dir="ltr"
                   aria-checked={permissionsState.canSeek}
                   onClick={() => setPermissionsState((prev) => ({ ...prev, canSeek: !prev.canSeek }))}
-                  className="relative h-6 w-11 shrink-0 rounded-full border border-white/10 transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                  style={{ backgroundColor: permissionsState.canSeek ? '#e50914' : '#334155' }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                    permissionsState.canSeek ? 'bg-[#e50914]' : 'bg-slate-700'
+                  }`}
                 >
-                  <span className={`block size-4 rounded-full bg-white shadow transition-transform duration-200 ${permissionsState.canSeek ? 'translate-x-5' : 'translate-x-1'}`} />
+                  <span
+                    className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                      permissionsState.canSeek ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
                 </button>
               </label>
 
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 transition hover:bg-white/10 select-none">
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5 transition hover:bg-white/10 select-none">
                 <span className="text-xs font-bold text-slate-200">تغيير الفيلم أو الحلقة (Change Media)</span>
                 <button
                   type="button"
                   role="switch"
+                  dir="ltr"
                   aria-checked={permissionsState.canChangeMedia}
                   onClick={() => setPermissionsState((prev) => ({ ...prev, canChangeMedia: !prev.canChangeMedia }))}
-                  className="relative h-6 w-11 shrink-0 rounded-full border border-white/10 transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                  style={{ backgroundColor: permissionsState.canChangeMedia ? '#e50914' : '#334155' }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                    permissionsState.canChangeMedia ? 'bg-[#e50914]' : 'bg-slate-700'
+                  }`}
                 >
-                  <span className={`block size-4 rounded-full bg-white shadow transition-transform duration-200 ${permissionsState.canChangeMedia ? 'translate-x-5' : 'translate-x-1'}`} />
+                  <span
+                    className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                      permissionsState.canChangeMedia ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
                 </button>
               </label>
             </div>
@@ -1101,69 +1125,101 @@ export default function RoomSidebar({
           </div>
         )}
 
-        {/* TAB 3: SETTINGS (SPACIOUS & NO CRAMPED NESTED SCROLLING) */}
+        {/* TAB 3: SETTINGS (CLEAN, MODERN, PIXEL-PERFECT GLASSMORPHIC) */}
         {activeTab === 'settings' && (
           <div
             id="room-panel-settings"
-            className="flex flex-col bg-[#0b111c] p-3.5 sm:p-4 space-y-3 overflow-y-auto"
+            className="flex flex-col bg-[#0b111c] p-3.5 sm:p-4 space-y-3.5 overflow-y-auto"
             role="region"
             aria-label="إعدادات الغرفة"
           >
-            {/* Share & Copy Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {/* Share & Copy Stack */}
+            <div className="space-y-2">
               <button
                 type="button"
                 onClick={() => void copyInviteLink()}
-                className="flex items-center justify-between gap-3 p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition cursor-pointer text-right"
+                className="group flex w-full items-center justify-between gap-3 p-3.5 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] hover:border-red-500/30 transition-all cursor-pointer text-right"
               >
-                <div>
-                  <span className="block text-xs sm:text-sm font-bold text-white">دعوة الأصدقاء</span>
-                  <span className="block text-[11px] text-slate-400">نسخ رابط الغرفة</span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="size-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0 text-sm group-hover:scale-105 group-hover:bg-red-500/20 transition-all">
+                    <i className="fa-solid fa-link" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block text-xs sm:text-sm font-bold text-white">دعوة الأصدقاء</span>
+                    <span className="block text-[11px] text-slate-400 truncate">نسخ الرابط المباشر للغرفة</span>
+                  </div>
                 </div>
-                <i className="fa-solid fa-link text-red-400 text-sm" />
+                <span className="shrink-0 text-[11px] font-extrabold text-red-300 bg-red-500/15 px-2.5 py-1.5 rounded-lg border border-red-500/20 group-hover:bg-red-500 group-hover:text-white transition-all">
+                  نسخ
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => void copyRoomId()}
-                className="flex items-center justify-between gap-3 p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition cursor-pointer text-right"
+                className="group flex w-full items-center justify-between gap-3 p-3.5 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/20 transition-all cursor-pointer text-right"
               >
-                <div>
-                  <span className="block text-xs sm:text-sm font-bold text-white">معرّف الغرفة</span>
-                  <span className="block font-mono text-[11px] text-slate-400 truncate" dir="ltr">{roomId}</span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="size-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-slate-300 shrink-0 text-sm group-hover:scale-105 group-hover:bg-white/10 transition-all">
+                    <i className="fa-regular fa-copy" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block text-xs sm:text-sm font-bold text-white">معرّف الغرفة</span>
+                    <span className="block font-mono text-[11px] text-slate-400 truncate" dir="ltr">{roomId}</span>
+                  </div>
                 </div>
-                <i className="fa-regular fa-copy text-red-400 text-sm" />
+                <span className="shrink-0 text-[11px] font-extrabold text-slate-300 bg-white/[0.06] px-2.5 py-1.5 rounded-lg border border-white/10 group-hover:bg-white/20 group-hover:text-white transition-all">
+                  نسخ
+                </span>
               </button>
             </div>
 
-            {/* Preferences Switches Box */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] divide-y divide-white/5">
+            {/* Preferences Switches Card */}
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] divide-y divide-white/5 overflow-hidden">
               {/* Compact Chat Toggle */}
-              <div className="flex items-center justify-between p-3 gap-2">
-                <div>
-                  <p className="text-xs sm:text-sm font-bold text-white">دردشة مدمجة</p>
-                  <p className="text-[11px] text-slate-400">تقليل المسافات بين الرسائل</p>
+              <div className="flex items-center justify-between p-3.5 gap-3 hover:bg-white/[0.02] transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="size-8 rounded-lg bg-white/[0.04] flex items-center justify-center text-slate-300 shrink-0 text-xs">
+                    <i className="fa-solid fa-compress" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-bold text-white">دردشة مدمجة</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">تقليل المسافات بين الرسائل</p>
+                  </div>
                 </div>
                 <button
                   type="button"
                   role="switch"
+                  dir="ltr"
                   aria-checked={compactChat}
                   onClick={() => setCompactChat((value) => !value)}
-                  className={`w-11 h-6 flex items-center rounded-full p-0.5 transition-colors duration-200 cursor-pointer ${compactChat ? 'bg-red-600' : 'bg-slate-700'}`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                    compactChat ? 'bg-[#e50914]' : 'bg-slate-700'
+                  }`}
                 >
-                  <div className={`bg-white size-4.5 rounded-full shadow-md transform transition-transform duration-200 ${compactChat ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  <span
+                    className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                      compactChat ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
                 </button>
               </div>
 
               {/* Sound Notifications Toggle */}
-              <div className="flex items-center justify-between p-3 gap-2">
-                <div>
-                  <p className="text-xs sm:text-sm font-bold text-white">صوت إشعارات الدردشة</p>
-                  <p className="text-[11px] text-slate-400">تنبيه صوتي للرسائل الجديدة</p>
+              <div className="flex items-center justify-between p-3.5 gap-3 hover:bg-white/[0.02] transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="size-8 rounded-lg bg-white/[0.04] flex items-center justify-center text-slate-300 shrink-0 text-xs">
+                    <i className="fa-solid fa-bell" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-bold text-white">صوت إشعارات الدردشة</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">تنبيه صوتي للرسائل الجديدة</p>
+                  </div>
                 </div>
                 <button
                   type="button"
                   role="switch"
+                  dir="ltr"
                   aria-checked={notificationSound}
                   onClick={() => {
                     setNotificationSound((value) => {
@@ -1174,45 +1230,64 @@ export default function RoomSidebar({
                       return !value;
                     });
                   }}
-                  className={`w-11 h-6 flex items-center rounded-full p-0.5 transition-colors duration-200 cursor-pointer ${notificationSound ? 'bg-red-600' : 'bg-slate-700'}`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                    notificationSound ? 'bg-[#e50914]' : 'bg-slate-700'
+                  }`}
                 >
-                  <div className={`bg-white size-4.5 rounded-full shadow-md transform transition-transform duration-200 ${notificationSound ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  <span
+                    className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                      notificationSound ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
                 </button>
               </div>
 
               {/* Private Room Toggle (Host Only) */}
-              <div className="flex items-center justify-between p-3 gap-2">
-                <div>
-                  <p className="text-xs sm:text-sm font-bold text-white">غرفة خاصة</p>
-                  <p className="text-[11px] text-slate-400">إخفاؤها من قائمة الغرف العامة</p>
+              <div className="flex items-center justify-between p-3.5 gap-3 hover:bg-white/[0.02] transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="size-8 rounded-lg bg-white/[0.04] flex items-center justify-center text-slate-300 shrink-0 text-xs">
+                    <i className="fa-solid fa-lock" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-bold text-white">غرفة خاصة</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">إخفاؤها من قائمة الغرف العامة</p>
+                  </div>
                 </div>
                 <button
                   type="button"
                   role="switch"
+                  dir="ltr"
                   onClick={handleTogglePrivacy}
                   disabled={!isHost || isToggling}
                   aria-checked={isPrivate}
-                  className={`w-11 h-6 flex items-center rounded-full p-0.5 transition-colors duration-200 disabled:opacity-40 cursor-pointer ${isPrivate ? 'bg-red-600' : 'bg-slate-700'}`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                    isPrivate ? 'bg-[#e50914]' : 'bg-slate-700'
+                  }`}
                 >
-                  <div className={`bg-white size-4.5 rounded-full shadow-md transform transition-transform duration-200 ${isPrivate ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  <span
+                    className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                      isPrivate ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
                 </button>
               </div>
             </div>
 
             {!isHost && (
-              <p className="rounded-xl border border-white/5 bg-white/[0.02] p-2.5 text-[11px] text-slate-400">
+              <p className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-[11px] leading-5 text-slate-400">
+                <i className="fa-solid fa-circle-info ml-1.5 text-slate-500" aria-hidden="true" />
                 إعدادات الخصوصية وإدارة المشاركين متاحة للمضيف فقط.
               </p>
             )}
 
             {/* Room Actions */}
-            <div className="flex flex-col sm:flex-row gap-2 pt-1">
+            <div className="flex flex-col gap-2 pt-2">
               <button
                 type="button"
                 onClick={onLeaveRoom}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs sm:text-sm font-bold text-slate-200 transition cursor-pointer"
+                className="flex w-full items-center justify-center gap-2.5 py-3 px-4 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/20 text-xs sm:text-sm font-bold text-slate-200 transition cursor-pointer active:scale-[0.99]"
               >
-                <i className="fa-solid fa-arrow-right-from-bracket" />
+                <i className="fa-solid fa-arrow-right-from-bracket text-slate-400" aria-hidden="true" />
                 <span>مغادرة الغرفة</span>
               </button>
 
@@ -1221,10 +1296,10 @@ export default function RoomSidebar({
                   type="button"
                   onClick={() => setShowCloseRoomModal(true)}
                   disabled={isClosingRoom}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-xs sm:text-sm font-bold text-red-300 transition disabled:opacity-50 cursor-pointer"
+                  className="flex w-full items-center justify-center gap-2.5 py-3 px-4 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 hover:border-red-500/50 text-xs sm:text-sm font-bold text-red-300 transition disabled:opacity-50 cursor-pointer active:scale-[0.99]"
                 >
-                  <i className="fa-solid fa-trash-can" />
-                  <span>{isClosingRoom ? 'جارٍ الإغلاق...' : 'إغلاق الغرفة'}</span>
+                  <i className="fa-solid fa-trash-can text-red-400" aria-hidden="true" />
+                  <span>{isClosingRoom ? 'جارٍ إغلاق الغرفة...' : 'إغلاق الغرفة'}</span>
                 </button>
               )}
             </div>
