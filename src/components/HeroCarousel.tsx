@@ -67,20 +67,13 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
     return () => window.removeEventListener('resize', calculateLayout);
   }, []);
 
-  // Auto-scroll active thumbnail with exact snap boundary alignment
+  // Auto-scroll active thumbnail into view
   useEffect(() => {
-    if (activeIndex === 0) {
-      const scrollEl = thumbnailsContainerRef.current?.querySelector('.overflow-x-auto') as HTMLElement | null;
-      if (scrollEl) {
-        scrollEl.scrollTo({ left: 0, behavior: 'smooth' });
-        return;
-      }
-    }
     if (thumbnailsRef.current[activeIndex]) {
       thumbnailsRef.current[activeIndex]?.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest',
-        inline: 'nearest',
+        inline: 'center',
       });
     }
   }, [activeIndex]);
@@ -279,46 +272,42 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             ))}
           </div>
 
-          {/* Desktop Thumbnails (Exact Geometric Calculation — 100% Full Cards, Zero Edge Cut-off) */}
-          <div className="hidden lg:block w-full px-6 sm:px-10 py-5 overflow-hidden" dir="rtl">
-            <div 
-              className="flex gap-3.5 overflow-x-auto hide-scrollbar w-full px-0 scroll-smooth items-end pointer-events-auto snap-x snap-mandatory"
-            >
-              {videos.map((video, idx) => {
-                const thumbUrl = getVideoImageUrl(video, 'cover') || getVideoImageUrl(video, 'poster');
-                const isActive = activeIndex === idx;
-                return (
-                  <button
-                    key={video.nb}
-                    ref={(el) => {
-                      thumbnailsRef.current[idx] = el;
-                    }}
-                    type="button"
-                    onClick={() => triggerSlideChange(idx)}
-                    className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none border snap-start w-[calc((100%-0.875rem*4)/5)] xl:w-[calc((100%-0.875rem*5)/6)] 2xl:w-[calc((100%-0.875rem*6)/7)] ${
-                      isActive
-                        ? 'border-alex-primary ring-2 ring-alex-primary shadow-[0_10px_30px_rgba(229,9,20,0.5)] scale-100 opacity-100 z-10'
-                        : 'border-white/10 opacity-75 hover:opacity-100 hover:border-white/30 scale-95 hover:scale-100 z-0 bg-[#060811]'
+          {/* Desktop Thumbnails */}
+          <div className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-8 py-5 scroll-smooth items-end pointer-events-auto">
+            {videos.map((video, idx) => {
+              const thumbUrl = getVideoImageUrl(video, 'cover') || getVideoImageUrl(video, 'poster');
+              const isActive = activeIndex === idx;
+              return (
+                <button
+                  key={video.nb}
+                  ref={(el) => {
+                    thumbnailsRef.current[idx] = el;
+                  }}
+                  type="button"
+                  onClick={() => triggerSlideChange(idx)}
+                  className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none border ${
+                    isActive
+                      ? 'w-32 sm:w-44 md:w-56 lg:w-64 border-alex-primary ring-2 ring-alex-primary shadow-[0_10px_30px_rgba(229,9,20,0.5)] scale-100 opacity-100 z-10'
+                      : 'w-24 sm:w-32 md:w-40 lg:w-48 border-white/10 opacity-85 hover:opacity-100 scale-95 hover:scale-100 hover:border-white/30 z-0 bg-[#060811]'
+                  }`}
+                  aria-label={`Go to slide ${idx + 1}`}
+                >
+                  <Image
+                    src={thumbUrl}
+                    alt={video.ar_title}
+                    fill
+                    unoptimized
+                    className="w-full h-full object-cover transform-gpu"
+                    loading="lazy"
+                  />
+                  <div
+                    className={`absolute inset-0 transition-colors duration-300 ${
+                      isActive ? 'bg-transparent' : 'bg-black/40 hover:bg-black/10'
                     }`}
-                    aria-label={`Go to slide ${idx + 1}`}
-                  >
-                    <Image
-                      src={thumbUrl}
-                      alt={video.ar_title}
-                      fill
-                      unoptimized
-                      className="w-full h-full object-cover transform-gpu"
-                      loading="lazy"
-                    />
-                    <div
-                      className={`absolute inset-0 transition-colors duration-300 ${
-                        isActive ? 'bg-transparent' : 'bg-black/40 hover:bg-black/10'
-                      }`}
-                    ></div>
-                  </button>
-                );
-              })}
-            </div>
+                  ></div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
