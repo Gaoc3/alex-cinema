@@ -152,8 +152,8 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
   };
 
   return (
-    <div className="mx-auto w-full max-w-5xl text-right" dir="rtl">
-      <div className="relative mb-4">
+    <div className="w-full text-right" dir="rtl">
+      <div className="relative mx-auto mb-5 max-w-xl">
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
           <i className="fa-solid fa-search text-sm text-red-400" aria-hidden="true" />
         </div>
@@ -173,7 +173,7 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
       </div>
 
       {results.length > 0 && (
-        <div className="custom-scrollbar grid max-h-[min(58svh,32rem)] grid-cols-2 gap-3 overflow-y-auto p-1 text-right sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+        <div className="custom-scrollbar grid w-full max-h-[min(62svh,36rem)] grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 p-1 text-right overflow-y-auto">
           {results.map((item) => (
             <button
               type="button"
