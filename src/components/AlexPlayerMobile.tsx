@@ -444,7 +444,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     const videoId = (videoData as any)?.nb || (videoData as any)?.id || videoData?.ar_title || '';
     const isNewVideo = currentVideoIdRef.current !== videoId;
 
-    if (currentStreamUrl && selectedResolution && !isNewVideo) {
+    if (currentStreamUrl && !isNewVideo) {
       return;
     }
 
