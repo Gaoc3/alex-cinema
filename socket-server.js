@@ -455,22 +455,12 @@ async function start() {
           rooms.set(roomId, room);
         } else {
           room.hostUserId = roomRecord.hostId;
-          const databaseMediaChanged = room.videoId !== roomRecord.movieId;
-          const databaseEpisodeChanged = room.episodeId !== roomRecord.currentEpisodeId;
-          room.videoId = roomRecord.movieId;
-          room.episodeId = roomRecord.currentEpisodeId;
-          room.season = roomRecord.currentSeason;
-          room.episode = roomRecord.currentEpisode;
-          if (databaseMediaChanged) {
-            room.state = { time: 0, playing: false, lastUpdated: Date.now() };
-            io.to(roomId).emit('change_video', { videoId: room.videoId, episodeId: room.episodeId });
-          } else if (databaseEpisodeChanged) {
-            room.state = { time: 0, playing: false, lastUpdated: Date.now() };
-            io.to(roomId).emit('change_episode', {
-              episodeId: room.episodeId,
-              season: room.season,
-              episode: room.episode,
-            });
+          // Keep live in-memory video, episode, and playback state intact without resetting to 0
+          if (!room.videoId && roomRecord.movieId) {
+            room.videoId = roomRecord.movieId;
+            room.episodeId = roomRecord.currentEpisodeId;
+            room.season = roomRecord.currentSeason;
+            room.episode = roomRecord.currentEpisode;
           }
         }
 

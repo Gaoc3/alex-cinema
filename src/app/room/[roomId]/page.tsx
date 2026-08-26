@@ -115,8 +115,17 @@ export default async function RoomPage({
     let episodes: SeriesEpisode[] = [];
 
     if (videoId) {
+      const fallbackTitle = (typeof resolvedSearchParams.title === 'string' && resolvedSearchParams.title.trim())
+        || (room.movieTitle && room.movieTitle.trim())
+        || 'عمل سينمائي';
+
       try {
         video = await getVideoDetails(videoId) as RoomPageVideo | null;
+        if (video) {
+          if (!video.ar_title || video.ar_title.includes('(روم)')) {
+            video.ar_title = video.ar_title || video.en_title || fallbackTitle;
+          }
+        }
       } catch (e) {
         console.error('Error fetching video details for room:', e);
         video = null;
@@ -129,9 +138,9 @@ export default async function RoomPage({
             const streams = streamsData as PlayerStream[];
             video = {
               nb: videoId,
-              ar_title: 'فيلم سينمائي (روم)',
-              en_title: 'Movie Room',
-              kind: '1',
+              ar_title: fallbackTitle,
+              en_title: fallbackTitle,
+              kind: room.kind || '1',
               streams: streams,
               stream_url: streams[0].videoUrl
             };

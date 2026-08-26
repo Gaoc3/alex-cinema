@@ -57,9 +57,17 @@ function RoomPlayerContent({ video, seasons = [], episodes = [], roomHook }: Roo
   const initialEpisode = getInitialEpisode(sortedEpisodesList, roomHook?.remoteEpisodeId ?? null);
   const [activeEpisode, setActiveEpisode] = useState<SeriesEpisode | null>(initialEpisode);
   const [currentSeason, setCurrentSeason] = useState(initialEpisode?.season || '');
-  const [episodeRequest, setEpisodeRequest] = useState<EpisodeRequestState | null>(null);
-
   const activeEpisodeId = activeEpisode?.nb ?? null;
+
+  // Gracefully sync episode when host or room changes remoteEpisodeId without destroying player instance
+  useEffect(() => {
+    if (!isSeries || !roomHook?.remoteEpisodeId) return;
+    const target = sortedEpisodesList.find((ep) => ep.nb === roomHook.remoteEpisodeId);
+    if (target && target.nb !== activeEpisode?.nb) {
+      setActiveEpisode(target);
+      if (target.season) setCurrentSeason(target.season);
+    }
+  }, [isSeries, roomHook?.remoteEpisodeId, sortedEpisodesList, activeEpisode?.nb]);
 
   useEffect(() => {
     if (!isSeries || !activeEpisodeId) return;
@@ -203,9 +211,6 @@ export default function RoomPlayerUI(props: RoomPlayerUIProps) {
   const safeVideo = props.video || {} as RoomVideoData;
   const safeEpisodes = Array.isArray(props.episodes) ? props.episodes : [];
   const safeSeasons = Array.isArray(props.seasons) ? props.seasons : [];
-  const videoKey = safeVideo.nb || safeVideo.id || 'video';
-  const episodeKey = props.roomHook?.remoteEpisodeId || 'default';
-  const contentKey = `${videoKey}:${episodeKey}:${safeEpisodes.length}`;
 
-  return <RoomPlayerContent key={contentKey} {...props} video={safeVideo} episodes={safeEpisodes} seasons={safeSeasons} />;
+  return <RoomPlayerContent {...props} video={safeVideo} episodes={safeEpisodes} seasons={safeSeasons} />;
 }
