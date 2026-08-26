@@ -1974,11 +1974,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             style={{
               bottom: controlsVisible
                 ? isFullscreen
-                  ? `calc(clamp(5.5rem, 7.5vw, 6.5rem) + env(safe-area-inset-bottom, 0px))`
-                  : `calc(clamp(3.85rem, 5.5vw, 4.25rem) + env(safe-area-inset-bottom, 0px))`
+                  ? `calc(clamp(6.75rem, 9vw, 8rem) + env(safe-area-inset-bottom, 0px))`
+                  : `calc(clamp(5.5rem, 7vw, 6.25rem) + env(safe-area-inset-bottom, 0px))`
                 : isFullscreen
-                  ? `calc(clamp(1.5rem, 3vw, 2rem) + env(safe-area-inset-bottom, 0px))`
-                  : `calc(0.75rem + env(safe-area-inset-bottom, 0px))`,
+                  ? `calc(clamp(2.5rem, 4vw, 3.25rem) + env(safe-area-inset-bottom, 0px))`
+                  : `calc(2rem + env(safe-area-inset-bottom, 0px))`,
               paddingLeft: 'max(clamp(0.25rem, 1vw, 0.75rem), env(safe-area-inset-left, 0px))',
               paddingRight: 'max(clamp(0.25rem, 1vw, 0.75rem), env(safe-area-inset-right, 0px))',
             }}

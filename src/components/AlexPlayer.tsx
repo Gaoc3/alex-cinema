@@ -1826,11 +1826,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
             style={{
               bottom: controlsVisible
                 ? isFullscreen
-                  ? `calc(clamp(5.75rem, 8vw, 7rem) + env(safe-area-inset-bottom, 0px))`
-                  : `calc(5.25rem + env(safe-area-inset-bottom, 0px))`
+                  ? `calc(clamp(7.5rem, 10vw, 8.75rem) + env(safe-area-inset-bottom, 0px))`
+                  : `calc(7.25rem + env(safe-area-inset-bottom, 0px))`
                 : isFullscreen
-                  ? `calc(clamp(1.75rem, 3.5vw, 2.25rem) + env(safe-area-inset-bottom, 0px))`
-                  : `calc(1.25rem + env(safe-area-inset-bottom, 0px))`,
+                  ? `calc(clamp(2.5rem, 4vw, 3.25rem) + env(safe-area-inset-bottom, 0px))`
+                  : `calc(2.5rem + env(safe-area-inset-bottom, 0px))`,
               paddingLeft: 'max(clamp(0.5rem, 1.5vw, 1rem), env(safe-area-inset-left, 0px))',
               paddingRight: 'max(clamp(0.5rem, 1.5vw, 1rem), env(safe-area-inset-right, 0px))',
             }}
