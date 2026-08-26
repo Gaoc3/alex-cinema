@@ -341,25 +341,24 @@ export default function Sidebar() {
                   ? 'bg-white/[0.08] text-white border-r-[3px] border-alex-primary font-black shadow-[0_4px_15px_rgba(0,0,0,0.15)]'
                   : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] border-r-[3px] border-transparent font-medium'
               }`}>
-                <button 
+                <Link 
+                  href="/movies"
                   onClick={(e) => {
-                    e.preventDefault();
-                    if (isCollapsed) {
-                      toggleSidebar();
-                      setMoviesOpen(true);
-                    } else {
-                      setMoviesOpen(!moviesOpen);
-                    }
+                    handleNav(e, '/movies');
+                    closeSidebar();
+                    setMoviesOpen(true);
                   }}
                   className="flex items-center gap-3.5 sidebar-item-content flex-grow py-2 px-2 cursor-pointer text-left w-full"
                 >
                   <i className="fa-solid fa-film text-lg w-5 text-center"></i>
                   <span className="sidebar-label text-[15px]">الأفلام</span>
-                </button>
+                </Link>
                 <button 
+                  type="button"
                   onClick={(e) => {
                     e.preventDefault();
-                    if (isCollapsed) {
+                    e.stopPropagation();
+                    if (isCollapsed && !isMobileSidebarOpen) {
                       toggleSidebar();
                       setMoviesOpen(true);
                     } else {
@@ -367,16 +366,17 @@ export default function Sidebar() {
                     }
                   }}
                   className="px-3 py-2 cursor-pointer flex items-center justify-center hover:text-alex-primary transition-colors animate-fade-in"
+                  aria-label="قائمة الأفلام الفرعية"
                 >
                   <i className={`fa-solid fa-chevron-left text-xs transition-transform duration-300 sidebar-label ${moviesOpen ? '-rotate-90' : ''}`}></i>
                 </button>
               </div>
               
               {/* Movies Submenu */}
-              <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] mr-8 space-y-1 mt-1 sidebar-submenu origin-top ${moviesOpen && !isCollapsed ? 'max-h-40 opacity-100 translate-y-0 scale-y-100' : 'max-h-0 opacity-0 -translate-y-2 scale-y-95 pointer-events-none'}`}>
-                <Link href="/movies" onClick={(e) => handleNav(e, '/movies')} className={`block py-2 px-4 text-sm font-medium transition-all ${isActive('/movies') ? 'text-alex-primary font-bold translate-x-[-4px]' : 'text-gray-500 hover:text-gray-200 hover:translate-x-[-4px]'}`}>كل الأفلام</Link>
-                <Link href="/movies?sort=stars" onClick={(e) => handleNav(e, '/movies?sort=stars')} className={`block py-2 px-4 text-sm font-medium transition-all ${isActive('/movies?sort=stars') ? 'text-alex-primary font-bold translate-x-[-4px]' : 'text-gray-500 hover:text-gray-200 hover:translate-x-[-4px]'}`}>الأعلى تقييماً</Link>
-                <Link href="/movies?category=84" onClick={(e) => handleNav(e, '/movies?category=84')} className={`block py-2 px-4 text-sm font-medium transition-all ${isActive('/movies?category=84') ? 'text-alex-primary font-bold translate-x-[-4px]' : 'text-gray-500 hover:text-gray-200 hover:translate-x-[-4px]'}`}>أفلام أكشن</Link>
+              <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] mr-8 space-y-1 mt-1 sidebar-submenu origin-top ${moviesOpen && (isMobileSidebarOpen || !isCollapsed) ? 'max-h-48 opacity-100 translate-y-0 scale-y-100' : 'max-h-0 opacity-0 -translate-y-2 scale-y-95 pointer-events-none'}`}>
+                <Link href="/movies" onClick={(e) => { handleNav(e, '/movies'); closeSidebar(); }} className={`block py-2 px-4 text-sm font-medium transition-all ${isActive('/movies') ? 'text-alex-primary font-bold translate-x-[-4px]' : 'text-gray-500 hover:text-gray-200 hover:translate-x-[-4px]'}`}>كل الأفلام</Link>
+                <Link href="/movies?sort=stars" onClick={(e) => { handleNav(e, '/movies?sort=stars'); closeSidebar(); }} className={`block py-2 px-4 text-sm font-medium transition-all ${isActive('/movies?sort=stars') ? 'text-alex-primary font-bold translate-x-[-4px]' : 'text-gray-500 hover:text-gray-200 hover:translate-x-[-4px]'}`}>الأعلى تقييماً</Link>
+                <Link href="/movies?category=84" onClick={(e) => { handleNav(e, '/movies?category=84'); closeSidebar(); }} className={`block py-2 px-4 text-sm font-medium transition-all ${isActive('/movies?category=84') ? 'text-alex-primary font-bold translate-x-[-4px]' : 'text-gray-500 hover:text-gray-200 hover:translate-x-[-4px]'}`}>أفلام أكشن</Link>
               </div>
             </div>
 
@@ -387,25 +387,24 @@ export default function Sidebar() {
                   ? 'bg-white/[0.08] text-white border-r-[3px] border-alex-primary font-black shadow-[0_4px_15px_rgba(0,0,0,0.15)]'
                   : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] border-r-[3px] border-transparent font-medium'
               }`}>
-                <button 
+                <Link 
+                  href="/series"
                   onClick={(e) => {
-                    e.preventDefault();
-                    if (isCollapsed) {
-                      toggleSidebar();
-                      setSeriesOpen(true);
-                    } else {
-                      setSeriesOpen(!seriesOpen);
-                    }
+                    handleNav(e, '/series');
+                    closeSidebar();
+                    setSeriesOpen(true);
                   }}
                   className="flex items-center gap-3.5 sidebar-item-content flex-grow py-2 px-2 cursor-pointer text-left w-full"
                 >
                   <i className="fa-solid fa-tv text-lg w-5 text-center"></i>
                   <span className="sidebar-label text-[15px]">المسلسلات</span>
-                </button>
+                </Link>
                 <button 
+                  type="button"
                   onClick={(e) => {
                     e.preventDefault();
-                    if (isCollapsed) {
+                    e.stopPropagation();
+                    if (isCollapsed && !isMobileSidebarOpen) {
                       toggleSidebar();
                       setSeriesOpen(true);
                     } else {
@@ -413,16 +412,17 @@ export default function Sidebar() {
                     }
                   }}
                   className="px-3 py-2 cursor-pointer flex items-center justify-center hover:text-alex-primary transition-colors animate-fade-in"
+                  aria-label="قائمة المسلسلات الفرعية"
                 >
                   <i className={`fa-solid fa-chevron-left text-xs transition-transform duration-300 sidebar-label ${seriesOpen ? '-rotate-90' : ''}`}></i>
                 </button>
               </div>
               
               {/* Series Submenu */}
-              <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] mr-8 space-y-1 mt-1 sidebar-submenu origin-top ${seriesOpen && !isCollapsed ? 'max-h-40 opacity-100 translate-y-0 scale-y-100' : 'max-h-0 opacity-0 -translate-y-2 scale-y-95 pointer-events-none'}`}>
-                <Link href="/series" onClick={(e) => handleNav(e, '/series')} className={`block py-2 px-4 text-sm font-medium transition-all ${isActive('/series') ? 'text-alex-primary font-bold translate-x-[-4px]' : 'text-gray-500 hover:text-gray-200 hover:translate-x-[-4px]'}`}>كل المسلسلات</Link>
-                <Link href="/series?sort=stars" onClick={(e) => handleNav(e, '/series?sort=stars')} className={`block py-2 px-4 text-sm font-medium transition-all ${isActive('/series?sort=stars') ? 'text-alex-primary font-bold translate-x-[-4px]' : 'text-gray-500 hover:text-gray-200 hover:translate-x-[-4px]'}`}>الأعلى تقييماً</Link>
-                <Link href="/series?category=62" onClick={(e) => handleNav(e, '/series?category=62')} className={`block py-2 px-4 text-sm font-medium transition-all ${isActive('/series?category=62') ? 'text-alex-primary font-bold translate-x-[-4px]' : 'text-gray-500 hover:text-gray-200 hover:translate-x-[-4px]'}`}>مسلسلات دراما</Link>
+              <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] mr-8 space-y-1 mt-1 sidebar-submenu origin-top ${seriesOpen && (isMobileSidebarOpen || !isCollapsed) ? 'max-h-48 opacity-100 translate-y-0 scale-y-100' : 'max-h-0 opacity-0 -translate-y-2 scale-y-95 pointer-events-none'}`}>
+                <Link href="/series" onClick={(e) => { handleNav(e, '/series'); closeSidebar(); }} className={`block py-2 px-4 text-sm font-medium transition-all ${isActive('/series') ? 'text-alex-primary font-bold translate-x-[-4px]' : 'text-gray-500 hover:text-gray-200 hover:translate-x-[-4px]'}`}>كل المسلسلات</Link>
+                <Link href="/series?sort=stars" onClick={(e) => { handleNav(e, '/series?sort=stars'); closeSidebar(); }} className={`block py-2 px-4 text-sm font-medium transition-all ${isActive('/series?sort=stars') ? 'text-alex-primary font-bold translate-x-[-4px]' : 'text-gray-500 hover:text-gray-200 hover:translate-x-[-4px]'}`}>الأعلى تقييماً</Link>
+                <Link href="/series?category=62" onClick={(e) => { handleNav(e, '/series?category=62'); closeSidebar(); }} className={`block py-2 px-4 text-sm font-medium transition-all ${isActive('/series?category=62') ? 'text-alex-primary font-bold translate-x-[-4px]' : 'text-gray-500 hover:text-gray-200 hover:translate-x-[-4px]'}`}>مسلسلات دراما</Link>
               </div>
             </div>
 

@@ -517,8 +517,8 @@ body.preload nav#navbar {
   }
   
   /* Hide labels, brand name, and submenus ONLY when collapsed (Zero Layout Reflow) */
-  body.sidebar-collapsed .sidebar-label,
-  body.sidebar-collapsed .sidebar-brand-name {
+  body.sidebar-collapsed:not(.sidebar-open) .sidebar-label,
+  body.sidebar-collapsed:not(.sidebar-open) .sidebar-brand-name {
     opacity: 0 !important;
     transform: translate3d(15px, 0, 0) !important;
     pointer-events: none !important;
@@ -527,7 +527,7 @@ body.preload nav#navbar {
     transition: opacity 0.15s ease, transform 0.15s ease !important;
   }
 
-  body.sidebar-collapsed .sidebar-submenu {
+  body.sidebar-collapsed:not(.sidebar-open) .sidebar-submenu {
     max-height: 0 !important;
     opacity: 0 !important;
     pointer-events: none !important;

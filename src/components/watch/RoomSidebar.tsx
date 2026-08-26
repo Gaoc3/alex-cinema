@@ -239,24 +239,16 @@ export default function RoomSidebar({
 
   useEffect(() => {
     if (!openActionsId) return;
-    const closeMenu = (event: PointerEvent) => {
-      const target = event.target;
-      if (target instanceof Element && !target.closest('[data-chat-actions]')) {
-        setOpenActionsId(null);
-      }
-    };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       actionButtonRefs.current.get(openActionsId)?.focus();
       setOpenActionsId(null);
     };
     const closeOnViewportChange = () => setOpenActionsId(null);
-    document.addEventListener('pointerdown', closeMenu);
     document.addEventListener('keydown', closeOnEscape);
     window.addEventListener('resize', closeOnViewportChange);
     window.addEventListener('scroll', closeOnViewportChange, true);
     return () => {
-      document.removeEventListener('pointerdown', closeMenu);
       document.removeEventListener('keydown', closeOnEscape);
       window.removeEventListener('resize', closeOnViewportChange);
       window.removeEventListener('scroll', closeOnViewportChange, true);
@@ -1382,9 +1374,11 @@ export default function RoomSidebar({
               <button
                 type="button"
                 role="menuitem"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const targetMsg = activeActionMessage;
                   setOpenActionsId(null);
-                  beginEditMessage(activeActionMessage);
+                  beginEditMessage(targetMsg);
                 }}
                 className="flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-xl px-3 text-right text-xs font-bold text-amber-300 transition hover:bg-amber-500/15"
               >
@@ -1395,9 +1389,11 @@ export default function RoomSidebar({
             <button
               type="button"
               role="menuitem"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
+                const targetMsg = activeActionMessage;
                 setOpenActionsId(null);
-                beginReply(activeActionMessage);
+                beginReply(targetMsg);
               }}
               className="flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-xl px-3 text-right text-xs font-bold text-slate-200 transition hover:bg-white/10"
             >
@@ -1407,9 +1403,11 @@ export default function RoomSidebar({
             <button
               type="button"
               role="menuitem"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
+                const targetMsg = activeActionMessage;
                 setOpenActionsId(null);
-                copyMessage(activeActionMessage);
+                copyMessage(targetMsg);
               }}
               className="flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-xl px-3 text-right text-xs font-bold text-slate-200 transition hover:bg-white/10"
             >
@@ -1421,9 +1419,11 @@ export default function RoomSidebar({
                 type="button"
                 role="menuitem"
                 disabled={deletingMessageId === activeActionMessage.id}
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const targetMsg = activeActionMessage;
                   setOpenActionsId(null);
-                  setDeleteMessageTarget(activeActionMessage);
+                  setDeleteMessageTarget(targetMsg);
                 }}
                 className="flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-xl px-3 text-right text-xs font-bold text-red-400 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-50"
               >

@@ -322,7 +322,8 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       }
     },
   });
-  const lastSyncTimeRef = useRef(0);
+  const lastLocalActionTimeRef = useRef(0);
+  const lastHeartbeatTimeRef = useRef(0);
   const shouldResumePlaybackRef = useRef(!isPaused);
 
   useEffect(() => {
@@ -333,22 +334,32 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !roomState || !roomHook) return;
-    if (canControlPlayback && Date.now() - lastSyncTimeRef.current < 600) return;
+    // Ignore echo of local user's own explicit seek/play action within 800ms
+    if (Date.now() - lastLocalActionTimeRef.current < 800) return;
 
     const elapsed = roomState.playing
       ? Math.max(0, (Date.now() - (roomState.receivedAt || Date.now())) / 1000)
       : 0;
     const targetTime = Math.max(0, roomState.time + elapsed);
-    if (Math.abs(video.currentTime - targetTime) > 2) {
-      video.currentTime = targetTime;
-    }
+    const timeDiff = Math.abs(video.currentTime - targetTime);
 
     if (roomState.playing && video.paused) {
+      video.currentTime = targetTime;
+      setCurrentTime(targetTime);
       video.play().catch(error => console.log('Autoplay prevented', error));
     } else if (!roomState.playing && !video.paused) {
+      video.currentTime = targetTime;
+      setCurrentTime(targetTime);
       video.pause();
+    } else if (timeDiff > 1.8) {
+      video.currentTime = targetTime;
+      setCurrentTime(targetTime);
     }
-  }, [roomState, canControlPlayback, roomHook]);
+
+    if (isHost) {
+      lastHeartbeatTimeRef.current = Date.now() + 2500;
+    }
+  }, [roomState, isHost, roomHook]);
 
   // Pixel-level adaptation (Ambient Light Glow)
   useEffect(() => {
@@ -870,11 +881,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       }
       setCurrentTime(video.currentTime);
 
-      if (canControlPlayback && roomHook) {
+      if (isHost && roomHook) {
         const now = Date.now();
-        if (now - lastSyncTimeRef.current > 1000) {
+        if (now - lastHeartbeatTimeRef.current > 3000) {
           sendSyncUpdate?.(video.currentTime, !video.paused);
-          lastSyncTimeRef.current = now;
+          lastHeartbeatTimeRef.current = now;
         }
       }
 
@@ -1682,8 +1693,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               setIsPaused(false);
               resetControlsTimer();
               if (canControlPlayback && roomHook && videoRef.current) {
+                lastLocalActionTimeRef.current = Date.now();
+                lastHeartbeatTimeRef.current = Date.now() + 2500;
                 sendSyncUpdate?.(videoRef.current.currentTime, true);
-                lastSyncTimeRef.current = Date.now();
               }
             }}
             onPause={(event) => {
@@ -1692,8 +1704,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 if (!video.paused) return;
                 setIsPaused(true);
                 if (canControlPlayback && roomHook) {
+                  lastLocalActionTimeRef.current = Date.now();
+                  lastHeartbeatTimeRef.current = Date.now() + 2500;
                   sendSyncUpdate?.(video.currentTime, false);
-                  lastSyncTimeRef.current = Date.now();
                 }
               });
             }}
@@ -1714,8 +1727,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               }
               setIsWaiting(false);
               if (canControlPlayback && roomHook && videoRef.current) {
+                lastLocalActionTimeRef.current = Date.now();
+                lastHeartbeatTimeRef.current = Date.now() + 2500;
                 sendSyncUpdate?.(videoRef.current.currentTime, !videoRef.current.paused);
-                lastSyncTimeRef.current = Date.now();
               }
               handleTimeUpdate();
             }}
