@@ -67,29 +67,24 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
     return () => window.removeEventListener('resize', calculateLayout);
   }, []);
 
-  // Auto-scroll active thumbnail into view with safe padding bounds (Zero Cut-off)
+  const [itemsPerPage, setItemsPerPage] = useState(6);
+
+  // Determine items per batch based on screen breakpoint
   useEffect(() => {
-    const container = thumbnailsContainerRef.current?.querySelector('.overflow-x-auto') as HTMLElement | null;
-    const activeEl = thumbnailsRef.current[activeIndex];
-    if (!container || !activeEl) return;
-
-    if (activeIndex === 0) {
-      container.scrollTo({ left: 0, behavior: 'smooth' });
-      return;
-    }
-
-    const containerRect = container.getBoundingClientRect();
-    const activeRect = activeEl.getBoundingClientRect();
-    const safeMargin = 50; // 50px safe padding from screen edge
-
-    if (activeRect.left < containerRect.left + safeMargin) {
-      const diff = (containerRect.left + safeMargin) - activeRect.left;
-      container.scrollBy({ left: -diff, behavior: 'smooth' });
-    } else if (activeRect.right > containerRect.right - safeMargin) {
-      const diff = activeRect.right - (containerRect.right - safeMargin);
-      container.scrollBy({ left: diff, behavior: 'smooth' });
-    }
-  }, [activeIndex]);
+    const handleResize = () => {
+      if (typeof window === 'undefined') return;
+      if (window.innerWidth >= 1536) {
+        setItemsPerPage(7);
+      } else if (window.innerWidth >= 1280) {
+        setItemsPerPage(6);
+      } else {
+        setItemsPerPage(5);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (videos.length <= 1) return;
@@ -108,6 +103,14 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
 
   const current = videos[activeIndex];
   const watchUrl = `/watch/${current.nb}?title=${encodeURIComponent(current.ar_title || current.en_title || '')}`;
+
+  const currentBatch = Math.floor(activeIndex / itemsPerPage);
+  const totalBatches = Math.ceil(videos.length / itemsPerPage);
+
+  const batches: Video[][] = [];
+  for (let i = 0; i < videos.length; i += itemsPerPage) {
+    batches.push(videos.slice(i, i + itemsPerPage));
+  }
 
   const titleLength = current.ar_title ? current.ar_title.length : 0;
   let titleFontSizeClass = 'text-3xl sm:text-5xl lg:text-6xl';
@@ -285,45 +288,82 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             ))}
           </div>
 
-          {/* Desktop Thumbnails */}
-          <div 
-            dir="rtl"
-            className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-6 sm:px-10 py-5 scroll-smooth items-end pointer-events-auto"
-          >
-            {videos.map((video, idx) => {
-              const thumbUrl = getVideoImageUrl(video, 'cover');
-              const isActive = activeIndex === idx;
-              return (
+          {/* Desktop Batch-Sliding Thumbnails (100% Full Cards, Zero Edge Cut-off) */}
+          <div className="hidden lg:block relative w-full overflow-hidden px-8 sm:px-12 py-5" dir="rtl">
+            {/* Batch Navigation Buttons */}
+            {totalBatches > 1 && (
+              <>
                 <button
-                  key={video.nb}
-                  ref={(el) => {
-                    thumbnailsRef.current[idx] = el;
-                  }}
                   type="button"
-                  onClick={() => triggerSlideChange(idx)}
-                  className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none border ${
-                    isActive
-                      ? 'w-32 sm:w-44 md:w-56 lg:w-64 border-alex-primary ring-2 ring-alex-primary shadow-[0_10px_30px_rgba(229,9,20,0.5)] scale-100 opacity-100 z-10'
-                      : 'w-24 sm:w-32 md:w-40 lg:w-48 border-white/10 opacity-85 hover:opacity-100 scale-95 hover:scale-100 z-0 bg-[#060811]'
-                  }`}
-                  aria-label={`Go to slide ${idx + 1}`}
+                  onClick={() => {
+                    const prevBatch = (currentBatch - 1 + totalBatches) % totalBatches;
+                    setActiveIndex(prevBatch * itemsPerPage);
+                  }}
+                  className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center border border-white/20 shadow-lg transition-all pointer-events-auto cursor-pointer active:scale-90"
+                  aria-label="Previous batch"
                 >
-                  <Image
-                    src={thumbUrl}
-                    alt={video.ar_title}
-                    fill
-                    unoptimized
-                    className="w-full h-full object-cover transform-gpu"
-                    loading="lazy"
-                  />
-                  <div
-                    className={`absolute inset-0 transition-colors duration-300 ${
-                      isActive ? 'bg-transparent' : 'bg-black/40 hover:bg-black/10'
-                    }`}
-                  ></div>
+                  <i className="fa-solid fa-chevron-right text-xs"></i>
                 </button>
-              );
-            })}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextBatch = (currentBatch + 1) % totalBatches;
+                    setActiveIndex(nextBatch * itemsPerPage);
+                  }}
+                  className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center border border-white/20 shadow-lg transition-all pointer-events-auto cursor-pointer active:scale-90"
+                  aria-label="Next batch"
+                >
+                  <i className="fa-solid fa-chevron-left text-xs"></i>
+                </button>
+              </>
+            )}
+
+            <div 
+              className="flex transition-transform duration-500 ease-out will-change-transform w-full pointer-events-auto"
+              style={{ transform: `translate3d(${currentBatch * 100}%, 0, 0)` }}
+            >
+              {batches.map((batch, batchIdx) => (
+                <div 
+                  key={batchIdx}
+                  className="w-full shrink-0 grid grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3.5"
+                >
+                  {batch.map((video, itemIdx) => {
+                    const globalIdx = batchIdx * itemsPerPage + itemIdx;
+                    const isActive = activeIndex === globalIdx;
+                    const thumbUrl = getVideoImageUrl(video, 'cover');
+
+                    return (
+                      <button
+                        key={video.nb}
+                        type="button"
+                        onClick={() => triggerSlideChange(globalIdx)}
+                        className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform cursor-pointer select-none border ${
+                          isActive
+                            ? 'border-alex-primary ring-2 ring-alex-primary shadow-[0_6px_20px_rgba(229,9,20,0.5)] opacity-100 z-10'
+                            : 'border-white/10 opacity-75 hover:opacity-100 hover:border-white/30 z-0 bg-[#060811]'
+                        }`}
+                        aria-label={`Go to slide ${globalIdx + 1}`}
+                      >
+                        <Image
+                          src={thumbUrl}
+                          alt={video.ar_title}
+                          fill
+                          unoptimized
+                          className="w-full h-full object-cover transform-gpu"
+                          loading="lazy"
+                        />
+                        <div
+                          className={`absolute inset-0 transition-colors duration-300 ${
+                            isActive ? 'bg-transparent' : 'bg-black/40 hover:bg-black/10'
+                          }`}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
