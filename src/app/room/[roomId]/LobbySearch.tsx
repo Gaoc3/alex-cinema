@@ -262,73 +262,88 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
 
       {/* Search Results Grid */}
       {filteredResults.length > 0 && (
-        <div className="custom-scrollbar grid w-full max-h-[min(58svh,34rem)] grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 p-1 pb-8 text-right overflow-y-auto">
+        <div className="custom-scrollbar grid w-full max-h-[min(58svh,34rem)] grid-cols-2 gap-3.5 min-[440px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 p-1.5 pb-8 text-right overflow-y-auto">
           {filteredResults.map((item) => {
             const isSelectingThis = selectedId === item.nb;
+            const rawAr = (item.ar_title || '').trim();
+            const rawEn = (item.en_title || '').trim();
+            const mainTitle = rawAr || rawEn || 'عمل سينمائي';
+            const isDiffEn = rawEn && rawAr && rawEn.toLowerCase() !== rawAr.toLowerCase() && !rawAr.toLowerCase().includes(rawEn.toLowerCase()) && !rawEn.toLowerCase().includes(rawAr.toLowerCase());
+
             return (
               <button
                 type="button"
                 key={item.nb}
                 disabled={Boolean(selectedId)}
                 onClick={() => void handleSelectVideo(item)}
-                className={`group relative min-w-0 cursor-pointer overflow-hidden rounded-2xl border bg-gradient-to-b from-white/[0.06] to-white/[0.02] text-right transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_16px_40px_rgba(229,9,20,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden rounded-2xl border bg-[#0c1220] text-right shadow-md transition-all duration-300 ease-out hover:scale-[1.04] hover:-translate-y-1 hover:border-red-500/60 hover:shadow-[0_16px_36px_rgba(0,0,0,0.85),0_0_24px_rgba(229,9,20,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
                   isSelectingThis
-                    ? 'border-red-500 ring-2 ring-red-500 shadow-[0_0_30px_rgba(229,9,20,0.5)]'
-                    : 'border-white/10 hover:border-red-500/80'
+                    ? 'border-red-500 ring-2 ring-red-500 shadow-[0_0_30px_rgba(229,9,20,0.6)]'
+                    : 'border-white/10'
                 }`}
-                aria-label={`اختيار ${item.ar_title || item.en_title}`}
+                aria-label={`اختيار ${mainTitle}`}
               >
-                <div className="relative aspect-[2/3] w-full bg-[#0a0f1d] overflow-hidden">
+                {/* Poster Background Image */}
+                <div className="absolute inset-0 bg-[#0a0f1d]">
                   <MediaPosterImage
                     video={item}
                     type="poster"
                     sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
-                    className="transition-transform duration-500 group-hover:scale-108"
+                    className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
+                </div>
 
-                  {/* Top Badges */}
-                  <div className="absolute top-2.5 right-2.5 left-2.5 flex items-center justify-between z-10">
-                    <span
-                      className={`rounded-lg px-2 py-0.5 text-[10px] font-black backdrop-blur-md border ${
-                        item.kind === '2'
-                          ? 'bg-purple-600/80 border-purple-400/40 text-white'
-                          : 'bg-red-600/80 border-red-400/40 text-white'
-                      }`}
-                    >
-                      {item.kind === '2' ? 'مسلسل' : 'فيلم'}
+                {/* Cinematic Vignette & Bottom Ease Gradient */}
+                <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#060a14] via-[#060a14]/65 via-35% to-transparent opacity-90 transition-opacity duration-300 group-hover:opacity-95 pointer-events-none" />
+
+                {/* Top Floating Glass Badges */}
+                <div className="absolute top-2.5 right-2.5 left-2.5 flex items-center justify-between z-10 pointer-events-none">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/65 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-lg backdrop-blur-md">
+                    <span className={`size-1.5 rounded-full ${item.kind === '2' ? 'bg-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.8)]' : 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]'}`} />
+                    <span>{item.kind === '2' ? 'مسلسل' : 'فيلم'}</span>
+                  </span>
+
+                  {item.stars && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-black/65 px-2 py-0.5 text-[10px] font-black text-amber-300 shadow-lg backdrop-blur-md">
+                      <i className="fa-solid fa-star text-[9px] text-amber-400" />
+                      <span className="font-mono">{item.stars}</span>
                     </span>
-                    {item.stars && (
-                      <span className="flex items-center gap-1 rounded-lg border border-amber-400/30 bg-black/70 backdrop-blur-md px-2 py-0.5 text-[10px] font-black text-amber-300">
-                        <span>{item.stars}</span>
-                        <i className="fa-solid fa-star text-[9px] text-amber-400" />
-                      </span>
-                    )}
-                  </div>
+                  )}
+                </div>
 
-                  {/* Neon Glowing Play Button on Hover */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-[2px] opacity-0 transition-all duration-300 group-hover:opacity-100">
-                    <div className="flex size-12 items-center justify-center rounded-full bg-gradient-to-tr from-red-600 to-red-500 text-white shadow-[0_0_25px_rgba(229,9,20,0.8)] ring-4 ring-red-500/20 transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                      {isSelectingThis ? (
-                        <i className="fa-solid fa-spinner fa-spin text-base" />
-                      ) : (
-                        <i className="fa-solid fa-play text-base mr-0.5" />
-                      )}
-                    </div>
+                {/* Glowing Center Play Capsule on Hover */}
+                <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-red-600/90 border border-white/40 text-white shadow-[0_0_30px_rgba(229,9,20,0.8)] backdrop-blur-md transform scale-75 group-hover:scale-100 transition-all duration-300">
+                    {isSelectingThis ? (
+                      <i className="fa-solid fa-spinner fa-spin text-base" />
+                    ) : (
+                      <i className="fa-solid fa-play text-base mr-0.5" />
+                    )}
                   </div>
                 </div>
 
-                {/* Card Title & Info */}
-                <div className="p-3 text-right">
+                {/* Bottom Title & Metadata */}
+                <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col justify-end p-3 text-right pointer-events-none">
                   <h4
-                    className="truncate text-xs font-black leading-snug text-white group-hover:text-red-400 transition-colors"
-                    title={item.ar_title}
+                    className="text-xs sm:text-[13px] font-black leading-snug text-white line-clamp-1 drop-shadow-md group-hover:text-red-400 transition-colors"
+                    title={mainTitle}
                   >
-                    {item.ar_title}
+                    {mainTitle}
                   </h4>
-                  <div className="mt-1 flex items-center justify-between text-[10px] font-semibold text-slate-400" dir="ltr">
-                    <span className="truncate">{item.en_title || ''}</span>
-                    {item.year && <span className="shrink-0 text-slate-500 font-bold ml-1">{item.year}</span>}
+
+                  <div className="mt-1 flex items-center gap-1.5 text-[10px] font-bold text-slate-300/90 drop-shadow">
+                    {item.year && <span>{item.year}</span>}
+                    {item.year && <span className="size-1 rounded-full bg-slate-400/50" />}
+                    <span className={item.kind === '2' ? 'text-purple-300' : 'text-slate-300'}>
+                      {item.kind === '2' ? 'مسلسل' : 'فيلم'}
+                    </span>
+                    {isDiffEn && (
+                      <>
+                        <span className="size-1 rounded-full bg-slate-400/50" />
+                        <span className="truncate max-w-[85px] text-slate-400 font-medium" dir="ltr">{rawEn}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </button>
@@ -350,73 +365,88 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
             <span className="text-[10px] font-bold text-slate-400">اختر للبدء فوراً لجميع المشاركين</span>
           </div>
 
-          <div className="custom-scrollbar grid w-full max-h-[min(54svh,32rem)] grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 p-1 pb-8 text-right overflow-y-auto">
+          <div className="custom-scrollbar grid w-full max-h-[min(54svh,32rem)] grid-cols-2 gap-3.5 min-[440px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 p-1.5 pb-8 text-right overflow-y-auto">
             {suggestions.map((item) => {
               const isSelectingThis = selectedId === item.nb;
+              const rawAr = (item.ar_title || '').trim();
+              const rawEn = (item.en_title || '').trim();
+              const mainTitle = rawAr || rawEn || 'عمل سينمائي';
+              const isDiffEn = rawEn && rawAr && rawEn.toLowerCase() !== rawAr.toLowerCase() && !rawAr.toLowerCase().includes(rawEn.toLowerCase()) && !rawEn.toLowerCase().includes(rawAr.toLowerCase());
+
               return (
                 <button
                   type="button"
                   key={item.nb}
                   disabled={Boolean(selectedId)}
                   onClick={() => void handleSelectVideo(item)}
-                  className={`group relative min-w-0 cursor-pointer overflow-hidden rounded-2xl border bg-gradient-to-b from-white/[0.06] to-white/[0.02] text-right transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_16px_40px_rgba(229,9,20,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                  className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden rounded-2xl border bg-[#0c1220] text-right shadow-md transition-all duration-300 ease-out hover:scale-[1.04] hover:-translate-y-1 hover:border-red-500/60 hover:shadow-[0_16px_36px_rgba(0,0,0,0.85),0_0_24px_rgba(229,9,20,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
                     isSelectingThis
-                      ? 'border-red-500 ring-2 ring-red-500 shadow-[0_0_30px_rgba(229,9,20,0.5)]'
-                      : 'border-white/10 hover:border-red-500/80'
+                      ? 'border-red-500 ring-2 ring-red-500 shadow-[0_0_30px_rgba(229,9,20,0.6)]'
+                      : 'border-white/10'
                   }`}
-                  aria-label={`اختيار ${item.ar_title || item.en_title}`}
+                  aria-label={`اختيار ${mainTitle}`}
                 >
-                  <div className="relative aspect-[2/3] w-full bg-[#0a0f1d] overflow-hidden">
+                  {/* Poster Background Image */}
+                  <div className="absolute inset-0 bg-[#0a0f1d]">
                     <MediaPosterImage
                       video={item}
                       type="poster"
                       sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
-                      className="transition-transform duration-500 group-hover:scale-108"
+                      className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
+                  </div>
 
-                    {/* Top Badges */}
-                    <div className="absolute top-2.5 right-2.5 left-2.5 flex items-center justify-between z-10">
-                      <span
-                        className={`rounded-lg px-2 py-0.5 text-[10px] font-black backdrop-blur-md border ${
-                          item.kind === '2'
-                            ? 'bg-purple-600/80 border-purple-400/40 text-white'
-                            : 'bg-red-600/80 border-red-400/40 text-white'
-                        }`}
-                      >
-                        {item.kind === '2' ? 'مسلسل' : 'فيلم'}
+                  {/* Cinematic Vignette & Bottom Ease Gradient */}
+                  <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#060a14] via-[#060a14]/65 via-35% to-transparent opacity-90 transition-opacity duration-300 group-hover:opacity-95 pointer-events-none" />
+
+                  {/* Top Floating Glass Badges */}
+                  <div className="absolute top-2.5 right-2.5 left-2.5 flex items-center justify-between z-10 pointer-events-none">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/65 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-lg backdrop-blur-md">
+                      <span className={`size-1.5 rounded-full ${item.kind === '2' ? 'bg-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.8)]' : 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]'}`} />
+                      <span>{item.kind === '2' ? 'مسلسل' : 'فيلم'}</span>
+                    </span>
+
+                    {item.stars && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-black/65 px-2 py-0.5 text-[10px] font-black text-amber-300 shadow-lg backdrop-blur-md">
+                        <i className="fa-solid fa-star text-[9px] text-amber-400" />
+                        <span className="font-mono">{item.stars}</span>
                       </span>
-                      {item.stars && (
-                        <span className="flex items-center gap-1 rounded-lg border border-amber-400/30 bg-black/70 backdrop-blur-md px-2 py-0.5 text-[10px] font-black text-amber-300">
-                          <span>{item.stars}</span>
-                          <i className="fa-solid fa-star text-[9px] text-amber-400" />
-                        </span>
-                      )}
-                    </div>
+                    )}
+                  </div>
 
-                    {/* Neon Glowing Play Button on Hover */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-[2px] opacity-0 transition-all duration-300 group-hover:opacity-100">
-                      <div className="flex size-12 items-center justify-center rounded-full bg-gradient-to-tr from-red-600 to-red-500 text-white shadow-[0_0_25px_rgba(229,9,20,0.8)] ring-4 ring-red-500/20 transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                        {isSelectingThis ? (
-                          <i className="fa-solid fa-spinner fa-spin text-base" />
-                        ) : (
-                          <i className="fa-solid fa-play text-base mr-0.5" />
-                        )}
-                      </div>
+                  {/* Glowing Center Play Capsule on Hover */}
+                  <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-300">
+                    <div className="flex size-12 items-center justify-center rounded-full bg-red-600/90 border border-white/40 text-white shadow-[0_0_30px_rgba(229,9,20,0.8)] backdrop-blur-md transform scale-75 group-hover:scale-100 transition-all duration-300">
+                      {isSelectingThis ? (
+                        <i className="fa-solid fa-spinner fa-spin text-base" />
+                      ) : (
+                        <i className="fa-solid fa-play text-base mr-0.5" />
+                      )}
                     </div>
                   </div>
 
-                  {/* Card Title & Info */}
-                  <div className="p-3 text-right">
+                  {/* Bottom Title & Metadata */}
+                  <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col justify-end p-3 text-right pointer-events-none">
                     <h4
-                      className="truncate text-xs font-black leading-snug text-white group-hover:text-red-400 transition-colors"
-                      title={item.ar_title}
+                      className="text-xs sm:text-[13px] font-black leading-snug text-white line-clamp-1 drop-shadow-md group-hover:text-red-400 transition-colors"
+                      title={mainTitle}
                     >
-                      {item.ar_title}
+                      {mainTitle}
                     </h4>
-                    <div className="mt-1 flex items-center justify-between text-[10px] font-semibold text-slate-400" dir="ltr">
-                      <span className="truncate">{item.en_title || ''}</span>
-                      {item.year && <span className="shrink-0 text-slate-500 font-bold ml-1">{item.year}</span>}
+
+                    <div className="mt-1 flex items-center gap-1.5 text-[10px] font-bold text-slate-300/90 drop-shadow">
+                      {item.year && <span>{item.year}</span>}
+                      {item.year && <span className="size-1 rounded-full bg-slate-400/50" />}
+                      <span className={item.kind === '2' ? 'text-purple-300' : 'text-slate-300'}>
+                        {item.kind === '2' ? 'مسلسل' : 'فيلم'}
+                      </span>
+                      {isDiffEn && (
+                        <>
+                          <span className="size-1 rounded-full bg-slate-400/50" />
+                          <span className="truncate max-w-[85px] text-slate-400 font-medium" dir="ltr">{rawEn}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </button>
