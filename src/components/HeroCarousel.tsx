@@ -273,7 +273,13 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           </div>
 
           {/* Desktop Thumbnails */}
-          <div className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-8 py-5 scroll-smooth items-end pointer-events-auto">
+          <div 
+            className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-8 py-5 scroll-smooth items-end pointer-events-auto"
+            style={{
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 60px, black calc(100% - 60px), transparent 100%)',
+              maskImage: 'linear-gradient(to right, transparent 0%, black 60px, black calc(100% - 60px), transparent 100%)'
+            }}
+          >
             {videos.map((video, idx) => {
               const thumbUrl = getVideoImageUrl(video, 'cover');
               const isActive = activeIndex === idx;
