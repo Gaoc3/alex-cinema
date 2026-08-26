@@ -153,7 +153,7 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
 
   return (
     <div className="w-full text-right" dir="rtl">
-      <div className="relative mx-auto mb-5 max-w-xl">
+      <div className="relative mx-auto mb-3.5 max-w-xl">
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
           <i className="fa-solid fa-search text-sm text-red-400" aria-hidden="true" />
         </div>
@@ -163,7 +163,7 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
           onChange={(e) => handleQueryChange(e.target.value)}
           placeholder="ابحث عن فيلم أو مسلسل..."
           aria-label="البحث عن محتوى للغرفة"
-          className="min-h-12 w-full rounded-xl border border-white/10 bg-white/[0.055] py-3 pl-12 pr-11 text-sm font-bold text-white outline-none transition placeholder:text-slate-500 focus:border-red-500/60 focus:ring-2 focus:ring-red-500/10"
+          className="min-h-11 w-full rounded-xl border border-white/10 bg-white/[0.055] py-2.5 pl-12 pr-11 text-sm font-bold text-white outline-none transition placeholder:text-slate-500 focus:border-red-500/60 focus:ring-2 focus:ring-red-500/10"
         />
         {isLoading && (
           <div className="absolute inset-y-0 left-0 flex items-center pl-4">
@@ -173,7 +173,7 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
       </div>
 
       {results.length > 0 && (
-        <div className="custom-scrollbar grid w-full max-h-[min(62svh,36rem)] grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 p-1 text-right overflow-y-auto">
+        <div className="custom-scrollbar grid w-full max-h-[min(54svh,30rem)] grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 p-1 text-right overflow-y-auto">
           {results.map((item) => (
             <button
               type="button"
