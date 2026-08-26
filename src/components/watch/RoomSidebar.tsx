@@ -996,6 +996,39 @@ export default function RoomSidebar({
                   </button>
                 </div>
               ) : null}
+
+              {/* Quick Reactions Bar */}
+              <div className="mb-2 flex items-center justify-between rounded-xl border border-white/[0.08] bg-black/30 px-2.5 py-1.5 backdrop-blur-md">
+                <span className="flex items-center gap-1 text-[10px] font-black text-slate-400">
+                  <i className="fa-solid fa-bolt-lightning text-amber-400" aria-hidden="true" />
+                  <span>تفاعل سريع:</span>
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {['🍿', '🔥', '❤️', '👏', '😂', '😱'].map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      disabled={isSending}
+                      onClick={async () => {
+                        if (isSending) return;
+                        setIsSending(true);
+                        try {
+                          const ok = await sendChatMessage(emoji, null);
+                          if (ok) scrollToLatest();
+                        } finally {
+                          setIsSending(false);
+                        }
+                      }}
+                      className="flex size-7 cursor-pointer items-center justify-center rounded-lg bg-white/[0.04] text-xs transition-all hover:scale-125 hover:bg-white/10 active:scale-95 disabled:opacity-40"
+                      title={`إرسال ${emoji}`}
+                      aria-label={`تفاعل سريع ${emoji}`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-end gap-2">
                 <textarea
                   ref={composerRef}

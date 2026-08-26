@@ -31,10 +31,32 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
   const [query, setQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'movies' | 'series'>('all');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const router = useRouter();
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load VIP suggestions on mount
+  useEffect(() => {
+    const controller = new AbortController();
+    const loadSuggestions = async () => {
+      try {
+        const res = await fetch(`/api/proxy?endpoint=AdvancedSearch&level=1&videoTitle=&staffTitle=&page=0&year=2024,2026&type=movies`, { signal: controller.signal });
+        if (res.ok) {
+          const encrypted = await res.json();
+          const data: unknown = decryptData(encrypted.payload);
+          if (Array.isArray(data)) {
+            setSuggestions(dedupeMediaById(data as SearchResult[]).slice(0, 10));
+          }
+        }
+      } catch {
+        // Fallback silently
+      }
+    };
+    loadSuggestions();
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -276,6 +298,80 @@ export default function LobbySearch({ roomId, onVideoSelected }: LobbySearchProp
               </button>
             );
           })}
+        </div>
+      )}
+
+      {/* VIP Suggestions Grid (Visible when no query is typed) */}
+      {query.trim().length < 2 && suggestions.length > 0 && (
+        <div className="mt-4">
+          <div className="flex items-center justify-between px-1 mb-2.5">
+            <span className="flex items-center gap-1.5 text-xs font-black text-white">
+              <i className="fa-solid fa-fire text-red-500" aria-hidden="true" />
+              <span>الأكثر طلباً للمشاهدة الجماعية</span>
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">اختر للبدء فوراً</span>
+          </div>
+
+          <div className="custom-scrollbar grid w-full max-h-[min(50svh,28rem)] grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 p-1 text-right overflow-y-auto">
+            {suggestions.map((item) => {
+              const isSelectingThis = selectedId === item.nb;
+              return (
+                <button
+                  type="button"
+                  key={item.nb}
+                  disabled={Boolean(selectedId)}
+                  onClick={() => void handleSelectVideo(item)}
+                  className={`group relative min-w-0 cursor-pointer overflow-hidden rounded-2xl border bg-white/[0.03] text-right transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(229,9,20,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                    isSelectingThis ? 'border-red-500 ring-2 ring-red-500' : 'border-white/10 hover:border-red-500/60'
+                  }`}
+                  aria-label={`اختيار ${item.ar_title || item.en_title}`}
+                >
+                  <div className="relative aspect-[2/3] w-full bg-[#0d121d] overflow-hidden">
+                    <MediaPosterImage
+                      video={item}
+                      type="poster"
+                      sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
+                      className="transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
+                    
+                    <div className="absolute bottom-2.5 right-2.5 left-2.5 flex justify-between items-center z-10">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-black ${
+                        item.kind === '2' ? 'bg-purple-600 text-white' : 'bg-red-600 text-white'
+                      }`}>
+                        {item.kind === '2' ? 'مسلسل' : 'فيلم'}
+                      </span>
+                      {item.stars && (
+                        <span className="flex items-center gap-1 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded-md text-amber-400 text-[11px] font-bold font-en border border-amber-400/20">
+                          <span>{item.stars}</span>
+                          <i className="fa-solid fa-star text-[9px]" />
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[2px] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <div className="flex size-11 items-center justify-center rounded-full bg-red-600 text-white shadow-xl shadow-red-600/40 transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                        {isSelectingThis ? (
+                          <i className="fa-solid fa-spinner fa-spin text-sm" />
+                        ) : (
+                          <i className="fa-solid fa-play text-sm mr-0.5" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 text-right">
+                    <h4 className="truncate text-xs font-black leading-tight text-white group-hover:text-red-400 transition-colors" title={item.ar_title}>
+                      {item.ar_title}
+                    </h4>
+                    <p className="mt-0.5 truncate text-[10px] font-medium text-slate-400" dir="ltr">
+                      {item.year || item.en_title}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
