@@ -227,8 +227,8 @@ export default function MediaDetails({
                 const totalMinutes = duration > 300 ? Math.round(duration / 60) : Math.round(duration);
                 const hours = Math.floor(totalMinutes / 60);
                 const mins = totalMinutes % 60;
-                const hoursText = hours > 0 ? (hours === 1 ? '1 ساعة' : hours === 2 ? 'ساعتان' : `${hours} ساعات`) : '';
-                const minsText = mins > 0 ? `${mins} دقيقة` : '';
+                const hoursText = hours > 0 ? (hours === 1 ? 'ساعة واحدة' : hours === 2 ? 'ساعتان' : hours >= 3 && hours <= 10 ? `${hours} ساعات` : `${hours} ساعة`) : '';
+                const minsText = mins > 0 ? (mins === 1 ? 'دقيقة واحدة' : mins === 2 ? 'دقيقتان' : mins >= 3 && mins <= 10 ? `${mins} دقائق` : `${mins} دقيقة`) : '';
                 const formattedDuration = hoursText && minsText ? `${hoursText} و ${minsText}` : (hoursText || minsText || `${totalMinutes} دقيقة`);
                 return (
                   <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/5 text-[10px] sm:text-xs text-gray-300">
