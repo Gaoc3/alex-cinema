@@ -67,21 +67,27 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
     return () => window.removeEventListener('resize', calculateLayout);
   }, []);
 
-  // Auto-scroll active thumbnail into view cleanly without cutting off start banner
+  // Auto-scroll active thumbnail into view with safe padding bounds (Zero Cut-off)
   useEffect(() => {
+    const container = thumbnailsContainerRef.current?.querySelector('.overflow-x-auto') as HTMLElement | null;
+    const activeEl = thumbnailsRef.current[activeIndex];
+    if (!container || !activeEl) return;
+
     if (activeIndex === 0) {
-      const scrollEl = thumbnailsContainerRef.current?.querySelector('.overflow-x-auto') as HTMLElement | null;
-      if (scrollEl) {
-        scrollEl.scrollTo({ left: 0, behavior: 'smooth' });
-        return;
-      }
+      container.scrollTo({ left: 0, behavior: 'smooth' });
+      return;
     }
-    if (thumbnailsRef.current[activeIndex]) {
-      thumbnailsRef.current[activeIndex]?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'nearest',
-      });
+
+    const containerRect = container.getBoundingClientRect();
+    const activeRect = activeEl.getBoundingClientRect();
+    const safeMargin = 50; // 50px safe padding from screen edge
+
+    if (activeRect.left < containerRect.left + safeMargin) {
+      const diff = (containerRect.left + safeMargin) - activeRect.left;
+      container.scrollBy({ left: -diff, behavior: 'smooth' });
+    } else if (activeRect.right > containerRect.right - safeMargin) {
+      const diff = activeRect.right - (containerRect.right - safeMargin);
+      container.scrollBy({ left: diff, behavior: 'smooth' });
     }
   }, [activeIndex]);
 
