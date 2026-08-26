@@ -340,19 +340,19 @@ export default function RoomClientWrapper({
   };
 
   return (
-    <div className="relative min-h-[100svh] overflow-x-clip bg-[#050811] text-white selection:bg-red-600 selection:text-white" dir="rtl">
+    <div className="relative min-h-[100svh] overflow-x-clip bg-[#03060f] bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(229,9,20,0.16),rgba(6,18,33,0.5)_45%,#02040a_100%)] text-white selection:bg-red-600 selection:text-white" dir="rtl">
       {/* Dynamic Ambient Background Glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         {bgImage ? (
           <div
-            className="absolute inset-x-0 top-0 h-[60svh] bg-cover bg-center opacity-[0.12] blur-3xl transition-opacity duration-1000"
-            style={{ backgroundImage: `linear-gradient(to bottom, transparent, #050811), url(${bgImage})` }}
+            className="absolute inset-x-0 top-0 h-[70svh] bg-cover bg-center opacity-[0.16] blur-3xl transition-opacity duration-1000 scale-105"
+            style={{ backgroundImage: `linear-gradient(to bottom, transparent, #03060f), url(${bgImage})` }}
           />
         ) : (
-          <div className="absolute inset-x-0 top-0 h-[40svh] bg-gradient-to-b from-red-600/10 via-transparent to-transparent blur-3xl" />
+          <div className="absolute inset-x-0 top-0 h-[45svh] bg-gradient-to-b from-red-600/15 via-transparent to-transparent blur-3xl" />
         )}
-        <div className="absolute -right-32 top-10 size-96 rounded-full bg-red-600/10 blur-[130px]" />
-        <div className="absolute -left-32 bottom-10 size-96 rounded-full bg-blue-600/10 blur-[130px]" />
+        <div className="absolute -right-32 top-10 size-96 rounded-full bg-red-600/12 blur-[140px]" />
+        <div className="absolute -left-32 bottom-10 size-96 rounded-full bg-blue-600/12 blur-[140px]" />
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-7xl 2xl:max-w-[1560px] flex-col px-3 pb-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 lg:px-6">
@@ -471,7 +471,7 @@ export default function RoomClientWrapper({
         </header>
 
         {/* Main Grid Layout */}
-        <div className="grid min-h-0 flex-1 items-start gap-4 lg:gap-5 lg:grid-cols-[23rem_minmax(0,1fr)] xl:grid-cols-[25rem_minmax(0,1fr)]" dir="rtl">
+        <div className="grid min-h-0 flex-1 items-start gap-4 lg:gap-5 lg:grid-cols-[25.5rem_minmax(0,1fr)] xl:grid-cols-[28rem_minmax(0,1fr)] 2xl:grid-cols-[30rem_minmax(0,1fr)]" dir="rtl">
           {/* Lounge Sidebar: Right side on Desktop (Order 1 in RTL), under player on Mobile */}
           <aside ref={sidebarPanelRef} className="order-2 min-w-0 scroll-mt-4 lg:order-1 lg:sticky lg:top-4 lg:self-start" dir="rtl">
             <RoomSidebar
@@ -530,15 +530,13 @@ export default function RoomClientWrapper({
                 </div>
               </div>
             ) : (
-              <div className="flex min-w-0 flex-col gap-4">
-                <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#0a0f1d]/85 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
-                  <RoomPlayerUI
-                    video={video}
-                    seasons={seasons}
-                    episodes={episodes}
-                    roomHook={roomHook}
-                  />
-                </div>
+              <div className="flex min-w-0 flex-col gap-4 sm:gap-5">
+                <RoomPlayerUI
+                  video={video}
+                  seasons={seasons}
+                  episodes={episodes}
+                  roomHook={roomHook}
+                />
 
                 {canChangeMedia && (
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0a0f1d]/85 p-3.5 shadow-lg backdrop-blur-xl transition-all">

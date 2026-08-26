@@ -101,32 +101,34 @@ export default function SeriesNavigator({
   }, [currentSeason, seasonEpisodes, updateScrollButtons]);
 
   return (
-    <div className="flex flex-col gap-4 w-full animate-fade-in-up" dir="rtl">
-      <div className="bg-[#0c1322] rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-xl border border-white/10 relative overflow-hidden w-full flex flex-col gap-4 sm:gap-6">
-        
+    <div className="flex flex-col w-full animate-fade-in-up" dir="rtl">
+      <div className="relative overflow-hidden w-full flex flex-col gap-3.5 sm:gap-4 p-3.5 sm:p-4.5 md:p-5 bg-[#090e1d]/90 rounded-3xl border border-white/12 shadow-[0_12px_40px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
+        {/* Subtle Ambient Red Halo */}
+        <div className="absolute -top-16 -right-16 size-36 rounded-full bg-red-600/10 blur-2xl pointer-events-none" />
+
         {/* ══════ Header Area: Title, Badges & Fully Dynamic Season Selector ══════ */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 border-b border-white/10 pb-4 relative z-10 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-white/10 pb-3 relative z-10 w-full">
           {/* Title Area + Badges */}
           <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
-            <div className="flex items-center gap-2.5">
-              <div className="w-1.5 sm:w-2 h-5 sm:h-6 bg-alex-primary rounded-full shadow-[0_0_12px_rgba(229,9,20,0.6)]"></div>
-              <h3 className="text-base sm:text-lg font-black text-white whitespace-nowrap">حلقات المسلسل</h3>
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-4.5 bg-red-600 rounded-full shadow-[0_0_12px_rgba(229,9,20,0.7)]" />
+              <h3 className="text-sm sm:text-base font-black text-white whitespace-nowrap tracking-wide">حلقات المسلسل</h3>
             </div>
             
             {/* Meta Count Badges */}
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="bg-blue-500/15 border border-blue-500/30 text-blue-400 px-2.5 py-0.5 rounded-xl text-[11px] font-black">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="bg-blue-500/15 border border-blue-500/30 text-blue-400 px-2 py-0.5 rounded-lg text-[10px] font-black">
                 {seasons.length} مواسم
               </span>
-              <span className="bg-amber-500/15 border border-amber-500/30 text-amber-400 px-2.5 py-0.5 rounded-xl text-[11px] font-black">
+              <span className="bg-amber-500/15 border border-amber-500/30 text-amber-400 px-2 py-0.5 rounded-lg text-[10px] font-black">
                 {episodes.length} حلقة
               </span>
             </div>
           </div>
 
-          {/* Season Selector - Fully Dynamic Adaptive Horizontal Track (No rigid dead-space box) */}
+          {/* Season Selector - Fully Dynamic Adaptive Horizontal Track */}
           {seasons.length > 0 && (
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth w-full sm:w-auto py-1 max-w-full">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth w-full sm:w-auto py-0.5 max-w-full">
               {seasons.map((s) => {
                 const isSelected = currentSeason === s.season;
                 return (
@@ -134,10 +136,10 @@ export default function SeriesNavigator({
                     key={s.season}
                     type="button"
                     onClick={() => setCurrentSeason(s.season)}
-                    className={`min-h-[38px] px-4 py-1.5 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 flex items-center justify-center cursor-pointer select-none active:scale-95 shrink-0 ${
+                    className={`min-h-[32px] px-3.5 py-1 rounded-xl text-xs font-black transition-all duration-200 flex items-center justify-center cursor-pointer select-none active:scale-95 shrink-0 ${
                       isSelected
-                        ? 'bg-gradient-to-r from-alex-primary to-red-700 text-white shadow-[0_0_18px_rgba(229,9,20,0.5)] border border-red-500/40'
-                        : 'text-gray-300 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] border border-white/10'
+                        ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-[0_0_15px_rgba(229,9,20,0.45)] border border-red-500/40'
+                        : 'text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10'
                     }`}
                   >
                     <span>الموسم {s.season}</span>
@@ -149,19 +151,19 @@ export default function SeriesNavigator({
         </div>
 
         {/* ══════ MOBILE VIEW (sm:hidden): Direct Episodes Stream ══════ */}
-        <div key={`mobile-${currentSeason}`} className="flex flex-col gap-3 sm:hidden w-full">
+        <div key={`mobile-${currentSeason}`} className="flex flex-col gap-2 sm:hidden w-full">
           <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-black text-gray-300 flex items-center gap-2">
-              <i className="fa-solid fa-list-ol text-alex-primary text-xs"></i>
+            <span className="text-xs font-black text-slate-300 flex items-center gap-1.5">
+              <i className="fa-solid fa-list-ol text-red-500 text-xs" />
               حلقات الموسم {currentSeason}
             </span>
-            <span className="text-[11px] font-bold text-gray-400">
+            <span className="text-[10px] font-bold text-slate-400">
               {seasonEpisodes.length} حلقة متاحة
             </span>
           </div>
 
           {/* Episode List with Left Padding to Prevent Scrollbar Collision in RTL */}
-          <div className="space-y-2.5 max-h-[520px] overflow-y-auto pl-3.5 pr-1 py-1 custom-scrollbar">
+          <div className="space-y-2 max-h-[380px] overflow-y-auto pl-2 pr-0.5 py-1 custom-scrollbar">
             {seasonEpisodes.map((ep) => {
               const isActiveEp = activeEpisode?.nb === ep.nb;
               return (
@@ -172,16 +174,16 @@ export default function SeriesNavigator({
                   onClick={() => setActiveEpisode(ep)}
                   disabled={!canSelectEpisodes}
                   aria-pressed={isActiveEp}
-                  className={`flex w-full items-center justify-between gap-3 rounded-2xl border p-2.5 text-right transition-all duration-300 active:scale-[0.98] ${
+                  className={`flex w-full items-center justify-between gap-3 rounded-2xl border p-2 text-right transition-all duration-200 active:scale-[0.98] ${
                     isActiveEp
-                      ? 'bg-red-950/40 border-alex-primary shadow-[0_0_20px_rgba(229,9,20,0.3)]'
-                      : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/10'
+                      ? 'bg-red-950/40 border-red-500/70 shadow-[0_0_20px_rgba(229,9,20,0.3)] ring-1 ring-red-500/30'
+                      : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/10'
                   }`}
                 >
                   {/* Right side: Thumbnail + Title + Meta */}
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     {/* Thumbnail with duration */}
-                    <div className="relative w-24 xs:w-28 aspect-[16/10] rounded-xl overflow-hidden shrink-0 border border-white/10 bg-[#070b13]">
+                    <div className="relative w-22 aspect-[16/9] rounded-xl overflow-hidden shrink-0 border border-white/10 bg-[#070b13]">
                       <img
                         src={getImageUrl(videoImg, 'poster') || '/icon.svg'}
                         alt={`الحلقة ${ep.episodeNummer}`}
@@ -189,14 +191,14 @@ export default function SeriesNavigator({
                         loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-1">
-                        <span className="text-[9px] text-gray-200 font-en font-bold px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm">
+                        <span className="text-[8px] text-slate-200 font-mono font-bold px-1 py-0.2 rounded bg-black/70 backdrop-blur-sm">
                           {formatDuration(ep.duration || episodes[0]?.duration)}
                         </span>
                       </div>
                       {isActiveEp && (
-                        <div className="absolute inset-0 bg-alex-primary/20 flex items-center justify-center">
-                          <div className="w-7 h-7 rounded-full bg-alex-primary text-white flex items-center justify-center shadow-lg">
-                            <i className="fa-solid fa-play text-[10px]"></i>
+                        <div className="absolute inset-0 bg-red-600/20 flex items-center justify-center">
+                          <div className="size-6 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg">
+                            <i className="fa-solid fa-play text-[8px]" />
                           </div>
                         </div>
                       )}
@@ -204,10 +206,10 @@ export default function SeriesNavigator({
 
                     {/* Episode details */}
                     <div className="flex flex-col justify-center min-w-0 flex-1">
-                      <h4 className={`text-xs xs:text-sm font-black truncate ${isActiveEp ? 'text-alex-primary' : 'text-white'}`}>
+                      <h4 className={`text-xs font-black truncate ${isActiveEp ? 'text-red-400' : 'text-white'}`}>
                         {ep.ar_title || `الحلقة ${ep.episodeNummer}`}
                       </h4>
-                      <p className="text-[11px] text-gray-400 truncate mt-0.5">
+                      <p className="text-[10px] text-slate-400 truncate mt-0.5">
                         الموسم {currentSeason} • الحلقة {ep.episodeNummer}
                       </p>
                     </div>
@@ -216,13 +218,13 @@ export default function SeriesNavigator({
                   {/* Left side: Play status icon */}
                   <div className="shrink-0 pl-1">
                     {isActiveEp ? (
-                      <span className="px-2.5 py-1 rounded-xl bg-alex-primary text-white text-[10px] font-black shadow-md flex items-center gap-1">
-                        <i className="fa-solid fa-circle-play text-[10px]"></i>
+                      <span className="px-2 py-0.5 rounded-lg bg-red-600 text-white text-[9px] font-black shadow-md flex items-center gap-1">
+                        <i className="fa-solid fa-circle-play text-[9px]" />
                         شغّال
                       </span>
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors">
-                        <i className="fa-solid fa-play text-[11px]"></i>
+                      <div className="size-7 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-colors">
+                        <i className="fa-solid fa-play text-[10px]" />
                       </div>
                     )}
                   </div>
@@ -239,29 +241,29 @@ export default function SeriesNavigator({
             type="button"
             aria-label="تمرير لليمين"
             onClick={() => scrollBy('start')}
-            className={`absolute right-1 top-[40%] -translate-y-1/2 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer
-              bg-[#0b101d]/95 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.7)] text-white hover:bg-alex-primary hover:border-alex-primary hover:scale-110 active:scale-95
+            className={`absolute right-0 top-[40%] -translate-y-1/2 z-30 size-8 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer
+              bg-[#0b101d]/95 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.7)] text-white hover:bg-red-600 hover:border-red-600 hover:scale-110 active:scale-95
               ${canScrollStart ? 'opacity-90 hover:opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           >
-            <i className="fa-solid fa-chevron-right text-xs" aria-hidden="true" />
+            <i className="fa-solid fa-chevron-right text-[10px]" aria-hidden="true" />
           </button>
 
           <button
             type="button"
             aria-label="تمرير لليسار"
             onClick={() => scrollBy('end')}
-            className={`absolute left-1 top-[40%] -translate-y-1/2 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer
-              bg-[#0b101d]/95 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.7)] text-white hover:bg-alex-primary hover:border-alex-primary hover:scale-110 active:scale-95
+            className={`absolute left-0 top-[40%] -translate-y-1/2 z-30 size-8 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer
+              bg-[#0b101d]/95 backdrop-blur-xl border border-white/20 shadow-[0_6px_20px_rgba(0,0,0,0.7)] text-white hover:bg-red-600 hover:border-red-600 hover:scale-110 active:scale-95
               ${canScrollEnd ? 'opacity-90 hover:opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           >
-            <i className="fa-solid fa-chevron-left text-xs" aria-hidden="true" />
+            <i className="fa-solid fa-chevron-left text-[10px]" aria-hidden="true" />
           </button>
 
           <div 
             key={`desktop-${currentSeason}`}
             ref={scrollContainerRef}
             style={{ touchAction: 'pan-y', overscrollBehaviorY: 'auto' }}
-            className="flex w-full overflow-x-auto hide-scrollbar scroll-smooth py-2 px-1 relative z-10 flex-row gap-4 sm:gap-5 select-none animate-fade-in-up" 
+            className="flex w-full overflow-x-auto hide-scrollbar scroll-smooth py-1 px-0.5 relative z-10 flex-row gap-3 sm:gap-3.5 select-none animate-fade-in-up" 
             dir="rtl"
           >
             {seasonEpisodes.map((ep) => {
@@ -270,16 +272,16 @@ export default function SeriesNavigator({
                 <div 
                   key={ep.nb} 
                   data-active={isActiveEp ? 'true' : 'false'}
-                  className="flex flex-col shrink-0 w-[calc((100%-1rem)/2)] sm:w-[calc((100%-1.25rem*2)/3)] md:w-[calc((100%-1.25rem*3)/4)] lg:w-[calc((100%-1.25rem*4)/5)] xl:w-[calc((100%-1.25rem*5)/6)] group"
+                  className="flex flex-col shrink-0 w-[calc((100%-0.75rem)/2)] sm:w-[calc((100%-0.875rem*2)/3)] md:w-[calc((100%-0.875rem*3)/4)] lg:w-[calc((100%-0.875rem*4)/5)] xl:w-[calc((100%-0.875rem*5)/6)] group"
                 >
                   <button
                     type="button"
                     onClick={() => setActiveEpisode(ep)}
                     disabled={!canSelectEpisodes}
-                    className={`relative aspect-[16/10] w-full rounded-2xl overflow-hidden border transition-all duration-300 cursor-pointer ${
+                    className={`relative aspect-[16/9] w-full rounded-2xl overflow-hidden border transition-all duration-300 cursor-pointer ${
                       isActiveEp 
-                        ? 'border-alex-primary shadow-[0_8px_30px_rgba(229,9,20,0.4)] scale-[1.03]' 
-                        : 'border-white/10 hover:border-alex-primary/50 hover:shadow-[0_6px_20px_rgba(0,0,0,0.6)] group-hover:scale-[1.02]'
+                        ? 'border-red-500 shadow-[0_6px_25px_rgba(229,9,20,0.45)] ring-1 ring-red-500/50 scale-[1.02]' 
+                        : 'border-white/10 hover:border-red-500/50 hover:shadow-[0_6px_20px_rgba(0,0,0,0.6)] group-hover:scale-[1.02]'
                     }`}
                   >
                     {/* Thumbnail Image */}
@@ -291,29 +293,29 @@ export default function SeriesNavigator({
                     />
                     
                     {/* Hover & Active Overlay */}
-                    <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex items-center justify-center transition-all duration-300 ${
+                    <div className={`absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex items-center justify-center transition-all duration-300 ${
                       isActiveEp ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                     }`}>
-                      <div className="px-3.5 py-1.5 rounded-full bg-alex-primary text-white text-xs font-black tracking-wide flex items-center gap-1.5 shadow-xl border border-white/20">
-                        <i className="fa-solid fa-circle-play text-xs text-white"></i>
-                        <span>{isActiveEp ? 'جارٍ التشغيل 🔴' : 'تشغيل الحلقة'}</span>
+                      <div className="px-3 py-1 rounded-full bg-red-600 text-white text-[11px] font-black tracking-wide flex items-center gap-1.5 shadow-xl border border-white/20">
+                        <i className="fa-solid fa-circle-play text-[10px] text-white" />
+                        <span>{isActiveEp ? 'جارٍ التشغيل 🔴' : 'تشغيل'}</span>
                       </div>
                     </div>
 
                     {isActiveEp && (
-                      <div className="absolute top-2.5 right-2.5 bg-alex-primary text-white px-2 py-0.5 rounded-lg text-[9px] font-black border border-white/20 backdrop-blur-md flex items-center gap-1 shadow-md">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                      <div className="absolute top-2 right-2 bg-red-600 text-white px-1.5 py-0.5 rounded-md text-[8px] font-black border border-white/20 backdrop-blur-md flex items-center gap-1 shadow-md">
+                        <span className="size-1.5 rounded-full bg-white animate-ping" />
                         مباشر
                       </div>
                     )}
                   </button>
                   
                   {/* Metadata Row */}
-                  <div className="flex justify-between items-center mt-2 px-1 text-xs font-bold">
-                    <span className={`transition-colors truncate max-w-[70%] text-right ${isActiveEp ? 'text-alex-primary font-black' : 'text-gray-200 group-hover:text-white'}`}>
+                  <div className="flex justify-between items-center mt-1.5 px-0.5 text-[11px] font-bold">
+                    <span className={`transition-colors truncate max-w-[70%] text-right ${isActiveEp ? 'text-red-400 font-black' : 'text-slate-200 group-hover:text-white'}`}>
                       {ep.ar_title || `الحلقة ${ep.episodeNummer}`}
                     </span>
-                    <span className="text-gray-400 font-en opacity-80 text-[11px]">
+                    <span className="text-slate-400 font-mono text-[10px]">
                       {formatDuration(ep.duration || episodes[0]?.duration)}
                     </span>
                   </div>

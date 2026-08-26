@@ -163,8 +163,9 @@ function RoomPlayerContent({ video, seasons = [], episodes = [], roomHook }: Roo
     : safeVideo.ar_title || '';
 
   return (
-    <div className="relative flex w-full min-w-0 flex-col gap-5">
-      <div className="relative w-full min-w-0">
+    <div className="relative flex w-full min-w-0 flex-col gap-4 sm:gap-5">
+      {/* 1. Dedicated Player Stage Card */}
+      <div className="relative w-full min-w-0 overflow-hidden rounded-3xl border border-white/12 bg-[#090e1d]/90 shadow-[0_12px_40px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
         <PlayerSection
           isLoadingStreams={isLoadingStreams}
           isSeries={isSeries}
@@ -177,21 +178,23 @@ function RoomPlayerContent({ video, seasons = [], episodes = [], roomHook }: Roo
         />
       </div>
 
+      {/* 2. Completely Separated Luxury Series Episodes Card */}
       {isSeries && safeEpisodes.length > 0 && (
-        <SeriesNavigator
-          seasons={safeSeasons}
-          episodes={safeEpisodes}
-          currentSeason={currentSeason}
-          setCurrentSeason={setCurrentSeason}
-          activeEpisode={activeEpisode}
-          setActiveEpisode={selectEpisode}
-          seasonEpisodes={seasonEpisodes}
-          videoTitle={safeVideo.ar_title || ''}
-          videoImg={safeVideo.img || ''}
-          canSelectEpisodes={canChangeEpisode}
-        />
+        <div className="relative w-full min-w-0">
+          <SeriesNavigator
+            seasons={safeSeasons}
+            episodes={safeEpisodes}
+            currentSeason={currentSeason}
+            setCurrentSeason={setCurrentSeason}
+            activeEpisode={activeEpisode}
+            setActiveEpisode={selectEpisode}
+            seasonEpisodes={seasonEpisodes}
+            videoTitle={safeVideo.ar_title || ''}
+            videoImg={safeVideo.img || ''}
+            canSelectEpisodes={canChangeEpisode}
+          />
+        </div>
       )}
-
     </div>
   );
 }

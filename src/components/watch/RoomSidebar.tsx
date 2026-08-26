@@ -818,38 +818,41 @@ export default function RoomSidebar({
       )}
 
       <section
-        className={`relative flex w-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0a0f1d]/85 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all ${
+        className={`relative flex w-full flex-col overflow-hidden rounded-3xl border border-white/12 bg-[#090e1d]/90 shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_35px_rgba(229,9,20,0.07)] backdrop-blur-2xl transition-all ${
           activeTab === 'chat'
-            ? 'h-[clamp(28rem,70dvh,42rem)] min-h-[28rem]'
+            ? 'h-[clamp(32rem,78dvh,48rem)] min-h-[32rem]'
             : 'h-auto min-h-0'
-        } lg:h-[min(68dvh,42rem)] lg:min-h-[30rem] lg:max-h-[42rem]`}
+        } lg:h-[min(78dvh,48rem)] lg:min-h-[35rem] lg:max-h-[48rem]`}
         aria-label="مجلس الغرفة"
       >
         {/* Lounge Header */}
-        <header className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-white/10 px-4 py-2.5 bg-white/[0.02]">
-          <div className="min-w-0">
-            <h2 className="truncate text-sm font-black text-white tracking-wide">مجلس الغرفة</h2>
-            <p className="mt-0.5 flex items-center gap-1.5 text-[10px] text-slate-400" aria-live="polite">
-              <span className={`size-1.5 rounded-full ${connectionMeta.color}`} aria-hidden="true" />
-              <span className="font-medium">{connectionMeta.label}</span>
-            </p>
+        <header className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-white/10 px-4 py-3 bg-white/[0.02]">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="size-2 rounded-full bg-red-600 shadow-[0_0_10px_rgba(229,9,20,0.9)] animate-pulse" />
+            <div>
+              <h2 className="truncate text-sm font-black text-white tracking-wide">مجلس الغرفة</h2>
+              <p className="mt-0.5 flex items-center gap-1.5 text-[10px] text-slate-400" aria-live="polite">
+                <span className={`size-1.5 rounded-full ${connectionMeta.color}`} aria-hidden="true" />
+                <span className="font-medium">{connectionMeta.label}</span>
+              </p>
+            </div>
           </div>
-          <span className="rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1 font-mono text-[10px] text-slate-400" dir="ltr">
+          <span className="rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1 font-mono text-[10px] text-slate-400 font-bold" dir="ltr">
             {roomId.slice(0, 8)}
           </span>
         </header>
 
         {/* Segmented Tab Selector */}
-        <div className="grid grid-cols-3 gap-1 shrink-0 border-b border-white/10 bg-black/25 p-1.5" role="toolbar" aria-label="أدوات الغرفة">
+        <div className="grid grid-cols-3 gap-1.5 shrink-0 border-b border-white/10 bg-black/30 p-1.5" role="toolbar" aria-label="أدوات الغرفة">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               aria-pressed={activeTab === tab.id}
               onClick={() => onActiveTabChange(tab.id)}
-              className={`flex min-h-10 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2 text-[11px] font-black transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 active:scale-95 ${
+              className={`flex min-h-10 cursor-pointer items-center justify-center gap-1.5 rounded-2xl px-2 text-[11px] font-black transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 active:scale-95 ${
                 activeTab === tab.id
-                  ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
+                  ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-[0_4px_16px_rgba(229,9,20,0.4)]'
                   : 'text-slate-400 hover:bg-white/[0.06] hover:text-white'
               }`}
             >
