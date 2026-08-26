@@ -407,18 +407,46 @@ export default function RoomClientWrapper({
           </button>
         </header>
 
-        <div className="grid min-h-0 flex-1 items-start gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1fr)_21rem] xl:grid-cols-[minmax(0,1fr)_23rem]" dir="rtl">
-          <section className="min-w-0" dir="rtl">
+        <div className="grid min-h-0 flex-1 items-start gap-4 lg:gap-5 lg:grid-cols-[23rem_minmax(0,1fr)] xl:grid-cols-[25rem_minmax(0,1fr)]" dir="rtl">
+          {/* Chat Sidebar: Right side on Desktop (Order 1 in RTL), under player on Mobile */}
+          <aside ref={sidebarPanelRef} className="order-2 min-w-0 scroll-mt-4 lg:order-1 lg:sticky lg:top-4 lg:self-start" dir="rtl">
+            <RoomSidebar
+              roomId={roomId}
+              initialPrivacy={roomData.isPrivate ?? false}
+              members={roomHook.members}
+              messages={roomHook.messages}
+              connectionState={roomHook.connectionState}
+              isChatHistoryLoaded={roomHook.isChatHistoryLoaded}
+              sendChatMessage={roomHook.sendChatMessage}
+              editChatMessage={roomHook.editChatMessage}
+              deleteChatMessage={roomHook.deleteChatMessage}
+              currentUserId={currentUserId}
+              isHost={isHostUser}
+              userRole={roomHook.userRole}
+              userPermissions={roomHook.userPermissions}
+              setModeratorPermissions={roomHook.setModeratorPermissions}
+              removeModerator={roomHook.removeModerator}
+              kickUser={roomHook.kickUser}
+              banUser={roomHook.banUser}
+              closeRoom={roomHook.closeRoom}
+              activeTab={activeRoomTab}
+              onActiveTabChange={setActiveRoomTab}
+              onLeaveRoom={handleExitRoom}
+            />
+          </aside>
+
+          {/* Main Stage (Player & Search): Left side on Desktop (Order 2 in RTL), top on Mobile */}
+          <section className="order-1 min-w-0 lg:order-2" dir="rtl">
             {!video ? (
-              <div className="flex min-h-[min(46svh,26rem)] items-center justify-center rounded-2xl border border-white/10 bg-[#0b101a]/90 p-5 shadow-2xl sm:min-h-[min(56svh,34rem)] sm:p-9 lg:min-h-[min(68svh,42rem)]">
-                <div className="w-full max-w-3xl text-center">
-                  <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-2xl text-red-400">
+              <div className="flex min-h-[min(36svh,19rem)] items-center justify-center rounded-2xl border border-white/10 bg-[#0b101a]/90 p-4 shadow-2xl sm:min-h-[min(44svh,24rem)] sm:p-6 lg:min-h-[min(48svh,27rem)]">
+                <div className="w-full max-w-lg text-center">
+                  <div className="mx-auto mb-3.5 flex size-13 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-xl text-red-400">
                     <i className="fa-solid fa-film" aria-hidden="true" />
                   </div>
-                  <h2 className="mb-2 text-2xl font-black sm:text-3xl">
+                  <h2 className="mb-1 text-xl font-black sm:text-2xl">
                     {canChangeMedia ? 'اختر ما ستشاهدونه' : 'بانتظار اختيار المحتوى'}
                   </h2>
-                  <p className="mx-auto mb-7 max-w-xl text-sm leading-7 text-slate-300">
+                  <p className="mx-auto mb-4 max-w-md text-xs sm:text-sm leading-6 text-slate-300">
                     {canChangeMedia
                       ? 'ابحث عن فيلم أو مسلسل، وسيظهر لجميع المشاركين فور اختياره.'
                       : 'سيبدأ العرض تلقائياً عندما يختار المضيف أو المشرف الفيلم أو الحلقة.'}
@@ -460,33 +488,6 @@ export default function RoomClientWrapper({
               </div>
             )}
           </section>
-
-          <aside ref={sidebarPanelRef} className="min-w-0 scroll-mt-4 lg:sticky lg:top-4 lg:self-start" dir="rtl">
-            <RoomSidebar
-              roomId={roomId}
-              initialPrivacy={roomData.isPrivate ?? false}
-              members={roomHook.members}
-              messages={roomHook.messages}
-              connectionState={roomHook.connectionState}
-              isChatHistoryLoaded={roomHook.isChatHistoryLoaded}
-              sendChatMessage={roomHook.sendChatMessage}
-              editChatMessage={roomHook.editChatMessage}
-              deleteChatMessage={roomHook.deleteChatMessage}
-              currentUserId={currentUserId}
-              isHost={isHostUser}
-              userRole={roomHook.userRole}
-              userPermissions={roomHook.userPermissions}
-              setModeratorPermissions={roomHook.setModeratorPermissions}
-              removeModerator={roomHook.removeModerator}
-              kickUser={roomHook.kickUser}
-              banUser={roomHook.banUser}
-              closeRoom={roomHook.closeRoom}
-              activeTab={activeRoomTab}
-              onActiveTabChange={setActiveRoomTab}
-              onLeaveRoom={handleExitRoom}
-            />
-
-          </aside>
         </div>
       </div>
     </div>
