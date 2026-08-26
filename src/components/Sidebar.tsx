@@ -172,7 +172,7 @@ export default function Sidebar() {
       />
       
       <aside 
-        className={`fixed top-0 right-0 z-[60] flex flex-col bg-[#070a13] sidebar overflow-hidden border-r-0 border-y-0 border-l border-white/[0.06] xl:border-l-0 rounded-none shadow-2xl xl:shadow-none h-screen ${
+        className={`fixed top-0 right-0 z-[60] flex flex-col bg-[#061520] sidebar overflow-hidden border-r-0 border-y-0 border-l border-white/[0.06] xl:border-l-0 rounded-none shadow-2xl xl:shadow-none h-screen ${
           isMobileSidebarOpen ? 'w-72 max-w-[85vw]' : (isCollapsed ? 'w-20 xl:w-20' : 'w-72 xl:w-72')
         }`} 
       >

@@ -399,6 +399,7 @@ button:disabled,
 .sidebar {
   transform: translate3d(100%, 0, 0); /* Hidden by default on mobile/tablet */
   width: 18rem; /* Default wide width */
+  background-color: #061520;
   will-change: transform, width;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
