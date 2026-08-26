@@ -609,121 +609,203 @@ export default function RoomSidebar({
 
       {/* Permissions Modal for Host */}
       {modPermissionsTarget && mounted && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 p-4 backdrop-blur-2xl animate-fadeIn" dir="rtl">
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/15 bg-[#0c1220] p-6 text-right shadow-[0_25px_70px_rgba(0,0,0,0.85),0_0_30px_rgba(229,9,20,0.2)]">
-            <header className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-red-600/15 text-red-500 border border-red-500/30">
-                  <i className="fa-solid fa-shield-halved text-base" />
+        <div 
+          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 sm:p-6 backdrop-blur-xl animate-fadeIn" 
+          dir="rtl"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setModPermissionsTarget(null);
+          }}
+        >
+          <div 
+            className="relative m-auto flex w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-white/15 bg-[#090e1d]/95 p-6 sm:p-8 text-right shadow-[0_30px_90px_rgba(0,0,0,0.9),0_0_50px_rgba(229,9,20,0.2)] backdrop-blur-2xl animate-scaleIn"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Ambient Background Glows */}
+            <div className="absolute -top-24 -right-24 size-56 rounded-full bg-red-600/15 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 size-56 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
+
+            <header className="relative z-10 mb-6 flex items-center justify-between border-b border-white/10 pb-5">
+              <div className="flex items-center gap-3.5">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-red-600/20 text-red-400 border border-red-500/35 shadow-[0_0_25px_rgba(229,9,20,0.3)]">
+                  <i className="fa-solid fa-shield-halved text-xl" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">إدارة صلاحيات المشرف</h3>
-                  <p className="mt-0.5 text-xs font-semibold text-slate-400">{modPermissionsTarget.name}</p>
+                  <h3 className="text-lg font-black text-white">إدارة صلاحيات المشرف</h3>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-0.5 text-xs font-bold text-slate-300">
+                      <i className="fa-solid fa-user text-[10px] text-slate-400" />
+                      <span>{modPermissionsTarget.name}</span>
+                    </span>
+                    <span className="text-[11px] font-semibold text-slate-400">تحديد صلاحيات التحكم بالغرفة</span>
+                  </div>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setModPermissionsTarget(null)}
-                className="flex size-8 cursor-pointer items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white"
+                className="flex size-9 cursor-pointer items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all"
+                aria-label="إغلاق"
               >
-                <i className="fa-solid fa-xmark text-sm" aria-hidden="true" />
+                <i className="fa-solid fa-xmark text-base" aria-hidden="true" />
               </button>
             </header>
 
-            <div className="space-y-2.5 py-1">
-              <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:bg-white/[0.06] select-none">
-                <span className="text-xs font-bold text-slate-200">صلاحية طرد الأعضاء (Kick)</span>
+            <div className="relative z-10 space-y-3 py-1">
+              {/* Kick Permission */}
+              <div 
+                onClick={() => setPermissionsState((prev) => ({ ...prev, canKick: !prev.canKick }))}
+                className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-4.5 transition-all hover:bg-white/[0.06] hover:border-white/20 select-none group"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 text-orange-400 border border-orange-500/25 group-hover:scale-105 transition-transform">
+                    <i className="fa-solid fa-user-xmark text-base" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">صلاحية طرد الأعضاء (Kick)</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">السماح بطرد أي مشارك مؤقتاً وإخراجه من الجلسة</p>
+                  </div>
+                </div>
                 <button
                   type="button"
                   role="switch"
                   dir="ltr"
                   aria-checked={permissionsState.canKick}
-                  onClick={() => setPermissionsState((prev) => ({ ...prev, canKick: !prev.canKick }))}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    permissionsState.canKick ? 'bg-red-600' : 'bg-slate-700'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPermissionsState((prev) => ({ ...prev, canKick: !prev.canKick }));
+                  }}
+                  className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none shadow-inner ${
+                    permissionsState.canKick ? 'bg-red-600 shadow-[0_0_15px_rgba(229,9,20,0.5)]' : 'bg-slate-700/80'
                   }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                    className={`pointer-events-none inline-block size-6 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
                       permissionsState.canKick ? 'translate-x-5' : 'translate-x-0'
                     }`}
                   />
                 </button>
-              </label>
+              </div>
 
-              <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:bg-white/[0.06] select-none">
-                <span className="text-xs font-bold text-slate-200">صلاحية حظر الأعضاء أبداً (Ban Forever)</span>
+              {/* Ban Permission */}
+              <div 
+                onClick={() => setPermissionsState((prev) => ({ ...prev, canBan: !prev.canBan }))}
+                className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-4.5 transition-all hover:bg-white/[0.06] hover:border-white/20 select-none group"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-rose-500/15 text-rose-400 border border-rose-500/25 group-hover:scale-105 transition-transform">
+                    <i className="fa-solid fa-ban text-base" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">صلاحية الحظر الأبدي (Ban Forever)</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">منع العضو نهائياً من العودة للغرفة مستقبلاً</p>
+                  </div>
+                </div>
                 <button
                   type="button"
                   role="switch"
                   dir="ltr"
                   aria-checked={permissionsState.canBan}
-                  onClick={() => setPermissionsState((prev) => ({ ...prev, canBan: !prev.canBan }))}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    permissionsState.canBan ? 'bg-red-600' : 'bg-slate-700'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPermissionsState((prev) => ({ ...prev, canBan: !prev.canBan }));
+                  }}
+                  className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none shadow-inner ${
+                    permissionsState.canBan ? 'bg-red-600 shadow-[0_0_15px_rgba(229,9,20,0.5)]' : 'bg-slate-700/80'
                   }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                    className={`pointer-events-none inline-block size-6 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
                       permissionsState.canBan ? 'translate-x-5' : 'translate-x-0'
                     }`}
                   />
                 </button>
-              </label>
+              </div>
 
-              <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:bg-white/[0.06] select-none">
-                <span className="text-xs font-bold text-slate-200">التحكم بالتقديم والتأخير (Seek / Playback)</span>
+              {/* Seek / Playback Permission */}
+              <div 
+                onClick={() => setPermissionsState((prev) => ({ ...prev, canSeek: !prev.canSeek }))}
+                className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-4.5 transition-all hover:bg-white/[0.06] hover:border-white/20 select-none group"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/25 group-hover:scale-105 transition-transform">
+                    <i className="fa-solid fa-forward-step text-base" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">التحكم بالتقديم والتأخير (Seek / Playback)</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">تقديم، تأخير، وإيقاف وتشغيل الفيديو لحظياً للجميع</p>
+                  </div>
+                </div>
                 <button
                   type="button"
                   role="switch"
                   dir="ltr"
                   aria-checked={permissionsState.canSeek}
-                  onClick={() => setPermissionsState((prev) => ({ ...prev, canSeek: !prev.canSeek }))}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    permissionsState.canSeek ? 'bg-red-600' : 'bg-slate-700'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPermissionsState((prev) => ({ ...prev, canSeek: !prev.canSeek }));
+                  }}
+                  className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none shadow-inner ${
+                    permissionsState.canSeek ? 'bg-red-600 shadow-[0_0_15px_rgba(229,9,20,0.5)]' : 'bg-slate-700/80'
                   }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                    className={`pointer-events-none inline-block size-6 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
                       permissionsState.canSeek ? 'translate-x-5' : 'translate-x-0'
                     }`}
                   />
                 </button>
-              </label>
+              </div>
 
-              <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:bg-white/[0.06] select-none">
-                <span className="text-xs font-bold text-slate-200">تغيير الفيلم أو الحلقة (Change Media)</span>
+              {/* Change Media Permission */}
+              <div 
+                onClick={() => setPermissionsState((prev) => ({ ...prev, canChangeMedia: !prev.canChangeMedia }))}
+                className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-4.5 transition-all hover:bg-white/[0.06] hover:border-white/20 select-none group"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/25 group-hover:scale-105 transition-transform">
+                    <i className="fa-solid fa-film text-base" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">تغيير العمل المعروض (Change Media)</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">البحث واختيار أفلام ومسلسلات وحلقات جديدة للبث</p>
+                  </div>
+                </div>
                 <button
                   type="button"
                   role="switch"
                   dir="ltr"
                   aria-checked={permissionsState.canChangeMedia}
-                  onClick={() => setPermissionsState((prev) => ({ ...prev, canChangeMedia: !prev.canChangeMedia }))}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    permissionsState.canChangeMedia ? 'bg-red-600' : 'bg-slate-700'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPermissionsState((prev) => ({ ...prev, canChangeMedia: !prev.canChangeMedia }));
+                  }}
+                  className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none shadow-inner ${
+                    permissionsState.canChangeMedia ? 'bg-red-600 shadow-[0_0_15px_rgba(229,9,20,0.5)]' : 'bg-slate-700/80'
                   }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                    className={`pointer-events-none inline-block size-6 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
                       permissionsState.canChangeMedia ? 'translate-x-5' : 'translate-x-0'
                     }`}
                   />
                 </button>
-              </label>
+              </div>
             </div>
 
-            <footer className="mt-5 flex gap-2.5 border-t border-white/10 pt-4">
+            <footer className="relative z-10 mt-6 flex gap-3 border-t border-white/10 pt-5">
               <button
                 type="button"
                 onClick={() => void handleSaveModeratorPermissions()}
-                className="flex-1 cursor-pointer rounded-xl bg-red-600 py-3 text-xs font-black text-white shadow-lg shadow-red-600/30 hover:bg-red-700 active:scale-95 transition-all"
+                className="flex-1 cursor-pointer rounded-2xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 py-3.5 text-sm font-black text-white shadow-[0_8px_25px_rgba(229,9,20,0.4)] active:scale-[0.98] transition-all"
               >
                 حفظ الصلاحيات
               </button>
               <button
                 type="button"
                 onClick={() => setModPermissionsTarget(null)}
-                className="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-xs font-bold text-slate-300 hover:bg-white/10 active:scale-95 transition-all"
+                className="cursor-pointer rounded-2xl border border-white/10 bg-white/5 px-6 py-3.5 text-sm font-bold text-slate-300 hover:bg-white/10 active:scale-[0.98] transition-all"
               >
                 إلغاء
               </button>

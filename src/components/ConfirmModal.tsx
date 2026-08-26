@@ -85,7 +85,7 @@ export default function ConfirmModal({
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4 backdrop-blur-xl animate-fadeIn"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-xl animate-fadeIn"
       dir="rtl"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onCancel();
@@ -98,7 +98,7 @@ export default function ConfirmModal({
         aria-labelledby={titleId}
         aria-describedby={messageId}
         tabIndex={-1}
-        className="relative w-full max-w-md scale-100 overflow-hidden rounded-3xl border border-white/15 bg-[#0d1322]/95 p-6 text-right shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_30px_rgba(229,9,20,0.25)] transition-all sm:p-8"
+        className="relative m-auto w-full max-w-lg scale-100 overflow-hidden rounded-3xl border border-white/15 bg-[#090e1d]/95 p-6 text-right shadow-[0_30px_90px_rgba(0,0,0,0.9),0_0_40px_rgba(229,9,20,0.25)] backdrop-blur-2xl transition-all sm:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Glowing Gradient Line */}
