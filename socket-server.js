@@ -54,23 +54,18 @@ function loadReactionsFromDisk() {
   }
 }
 
-let reactionsSaveTimeout = null;
 function saveReactionsToDisk() {
-  if (reactionsSaveTimeout) return;
-  reactionsSaveTimeout = setTimeout(() => {
-    reactionsSaveTimeout = null;
-    try {
-      const obj = {};
-      for (const [msgId, reactions] of messageReactions.entries()) {
-        if (reactions && Object.keys(reactions).length > 0) {
-          obj[msgId] = reactions;
-        }
+  try {
+    const obj = {};
+    for (const [msgId, reactions] of messageReactions.entries()) {
+      if (reactions && Object.keys(reactions).length > 0) {
+        obj[msgId] = reactions;
       }
-      fs.writeFileSync(REACTIONS_STORAGE_PATH, JSON.stringify(obj), 'utf8');
-    } catch (err) {
-      console.error('Failed to save reactions to disk:', err);
     }
-  }, 1000);
+    fs.writeFileSync(REACTIONS_STORAGE_PATH, JSON.stringify(obj), 'utf8');
+  } catch (err) {
+    console.error('Failed to save reactions to disk:', err);
+  }
 }
 
 loadReactionsFromDisk();
