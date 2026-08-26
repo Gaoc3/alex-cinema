@@ -398,10 +398,10 @@ button:disabled,
 
 .sidebar {
   transform: translate3d(100%, 0, 0); /* Hidden by default on mobile/tablet */
-  width: 18rem; /* Default wide width */
+  width: 15rem; /* 240px matching authentic compact design */
   background-color: #061520;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.65), -3px 0 10px rgba(0, 0, 0, 0.4);
+  border: none !important;
+  box-shadow: -15px 0 35px rgba(0, 0, 0, 0.85), -4px 0 12px rgba(0, 0, 0, 0.55);
   will-change: transform, width;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -561,17 +561,17 @@ body.preload nav#navbar {
 
   /* EXPANDED STATE: Only when body has .sidebar-expanded */
   body.sidebar-expanded .sidebar {
-    width: 18rem !important; /* 288px */
+    width: 15rem !important; /* 240px */
   }
 
   body.sidebar-expanded nav#navbar {
-    right: 18rem !important;
+    right: 15rem !important;
   }
 
   body.sidebar-expanded main:not(.auth-main),
   body.sidebar-expanded nav:not(.auth-nav),
   body.sidebar-expanded footer:not(.auth-footer) {
-    padding-right: 18rem !important;
+    padding-right: 15rem !important;
   }
 
   body.sidebar-expanded .sidebar-label,
@@ -605,7 +605,7 @@ body.sidebar-open {
 
 body.sidebar-open .sidebar {
   transform: translate3d(0, 0, 0) !important;
-  width: 18rem !important;
+  width: 15rem !important;
 }
 
 body.sidebar-open .sidebar-label,
