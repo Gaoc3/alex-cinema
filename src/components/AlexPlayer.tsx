@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Hls from 'hls.js';
+import toast from 'react-hot-toast';
 import type { WatchRoomHook } from '@/hooks/useWatchRoom';
 import {
   findActiveIntroOrOutro,
@@ -498,7 +499,13 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         hls.loadSource(currentStreamUrl);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          if (shouldResumePlaybackRef.current) {
+          if (roomHook) {
+            if (roomState?.playing) {
+              video.play().catch(() => {});
+            } else {
+              video.pause();
+            }
+          } else if (shouldResumePlaybackRef.current) {
             video.play().catch(() => {});
           }
         });
@@ -661,31 +668,29 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   // Sync play/pause when user triggers manually
   const togglePlay = () => {
     const video = videoRef.current;
-    if (video) {
-      if (roomHook && !canControlPlayback) {
-        if (roomState?.playing) {
-          const elapsed = Math.max(0, (Date.now() - (roomState.receivedAt || Date.now())) / 1000);
-          video.currentTime = Math.max(0, roomState.time + elapsed);
-          video.play().catch(() => setIsPaused(true));
-        } else {
-          video.pause();
-        }
-        return;
-      }
-      if (video.paused || video.ended) {
-        video.play().catch(() => setIsPaused(true));
-        resetControlsTimer();
-      } else {
-        video.pause();
-        setShowControls(true);
-        if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-      }
+    if (!video) return;
+
+    if (roomHook && !canControlPlayback) {
+      toast.error('التحكم بالمشغل وتشغيل/إيقاف الفيديو مخصص للمضيف والمشرفين فقط 🔒', { id: 'room-no-seek-perm' });
+      return;
+    }
+
+    if (video.paused || video.ended) {
+      video.play().catch(() => setIsPaused(true));
+      resetControlsTimer();
+    } else {
+      video.pause();
+      setShowControls(true);
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     }
   };
 
   // Gesture Handlers
   const handleSeekForward = (seconds: number = 10) => {
-    if (roomHook && !canControlPlayback) return;
+    if (roomHook && !canControlPlayback) {
+      toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط 🔒', { id: 'room-no-seek-perm' });
+      return;
+    }
     const video = videoRef.current;
     if (video) {
       video.currentTime = Math.min(video.duration || 0, video.currentTime + seconds);
@@ -695,7 +700,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   };
 
   const handleSeekBackward = (seconds: number = 10) => {
-    if (roomHook && !canControlPlayback) return;
+    if (roomHook && !canControlPlayback) {
+      toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط 🔒', { id: 'room-no-seek-perm' });
+      return;
+    }
     const video = videoRef.current;
     if (video) {
       video.currentTime = Math.max(0, video.currentTime - seconds);
@@ -863,7 +871,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   // Seek time
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (roomHook && !canControlPlayback) return;
+    if (roomHook && !canControlPlayback) {
+      toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط 🔒', { id: 'room-no-seek-perm' });
+      return;
+    }
     const video = videoRef.current;
     if (video) {
       const newTime = parseFloat(e.target.value);
@@ -1058,8 +1069,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
       const resumeSeek = () => {
         video.currentTime = savedTime;
-        if (wasPlaying) {
+        const shouldPlay = roomHook ? Boolean(roomState?.playing) : wasPlaying;
+        if (shouldPlay) {
           video.play().catch(() => {});
+        } else {
+          video.pause();
         }
         video.removeEventListener('loadedmetadata', resumeSeek);
         if (qualityRestoreRef.current === resumeSeek) qualityRestoreRef.current = null;
@@ -1171,26 +1185,28 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         case ' ':
           e.preventDefault();
           if (roomHook && !canControlPlayback) {
-            if (roomState?.playing) {
-              const elapsed = Math.max(0, (Date.now() - (roomState.receivedAt || Date.now())) / 1000);
-              video.currentTime = Math.max(0, roomState.time + elapsed);
-              video.play().catch(() => setIsPaused(true));
-            } else {
-              video.pause();
-            }
-          } else if (video.paused || video.ended) {
+            toast.error('التحكم بالمشغل وتشغيل/إيقاف الفيديو مخصص للمضيف والمشرفين فقط 🔒', { id: 'room-no-seek-perm' });
+            break;
+          }
+          if (video.paused || video.ended) {
             video.play().catch(() => setIsPaused(true));
           } else {
             video.pause();
           }
           break;
         case 'ArrowLeft':
-          if (roomHook && !canControlPlayback) break;
+          if (roomHook && !canControlPlayback) {
+            toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط 🔒', { id: 'room-no-seek-perm' });
+            break;
+          }
           e.preventDefault();
           video.currentTime = Math.max(0, video.currentTime - 10);
           break;
         case 'ArrowRight':
-          if (roomHook && !canControlPlayback) break;
+          if (roomHook && !canControlPlayback) {
+            toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط 🔒', { id: 'room-no-seek-perm' });
+            break;
+          }
           e.preventDefault();
           video.currentTime = Math.min(video.duration, video.currentTime + 10);
           break;
@@ -1619,7 +1635,9 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         className={`relative select-none group/player transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] min-h-[200px] w-full bg-black cursor-pointer ${
           isFullscreen 
             ? 'h-full rounded-none border-none shadow-none'
-            : 'rounded-3xl overflow-visible shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 aspect-video'
+            : roomHook
+              ? 'rounded-3xl overflow-visible shadow-[0_0_50px_rgba(229,9,20,0.15)] border border-white/10 aspect-video max-h-[min(48svh,390px)] sm:max-h-[min(52svh,430px)]'
+              : 'rounded-3xl overflow-visible shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 aspect-video'
         }`}
         style={{ aspectRatio: isFullscreen ? 'auto' : 16/9 }}
         dir="ltr"
@@ -1741,7 +1759,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               setIsWaiting(false);
               setIsPaused(false);
             }}
-            autoPlay
+            autoPlay={!roomHook}
             playsInline
           >
             {vttTranslations.map((track) => (
@@ -1899,9 +1917,12 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               max={duration || 100}
               value={currentTime}
               onChange={handleProgressChange}
+              disabled={Boolean(roomHook && !canControlPlayback)}
               aria-label="موضع تشغيل الفيديو"
               style={progressStyle}
-              className="flex-grow h-1 md:h-1.5 rounded-full appearance-none cursor-pointer accent-alex-primary hover:h-1.5 md:hover:h-2 transition-all outline-none border-0 shadow-none bg-transparent"
+              className={`flex-grow h-1 md:h-1.5 rounded-full appearance-none accent-alex-primary transition-all outline-none border-0 shadow-none bg-transparent ${
+                roomHook && !canControlPlayback ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:h-1.5 md:hover:h-2'
+              }`}
             />
             <span className="text-[10px] md:text-xs font-en font-bold text-gray-300 min-w-[32px] md:min-w-[45px] text-right">
               {formatTime(duration)}
