@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import toast from 'react-hot-toast';
@@ -195,6 +196,23 @@ export default function RoomClientWrapper({
       };
     }
   }, []);
+
+  const [isMediaSwitcherOpen, setIsMediaSwitcherOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMediaSwitcherOpen) {
+        setIsMediaSwitcherOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMediaSwitcherOpen]);
 
   const bgImage = video ? getVideoImageUrl(video) : null;
   const uniqueMembers = React.useMemo(() => {
@@ -482,23 +500,85 @@ export default function RoomClientWrapper({
                 </div>
 
                 {canChangeMedia && (
-                  <details className="group rounded-2xl border border-white/10 bg-[#0a0f1d]/85 shadow-lg backdrop-blur-xl transition-all">
-                    <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 text-sm font-extrabold marker:content-none hover:bg-white/[0.02]">
-                      <span className="flex items-center gap-2.5 text-white">
-                        <i className="fa-solid fa-film text-red-500" aria-hidden="true" />
-                        <span>تغيير الفيلم أو الحلقة المعروضة</span>
-                      </span>
-                      <i className="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
-                    </summary>
-                    <div className="border-t border-white/10 p-5">
-                      <LobbySearch roomId={roomId} onVideoSelected={roomHook.changeVideo} />
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0a0f1d]/85 p-3.5 shadow-lg backdrop-blur-xl transition-all">
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 items-center justify-center rounded-xl bg-red-600/15 text-red-500 border border-red-500/25 shadow-[0_0_20px_rgba(229,9,20,0.25)]">
+                        <i className="fa-solid fa-film text-sm" />
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-black text-white">تغيير العمل المعروض</p>
+                        <p className="text-[10px] font-semibold text-slate-400">
+                          ابحث عن فيلم أو مسلسل آخر للبث الفوري لجميع المشاركين
+                        </p>
+                      </div>
                     </div>
-                  </details>
+                    <button
+                      type="button"
+                      onClick={() => setIsMediaSwitcherOpen(true)}
+                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-red-600/30 hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                    >
+                      <i className="fa-solid fa-magnifying-glass text-xs" />
+                      <span>فتح مكتبة العرض 🎬</span>
+                    </button>
+                  </div>
                 )}
               </div>
             )}
           </section>
         </div>
+
+        {/* Cinema Library Modal Drawer */}
+        {isMediaSwitcherOpen && mounted && typeof document !== 'undefined' && createPortal(
+          <div
+            className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 p-3 sm:p-5 lg:p-6 backdrop-blur-2xl animate-fadeIn"
+            dir="rtl"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsMediaSwitcherOpen(false);
+            }}
+          >
+            <div
+              className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/15 bg-[#080d1a] shadow-[0_25px_80px_rgba(0,0,0,0.9),0_0_40px_rgba(229,9,20,0.2)] animate-scaleIn text-right"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="media-switcher-title"
+            >
+              {/* Modal Header */}
+              <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-xl bg-red-600/15 text-red-500 border border-red-500/25 shadow-[0_0_20px_rgba(229,9,20,0.25)]">
+                    <i className="fa-solid fa-clapperboard text-sm" />
+                  </div>
+                  <div>
+                    <h3 id="media-switcher-title" className="text-base font-black text-white">
+                      مكتبة عروض الغرفة
+                    </h3>
+                    <p className="text-xs font-semibold text-slate-400">
+                      اختر أي فيلم أو مسلسل ليبدأ البث المباشر فوراً لجميع الحاضرين
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMediaSwitcherOpen(false)}
+                  className="flex size-9 cursor-pointer items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all"
+                  aria-label="إغلاق"
+                >
+                  <i className="fa-solid fa-xmark text-base" />
+                </button>
+              </header>
+
+              {/* Modal Body */}
+              <div className="custom-scrollbar flex-1 overflow-y-auto p-4 sm:p-6">
+                <LobbySearch
+                  roomId={roomId}
+                  onVideoSelected={roomHook.changeVideo}
+                  onClose={() => setIsMediaSwitcherOpen(false)}
+                />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
       </div>
     </div>
   );
