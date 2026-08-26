@@ -537,10 +537,11 @@ export default function RoomClientWrapper({
             }}
           >
             <div
-              className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/15 bg-[#080d1a] shadow-[0_25px_80px_rgba(0,0,0,0.9),0_0_40px_rgba(229,9,20,0.2)] animate-scaleIn text-right"
+              className="relative m-auto flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/15 bg-[#080d1a] shadow-[0_25px_80px_rgba(0,0,0,0.9),0_0_40px_rgba(229,9,20,0.2)] animate-scaleIn text-right"
               role="dialog"
               aria-modal="true"
               aria-labelledby="media-switcher-title"
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
               <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
