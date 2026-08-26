@@ -26,6 +26,11 @@ export interface RoomMember {
   permissions?: MemberPermissions;
 }
 
+export interface ChatMessageReactionUser {
+  id: string;
+  name: string;
+}
+
 export interface ChatMessage {
   id: string;
   senderId: string | null;
@@ -45,6 +50,7 @@ export interface ChatMessage {
     text: string;
     isDeleted: boolean;
   } | null;
+  reactions?: Record<string, ChatMessageReactionUser[]>;
 }
 
 interface ChatSendResult {
@@ -74,6 +80,7 @@ export interface WatchRoomHook {
   sendChatMessage: (text: string, replyToId?: string) => Promise<ChatSendResult>;
   editChatMessage: (messageId: string, text: string) => Promise<ChatSendResult>;
   deleteChatMessage: (messageId: string) => Promise<ChatSendResult>;
+  reactToMessage: (messageId: string, emoji: string) => Promise<ChatSendResult>;
   remoteVideoId: string | null;
   remoteEpisodeId: string | null;
   isKicked: boolean;
@@ -437,6 +444,33 @@ export function useWatchRoom(
       setMessages((current) => tombstoneMessage(current, messageId, deletedAt));
     });
 
+    newSocket.on('chat_message_reacted', (data: { messageId?: string; emoji?: string; userId?: string; userName?: string }) => {
+      const messageId = data?.messageId;
+      const emoji = data?.emoji;
+      const userId = data?.userId;
+      const userName = data?.userName;
+      if (!messageId || !emoji || !userId) return;
+
+      setMessages((current) => current.map((msg) => {
+        if (msg.id !== messageId) return msg;
+        const currentReactions = { ...(msg.reactions || {}) };
+        const existingUsers = currentReactions[emoji] ? [...currentReactions[emoji]] : [];
+        const hasReacted = existingUsers.some((u) => u.id === userId);
+        let updatedUsers: ChatMessageReactionUser[];
+        if (hasReacted) {
+          updatedUsers = existingUsers.filter((u) => u.id !== userId);
+        } else {
+          updatedUsers = [...existingUsers, { id: userId, name: userName || 'مستخدم' }];
+        }
+        if (updatedUsers.length > 0) {
+          currentReactions[emoji] = updatedUsers;
+        } else {
+          delete currentReactions[emoji];
+        }
+        return { ...msg, reactions: currentReactions };
+      }));
+    });
+
     newSocket.on('host_left', () => {
       setRoomState((current) => current ? { ...current, playing: false } : null);
     });
@@ -666,6 +700,18 @@ export function useWatchRoom(
     });
   }, [isHost]);
 
+  const reactToMessage = useCallback(async (messageId: string, emoji: string): Promise<ChatSendResult> => {
+    const activeSocket = socketRef.current;
+    if (!activeSocket?.connected) return { ok: false, error: 'غير متصل بالغرفة' };
+    if (!messageId || !emoji) return { ok: false, error: 'بيانات التفاعل غير صالحة' };
+
+    return new Promise((resolve) => {
+      activeSocket.emit('chat_react', { messageId, emoji }, (result: ChatSendResult) => {
+        resolve(result?.ok ? { ok: true } : { ok: false, error: result?.error || 'تعذر إرسال التفاعل' });
+      });
+    });
+  }, []);
+
   return {
     connectionState,
     isHost,
@@ -686,6 +732,7 @@ export function useWatchRoom(
     sendChatMessage,
     editChatMessage,
     deleteChatMessage,
+    reactToMessage,
     remoteVideoId,
     remoteEpisodeId,
     isKicked,

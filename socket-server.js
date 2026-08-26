@@ -760,6 +760,34 @@ async function start() {
       }
     });
 
+    socket.on('chat_react', async (payload, callback) => {
+      try {
+        const room = rooms.get(roomId);
+        const messageId = payload && payload.messageId;
+        const emoji = payload && payload.emoji;
+        if (!room || !socket.data.joinedRoom) {
+          safeAck(callback, { ok: false, error: 'يجب دخول الغرفة أولاً' });
+          return;
+        }
+        if (typeof messageId !== 'string' || typeof emoji !== 'string' || !emoji) {
+          safeAck(callback, { ok: false, error: 'بيانات التفاعل غير صالحة' });
+          return;
+        }
+        const userId = socket.data.userId || socket.data.senderIdentity || socket.id;
+        const userName = socket.data.name || 'مستخدم';
+        io.to(roomId).emit('chat_message_reacted', {
+          messageId,
+          emoji,
+          userId,
+          userName,
+        });
+        safeAck(callback, { ok: true, messageId, emoji });
+      } catch (error) {
+        console.error('chat_react failed:', error);
+        safeAck(callback, { ok: false, error: 'تعذر إرسال التفاعل' });
+      }
+    });
+
     socket.on('sync_update', (payload) => {
       const room = rooms.get(roomId);
       const time = Number(payload && payload.time);

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import ConfirmModal from '@/components/ConfirmModal';
 import type { ChatMessage, MemberPermissions, RoomConnectionState, RoomMember } from '@/hooks/useWatchRoom';
@@ -18,6 +19,7 @@ interface RoomSidebarProps {
   sendChatMessage: (text: string, replyToId?: string) => Promise<{ ok: boolean; error?: string }>;
   editChatMessage: (messageId: string, text: string) => Promise<{ ok: boolean; error?: string }>;
   deleteChatMessage: (messageId: string) => Promise<{ ok: boolean; error?: string }>;
+  reactToMessage?: (messageId: string, emoji: string) => Promise<{ ok: boolean; error?: string }>;
   currentUserId: string | null;
   isHost: boolean;
   userRole?: 'host' | 'moderator' | 'member';
@@ -61,6 +63,7 @@ export default function RoomSidebar({
   sendChatMessage,
   editChatMessage,
   deleteChatMessage,
+  reactToMessage,
   currentUserId,
   isHost,
   userRole = 'member',
@@ -83,12 +86,19 @@ export default function RoomSidebar({
   const [kickMemberTarget, setKickMemberTarget] = useState<RoomMember | null>(null);
   const [banMemberTarget, setBanMemberTarget] = useState<RoomMember | null>(null);
   const [modPermissionsTarget, setModPermissionsTarget] = useState<RoomMember | null>(null);
+  const [openMemberMenuId, setOpenMemberMenuId] = useState<string | null>(null);
+  const [reactingMessageId, setReactingMessageId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [permissionsState, setPermissionsState] = useState<MemberPermissions>({
     canKick: false,
     canBan: false,
     canSeek: true,
     canChangeMedia: false,
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
@@ -602,25 +612,30 @@ export default function RoomSidebar({
       />
 
       {/* Permissions Modal for Host */}
-      {modPermissionsTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" dir="rtl">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] p-5 shadow-2xl">
+      {modPermissionsTarget && mounted && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 p-4 backdrop-blur-2xl animate-fadeIn" dir="rtl">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/15 bg-[#0c1220] p-6 text-right shadow-[0_25px_70px_rgba(0,0,0,0.85),0_0_30px_rgba(229,9,20,0.2)]">
             <header className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
-              <div>
-                <h3 className="text-base font-black text-white">إدارة صلاحيات المشرف</h3>
-                <p className="mt-0.5 text-xs text-slate-400">{modPermissionsTarget.name}</p>
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-10 items-center justify-center rounded-xl bg-red-600/15 text-red-500 border border-red-500/30">
+                  <i className="fa-solid fa-shield-halved text-base" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">إدارة صلاحيات المشرف</h3>
+                  <p className="mt-0.5 text-xs font-semibold text-slate-400">{modPermissionsTarget.name}</p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setModPermissionsTarget(null)}
-                className="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white"
+                className="flex size-8 cursor-pointer items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white"
               >
-                <i className="fa-solid fa-xmark" aria-hidden="true" />
+                <i className="fa-solid fa-xmark text-sm" aria-hidden="true" />
               </button>
             </header>
 
-            <div className="space-y-3 py-2">
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5 transition hover:bg-white/10 select-none">
+            <div className="space-y-2.5 py-1">
+              <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:bg-white/[0.06] select-none">
                 <span className="text-xs font-bold text-slate-200">صلاحية طرد الأعضاء (Kick)</span>
                 <button
                   type="button"
@@ -628,8 +643,8 @@ export default function RoomSidebar({
                   dir="ltr"
                   aria-checked={permissionsState.canKick}
                   onClick={() => setPermissionsState((prev) => ({ ...prev, canKick: !prev.canKick }))}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
-                    permissionsState.canKick ? 'bg-[#e50914]' : 'bg-slate-700'
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    permissionsState.canKick ? 'bg-red-600' : 'bg-slate-700'
                   }`}
                 >
                   <span
@@ -640,7 +655,7 @@ export default function RoomSidebar({
                 </button>
               </label>
 
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5 transition hover:bg-white/10 select-none">
+              <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:bg-white/[0.06] select-none">
                 <span className="text-xs font-bold text-slate-200">صلاحية حظر الأعضاء أبداً (Ban Forever)</span>
                 <button
                   type="button"
@@ -648,8 +663,8 @@ export default function RoomSidebar({
                   dir="ltr"
                   aria-checked={permissionsState.canBan}
                   onClick={() => setPermissionsState((prev) => ({ ...prev, canBan: !prev.canBan }))}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
-                    permissionsState.canBan ? 'bg-[#e50914]' : 'bg-slate-700'
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    permissionsState.canBan ? 'bg-red-600' : 'bg-slate-700'
                   }`}
                 >
                   <span
@@ -660,7 +675,7 @@ export default function RoomSidebar({
                 </button>
               </label>
 
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5 transition hover:bg-white/10 select-none">
+              <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:bg-white/[0.06] select-none">
                 <span className="text-xs font-bold text-slate-200">التحكم بالتقديم والتأخير (Seek / Playback)</span>
                 <button
                   type="button"
@@ -668,8 +683,8 @@ export default function RoomSidebar({
                   dir="ltr"
                   aria-checked={permissionsState.canSeek}
                   onClick={() => setPermissionsState((prev) => ({ ...prev, canSeek: !prev.canSeek }))}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
-                    permissionsState.canSeek ? 'bg-[#e50914]' : 'bg-slate-700'
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    permissionsState.canSeek ? 'bg-red-600' : 'bg-slate-700'
                   }`}
                 >
                   <span
@@ -680,7 +695,7 @@ export default function RoomSidebar({
                 </button>
               </label>
 
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5 transition hover:bg-white/10 select-none">
+              <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:bg-white/[0.06] select-none">
                 <span className="text-xs font-bold text-slate-200">تغيير الفيلم أو الحلقة (Change Media)</span>
                 <button
                   type="button"
@@ -688,8 +703,8 @@ export default function RoomSidebar({
                   dir="ltr"
                   aria-checked={permissionsState.canChangeMedia}
                   onClick={() => setPermissionsState((prev) => ({ ...prev, canChangeMedia: !prev.canChangeMedia }))}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
-                    permissionsState.canChangeMedia ? 'bg-[#e50914]' : 'bg-slate-700'
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    permissionsState.canChangeMedia ? 'bg-red-600' : 'bg-slate-700'
                   }`}
                 >
                   <span
@@ -701,24 +716,25 @@ export default function RoomSidebar({
               </label>
             </div>
 
-            <footer className="mt-5 flex gap-2 border-t border-white/10 pt-4">
+            <footer className="mt-5 flex gap-2.5 border-t border-white/10 pt-4">
               <button
                 type="button"
                 onClick={() => void handleSaveModeratorPermissions()}
-                className="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white hover:bg-red-700 cursor-pointer"
+                className="flex-1 cursor-pointer rounded-xl bg-red-600 py-3 text-xs font-black text-white shadow-lg shadow-red-600/30 hover:bg-red-700 active:scale-95 transition-all"
               >
                 حفظ الصلاحيات
               </button>
               <button
                 type="button"
                 onClick={() => setModPermissionsTarget(null)}
-                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-bold text-slate-300 hover:bg-white/10 cursor-pointer"
+                className="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-xs font-bold text-slate-300 hover:bg-white/10 active:scale-95 transition-all"
               >
                 إلغاء
               </button>
             </footer>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <section
@@ -828,6 +844,44 @@ export default function RoomSidebar({
                               <time className="text-[10px] text-slate-500" dateTime={message.createdAt}>
                                 {formatMessageTime(message.createdAt)}
                               </time>
+
+                              {/* WhatsApp/Instagram Message Reaction Trigger */}
+                              {!message.isDeleted && (
+                                <div className="relative">
+                                  <button
+                                    type="button"
+                                    onClick={() => setReactingMessageId(reactingMessageId === message.id ? null : message.id)}
+                                    className="flex size-7 items-center justify-center rounded-full bg-white/[0.06] hover:bg-white/15 text-slate-400 hover:text-white transition-all cursor-pointer opacity-0 group-hover:opacity-100 max-sm:opacity-100"
+                                    title="تفاعل مع الرسالة"
+                                    aria-label="تفاعل مع الرسالة"
+                                  >
+                                    <i className="fa-regular fa-face-smile text-xs" />
+                                  </button>
+
+                                  {/* Floating WhatsApp/Instagram Emoji Bar */}
+                                  {reactingMessageId === message.id && (
+                                    <div
+                                      className="absolute -top-11 right-0 z-40 flex items-center gap-1.5 rounded-full border border-white/20 bg-[#0e1628]/95 px-2.5 py-1 shadow-[0_10px_30px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-scaleIn"
+                                    >
+                                      {['❤️', '👍', '😂', '😮', '😢', '👏', '🔥', '🍿'].map((emoji) => (
+                                        <button
+                                          key={emoji}
+                                          type="button"
+                                          onClick={() => {
+                                            setReactingMessageId(null);
+                                            if (reactToMessage) void reactToMessage(message.id, emoji);
+                                          }}
+                                          className="flex size-7 cursor-pointer items-center justify-center text-sm transition-transform hover:scale-135 active:scale-95"
+                                          title={`تفاعل بـ ${emoji}`}
+                                        >
+                                          {emoji}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
                               {(isOwner || canDelete) && (
                                 <div
                                   className="relative"
@@ -938,6 +992,33 @@ export default function RoomSidebar({
                               <p className="whitespace-pre-wrap" dir="auto">{message.text}</p>
                             )}
                           </div>
+
+                          {/* Message Reactions Badges */}
+                          {message.reactions && Object.keys(message.reactions).length > 0 && (
+                            <div className="mr-9 mt-1.5 flex flex-wrap items-center gap-1.5">
+                              {Object.entries(message.reactions).map(([emoji, users]) => {
+                                const hasReacted = users.some((u) => u.id === currentUserId);
+                                return (
+                                  <button
+                                    key={emoji}
+                                    type="button"
+                                    onClick={() => {
+                                      if (reactToMessage) void reactToMessage(message.id, emoji);
+                                    }}
+                                    className={`flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold transition-all active:scale-95 ${
+                                      hasReacted
+                                        ? 'border-red-500/60 bg-red-500/20 text-white shadow-sm shadow-red-500/30 scale-105'
+                                        : 'border-white/10 bg-white/[0.05] text-slate-300 hover:border-white/20 hover:bg-white/10'
+                                    }`}
+                                    title={users.map((u) => u.name).join('، ')}
+                                  >
+                                    <span className="text-xs">{emoji}</span>
+                                    <span className="text-[10px] font-mono font-bold text-slate-300">{users.length}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
                         </article>
                       );
                     })}
@@ -1084,7 +1165,7 @@ export default function RoomSidebar({
                 const isMemberMod = member.role === 'moderator';
 
                 return (
-                  <div key={member.id} className="flex flex-col gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.04] p-3 transition hover:bg-white/[0.06]">
+                  <div key={member.id} className="relative flex flex-col gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.04] p-3 transition hover:bg-white/[0.06]">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-2.5">
                         <span className="relative flex size-9 shrink-0 items-center justify-center">
@@ -1110,59 +1191,83 @@ export default function RoomSidebar({
                           </p>
                         </div>
                       </div>
-                    </div>
 
-                    {!isMemberHost && (canManageMembers || isHost) && (
-                      <div className="flex flex-wrap items-center justify-end gap-1.5 pt-2 border-t border-white/[0.06]">
-                        {isHost && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => openModPermissionsModal(member)}
-                              className="min-h-8 cursor-pointer rounded-lg border border-blue-400/20 bg-blue-500/10 px-2 text-[11px] font-bold text-blue-300 transition hover:bg-blue-500/20 active:scale-95"
-                              title="إدارة صلاحيات المشرف"
+                      {/* 3-dots Action Menu for Host / Moderators */}
+                      {!isMemberHost && (canManageMembers || isHost) && (
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setOpenMemberMenuId(openMemberMenuId === member.id ? null : member.id)}
+                            className="flex size-8 cursor-pointer items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                            aria-label={`إجراءات العضو ${member.name}`}
+                          >
+                            <i className="fa-solid fa-ellipsis-vertical text-sm" aria-hidden="true" />
+                          </button>
+
+                          {openMemberMenuId === member.id && (
+                            <div
+                              className="absolute left-0 top-9 z-30 min-w-40 overflow-hidden rounded-2xl border border-white/15 bg-[#0c1220] p-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.85)] backdrop-blur-2xl text-right animate-scaleIn"
                             >
-                              {isMemberMod ? 'الصلاحيات' : 'ترقية لمشرف'}
-                            </button>
-                            {isMemberMod && (
-                              <button
-                                type="button"
-                                onClick={() => void handleRemoveModeratorRole(member)}
-                                className="min-h-8 cursor-pointer rounded-lg border border-white/10 bg-white/5 px-2 text-[11px] font-bold text-slate-300 transition hover:bg-white/10 active:scale-95"
-                                title="تجريد من الإشراف"
-                              >
-                                تجريد
-                              </button>
-                            )}
-                          </>
-                        )}
+                              {isHost && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenMemberMenuId(null);
+                                    openModPermissionsModal(member);
+                                  }}
+                                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-blue-300 hover:bg-blue-500/15 transition-all text-right"
+                                >
+                                  <i className="fa-solid fa-shield-halved text-xs text-blue-400" />
+                                  <span>{isMemberMod ? 'إدارة الصلاحيات' : 'ترقية لمشرف'}</span>
+                                </button>
+                              )}
 
-                        {canManageMembers && (
-                          <>
-                            {(isHost || userPermissions.canKick) && (
-                              <button
-                                type="button"
-                                onClick={() => setKickMemberTarget(member)}
-                                className="min-h-8 cursor-pointer rounded-lg border border-amber-500/20 bg-amber-500/10 px-2.5 text-[11px] font-bold text-amber-300 transition hover:bg-amber-500/20 active:scale-95"
-                                title="طرد موقت من الغرفة"
-                              >
-                                طرد
-                              </button>
-                            )}
-                            {(isHost || userPermissions.canBan) && (
-                              <button
-                                type="button"
-                                onClick={() => setBanMemberTarget(member)}
-                                className="min-h-8 cursor-pointer rounded-lg border border-red-500/25 bg-red-500/15 px-2.5 text-[11px] font-bold text-red-300 transition hover:bg-red-500/25 active:scale-95"
-                                title="حظر أبدي من الغرفة"
-                              >
-                                حظر أبدي
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    )}
+                              {isHost && isMemberMod && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenMemberMenuId(null);
+                                    void handleRemoveModeratorRole(member);
+                                  }}
+                                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-300 hover:bg-white/10 transition-all text-right"
+                                >
+                                  <i className="fa-solid fa-user-minus text-xs text-slate-400" />
+                                  <span>تجريد من الإشراف</span>
+                                </button>
+                              )}
+
+                              {canManageMembers && (isHost || userPermissions.canKick) && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenMemberMenuId(null);
+                                    setKickMemberTarget(member);
+                                  }}
+                                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/15 transition-all text-right"
+                                >
+                                  <i className="fa-solid fa-user-xmark text-xs text-amber-400" />
+                                  <span>طرد مؤقت</span>
+                                </button>
+                              )}
+
+                              {canManageMembers && (isHost || userPermissions.canBan) && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenMemberMenuId(null);
+                                    setBanMemberTarget(member);
+                                  }}
+                                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/15 transition-all text-right"
+                                >
+                                  <i className="fa-solid fa-ban text-xs text-red-500" />
+                                  <span>حظر نهائي</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })

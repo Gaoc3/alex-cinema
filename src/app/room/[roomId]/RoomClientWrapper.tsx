@@ -426,6 +426,7 @@ export default function RoomClientWrapper({
               sendChatMessage={roomHook.sendChatMessage}
               editChatMessage={roomHook.editChatMessage}
               deleteChatMessage={roomHook.deleteChatMessage}
+              reactToMessage={roomHook.reactToMessage}
               currentUserId={currentUserId}
               isHost={isHostUser}
               userRole={roomHook.userRole}
