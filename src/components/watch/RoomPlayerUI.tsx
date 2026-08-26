@@ -49,7 +49,7 @@ function RoomPlayerContent({ video, seasons = [], episodes = [], roomHook }: Roo
   const safeVideo = video || {} as RoomVideoData;
 
   const isSeries = safeVideo.kind === '2';
-  const canChangeEpisode = Boolean(roomHook?.isHost);
+  const canChangeEpisode = Boolean(roomHook?.isHost || roomHook?.userPermissions?.canChangeMedia);
   const sortedEpisodesList = useMemo(
     () => [...safeEpisodes].sort(compareEpisodes),
     [safeEpisodes],

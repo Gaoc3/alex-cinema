@@ -86,7 +86,7 @@ export default function RoomSidebar({
   const [kickMemberTarget, setKickMemberTarget] = useState<RoomMember | null>(null);
   const [banMemberTarget, setBanMemberTarget] = useState<RoomMember | null>(null);
   const [modPermissionsTarget, setModPermissionsTarget] = useState<RoomMember | null>(null);
-  const [openMemberMenuId, setOpenMemberMenuId] = useState<string | null>(null);
+  const [memberDropdownState, setMemberDropdownState] = useState<{ member: RoomMember; top: number; left: number } | null>(null);
   const [reactingMessageId, setReactingMessageId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [permissionsState, setPermissionsState] = useState<MemberPermissions>({
@@ -157,6 +157,10 @@ export default function RoomSidebar({
     : null;
   const activeDeleteTarget = currentDeleteTarget && !currentDeleteTarget.isDeleted
     ? currentDeleteTarget
+    : null;
+
+  const activeActionMessage = openActionsId
+    ? messages.find((message) => message.id === openActionsId)
     : null;
 
   const getAudioContext = useCallback(() => {
@@ -408,11 +412,11 @@ export default function RoomSidebar({
     const top = spaceBelow >= estimatedHeight + 12
       ? bounds.bottom + 4
       : Math.max(8, bounds.top - estimatedHeight - 4);
-    const left = Math.min(
-      window.innerWidth - menuWidth - 8,
-      Math.max(8, bounds.right - menuWidth),
+    const left = Math.max(
+      8,
+      Math.min(window.innerWidth - menuWidth - 8, bounds.left),
     );
-    setActionMenuPosition({ top, left: Math.max(8, left) });
+    setActionMenuPosition({ top, left });
     setOpenActionsId(message.id);
   };
 
@@ -850,8 +854,11 @@ export default function RoomSidebar({
                                 <div className="relative">
                                   <button
                                     type="button"
-                                    onClick={() => setReactingMessageId(reactingMessageId === message.id ? null : message.id)}
-                                    className="flex size-7 items-center justify-center rounded-full bg-white/[0.06] hover:bg-white/15 text-slate-400 hover:text-white transition-all cursor-pointer opacity-0 group-hover:opacity-100 max-sm:opacity-100"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setReactingMessageId(reactingMessageId === message.id ? null : message.id);
+                                    }}
+                                    className="flex size-7 cursor-pointer items-center justify-center rounded-full bg-white/[0.06] hover:bg-white/15 text-slate-400 hover:text-white transition-all opacity-0 group-hover:opacity-100 max-sm:opacity-100"
                                     title="تفاعل مع الرسالة"
                                     aria-label="تفاعل مع الرسالة"
                                   >
@@ -860,39 +867,40 @@ export default function RoomSidebar({
 
                                   {/* Floating WhatsApp/Instagram Emoji Bar */}
                                   {reactingMessageId === message.id && (
-                                    <div
-                                      className="absolute -top-11 right-0 z-40 flex items-center gap-1.5 rounded-full border border-white/20 bg-[#0e1628]/95 px-2.5 py-1 shadow-[0_10px_30px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-scaleIn"
-                                    >
-                                      {['❤️', '👍', '😂', '😮', '😢', '👏', '🔥', '🍿'].map((emoji) => (
-                                        <button
-                                          key={emoji}
-                                          type="button"
-                                          onClick={() => {
-                                            setReactingMessageId(null);
-                                            if (reactToMessage) void reactToMessage(message.id, emoji);
-                                          }}
-                                          className="flex size-7 cursor-pointer items-center justify-center text-sm transition-transform hover:scale-135 active:scale-95"
-                                          title={`تفاعل بـ ${emoji}`}
-                                        >
-                                          {emoji}
-                                        </button>
-                                      ))}
-                                    </div>
+                                    <>
+                                      <div
+                                        className="fixed inset-0 z-30"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setReactingMessageId(null);
+                                        }}
+                                      />
+                                      <div
+                                        className="absolute -top-11 left-0 z-40 flex items-center gap-1.5 rounded-full border border-white/20 bg-[#0e1628]/95 px-2.5 py-1 shadow-[0_10px_30px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-scaleIn"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        {['❤️', '👍', '😂', '😮', '😢', '👏', '🔥', '🍿'].map((emoji) => (
+                                          <button
+                                            key={emoji}
+                                            type="button"
+                                            onClick={() => {
+                                              setReactingMessageId(null);
+                                              if (reactToMessage) void reactToMessage(message.id, emoji);
+                                            }}
+                                            className="flex size-7 cursor-pointer items-center justify-center text-sm transition-transform hover:scale-135 active:scale-95"
+                                            title={`تفاعل بـ ${emoji}`}
+                                          >
+                                            {emoji}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </>
                                   )}
                                 </div>
                               )}
 
-                              {(isOwner || canDelete) && (
-                                <div
-                                  className="relative"
-                                  data-chat-actions
-                                  onBlur={(event) => {
-                                    const nextTarget = event.relatedTarget;
-                                    if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
-                                      setOpenActionsId(null);
-                                    }
-                                  }}
-                                >
+                              {!message.isDeleted && (
+                                <div className="relative">
                                   <button
                                     ref={(el) => {
                                       if (el) actionButtonRefs.current.set(message.id, el);
@@ -903,67 +911,14 @@ export default function RoomSidebar({
                                     aria-haspopup="menu"
                                     aria-controls={menuId}
                                     aria-expanded={openActionsId === message.id}
-                                    onClick={() => toggleMessageActions(message)}
-                                    className="flex size-11 cursor-pointer items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleMessageActions(message);
+                                    }}
+                                    className="flex size-7 cursor-pointer items-center justify-center rounded-full bg-white/[0.06] hover:bg-white/15 text-slate-400 hover:text-white transition-all opacity-0 group-hover:opacity-100 max-sm:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                                   >
-                                    <i className="fa-solid fa-ellipsis" aria-hidden="true" />
+                                    <i className="fa-solid fa-ellipsis text-xs" aria-hidden="true" />
                                   </button>
-                                  {openActionsId === message.id && (
-                                    <div
-                                      id={menuId}
-                                      role="menu"
-                                      aria-label="إجراءات الرسالة"
-                                      onKeyDown={handleMenuKeyDown}
-                                      className="fixed z-50 w-36 overflow-hidden rounded-xl border border-white/10 bg-[#151c29] p-1.5 shadow-2xl"
-                                      style={actionMenuPosition}
-                                    >
-                                      {isOwner && (
-                                        <button
-                                          type="button"
-                                          role="menuitem"
-                                          onClick={() => beginEditMessage(message)}
-                                          className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg px-3 text-right text-xs font-bold text-amber-300 transition hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                                        >
-                                          <i className="fa-solid fa-pen text-amber-400" aria-hidden="true" />
-                                          تعديل
-                                        </button>
-                                      )}
-                                      <button
-                                        type="button"
-                                        role="menuitem"
-                                        onClick={() => beginReply(message)}
-                                        className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg px-3 text-right text-xs font-bold text-slate-200 transition hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                                      >
-                                        <i className="fa-solid fa-reply text-slate-400" aria-hidden="true" />
-                                        رد
-                                      </button>
-                                      <button
-                                        type="button"
-                                        role="menuitem"
-                                        onClick={() => copyMessage(message)}
-                                        className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg px-3 text-right text-xs font-bold text-slate-200 transition hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                                      >
-                                        <i className="fa-regular fa-copy text-slate-400" aria-hidden="true" />
-                                        نسخ
-                                      </button>
-                                      {canDelete && (
-                                        <button
-                                          type="button"
-                                          role="menuitem"
-                                          disabled={deletingMessageId === message.id}
-                                          onClick={() => {
-                                            actionButtonRefs.current.get(message.id)?.focus();
-                                            setOpenActionsId(null);
-                                            setDeleteMessageTarget(message);
-                                          }}
-                                          className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg px-3 text-right text-xs font-bold text-red-300 transition hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-50"
-                                        >
-                                          <i className="fa-regular fa-trash-can" aria-hidden="true" />
-                                          حذف
-                                        </button>
-                                      )}
-                                    </div>
-                                  )}
                                 </div>
                               )}
                             </div>
@@ -1197,74 +1152,25 @@ export default function RoomSidebar({
                         <div className="relative">
                           <button
                             type="button"
-                            onClick={() => setOpenMemberMenuId(openMemberMenuId === member.id ? null : member.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (memberDropdownState?.member.id === member.id) {
+                                setMemberDropdownState(null);
+                                return;
+                              }
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              const menuHeight = 170;
+                              const menuWidth = 175;
+                              const spaceBelow = window.innerHeight - rect.bottom;
+                              const top = spaceBelow < menuHeight ? Math.max(8, rect.top - menuHeight - 4) : rect.bottom + 4;
+                              const left = Math.max(8, Math.min(window.innerWidth - menuWidth - 8, rect.left));
+                              setMemberDropdownState({ member, top, left });
+                            }}
                             className="flex size-8 cursor-pointer items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                             aria-label={`إجراءات العضو ${member.name}`}
                           >
                             <i className="fa-solid fa-ellipsis-vertical text-sm" aria-hidden="true" />
                           </button>
-
-                          {openMemberMenuId === member.id && (
-                            <div
-                              className="absolute left-0 top-9 z-30 min-w-40 overflow-hidden rounded-2xl border border-white/15 bg-[#0c1220] p-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.85)] backdrop-blur-2xl text-right animate-scaleIn"
-                            >
-                              {isHost && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOpenMemberMenuId(null);
-                                    openModPermissionsModal(member);
-                                  }}
-                                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-blue-300 hover:bg-blue-500/15 transition-all text-right"
-                                >
-                                  <i className="fa-solid fa-shield-halved text-xs text-blue-400" />
-                                  <span>{isMemberMod ? 'إدارة الصلاحيات' : 'ترقية لمشرف'}</span>
-                                </button>
-                              )}
-
-                              {isHost && isMemberMod && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOpenMemberMenuId(null);
-                                    void handleRemoveModeratorRole(member);
-                                  }}
-                                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-300 hover:bg-white/10 transition-all text-right"
-                                >
-                                  <i className="fa-solid fa-user-minus text-xs text-slate-400" />
-                                  <span>تجريد من الإشراف</span>
-                                </button>
-                              )}
-
-                              {canManageMembers && (isHost || userPermissions.canKick) && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOpenMemberMenuId(null);
-                                    setKickMemberTarget(member);
-                                  }}
-                                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/15 transition-all text-right"
-                                >
-                                  <i className="fa-solid fa-user-xmark text-xs text-amber-400" />
-                                  <span>طرد مؤقت</span>
-                                </button>
-                              )}
-
-                              {canManageMembers && (isHost || userPermissions.canBan) && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOpenMemberMenuId(null);
-                                    setBanMemberTarget(member);
-                                  }}
-                                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/15 transition-all text-right"
-                                >
-                                  <i className="fa-solid fa-ban text-xs text-red-500" />
-                                  <span>حظر نهائي</span>
-                                </button>
-                              )}
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
@@ -1456,6 +1362,155 @@ export default function RoomSidebar({
           </div>
         )}
       </section>
+
+      {/* Message Action Menu Modal Portal */}
+      {openActionsId && activeActionMessage && mounted && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999]"
+          onClick={() => setOpenActionsId(null)}
+        >
+          <div
+            id={`message-actions-${activeActionMessage.id}`}
+            role="menu"
+            aria-label="إجراءات الرسالة"
+            className="fixed z-[99999] min-w-36 overflow-hidden rounded-2xl border border-white/15 bg-[#0c1220] p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.9)] backdrop-blur-2xl animate-scaleIn text-right"
+            style={actionMenuPosition}
+            dir="rtl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {isMessageOwner(activeActionMessage) && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpenActionsId(null);
+                  beginEditMessage(activeActionMessage);
+                }}
+                className="flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-xl px-3 text-right text-xs font-bold text-amber-300 transition hover:bg-amber-500/15"
+              >
+                <i className="fa-solid fa-pen text-amber-400 text-xs" aria-hidden="true" />
+                <span>تعديل</span>
+              </button>
+            )}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpenActionsId(null);
+                beginReply(activeActionMessage);
+              }}
+              className="flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-xl px-3 text-right text-xs font-bold text-slate-200 transition hover:bg-white/10"
+            >
+              <i className="fa-solid fa-reply text-slate-400 text-xs" aria-hidden="true" />
+              <span>رد</span>
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpenActionsId(null);
+                copyMessage(activeActionMessage);
+              }}
+              className="flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-xl px-3 text-right text-xs font-bold text-slate-200 transition hover:bg-white/10"
+            >
+              <i className="fa-regular fa-copy text-slate-400 text-xs" aria-hidden="true" />
+              <span>نسخ</span>
+            </button>
+            {canDeleteMessage(activeActionMessage) && (
+              <button
+                type="button"
+                role="menuitem"
+                disabled={deletingMessageId === activeActionMessage.id}
+                onClick={() => {
+                  setOpenActionsId(null);
+                  setDeleteMessageTarget(activeActionMessage);
+                }}
+                className="flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-xl px-3 text-right text-xs font-bold text-red-400 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <i className="fa-regular fa-trash-can text-red-500 text-xs" aria-hidden="true" />
+                <span>حذف</span>
+              </button>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Member 3-dots Dropdown Menu Portal */}
+      {memberDropdownState && mounted && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999]"
+          onClick={() => setMemberDropdownState(null)}
+        >
+          <div
+            className="fixed min-w-44 overflow-hidden rounded-2xl border border-white/15 bg-[#0c1220] p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.9)] backdrop-blur-2xl text-right animate-scaleIn"
+            style={{ top: memberDropdownState.top, left: memberDropdownState.left }}
+            dir="rtl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {isHost && (
+              <button
+                type="button"
+                onClick={() => {
+                  const m = memberDropdownState.member;
+                  setMemberDropdownState(null);
+                  openModPermissionsModal(m);
+                }}
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-blue-300 hover:bg-blue-500/15 transition-all text-right"
+              >
+                <i className="fa-solid fa-shield-halved text-xs text-blue-400" />
+                <span>{memberDropdownState.member.role === 'moderator' ? 'إدارة الصلاحيات' : 'ترقية لمشرف'}</span>
+              </button>
+            )}
+
+            {isHost && memberDropdownState.member.role === 'moderator' && (
+              <button
+                type="button"
+                onClick={() => {
+                  const m = memberDropdownState.member;
+                  setMemberDropdownState(null);
+                  void handleRemoveModeratorRole(m);
+                }}
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-300 hover:bg-white/10 transition-all text-right"
+              >
+                <i className="fa-solid fa-user-minus text-xs text-slate-400" />
+                <span>تجريد من الإشراف</span>
+              </button>
+            )}
+
+            {canManageMembers && (isHost || userPermissions?.canKick) && (
+              <button
+                type="button"
+                onClick={() => {
+                  const m = memberDropdownState.member;
+                  setMemberDropdownState(null);
+                  setKickMemberTarget(m);
+                }}
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/15 transition-all text-right"
+              >
+                <i className="fa-solid fa-user-xmark text-xs text-amber-400" />
+                <span>طرد مؤقت</span>
+              </button>
+            )}
+
+            {canManageMembers && (isHost || userPermissions?.canBan) && (
+              <button
+                type="button"
+                onClick={() => {
+                  const m = memberDropdownState.member;
+                  setMemberDropdownState(null);
+                  setBanMemberTarget(m);
+                }}
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/15 transition-all text-right"
+              >
+                <i className="fa-solid fa-ban text-xs text-red-500" />
+                <span>حظر نهائي</span>
+              </button>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
     </>
   );
 }

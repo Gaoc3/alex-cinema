@@ -95,7 +95,8 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const streams = videoData.streams || EMPTY_STREAMS;
   const translations = videoData.translations || [];
 
-  const isHost = roomHook?.isHost;
+  const isHost = Boolean(roomHook?.isHost);
+  const canControlPlayback = Boolean(!roomHook || isHost || roomHook?.userPermissions?.canSeek);
   const roomState = roomHook?.roomState;
   const sendSyncUpdate = roomHook?.sendSyncUpdate;
 
@@ -328,10 +329,11 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     shouldResumePlaybackRef.current = !isPaused;
   }, [isPaused]);
 
-  // Keep a guest synchronized with the host after all media refs exist.
+  // Keep viewers and host synchronized with real-time roomState
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !roomState || isHost || !roomHook) return;
+    if (!video || !roomState || !roomHook) return;
+    if (canControlPlayback && Date.now() - lastSyncTimeRef.current < 600) return;
 
     const elapsed = roomState.playing
       ? Math.max(0, (Date.now() - (roomState.receivedAt || Date.now())) / 1000)
@@ -346,7 +348,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     } else if (!roomState.playing && !video.paused) {
       video.pause();
     }
-  }, [roomState, isHost, roomHook]);
+  }, [roomState, canControlPlayback, roomHook]);
 
   // Pixel-level adaptation (Ambient Light Glow)
   useEffect(() => {
@@ -649,7 +651,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const togglePlay = () => {
     const video = videoRef.current;
     if (video) {
-      if (roomHook && !isHost) {
+      if (roomHook && !canControlPlayback) {
         if (roomState?.playing) {
           const elapsed = Math.max(0, (Date.now() - (roomState.receivedAt || Date.now())) / 1000);
           video.currentTime = Math.max(0, roomState.time + elapsed);
@@ -672,7 +674,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   // Gesture Handlers
   const handleSeekForward = (seconds: number = 10) => {
-    if (roomHook && !isHost) return;
+    if (roomHook && !canControlPlayback) return;
     const video = videoRef.current;
     if (video) {
       video.currentTime = Math.min(video.duration || 0, video.currentTime + seconds);
@@ -682,7 +684,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   };
 
   const handleSeekBackward = (seconds: number = 10) => {
-    if (roomHook && !isHost) return;
+    if (roomHook && !canControlPlayback) return;
     const video = videoRef.current;
     if (video) {
       video.currentTime = Math.max(0, video.currentTime - seconds);
@@ -777,7 +779,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   };
 
   const seekPastSkipSegment = (kind: SkipSegmentKind) => {
-    if (roomHook && !isHost) return false;
+    if (roomHook && !canControlPlayback) return false;
     const video = videoRef.current;
     const segment = getActiveSkipSegment();
     if (!video || !segment || segment.kind !== kind) return false;
@@ -799,7 +801,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   };
 
   const handleSkipOutro = () => {
-    if (roomHook && !isHost) return;
+    if (roomHook && !canControlPlayback) return;
     const segment = getActiveSkipSegment();
     if (!segment || segment.kind !== 'outro') return;
 
@@ -850,7 +852,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   // Seek time
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (roomHook && !isHost) return;
+    if (roomHook && !canControlPlayback) return;
     const video = videoRef.current;
     if (video) {
       const newTime = parseFloat(e.target.value);
@@ -868,7 +870,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       }
       setCurrentTime(video.currentTime);
 
-      if (isHost && roomHook) {
+      if (canControlPlayback && roomHook) {
         const now = Date.now();
         if (now - lastSyncTimeRef.current > 1000) {
           sendSyncUpdate?.(video.currentTime, !video.paused);
@@ -879,7 +881,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       // The API exposes parental scene ranges separately from intro/outro ranges.
       if (
         isFamilyMode
-        && (!roomHook || isHost)
+        && (!roomHook || canControlPlayback)
         && isParentSkippingEnabled(videoData.parent_skipping)
       ) {
         const mediaDuration = Number.isFinite(video.duration) && video.duration > 0
@@ -1113,7 +1115,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   const getSubtitlesProxyUrl = (url: string) => url;
   const controlsVisible = showControls || isPaused;
   const skipActionVisible = Boolean(
-    activeSkipKind && (!roomHook || isHost) && activeDropdown !== 'settings'
+    activeSkipKind && (!roomHook || canControlPlayback) && activeDropdown !== 'settings'
   );
 
   useEffect(() => {
@@ -1157,7 +1159,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
       switch (e.key) {
         case ' ':
           e.preventDefault();
-          if (roomHook && !isHost) {
+          if (roomHook && !canControlPlayback) {
             if (roomState?.playing) {
               const elapsed = Math.max(0, (Date.now() - (roomState.receivedAt || Date.now())) / 1000);
               video.currentTime = Math.max(0, roomState.time + elapsed);
@@ -1172,12 +1174,12 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           }
           break;
         case 'ArrowLeft':
-          if (roomHook && !isHost) break;
+          if (roomHook && !canControlPlayback) break;
           e.preventDefault();
           video.currentTime = Math.max(0, video.currentTime - 10);
           break;
         case 'ArrowRight':
-          if (roomHook && !isHost) break;
+          if (roomHook && !canControlPlayback) break;
           e.preventDefault();
           video.currentTime = Math.min(video.duration, video.currentTime + 10);
           break;
@@ -1679,7 +1681,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               setIsWaiting(false);
               setIsPaused(false);
               resetControlsTimer();
-              if (isHost && roomHook && videoRef.current) {
+              if (canControlPlayback && roomHook && videoRef.current) {
                 sendSyncUpdate?.(videoRef.current.currentTime, true);
                 lastSyncTimeRef.current = Date.now();
               }
@@ -1689,7 +1691,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               requestAnimationFrame(() => {
                 if (!video.paused) return;
                 setIsPaused(true);
-                if (isHost && roomHook) {
+                if (canControlPlayback && roomHook) {
                   sendSyncUpdate?.(video.currentTime, false);
                   lastSyncTimeRef.current = Date.now();
                 }
@@ -1711,7 +1713,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
                 waitingTimeoutRef.current = null;
               }
               setIsWaiting(false);
-              if (isHost && roomHook && videoRef.current) {
+              if (canControlPlayback && roomHook && videoRef.current) {
                 sendSyncUpdate?.(videoRef.current.currentTime, !videoRef.current.paused);
                 lastSyncTimeRef.current = Date.now();
               }

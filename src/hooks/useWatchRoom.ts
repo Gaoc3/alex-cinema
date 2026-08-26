@@ -387,7 +387,15 @@ export function useWatchRoom(
           const key = (m as any).userId || (m as any).identity || m.name || m.id;
           if (!unique.has(key) || m.isHost) unique.set(key, m);
         }
-        setMembers(Array.from(unique.values()));
+        const membersList = Array.from(unique.values());
+        setMembers(membersList);
+
+        // Instant Real-time sync for current user's role and permissions
+        const me = membersList.find((m) => m.id === newSocket.id || ((m as any).userId && (m as any).userId === userIdRef.current));
+        if (me && !isHost) {
+          if (me.role) setUserRole(me.role);
+          if (me.permissions) setUserPermissions(me.permissions);
+        }
       }
     });
 
