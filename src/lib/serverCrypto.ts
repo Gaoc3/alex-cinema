@@ -158,5 +158,22 @@ export function sanitizeVideoData<T>(data: T): T {
     }));
   }
 
+  const staffLists = ['actorsInfo', 'directorsInfo', 'writersInfo'] as const;
+  for (const listName of staffLists) {
+    if (Array.isArray(result[listName])) {
+      result[listName] = (result[listName] as Record<string, unknown>[]).map((staff) => {
+        const updated = { ...staff };
+        const staffImageFields = ['staff_img', 'staff_img_thumb', 'staff_img_medium_thumb'] as const;
+        for (const field of staffImageFields) {
+          const val = updated[field];
+          if (typeof val === 'string' && parseAllowedShabakatyUrl(val)) {
+            updated[field] = sanitizeUrl(val);
+          }
+        }
+        return updated;
+      });
+    }
+  }
+
   return result as T;
 }

@@ -223,12 +223,20 @@ export default function MediaDetails({
                   <i className="fa-regular fa-calendar text-amber-400 text-[10px]"></i> {year}
                 </span>
               )}
-              {duration ? (
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/5 text-[10px] sm:text-xs text-gray-300">
-                  <i className="fa-regular fa-clock text-alex-primary text-[10px]"></i>
-                  {Math.floor(duration / 60)} ساعة {duration % 60 > 0 ? `${duration % 60} دقيقة` : ''}
-                </span>
-              ) : null}
+              {duration ? (() => {
+                const totalMinutes = duration > 300 ? Math.round(duration / 60) : Math.round(duration);
+                const hours = Math.floor(totalMinutes / 60);
+                const mins = totalMinutes % 60;
+                const hoursText = hours > 0 ? (hours === 1 ? '1 ساعة' : hours === 2 ? 'ساعتان' : `${hours} ساعات`) : '';
+                const minsText = mins > 0 ? `${mins} دقيقة` : '';
+                const formattedDuration = hoursText && minsText ? `${hoursText} و ${minsText}` : (hoursText || minsText || `${totalMinutes} دقيقة`);
+                return (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/5 text-[10px] sm:text-xs text-gray-300">
+                    <i className="fa-regular fa-clock text-alex-primary text-[10px]"></i>
+                    {formattedDuration}
+                  </span>
+                );
+              })() : null}
               {itemDate && (
                 <span className="flex items-center gap-1 text-gray-500 text-[10px] sm:text-xs">
                   <i className="fa-regular fa-clock text-[10px]"></i> أُضيف {itemDate.split(' ')[0]}

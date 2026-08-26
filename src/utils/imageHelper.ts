@@ -23,19 +23,31 @@ export function getImageUrl(
   type: 'poster' | 'cover' | 'backdrop' = 'poster'
 ): string {
   if (!imgField) return '';
+  const trimmed = imgField.trim();
+  if (!trimmed) return '';
   // Already a proxied/rewritten URL from sanitized server data
-  if (imgField.startsWith('/api/') || imgField.startsWith('/tunnel/')) {
-    return withImageCacheVersion(imgField);
+  if (trimmed.startsWith('/api/') || trimmed.startsWith('/tunnel/')) {
+    return withImageCacheVersion(trimmed);
   }
-  if (imgField.startsWith('http')) {
-    return withImageCacheVersion(`/api/img?type=${type}&file=${encodeURIComponent(imgField.split('/').pop() || imgField)}`);
-  }
-  // Plain filename — construct the simple proxy URL
-  return withImageCacheVersion(`/api/img?type=${type}&file=${encodeURIComponent(imgField)}`);
+  // Strip query parameters and hash
+  const cleanPath = trimmed.split('?')[0].split('#')[0];
+  // Extract pure basename
+  const filename = cleanPath.split('/').pop() || cleanPath;
+  if (!filename) return '';
+  return withImageCacheVersion(`/api/img?type=${type}&file=${encodeURIComponent(filename)}`);
 }
 
 export function getVideoImageCandidates(
-  video: { img?: string; imgObjUrl?: string; imgMediumThumb?: string; imgThumb?: string } | undefined | null,
+  video: { 
+    img?: string; 
+    imgObjUrl?: string; 
+    imgMediumThumb?: string; 
+    imgThumb?: string;
+    imgThumbObjUrl?: string;
+    imgMediumThumbObjUrl?: string;
+    banner_img?: string;
+    cover?: string;
+  } | undefined | null,
   type: 'poster' | 'cover' | 'backdrop' = 'poster'
 ): string[] {
   if (!video) return [];
@@ -43,14 +55,21 @@ export function getVideoImageCandidates(
 
   if (type === 'poster') {
     if (video.imgMediumThumb) results.push(getImageUrl(video.imgMediumThumb, 'poster'));
+    if (video.imgMediumThumbObjUrl) results.push(getImageUrl(video.imgMediumThumbObjUrl, 'poster'));
     if (video.img) results.push(getImageUrl(video.img, 'poster'));
     if (video.imgThumb) results.push(getImageUrl(video.imgThumb, 'poster'));
+    if (video.imgThumbObjUrl) results.push(getImageUrl(video.imgThumbObjUrl, 'poster'));
     if (video.imgObjUrl) results.push(getImageUrl(video.imgObjUrl, 'poster'));
+    if (video.banner_img) results.push(getImageUrl(video.banner_img, 'poster'));
   } else {
     if (video.img) results.push(getImageUrl(video.img, type));
     if (video.imgObjUrl) results.push(getImageUrl(video.imgObjUrl, type));
+    if (video.banner_img) results.push(getImageUrl(video.banner_img, type));
+    if (video.cover) results.push(getImageUrl(video.cover, type));
     if (video.imgMediumThumb) results.push(getImageUrl(video.imgMediumThumb, type));
+    if (video.imgMediumThumbObjUrl) results.push(getImageUrl(video.imgMediumThumbObjUrl, type));
     if (video.imgThumb) results.push(getImageUrl(video.imgThumb, type));
+    if (video.imgThumbObjUrl) results.push(getImageUrl(video.imgThumbObjUrl, type));
   }
 
   // Deduplicate while preserving priority order
@@ -58,7 +77,16 @@ export function getVideoImageCandidates(
 }
 
 export function getVideoImageUrl(
-  video: { img?: string; imgObjUrl?: string; imgMediumThumb?: string; imgThumb?: string } | undefined | null,
+  video: { 
+    img?: string; 
+    imgObjUrl?: string; 
+    imgMediumThumb?: string; 
+    imgThumb?: string;
+    imgThumbObjUrl?: string;
+    imgMediumThumbObjUrl?: string;
+    banner_img?: string;
+    cover?: string;
+  } | undefined | null,
   type: 'poster' | 'cover' | 'backdrop' = 'poster'
 ): string {
   const candidates = getVideoImageCandidates(video, type);

@@ -285,7 +285,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
               className="flex gap-3.5 overflow-x-auto hide-scrollbar w-full px-0 scroll-smooth items-end pointer-events-auto snap-x snap-mandatory"
             >
               {videos.map((video, idx) => {
-                const thumbUrl = getVideoImageUrl(video, 'cover');
+                const thumbUrl = getVideoImageUrl(video, 'cover') || getVideoImageUrl(video, 'poster');
                 const isActive = activeIndex === idx;
                 return (
                   <button
@@ -297,8 +297,8 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                     onClick={() => triggerSlideChange(idx)}
                     className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none border snap-start w-[calc((100%-0.875rem*4)/5)] xl:w-[calc((100%-0.875rem*5)/6)] 2xl:w-[calc((100%-0.875rem*6)/7)] ${
                       isActive
-                        ? 'border-alex-primary ring-2 ring-alex-primary shadow-[0_10px_30px_rgba(229,9,20,0.5)] opacity-100 z-10'
-                        : 'border-white/10 opacity-75 hover:opacity-100 hover:border-white/30 z-0 bg-[#060811]'
+                        ? 'border-alex-primary ring-2 ring-alex-primary shadow-[0_10px_30px_rgba(229,9,20,0.5)] scale-100 opacity-100 z-10'
+                        : 'border-white/10 opacity-75 hover:opacity-100 hover:border-white/30 scale-95 hover:scale-100 z-0 bg-[#060811]'
                     }`}
                     aria-label={`Go to slide ${idx + 1}`}
                   >

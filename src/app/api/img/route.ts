@@ -67,7 +67,8 @@ const PLACEHOLDER_SVG = `
 </svg>`.trim();
 
 function sanitizeFilename(file: string): string {
-  return file.replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 255);
+  const basename = file.split('?')[0].split('#')[0].split('/').pop() || file;
+  return basename.replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 255);
 }
 
 function imageHeaders(contentType: string, size: number, cacheStatus: 'HIT' | 'MISS') {
@@ -213,12 +214,19 @@ function buildImageCandidates(initialTarget: URL | null, fileParam: string | nul
     if (cleanName.includes('_poster_medium_thumb.')) {
       fileVariants.push(cleanName.replace('_poster_medium_thumb.', '_poster.'));
       fileVariants.push(cleanName.replace('_poster_medium_thumb.', '_poster_thumb.'));
+      fileVariants.push(cleanName.replace('_poster_medium_thumb.', '_cover.'));
     } else if (cleanName.includes('_poster_thumb.')) {
       fileVariants.push(cleanName.replace('_poster_thumb.', '_poster.'));
       fileVariants.push(cleanName.replace('_poster_thumb.', '_poster_medium_thumb.'));
+      fileVariants.push(cleanName.replace('_poster_thumb.', '_cover.'));
     } else if (cleanName.includes('_poster.')) {
       fileVariants.push(cleanName.replace('_poster.', '_poster_medium_thumb.'));
       fileVariants.push(cleanName.replace('_poster.', '_poster_thumb.'));
+      fileVariants.push(cleanName.replace('_poster.', '_cover.'));
+    } else if (cleanName.includes('_cover.')) {
+      fileVariants.push(cleanName.replace('_cover.', '_poster.'));
+      fileVariants.push(cleanName.replace('_cover.', '_poster_medium_thumb.'));
+      fileVariants.push(cleanName.replace('_cover.', '_poster_thumb.'));
     }
 
     const extVariants: string[] = [];
