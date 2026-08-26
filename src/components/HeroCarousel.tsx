@@ -67,13 +67,20 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
     return () => window.removeEventListener('resize', calculateLayout);
   }, []);
 
-  // Auto-scroll active thumbnail into view
+  // Auto-scroll active thumbnail into view cleanly without cutting off start banner
   useEffect(() => {
+    if (activeIndex === 0) {
+      const scrollEl = thumbnailsContainerRef.current?.querySelector('.overflow-x-auto') as HTMLElement | null;
+      if (scrollEl) {
+        scrollEl.scrollTo({ left: 0, behavior: 'smooth' });
+        return;
+      }
+    }
     if (thumbnailsRef.current[activeIndex]) {
       thumbnailsRef.current[activeIndex]?.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest',
-        inline: 'center',
+        inline: 'nearest',
       });
     }
   }, [activeIndex]);
@@ -273,7 +280,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           </div>
 
           {/* Desktop Thumbnails */}
-          <div className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-8 py-5 scroll-smooth items-end pointer-events-auto">
+          <div 
+            dir="rtl"
+            className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-6 sm:px-10 py-5 scroll-smooth items-end pointer-events-auto"
+          >
             {videos.map((video, idx) => {
               const thumbUrl = getVideoImageUrl(video, 'cover');
               const isActive = activeIndex === idx;
