@@ -312,7 +312,7 @@ export default function RoomClientWrapper({
               {isEditingTitle ? (
                 <form
                   onSubmit={handleSaveTitle}
-                  className="flex items-center gap-1.5 min-w-0 flex-1"
+                  className="flex items-center gap-1.5 min-w-0 w-full max-w-xs sm:max-w-sm md:max-w-md"
                 >
                   <input
                     type="text"
@@ -438,15 +438,15 @@ export default function RoomClientWrapper({
           {/* Main Stage (Player & Search): Left side on Desktop (Order 2 in RTL), top on Mobile */}
           <section className="order-1 min-w-0 lg:order-2" dir="rtl">
             {!video ? (
-              <div className="flex min-h-[min(30svh,15rem)] sm:min-h-[min(34svh,18rem)] lg:min-h-[min(38svh,21rem)] items-center justify-center rounded-2xl border border-white/10 bg-[#0b101a]/90 p-4 sm:p-5 shadow-2xl">
+              <div className="flex min-h-[min(34svh,17rem)] sm:min-h-[min(38svh,21rem)] lg:min-h-[min(43svh,24.5rem)] items-center justify-center rounded-2xl border border-white/10 bg-[#0b101a]/90 p-5 sm:p-6 lg:p-7 shadow-2xl">
                 <div className="w-full text-center">
-                  <div className="mx-auto mb-2 flex size-11 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-lg text-red-400">
+                  <div className="mx-auto mb-2.5 flex size-12 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-xl text-red-400">
                     <i className="fa-solid fa-film" aria-hidden="true" />
                   </div>
-                  <h2 className="mb-0.5 text-lg font-black sm:text-xl">
+                  <h2 className="mb-1 text-xl font-black sm:text-2xl">
                     {canChangeMedia ? 'اختر ما ستشاهدونه' : 'بانتظار اختيار المحتوى'}
                   </h2>
-                  <p className="mx-auto mb-3.5 max-w-md text-xs leading-5 text-slate-300">
+                  <p className="mx-auto mb-4 max-w-md text-xs sm:text-sm leading-6 text-slate-300">
                     {canChangeMedia
                       ? 'ابحث عن فيلم أو مسلسل، وسيظهر لجميع المشاركين فور اختياره.'
                       : 'سيبدأ العرض تلقائياً عندما يختار المضيف أو المشرف الفيلم أو الحلقة.'}
