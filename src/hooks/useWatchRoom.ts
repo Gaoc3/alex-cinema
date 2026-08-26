@@ -106,6 +106,7 @@ function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]) {
       isEdited,
       editedAt: message.editedAt ?? previous?.editedAt ?? null,
       replyTo: message.replyTo ?? previous?.replyTo ?? null,
+      reactions: message.reactions !== undefined ? message.reactions : (previous?.reactions || {}),
       text: isDeleted ? '' : message.text,
     });
   }

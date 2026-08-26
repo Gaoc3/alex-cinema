@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 const { PrismaClient } = require('@prisma/client');
 const { Server } = require('socket.io');
 
@@ -32,6 +34,47 @@ const MESSAGE_PRUNE_INTERVAL = 25;
 
 const prisma = new PrismaClient();
 const rooms = new Map();
+const messageReactions = new Map(); // messageId -> { [emoji]: Array<{ id, name }> }
+const REACTIONS_STORAGE_PATH = path.join(__dirname, '.room_reactions.json');
+
+function loadReactionsFromDisk() {
+  try {
+    if (fs.existsSync(REACTIONS_STORAGE_PATH)) {
+      const data = JSON.parse(fs.readFileSync(REACTIONS_STORAGE_PATH, 'utf8'));
+      if (data && typeof data === 'object') {
+        for (const [msgId, reactions] of Object.entries(data)) {
+          if (reactions && typeof reactions === 'object') {
+            messageReactions.set(msgId, reactions);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load reactions from disk:', err);
+  }
+}
+
+let reactionsSaveTimeout = null;
+function saveReactionsToDisk() {
+  if (reactionsSaveTimeout) return;
+  reactionsSaveTimeout = setTimeout(() => {
+    reactionsSaveTimeout = null;
+    try {
+      const obj = {};
+      for (const [msgId, reactions] of messageReactions.entries()) {
+        if (reactions && Object.keys(reactions).length > 0) {
+          obj[msgId] = reactions;
+        }
+      }
+      fs.writeFileSync(REACTIONS_STORAGE_PATH, JSON.stringify(obj), 'utf8');
+    } catch (err) {
+      console.error('Failed to save reactions to disk:', err);
+    }
+  }, 1000);
+}
+
+loadReactionsFromDisk();
+
 const chatRateLimits = new Map();
 const chatDeleteRateLimits = new Map();
 const roomMessageCounts = new Map();
@@ -157,6 +200,7 @@ function toChatMessage(message, hostUserId, canDelete = false) {
         isDeleted: replyIsDeleted,
       }
       : null,
+    reactions: messageReactions.get(message.id) || {},
   };
 }
 
@@ -775,6 +819,31 @@ async function start() {
         }
         const userId = socket.data.userId || socket.data.senderIdentity || socket.id;
         const userName = socket.data.name || 'مستخدم';
+
+        const currentReactions = { ...(messageReactions.get(messageId) || {}) };
+        const existingUsers = Array.isArray(currentReactions[emoji]) ? [...currentReactions[emoji]] : [];
+        const hasReacted = existingUsers.some((u) => u.id === userId);
+        let updatedUsers;
+        if (hasReacted) {
+          updatedUsers = existingUsers.filter((u) => u.id !== userId);
+        } else {
+          updatedUsers = [...existingUsers, { id: userId, name: userName }];
+        }
+
+        if (updatedUsers.length > 0) {
+          currentReactions[emoji] = updatedUsers;
+        } else {
+          delete currentReactions[emoji];
+        }
+
+        if (Object.keys(currentReactions).length > 0) {
+          messageReactions.set(messageId, currentReactions);
+        } else {
+          messageReactions.delete(messageId);
+        }
+
+        saveReactionsToDisk();
+
         io.to(roomId).emit('chat_message_reacted', {
           messageId,
           emoji,
