@@ -67,13 +67,20 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
     return () => window.removeEventListener('resize', calculateLayout);
   }, []);
 
-  // Auto-scroll active thumbnail into view
+  // Auto-scroll active thumbnail with exact snap boundary alignment
   useEffect(() => {
+    if (activeIndex === 0) {
+      const scrollEl = thumbnailsContainerRef.current?.querySelector('.overflow-x-auto') as HTMLElement | null;
+      if (scrollEl) {
+        scrollEl.scrollTo({ left: 0, behavior: 'smooth' });
+        return;
+      }
+    }
     if (thumbnailsRef.current[activeIndex]) {
       thumbnailsRef.current[activeIndex]?.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest',
-        inline: 'center',
+        inline: 'nearest',
       });
     }
   }, [activeIndex]);
@@ -272,13 +279,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
             ))}
           </div>
 
-          {/* Desktop Thumbnails */}
+          {/* Desktop Thumbnails (Exact Geometric Calculation — 100% Full Cards, Zero Edge Cut-off) */}
           <div 
-            className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-8 py-5 scroll-smooth items-end pointer-events-auto"
-            style={{
-              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 60px, black calc(100% - 60px), transparent 100%)',
-              maskImage: 'linear-gradient(to right, transparent 0%, black 60px, black calc(100% - 60px), transparent 100%)'
-            }}
+            dir="rtl"
+            className="hidden lg:flex gap-3.5 overflow-x-auto hide-scrollbar w-full px-6 sm:px-10 py-5 scroll-smooth items-end pointer-events-auto snap-x snap-mandatory scroll-px-6 sm:scroll-px-10"
           >
             {videos.map((video, idx) => {
               const thumbUrl = getVideoImageUrl(video, 'cover');
@@ -291,10 +295,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                   }}
                   type="button"
                   onClick={() => triggerSlideChange(idx)}
-                  className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none border ${
+                  className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none border snap-start w-[calc((100%-0.875rem*4)/5)] xl:w-[calc((100%-0.875rem*5)/6)] 2xl:w-[calc((100%-0.875rem*6)/7)] ${
                     isActive
-                      ? 'w-32 sm:w-44 md:w-56 lg:w-64 border-alex-primary ring-2 ring-alex-primary shadow-[0_10px_30px_rgba(229,9,20,0.5)] scale-100 opacity-100 z-10'
-                      : 'w-24 sm:w-32 md:w-40 lg:w-48 border-white/10 opacity-85 hover:opacity-100 scale-95 hover:scale-100 z-0 bg-[#060811]'
+                      ? 'border-alex-primary ring-2 ring-alex-primary shadow-[0_10px_30px_rgba(229,9,20,0.5)] opacity-100 z-10'
+                      : 'border-white/10 opacity-75 hover:opacity-100 hover:border-white/30 z-0 bg-[#060811]'
                   }`}
                   aria-label={`Go to slide ${idx + 1}`}
                 >
