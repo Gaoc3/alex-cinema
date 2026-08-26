@@ -43,14 +43,24 @@ export async function GET(
 
     if (room.movieId) {
       video = await getVideoDetails(room.movieId).catch(() => null);
-      if (video && (video.kind === '2' || video.seriesId)) {
-        const targetSeriesId = String(video.seriesId || video.fatherId || room.movieId);
-        const [s, e] = await Promise.allSettled([
-          getSeriesSeasons(targetSeriesId),
-          getSeriesEpisodes(targetSeriesId),
-        ]);
-        if (s.status === 'fulfilled' && Array.isArray(s.value)) seasons = s.value;
-        if (e.status === 'fulfilled' && Array.isArray(e.value)) episodes = e.value;
+      if (video) {
+        video.ar_title = video.ar_title || video.en_title || room.movieTitle || 'عمل سينمائي';
+        if (video.kind === '2' || video.seriesId) {
+          const targetSeriesId = String(video.seriesId || video.fatherId || room.movieId);
+          const [s, e] = await Promise.allSettled([
+            getSeriesSeasons(targetSeriesId),
+            getSeriesEpisodes(targetSeriesId),
+          ]);
+          if (s.status === 'fulfilled' && Array.isArray(s.value)) seasons = s.value;
+          if (e.status === 'fulfilled' && Array.isArray(e.value)) episodes = e.value;
+        }
+      } else {
+        video = {
+          nb: room.movieId,
+          ar_title: room.movieTitle || 'عمل سينمائي',
+          en_title: room.movieTitle || 'Movie',
+          kind: room.kind || '1',
+        };
       }
     }
 
