@@ -11,7 +11,6 @@ import { useWatchRoom } from '@/hooks/useWatchRoom';
 import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
 import RoomSidebar, { type RoomTab } from '@/components/watch/RoomSidebar';
 import { getVideoImageUrl } from '@/utils/imageHelper';
-import { updateRoomTitle } from '@/app/actions/room.actions';
 import LobbySearch from './LobbySearch';
 import UserAvatar from '@/components/UserAvatar';
 import { isTelegramWebAppContext } from '@/lib/telegramWebAppClient';
@@ -61,15 +60,16 @@ function RoomStateScreen({
   }, [countdown, onAction]);
 
   return (
-    <div className="flex min-h-[100svh] items-center justify-center bg-[#070a11] p-4 text-white" dir="rtl">
-      <div className="w-full max-w-md rounded-3xl border border-red-500/30 bg-[#0d121d] p-7 text-center shadow-2xl sm:p-10 backdrop-blur-md">
-        <div className="mx-auto mb-5 flex size-20 items-center justify-center rounded-3xl border border-red-500/40 bg-red-500/10 text-3xl text-red-500 shadow-[0_0_30px_rgba(239,68,68,0.25)]">
+    <div className="flex min-h-[100svh] items-center justify-center bg-[#050811] p-4 text-white" dir="rtl">
+      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#0c121f]/90 p-8 text-center shadow-2xl backdrop-blur-2xl">
+        <div className="absolute -top-24 -right-24 size-48 rounded-full bg-red-600/15 blur-[60px] pointer-events-none" />
+        <div className="mx-auto mb-5 flex size-20 items-center justify-center rounded-3xl border border-red-500/30 bg-red-500/10 text-3xl text-red-400 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
           <i className={icon} aria-hidden="true" />
         </div>
-        <h1 className="mb-2 text-2xl font-black text-white sm:text-3xl">{title}</h1>
+        <h1 className="mb-2 text-2xl font-black text-white">{title}</h1>
         <p className="mb-6 text-sm leading-7 text-slate-300">{description}</p>
 
-        <div className="mb-6 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 px-4 text-xs text-slate-400">
+        <div className="mb-6 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] py-2.5 px-4 text-xs text-slate-400">
           <i className="fa-solid fa-clock text-amber-400" aria-hidden="true" />
           <span>سيتم تحويلك تلقائياً خلال <strong className="text-white font-mono text-sm">{countdown}</strong> ثوانٍ...</span>
         </div>
@@ -77,7 +77,7 @@ function RoomStateScreen({
         <button
           type="button"
           onClick={onAction}
-          className="w-full min-h-12 cursor-pointer rounded-xl bg-[#e50914] px-6 py-3 text-sm font-extrabold text-white transition hover:bg-red-700 active:scale-98 shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+          className="w-full min-h-12 cursor-pointer rounded-xl bg-red-600 px-6 py-3 text-sm font-extrabold text-white transition hover:bg-red-700 active:scale-98 shadow-lg shadow-red-600/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
         >
           {actionLabel}
         </button>
@@ -147,7 +147,7 @@ export default function RoomClientWrapper({
         return;
       }
       await navigator.clipboard.writeText(url);
-      toast.success('تم نسخ رابط الغرفة');
+      toast.success('تم نسخ رابط الغرفة بنجاح 📋');
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
       toast.error('تعذر مشاركة الرابط');
@@ -214,8 +214,8 @@ export default function RoomClientWrapper({
 
   if (!isLoaded) {
     return (
-      <div className="flex min-h-[100svh] items-center justify-center bg-[#070a11]" role="status" aria-label="جارٍ تحميل الغرفة">
-        <div className="size-11 animate-spin rounded-full border-4 border-red-500 border-t-transparent" />
+      <div className="flex min-h-[100svh] items-center justify-center bg-[#050811]" role="status" aria-label="جارٍ تحميل الغرفة">
+        <div className="size-12 animate-spin rounded-full border-4 border-red-600 border-t-transparent shadow-lg shadow-red-600/30" />
       </div>
     );
   }
@@ -256,7 +256,6 @@ export default function RoomClientWrapper({
     );
   }
 
-
   const handleSaveTitle = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || isSavingTitle) return;
@@ -283,50 +282,52 @@ export default function RoomClientWrapper({
   };
 
   return (
-    <div className="relative min-h-[100svh] overflow-x-clip bg-[#070a11] text-white" dir="rtl">
+    <div className="relative min-h-[100svh] overflow-x-clip bg-[#050811] text-white selection:bg-red-600 selection:text-white" dir="rtl">
+      {/* Dynamic Ambient Background Glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
-        {bgImage && (
+        {bgImage ? (
           <div
-            className="absolute inset-x-0 top-0 h-[55svh] bg-cover bg-center opacity-[0.09] blur-3xl"
-            style={{ backgroundImage: `linear-gradient(to bottom, transparent, #070a11), url(${bgImage})` }}
+            className="absolute inset-x-0 top-0 h-[60svh] bg-cover bg-center opacity-[0.12] blur-3xl transition-opacity duration-1000"
+            style={{ backgroundImage: `linear-gradient(to bottom, transparent, #050811), url(${bgImage})` }}
           />
+        ) : (
+          <div className="absolute inset-x-0 top-0 h-[40svh] bg-gradient-to-b from-red-600/10 via-transparent to-transparent blur-3xl" />
         )}
-        <div className="absolute -right-32 top-20 size-80 rounded-full bg-red-700/10 blur-[110px]" />
-        <div className="absolute -left-32 bottom-10 size-96 rounded-full bg-blue-700/10 blur-[130px]" />
+        <div className="absolute -right-32 top-10 size-96 rounded-full bg-red-600/10 blur-[130px]" />
+        <div className="absolute -left-32 bottom-10 size-96 rounded-full bg-blue-600/10 blur-[130px]" />
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-7xl 2xl:max-w-[1560px] flex-col px-3 pb-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 lg:px-6">
-        <header className="mb-3 flex min-h-14 items-center gap-2 overflow-hidden rounded-2xl border border-white/10 bg-[#0b101a]/95 p-2 shadow-xl sm:mb-4 sm:p-2.5">
-          <button
-            type="button"
-            onClick={handleExitRoom}
-            className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-slate-200 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-            aria-label="العودة إلى الغرف"
-            title="العودة إلى الغرف"
-          >
-            <i className="fa-solid fa-arrow-right" aria-hidden="true" />
-          </button>
+        {/* Luxury Top Header */}
+        <header className="mb-4 flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0a0f1d]/85 p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+          {/* Right Section: Back button & Room Title */}
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={handleExitRoom}
+              className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300 transition-all hover:border-red-500/40 hover:bg-red-600/10 hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 active:scale-95"
+              aria-label="العودة إلى الغرف"
+              title="العودة إلى الغرف"
+            >
+              <i className="fa-solid fa-arrow-right text-sm" aria-hidden="true" />
+            </button>
 
-          <div className="min-w-0 flex-1 px-1">
-            <div className="flex min-w-0 items-center gap-2">
+            <div className="min-w-0">
               {isEditingTitle ? (
-                <form
-                  onSubmit={handleSaveTitle}
-                  className="flex items-center gap-1.5 min-w-0 w-full max-w-xs sm:max-w-sm md:max-w-md"
-                >
+                <form onSubmit={handleSaveTitle} className="flex items-center gap-1.5 min-w-0 max-w-xs sm:max-w-sm">
                   <input
                     type="text"
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
                     maxLength={50}
-                    className="min-h-8 w-full min-w-0 rounded-lg border border-red-500/40 bg-black/40 px-2.5 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-red-500/30"
+                    className="min-h-8 w-full min-w-0 rounded-lg border border-red-500/60 bg-black/60 px-2.5 text-xs sm:text-sm font-bold text-white outline-none focus:ring-2 focus:ring-red-500/30"
                     autoFocus
                   />
                   <button
                     type="submit"
                     disabled={isSavingTitle}
-                    className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-red-600 text-xs font-bold text-white hover:bg-red-700 cursor-pointer"
-                    title="حفظ الاسم"
+                    className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-red-600 text-xs font-bold text-white hover:bg-red-700 cursor-pointer shadow-md shadow-red-600/30"
+                    title="حفظ"
                   >
                     <i className={isSavingTitle ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-check"} />
                   </button>
@@ -340,8 +341,8 @@ export default function RoomClientWrapper({
                   </button>
                 </form>
               ) : (
-                <>
-                  <h1 className="truncate text-base font-black text-white sm:text-lg">
+                <div className="flex items-center gap-2">
+                  <h1 className="truncate text-sm sm:text-base font-black text-white tracking-wide" title={displayTitle}>
                     {displayTitle}
                   </h1>
                   {isHostUser && (
@@ -351,64 +352,69 @@ export default function RoomClientWrapper({
                         setNewTitle(displayTitle);
                         setIsEditingTitle(true);
                       }}
-                      className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition"
+                      className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
                       title="إعادة تسمية الغرفة"
                       aria-label="إعادة تسمية الغرفة"
                     >
-                      <i className="fa-solid fa-pen text-xs" aria-hidden="true" />
+                      <i className="fa-solid fa-pen text-[10px]" aria-hidden="true" />
                     </button>
                   )}
                   {roomData.isPrivate && (
-                    <span className="shrink-0 rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-200">
+                    <span className="shrink-0 rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5 text-[9px] font-black text-amber-300">
                       <i className="fa-solid fa-lock ml-1" aria-hidden="true" />
                       خاصة
                     </span>
                   )}
-                </>
+                </div>
               )}
-            </div>
-            <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden text-[11px] text-slate-400">
-              <span className="inline-flex min-w-0 flex-1 items-center gap-1.5 text-slate-300">
-                <UserAvatar imageUrl={roomData.host?.imageUrl} name={roomData.host?.name} className="size-5 border border-white/15 text-[8px]" />
-                <span className="max-w-24 truncate">المضيف: {roomData.host?.name || 'مستخدم أليكس'}</span>
-              </span>
-              <span className="h-3 w-px shrink-0 bg-white/10" aria-hidden="true" />
-              <span className="inline-flex shrink-0 items-center gap-1.5 text-slate-300" aria-live="polite">
-                <span className={`size-1.5 rounded-full ${connectionMeta.color}`} />
-                <span className="hidden min-[380px]:inline">{connectionMeta.label}</span>
-              </span>
-              <span className="hidden truncate font-mono sm:inline" dir="ltr">{roomId.slice(0, 12)}</span>
+
+              {/* Sub-meta details */}
+              <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                <span className="inline-flex items-center gap-1.5 text-slate-300">
+                  <UserAvatar imageUrl={roomData.host?.imageUrl} name={roomData.host?.name} className="size-4 border border-white/20 text-[7px]" />
+                  <span className="max-w-28 truncate font-medium">{roomData.host?.name || 'مستخدم أليكس'}</span>
+                </span>
+                <span className="h-2.5 w-px bg-white/15" />
+                <span className="inline-flex items-center gap-1.5">
+                  <span className={`size-1.5 rounded-full ${connectionMeta.color}`} />
+                  <span className="text-[10px] text-slate-300 font-medium">{connectionMeta.label}</span>
+                </span>
+              </div>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={showMembersPanel}
-            className="flex min-h-11 shrink-0 cursor-pointer items-center rounded-xl border border-white/10 bg-white/[0.05] px-2.5 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-            aria-label={`عرض أعضاء الغرفة، العدد ${memberCount}`}
-          >
-            <i className="fa-solid fa-users text-slate-300 min-[430px]:hidden" aria-hidden="true" />
-            <span className="hidden -space-x-2 space-x-reverse min-[430px]:flex" aria-hidden="true">
-              {visibleMembers.map((member) => (
-                <UserAvatar key={member.id} imageUrl={member.avatarUrl} name={member.name} className="size-7 border-2 border-[#0b101a] text-[10px]" />
-              ))}
-            </span>
-            <span className="mr-1.5 text-xs font-bold text-slate-200 min-[430px]:mr-2">{memberCount}</span>
-          </button>
+          {/* Left Section: Active Members & Share Action */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={showMembersPanel}
+              className="flex min-h-10 shrink-0 cursor-pointer items-center rounded-xl border border-white/10 bg-white/[0.04] px-2.5 transition hover:border-white/20 hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+              aria-label={`عرض أعضاء الغرفة، العدد ${memberCount}`}
+            >
+              <i className="fa-solid fa-users text-slate-300 min-[430px]:hidden" aria-hidden="true" />
+              <span className="hidden -space-x-2 space-x-reverse min-[430px]:flex" aria-hidden="true">
+                {visibleMembers.map((member) => (
+                  <UserAvatar key={member.id} imageUrl={member.avatarUrl} name={member.name} className="size-6 border-2 border-[#0a0f1d] text-[9px]" />
+                ))}
+              </span>
+              <span className="mr-1.5 text-xs font-black text-slate-200 min-[430px]:mr-2">{memberCount}</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={handleShareRoom}
-            className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-[#e50914] text-white shadow-[0_8px_24px_rgba(229,9,20,0.25)] transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
-            aria-label="مشاركة رابط الغرفة"
-            title="مشاركة الغرفة"
-          >
-            <i className="fa-solid fa-share-nodes" aria-hidden="true" />
-          </button>
+            <button
+              type="button"
+              onClick={handleShareRoom}
+              className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-red-600 text-white shadow-lg shadow-red-600/30 transition hover:bg-red-700 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+              aria-label="مشاركة رابط الغرفة"
+              title="مشاركة الغرفة"
+            >
+              <i className="fa-solid fa-share-nodes text-xs" aria-hidden="true" />
+            </button>
+          </div>
         </header>
 
+        {/* Main Grid Layout */}
         <div className="grid min-h-0 flex-1 items-start gap-4 lg:gap-5 lg:grid-cols-[23rem_minmax(0,1fr)] xl:grid-cols-[25rem_minmax(0,1fr)]" dir="rtl">
-          {/* Chat Sidebar: Right side on Desktop (Order 1 in RTL), under player on Mobile */}
+          {/* Lounge Sidebar: Right side on Desktop (Order 1 in RTL), under player on Mobile */}
           <aside ref={sidebarPanelRef} className="order-2 min-w-0 scroll-mt-4 lg:order-1 lg:sticky lg:top-4 lg:self-start" dir="rtl">
             <RoomSidebar
               roomId={roomId}
@@ -435,28 +441,29 @@ export default function RoomClientWrapper({
             />
           </aside>
 
-          {/* Main Stage (Player & Search): Left side on Desktop (Order 2 in RTL), top on Mobile */}
+          {/* Main Cinema Stage (Player & Discovery): Left side on Desktop (Order 2 in RTL), top on Mobile */}
           <section className="order-1 min-w-0 lg:order-2" dir="rtl">
             {!video ? (
-              <div className="flex min-h-[min(34svh,17rem)] sm:min-h-[min(38svh,21rem)] lg:min-h-[min(43svh,24.5rem)] items-center justify-center rounded-2xl border border-white/10 bg-[#0b101a]/90 p-5 sm:p-6 lg:p-7 shadow-2xl">
-                <div className="w-full text-center">
-                  <div className="mx-auto mb-2.5 flex size-12 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-xl text-red-400">
-                    <i className="fa-solid fa-film" aria-hidden="true" />
+              <div className="relative overflow-hidden flex min-h-[min(34svh,17rem)] sm:min-h-[min(38svh,21rem)] lg:min-h-[min(43svh,24.5rem)] items-center justify-center rounded-3xl border border-white/10 bg-[#0a0f1d]/85 p-5 sm:p-6 lg:p-7 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+                <div className="absolute -top-20 -left-20 size-48 rounded-full bg-red-600/10 blur-[80px] pointer-events-none" />
+                <div className="w-full text-center relative z-10">
+                  <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-2xl border border-red-500/30 bg-gradient-to-tr from-red-600/20 to-red-500/5 text-2xl text-red-500 shadow-[0_0_25px_rgba(229,9,20,0.2)]">
+                    <i className="fa-solid fa-clapperboard" aria-hidden="true" />
                   </div>
-                  <h2 className="mb-1 text-xl font-black sm:text-2xl">
-                    {canChangeMedia ? 'اختر ما ستشاهدونه' : 'بانتظار اختيار المحتوى'}
+                  <h2 className="mb-1 text-xl font-black sm:text-2xl text-white tracking-wide">
+                    {canChangeMedia ? 'اختر ما ستشاهدونه الليلة' : 'بانتظار اختيار المحتوى'}
                   </h2>
-                  <p className="mx-auto mb-4 max-w-md text-xs sm:text-sm leading-6 text-slate-300">
+                  <p className="mx-auto mb-4 max-w-md text-xs sm:text-sm leading-relaxed text-slate-400">
                     {canChangeMedia
-                      ? 'ابحث عن فيلم أو مسلسل، وسيظهر لجميع المشاركين فور اختياره.'
-                      : 'سيبدأ العرض تلقائياً عندما يختار المضيف أو المشرف الفيلم أو الحلقة.'}
+                      ? 'ابحث عن فيلم أو مسلسل، وسيبدأ العرض فوراً لجميع المشاركين المتواجدين بالروم.'
+                      : 'سيبدأ البث والمشاهدة تلقائياً بمجرد أن يختار المضيف أو المشرف المحتوى.'}
                   </p>
                   {canChangeMedia ? (
                     <LobbySearch roomId={roomId} onVideoSelected={roomHook.changeVideo} />
                   ) : (
-                    <div className="flex justify-center gap-2" role="status" aria-label="بانتظار المضيف">
+                    <div className="flex justify-center items-center gap-2 py-4" role="status" aria-label="بانتظار المضيف">
                       {[0, 150, 300].map((delay) => (
-                        <span key={delay} className="size-2.5 animate-bounce rounded-full bg-red-500" style={{ animationDelay: `${delay}ms` }} />
+                        <span key={delay} className="size-3 animate-bounce rounded-full bg-red-600 shadow-md shadow-red-600/40" style={{ animationDelay: `${delay}ms` }} />
                       ))}
                     </div>
                   )}
@@ -464,23 +471,25 @@ export default function RoomClientWrapper({
               </div>
             ) : (
               <div className="flex min-w-0 flex-col gap-4">
-                <RoomPlayerUI
-                  video={video}
-                  seasons={seasons}
-                  episodes={episodes}
-                  roomHook={roomHook}
-                />
+                <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#0a0f1d]/85 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+                  <RoomPlayerUI
+                    video={video}
+                    seasons={seasons}
+                    episodes={episodes}
+                    roomHook={roomHook}
+                  />
+                </div>
 
                 {canChangeMedia && (
-                  <details className="group rounded-2xl border border-white/10 bg-[#0b101a]/90 shadow-lg">
-                    <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm font-extrabold marker:content-none sm:px-5">
-                      <span className="flex items-center gap-2.5">
-                        <i className="fa-solid fa-clapperboard text-red-400" aria-hidden="true" />
-                        تغيير الفيلم أو الحلقة
+                  <details className="group rounded-2xl border border-white/10 bg-[#0a0f1d]/85 shadow-lg backdrop-blur-xl transition-all">
+                    <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 text-sm font-extrabold marker:content-none hover:bg-white/[0.02]">
+                      <span className="flex items-center gap-2.5 text-white">
+                        <i className="fa-solid fa-film text-red-500" aria-hidden="true" />
+                        <span>تغيير الفيلم أو الحلقة المعروضة</span>
                       </span>
                       <i className="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
                     </summary>
-                    <div className="border-t border-white/10 p-4 sm:p-5">
+                    <div className="border-t border-white/10 p-5">
                       <LobbySearch roomId={roomId} onVideoSelected={roomHook.changeVideo} />
                     </div>
                   </details>

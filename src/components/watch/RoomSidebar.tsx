@@ -722,39 +722,47 @@ export default function RoomSidebar({
       )}
 
       <section
-        className={`relative flex w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0b101a] shadow-2xl transition-all ${
+        className={`relative flex w-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0a0f1d]/85 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all ${
           activeTab === 'chat'
             ? 'h-[clamp(28rem,70dvh,42rem)] min-h-[28rem]'
             : 'h-auto min-h-0'
         } lg:h-[min(68dvh,42rem)] lg:min-h-[30rem] lg:max-h-[42rem]`}
-        aria-label="لوحة الغرفة"
+        aria-label="مجلس الغرفة"
       >
-        <header className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-white/10 px-4">
+        {/* Lounge Header */}
+        <header className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-white/10 px-4 py-2.5 bg-white/[0.02]">
           <div className="min-w-0">
-            <h2 className="truncate text-sm font-black text-white">مجلس الغرفة</h2>
-            <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400" aria-live="polite">
+            <h2 className="truncate text-sm font-black text-white tracking-wide">مجلس الغرفة</h2>
+            <p className="mt-0.5 flex items-center gap-1.5 text-[10px] text-slate-400" aria-live="polite">
               <span className={`size-1.5 rounded-full ${connectionMeta.color}`} aria-hidden="true" />
-              {connectionMeta.label}
+              <span className="font-medium">{connectionMeta.label}</span>
             </p>
           </div>
-          <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 font-mono text-[10px] text-slate-400" dir="ltr">
+          <span className="rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1 font-mono text-[10px] text-slate-400" dir="ltr">
             {roomId.slice(0, 8)}
           </span>
         </header>
 
-        <div className="grid grid-cols-3 gap-1 shrink-0 border-b border-white/10 bg-black/15 p-2" role="toolbar" aria-label="أدوات الغرفة">
+        {/* Segmented Tab Selector */}
+        <div className="grid grid-cols-3 gap-1 shrink-0 border-b border-white/10 bg-black/25 p-1.5" role="toolbar" aria-label="أدوات الغرفة">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               aria-pressed={activeTab === tab.id}
               onClick={() => onActiveTabChange(tab.id)}
-              className={`flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2 text-[11px] font-extrabold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${activeTab === tab.id ? 'bg-white/10 text-white shadow-sm' : 'text-slate-400 hover:bg-white/[0.05] hover:text-white'}`}
+              className={`flex min-h-10 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2 text-[11px] font-black transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 active:scale-95 ${
+                activeTab === tab.id
+                  ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
+                  : 'text-slate-400 hover:bg-white/[0.06] hover:text-white'
+              }`}
             >
-              <i className={`fa-solid ${tab.icon} ${activeTab === tab.id ? 'text-red-400' : ''}`} aria-hidden="true" />
+              <i className={`fa-solid ${tab.icon} text-xs`} aria-hidden="true" />
               <span>{tab.label}</span>
               {typeof tab.count === 'number' && (
-                <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${tab.id === 'chat' ? 'bg-red-500 text-white' : 'bg-white/10'}`}>
+                <span className={`rounded-full px-1.5 py-0.2 text-[9px] font-mono ${
+                  activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-400'
+                }`}>
                   {tab.count}
                 </span>
               )}
@@ -765,7 +773,7 @@ export default function RoomSidebar({
         {/* TAB 1: CHAT */}
         {activeTab === 'chat' && (
           <div id="room-panel-chat" className="flex min-h-0 flex-1 flex-col">
-            <div className="relative min-h-0 flex-1 overflow-hidden bg-[#090e17]">
+            <div className="relative min-h-0 flex-1 overflow-hidden bg-[#070b14]/70">
               <div
                 ref={chatScrollRef}
                 onScroll={handleChatScroll}
@@ -981,10 +989,10 @@ export default function RoomSidebar({
                   <button
                     type="button"
                     onClick={() => setReplyingTo(null)}
-                    className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                    className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                     aria-label="إلغاء الرد"
                   >
-                    <i className="fa-solid fa-xmark" aria-hidden="true" />
+                    <i className="fa-solid fa-xmark text-xs" aria-hidden="true" />
                   </button>
                 </div>
               ) : null}
@@ -1001,17 +1009,21 @@ export default function RoomSidebar({
                   }}
                   maxLength={1000}
                   rows={1}
-                  placeholder={editingMessage ? 'أدخل الرسالة المعدلة...' : 'اكتب رسالة...'}
+                  placeholder={editingMessage ? 'أدخل الرسالة المعدلة...' : 'اكتب رسالة في المجلس...'}
                   aria-label="رسالة الدردشة"
-                  className="max-h-28 min-h-11 min-w-0 flex-1 resize-none rounded-xl border border-white/10 bg-white/[0.055] px-3.5 py-3 text-[13px] leading-5 text-white outline-none placeholder:text-slate-500 focus:border-red-500/60 focus:ring-2 focus:ring-red-500/20"
+                  className="max-h-28 min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-xs sm:text-sm leading-5 text-white outline-none placeholder:text-slate-500 transition-all focus:border-red-500 focus:bg-black/60 focus:ring-4 focus:ring-red-500/15"
                 />
                 <button
                   type="submit"
                   disabled={!inputText.trim() || isSending}
-                  className={`flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-white transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-not-allowed disabled:opacity-35 ${editingMessage ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#e50914] hover:bg-red-700'}`}
+                  className={`flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl text-white shadow-lg transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-30 ${
+                    editingMessage 
+                      ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/30' 
+                      : 'bg-red-600 hover:bg-red-700 shadow-red-600/30'
+                  }`}
                   aria-label={isSending ? 'جارٍ الإرسال' : editingMessage ? 'حفظ التعديل' : 'إرسال الرسالة'}
                 >
-                  <i className={`fa-solid ${isSending ? 'fa-spinner fa-spin' : editingMessage ? 'fa-check' : 'fa-paper-plane'}`} aria-hidden="true" />
+                  <i className={`fa-solid text-sm ${isSending ? 'fa-spinner fa-spin' : editingMessage ? 'fa-check' : 'fa-paper-plane'}`} aria-hidden="true" />
                 </button>
               </div>
             </form>
