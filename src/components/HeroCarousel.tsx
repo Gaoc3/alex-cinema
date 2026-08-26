@@ -282,7 +282,7 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           {/* Desktop Thumbnails */}
           <div 
             dir="rtl"
-            className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-6 sm:px-10 py-5 scroll-smooth items-end pointer-events-auto"
+            className="hidden lg:flex gap-4 overflow-x-auto hide-scrollbar w-full px-6 sm:px-10 py-5 scroll-smooth items-end pointer-events-auto snap-x snap-mandatory scroll-px-6 sm:scroll-px-10"
           >
             {videos.map((video, idx) => {
               const thumbUrl = getVideoImageUrl(video, 'cover');
@@ -295,10 +295,10 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
                   }}
                   type="button"
                   onClick={() => triggerSlideChange(idx)}
-                  className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none border ${
+                  className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none border snap-start w-[calc((100%-1rem*4)/5)] xl:w-[calc((100%-1rem*5)/6)] 2xl:w-[calc((100%-1rem*6)/7)] ${
                     isActive
-                      ? 'w-32 sm:w-44 md:w-56 lg:w-64 border-alex-primary ring-2 ring-alex-primary shadow-[0_10px_30px_rgba(229,9,20,0.5)] scale-100 opacity-100 z-10'
-                      : 'w-24 sm:w-32 md:w-40 lg:w-48 border-white/10 opacity-85 hover:opacity-100 scale-95 hover:scale-100 z-0 bg-[#060811]'
+                      ? 'border-alex-primary ring-2 ring-alex-primary shadow-[0_10px_30px_rgba(229,9,20,0.5)] scale-100 opacity-100 z-10'
+                      : 'border-white/10 opacity-80 hover:opacity-100 scale-95 hover:scale-100 z-0 bg-[#060811]'
                   }`}
                   aria-label={`Go to slide ${idx + 1}`}
                 >
