@@ -280,44 +280,45 @@ export default function HeroCarousel({ videos }: HeroCarouselProps) {
           </div>
 
           {/* Desktop Thumbnails (Exact Geometric Calculation — 100% Full Cards, Zero Edge Cut-off) */}
-          <div 
-            dir="rtl"
-            className="hidden lg:flex gap-3.5 overflow-x-auto hide-scrollbar w-full px-6 sm:px-10 py-5 scroll-smooth items-end pointer-events-auto snap-x snap-mandatory scroll-px-6 sm:scroll-px-10"
-          >
-            {videos.map((video, idx) => {
-              const thumbUrl = getVideoImageUrl(video, 'cover');
-              const isActive = activeIndex === idx;
-              return (
-                <button
-                  key={video.nb}
-                  ref={(el) => {
-                    thumbnailsRef.current[idx] = el;
-                  }}
-                  type="button"
-                  onClick={() => triggerSlideChange(idx)}
-                  className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none border snap-start w-[calc((100%-0.875rem*4)/5)] xl:w-[calc((100%-0.875rem*5)/6)] 2xl:w-[calc((100%-0.875rem*6)/7)] ${
-                    isActive
-                      ? 'border-alex-primary ring-2 ring-alex-primary shadow-[0_10px_30px_rgba(229,9,20,0.5)] opacity-100 z-10'
-                      : 'border-white/10 opacity-75 hover:opacity-100 hover:border-white/30 z-0 bg-[#060811]'
-                  }`}
-                  aria-label={`Go to slide ${idx + 1}`}
-                >
-                  <Image
-                    src={thumbUrl}
-                    alt={video.ar_title}
-                    fill
-                    unoptimized
-                    className="w-full h-full object-cover transform-gpu"
-                    loading="lazy"
-                  />
-                  <div
-                    className={`absolute inset-0 transition-colors duration-300 ${
-                      isActive ? 'bg-transparent' : 'bg-black/40 hover:bg-black/10'
+          <div className="hidden lg:block w-full px-6 sm:px-10 py-5 overflow-hidden" dir="rtl">
+            <div 
+              className="flex gap-3.5 overflow-x-auto hide-scrollbar w-full px-0 scroll-smooth items-end pointer-events-auto snap-x snap-mandatory"
+            >
+              {videos.map((video, idx) => {
+                const thumbUrl = getVideoImageUrl(video, 'cover');
+                const isActive = activeIndex === idx;
+                return (
+                  <button
+                    key={video.nb}
+                    ref={(el) => {
+                      thumbnailsRef.current[idx] = el;
+                    }}
+                    type="button"
+                    onClick={() => triggerSlideChange(idx)}
+                    className={`relative aspect-[16/9] rounded-xl overflow-hidden transition-all duration-300 transform-gpu backface-hidden will-change-transform flex-shrink-0 cursor-pointer select-none border snap-start w-[calc((100%-0.875rem*4)/5)] xl:w-[calc((100%-0.875rem*5)/6)] 2xl:w-[calc((100%-0.875rem*6)/7)] ${
+                      isActive
+                        ? 'border-alex-primary ring-2 ring-alex-primary shadow-[0_10px_30px_rgba(229,9,20,0.5)] opacity-100 z-10'
+                        : 'border-white/10 opacity-75 hover:opacity-100 hover:border-white/30 z-0 bg-[#060811]'
                     }`}
-                  ></div>
-                </button>
-              );
-            })}
+                    aria-label={`Go to slide ${idx + 1}`}
+                  >
+                    <Image
+                      src={thumbUrl}
+                      alt={video.ar_title}
+                      fill
+                      unoptimized
+                      className="w-full h-full object-cover transform-gpu"
+                      loading="lazy"
+                    />
+                    <div
+                      className={`absolute inset-0 transition-colors duration-300 ${
+                        isActive ? 'bg-transparent' : 'bg-black/40 hover:bg-black/10'
+                      }`}
+                    ></div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
