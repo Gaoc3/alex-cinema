@@ -38,6 +38,8 @@ function RoomStateScreen({
   description,
   actionLabel,
   onAction,
+  secondaryActionLabel,
+  onSecondaryAction,
   autoRedirectSeconds = 5,
 }: {
   icon: string;
@@ -45,43 +47,66 @@ function RoomStateScreen({
   description: string;
   actionLabel: string;
   onAction: () => void;
-  autoRedirectSeconds?: number;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
+  autoRedirectSeconds?: number | null;
 }) {
-  const [countdown, setCountdown] = useState(autoRedirectSeconds);
+  const [countdown, setCountdown] = useState<number | null>(autoRedirectSeconds);
 
   useEffect(() => {
+    if (countdown === null) return;
     if (countdown <= 0) {
       onAction();
       return;
     }
     const timer = setInterval(() => {
-      setCountdown((prev) => prev - 1);
+      setCountdown((prev) => (prev !== null ? prev - 1 : null));
     }, 1000);
     return () => clearInterval(timer);
   }, [countdown, onAction]);
 
   return (
     <div className="flex min-h-[100svh] items-center justify-center bg-[#050811] p-4 text-white" dir="rtl">
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#0c121f]/90 p-8 text-center shadow-2xl backdrop-blur-2xl">
-        <div className="absolute -top-24 -right-24 size-48 rounded-full bg-red-600/15 blur-[60px] pointer-events-none" />
-        <div className="mx-auto mb-5 flex size-20 items-center justify-center rounded-3xl border border-red-500/30 bg-red-500/10 text-3xl text-red-400 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/15 bg-[#090e1d]/95 p-8 sm:p-10 text-center shadow-[0_30px_90px_rgba(0,0,0,0.9),0_0_50px_rgba(229,9,20,0.2)] backdrop-blur-2xl animate-scaleIn">
+        {/* Ambient Glow */}
+        <div className="absolute -top-24 -right-24 size-56 rounded-full bg-red-600/15 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 size-56 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
+
+        <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-3xl border border-red-500/35 bg-red-600/20 text-3xl text-red-400 shadow-[0_0_35px_rgba(229,9,20,0.35)]">
           <i className={icon} aria-hidden="true" />
         </div>
-        <h1 className="mb-2 text-2xl font-black text-white">{title}</h1>
-        <p className="mb-6 text-sm leading-7 text-slate-300">{description}</p>
+        <h1 className="mb-3 text-2xl sm:text-3xl font-black text-white">{title}</h1>
+        <p className="mb-6 text-sm leading-7 text-slate-300 font-medium">{description}</p>
 
-        <div className="mb-6 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] py-2.5 px-4 text-xs text-slate-400">
-          <i className="fa-solid fa-clock text-amber-400" aria-hidden="true" />
-          <span>سيتم تحويلك تلقائياً خلال <strong className="text-white font-mono text-sm">{countdown}</strong> ثوانٍ...</span>
+        {countdown !== null && (
+          <div className="mb-6 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] py-2.5 px-4 text-xs text-slate-400">
+            <i className="fa-solid fa-clock text-amber-400" aria-hidden="true" />
+            <span>سيتم تحويلك تلقائياً خلال <strong className="text-white font-mono text-sm">{countdown}</strong> ثوانٍ...</span>
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          {secondaryActionLabel && onSecondaryAction && (
+            <button
+              type="button"
+              onClick={onSecondaryAction}
+              className="w-full sm:flex-1 min-h-12 cursor-pointer rounded-2xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 px-6 py-3.5 text-xs sm:text-sm font-black text-white shadow-[0_8px_25px_rgba(229,9,20,0.4)] transition-all active:scale-95"
+            >
+              {secondaryActionLabel}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onAction}
+            className={`w-full ${secondaryActionLabel ? 'sm:flex-1' : ''} min-h-12 cursor-pointer rounded-2xl ${
+              secondaryActionLabel
+                ? 'border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300'
+                : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white shadow-[0_8px_25px_rgba(229,9,20,0.4)]'
+            } px-6 py-3.5 text-xs sm:text-sm font-black transition-all active:scale-95`}
+          >
+            {actionLabel}
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={onAction}
-          className="w-full min-h-12 cursor-pointer rounded-xl bg-red-600 px-6 py-3 text-sm font-extrabold text-white transition hover:bg-red-700 active:scale-98 shadow-lg shadow-red-600/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-        >
-          {actionLabel}
-        </button>
       </div>
     </div>
   );
@@ -235,6 +260,21 @@ export default function RoomClientWrapper({
       <div className="flex min-h-[100svh] items-center justify-center bg-[#050811]" role="status" aria-label="جارٍ تحميل الغرفة">
         <div className="size-12 animate-spin rounded-full border-4 border-red-600 border-t-transparent shadow-lg shadow-red-600/30" />
       </div>
+    );
+  }
+
+  if (roomHook.isSessionReplaced) {
+    return (
+      <RoomStateScreen
+        icon="fa-solid fa-mobile-screen-button"
+        title="تم تسجيل الدخول من جهاز آخر"
+        description={roomHook.sessionReplacedMessage || 'تم إيقاف هذه الجلسة لأنك قمت بالانضمام إلى هذه الغرفة من جهاز أو متصفح آخر بحسابك.'}
+        actionLabel="العودة للرئيسية"
+        onAction={handleExitRoom}
+        secondaryActionLabel="إعادة الدخول من هذا الجهاز"
+        onSecondaryAction={() => window.location.reload()}
+        autoRedirectSeconds={null}
+      />
     );
   }
 
@@ -446,6 +486,7 @@ export default function RoomClientWrapper({
               deleteChatMessage={roomHook.deleteChatMessage}
               reactToMessage={roomHook.reactToMessage}
               currentUserId={currentUserId}
+              currentSocketId={roomHook.currentSocketId}
               isHost={isHostUser}
               userRole={roomHook.userRole}
               userPermissions={roomHook.userPermissions}

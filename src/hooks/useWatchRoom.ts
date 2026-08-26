@@ -87,6 +87,9 @@ export interface WatchRoomHook {
   isBanned: boolean;
   banReason: string | null;
   isRoomClosed: boolean;
+  isSessionReplaced: boolean;
+  sessionReplacedMessage: string | null;
+  currentSocketId: string | null;
   connectionError: string | null;
 }
 
@@ -214,6 +217,9 @@ export function useWatchRoom(
   const [isBanned, setIsBanned] = useState(false);
   const [banReason, setBanReason] = useState<string | null>(null);
   const [isRoomClosed, setIsRoomClosed] = useState(false);
+  const [isSessionReplaced, setIsSessionReplaced] = useState(false);
+  const [sessionReplacedMessage, setSessionReplacedMessage] = useState<string | null>(null);
+  const [currentSocketId, setCurrentSocketId] = useState<string | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
@@ -509,6 +515,19 @@ export function useWatchRoom(
       newSocket.disconnect();
     });
 
+    newSocket.on('connect', () => {
+      setCurrentSocketId(newSocket.id || null);
+    });
+
+    newSocket.on('session_replaced', (data: { reason?: string; message?: string }) => {
+      terminalDisconnect = true;
+      setConnectionState('offline');
+      setIsSessionReplaced(true);
+      setSessionReplacedMessage(data?.message || 'تم تسجيل الدخول إلى هذه الغرفة من جهاز أو متصفح آخر بحسابك.');
+      setConnectionError(data?.message || 'تم استبدال هذه الجلسة بجهاز آخر');
+      newSocket.disconnect();
+    });
+
     newSocket.on('room_deleted', () => {
       terminalDisconnect = true;
       setConnectionState('offline');
@@ -748,6 +767,9 @@ export function useWatchRoom(
     isBanned,
     banReason,
     isRoomClosed,
+    isSessionReplaced,
+    sessionReplacedMessage,
+    currentSocketId,
     connectionError,
   };
 }

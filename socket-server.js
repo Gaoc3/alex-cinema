@@ -495,6 +495,31 @@ async function start() {
           return;
         }
 
+        // Disconnect and replace any previous active session for the same user or identity in this room
+        for (const [existingSocketId, member] of room.members.entries()) {
+          const isSameUser = (socket.data.userId && member.userId === socket.data.userId) ||
+                             (socket.data.senderIdentity && member.identity === socket.data.senderIdentity);
+          if (isSameUser && existingSocketId !== socket.id) {
+            const prevSocket = io.sockets.sockets.get(existingSocketId);
+            if (prevSocket) {
+              prevSocket.emit('session_replaced', {
+                reason: 'DUPLICATE_SESSION',
+                message: 'تم تسجيل الدخول إلى هذه الغرفة من جهاز أو متصفح آخر بحسابك.'
+              });
+              prevSocket.leave(roomId);
+              prevSocket.data.joinedRoom = false;
+              setTimeout(() => {
+                try {
+                  prevSocket.disconnect(true);
+                } catch {
+                  // ignore
+                }
+              }, 100);
+            }
+            room.members.delete(existingSocketId);
+          }
+        }
+
         socket.join(roomId);
         socket.data.joinedRoom = true;
         const isHost = isRoomHost(socket, room);

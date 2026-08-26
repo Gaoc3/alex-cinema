@@ -21,6 +21,7 @@ interface RoomSidebarProps {
   deleteChatMessage: (messageId: string) => Promise<{ ok: boolean; error?: string }>;
   reactToMessage?: (messageId: string, emoji: string) => Promise<{ ok: boolean; error?: string }>;
   currentUserId: string | null;
+  currentSocketId?: string | null;
   isHost: boolean;
   userRole?: 'host' | 'moderator' | 'member';
   userPermissions?: MemberPermissions;
@@ -65,6 +66,7 @@ export default function RoomSidebar({
   deleteChatMessage,
   reactToMessage,
   currentUserId,
+  currentSocketId,
   isHost,
   userRole = 'member',
   userPermissions = { canKick: false, canBan: false, canSeek: false, canChangeMedia: false },
@@ -1192,6 +1194,10 @@ export default function RoomSidebar({
               [...hosts, ...moderators, ...viewers].map((member) => {
                 const isMemberHost = member.isHost;
                 const isMemberMod = member.role === 'moderator';
+                const isCurrentUser = Boolean(
+                  (currentUserId && (member as any).userId === currentUserId) ||
+                  (currentSocketId && member.id === currentSocketId)
+                );
 
                 return (
                   <div key={member.id} className="relative flex flex-col gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.04] p-3 transition hover:bg-white/[0.06]">
@@ -1214,15 +1220,22 @@ export default function RoomSidebar({
                           ) : null}
                         </span>
                         <div className="min-w-0">
-                          <p className="truncate text-xs font-bold text-slate-100">{member.name}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="truncate text-xs font-bold text-slate-100">{member.name}</p>
+                            {isCurrentUser && (
+                              <span className="shrink-0 text-[10px] font-black text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20">
+                                أنت
+                              </span>
+                            )}
+                          </div>
                           <p className="mt-0.5 text-[10px] font-semibold text-slate-400">
                             {isMemberHost ? 'المضيف' : isMemberMod ? 'مشرف الغرفة' : 'مشاهد'}
                           </p>
                         </div>
                       </div>
 
-                      {/* 3-dots Action Menu for Host / Moderators */}
-                      {!isMemberHost && (canManageMembers || isHost) && (
+                      {/* 3-dots Action Menu for Host / Moderators (Hidden on current user's own profile) */}
+                      {!isCurrentUser && !isMemberHost && (canManageMembers || isHost) && (
                         <div className="relative">
                           <button
                             type="button"
@@ -1560,7 +1573,7 @@ export default function RoomSidebar({
               </button>
             )}
 
-            {canManageMembers && (isHost || userPermissions?.canKick) && (
+            {canManageMembers && (isHost || (userPermissions?.canKick && memberDropdownState.member.role !== 'moderator')) && (
               <button
                 type="button"
                 onClick={() => {
@@ -1575,7 +1588,7 @@ export default function RoomSidebar({
               </button>
             )}
 
-            {canManageMembers && (isHost || userPermissions?.canBan) && (
+            {canManageMembers && (isHost || (userPermissions?.canBan && memberDropdownState.member.role !== 'moderator')) && (
               <button
                 type="button"
                 onClick={() => {
