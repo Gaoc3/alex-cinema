@@ -276,7 +276,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                 key={item.nb}
                 disabled={Boolean(selectedId)}
                 onClick={() => void handleSelectVideo(item)}
-                className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#070b14] text-right shadow-lg transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500/80 hover:shadow-[0_16px_36px_rgba(0,0,0,0.95),0_0_25px_rgba(229,9,20,0.4)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#03060f] text-right shadow-lg transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500/80 hover:shadow-[0_16px_36px_rgba(0,0,0,0.95),0_0_25px_rgba(229,9,20,0.4)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
                   isSelectingThis
                     ? 'border-red-500 ring-2 ring-red-500 shadow-[0_0_30px_rgba(229,9,20,0.6)]'
                     : 'border-white/10'
@@ -284,7 +284,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                 aria-label={`اختيار ${mainTitle}`}
               >
                 {/* Poster Background Image */}
-                <div className="absolute inset-0 bg-[#070b14]">
+                <div className="absolute inset-0 bg-[#03060f]">
                   <MediaPosterImage
                     video={item}
                     type="poster"
@@ -293,10 +293,14 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                   />
                 </div>
 
-                {/* Deep Vignette & Seamless Bottom Protection (No white artifact) */}
+                {/* Top Vignette */}
                 <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-[4]" />
-                <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-[#040711] from-25% via-[#040711]/92 via-55% to-transparent pointer-events-none z-[5]" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none z-[6]" />
+
+                {/* Solid Bottom Cap with Negative Inset (100% eliminates any bottom pixel bleed) */}
+                <div className="absolute -inset-x-2 -bottom-2 h-20 bg-[#03060f] pointer-events-none z-[5]" />
+
+                {/* Smooth Gradient Rising Upward */}
+                <div className="absolute -inset-x-2 -bottom-2 h-4/5 bg-gradient-to-t from-[#03060f] from-25% via-[#03060f]/90 via-55% to-transparent pointer-events-none z-[6]" />
 
                 {/* Top Floating Glass Badges */}
                 <div className="absolute top-2.5 right-2.5 left-2.5 flex items-center justify-between z-10 pointer-events-none">
@@ -380,7 +384,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                   key={item.nb}
                   disabled={Boolean(selectedId)}
                   onClick={() => void handleSelectVideo(item)}
-                  className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#070b14] text-right shadow-lg transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500/80 hover:shadow-[0_16px_36px_rgba(0,0,0,0.95),0_0_25px_rgba(229,9,20,0.4)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                  className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#03060f] text-right shadow-lg transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500/80 hover:shadow-[0_16px_36px_rgba(0,0,0,0.95),0_0_25px_rgba(229,9,20,0.4)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
                     isSelectingThis
                       ? 'border-red-500 ring-2 ring-red-500 shadow-[0_0_30px_rgba(229,9,20,0.6)]'
                       : 'border-white/10'
@@ -388,7 +392,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                   aria-label={`اختيار ${mainTitle}`}
                 >
                   {/* Poster Background Image */}
-                  <div className="absolute inset-0 bg-[#070b14]">
+                  <div className="absolute inset-0 bg-[#03060f]">
                     <MediaPosterImage
                       video={item}
                       type="poster"
@@ -397,10 +401,14 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                     />
                   </div>
 
-                  {/* Deep Vignette & Seamless Bottom Protection (No white artifact) */}
+                  {/* Top Vignette */}
                   <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-[4]" />
-                  <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-[#040711] from-25% via-[#040711]/92 via-55% to-transparent pointer-events-none z-[5]" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none z-[6]" />
+
+                  {/* Solid Bottom Cap with Negative Inset (100% eliminates any bottom pixel bleed) */}
+                  <div className="absolute -inset-x-2 -bottom-2 h-20 bg-[#03060f] pointer-events-none z-[5]" />
+
+                  {/* Smooth Gradient Rising Upward */}
+                  <div className="absolute -inset-x-2 -bottom-2 h-4/5 bg-gradient-to-t from-[#03060f] from-25% via-[#03060f]/90 via-55% to-transparent pointer-events-none z-[6]" />
 
                   {/* Top Floating Glass Badges */}
                   <div className="absolute top-2.5 right-2.5 left-2.5 flex items-center justify-between z-10 pointer-events-none">
