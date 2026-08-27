@@ -523,7 +523,7 @@ export default function RoomClientWrapper({
                   ) : (
                     <div className="flex justify-center items-center gap-2 py-4" role="status" aria-label="بانتظار المضيف">
                       {[0, 150, 300].map((delay) => (
-                        <span key={delay} className="size-3 animate-bounce rounded-full bg-red-600 shadow-md shadow-red-600/40" style={{ animationDelay: `${delay}ms` }} />
+                        <span key={delay} className="size-2.5 animate-pulse rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" style={{ animationDelay: `${delay}ms` }} />
                       ))}
                     </div>
                   )}

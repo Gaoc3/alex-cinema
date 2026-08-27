@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-27T03:15:49.227Z",
+  "title": "Design System: ALEX CINEMA",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Cinema Crimson",
+        "canonical": "#e50914"
+      },
+      "bg-obsidian": {
+        "role": "neutral",
+        "displayName": "Obsidian Void",
+        "canonical": "#03060f"
+      },
+      "surface-card": {
+        "role": "neutral",
+        "displayName": "Glass Slate",
+        "canonical": "#0a0f1d"
+      },
+      "accent-gold": {
+        "role": "secondary",
+        "displayName": "Starlight Gold",
+        "canonical": "#fbbf24"
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-hover",
+        "value": "0 12px 28px rgba(0,0,0,0.85), 0 0 18px rgba(229,9,20,0.3)",
+        "purpose": "Media card elevation aura."
+      },
+      {
+        "name": "play-glow",
+        "value": "0 0 30px rgba(229,9,20,0.8)",
+        "purpose": "Play capsule highlight."
+      }
+    ],
+    "motion": [
+      {
+        "name": "cinema-ease",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Smooth card and modal transitions."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      }
+    ]
+  },
+  "narrative": {
+    "northStar": "The Obsidian Cinema Sanctuary",
+    "overview": "ALEX CINEMA delivers an uncompromising, theater-grade dark aesthetic tailored for modern synchronized social watching.",
+    "keyCharacteristics": [
+      "Zero Light Pollution",
+      "Controlled Neon Brilliance",
+      "Instantaneous Synchronization"
+    ]
+  }
+}

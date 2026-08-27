@@ -109,7 +109,7 @@ export default function TelegramProfileModal({
             }}
             className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-[#141b30] hover:bg-[#1a2440] active:scale-95 border border-white/10 flex flex-col items-center justify-center gap-1.5 text-center transition-all shadow-md cursor-pointer"
           >
-            <i className="fa-solid fa-users text-purple-400 text-2xl sm:text-3xl mb-1"></i>
+            <i className="fa-solid fa-users text-red-400 text-2xl sm:text-3xl mb-1"></i>
             <span className="text-sm sm:text-base font-black text-white">الرومات</span>
             <span className="text-xs text-gray-400 font-bold">غرف المشاهدة</span>
           </button>
