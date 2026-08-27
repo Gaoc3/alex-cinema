@@ -276,7 +276,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                 key={item.nb}
                 disabled={Boolean(selectedId)}
                 onClick={() => void handleSelectVideo(item)}
-                className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#0a0f1d] text-right shadow-md transition-all duration-300 ease-out hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500 hover:shadow-[0_12px_28px_rgba(0,0,0,0.85),0_0_18px_rgba(229,9,20,0.3)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                className={`content-auto group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#0a0f1d] text-right shadow-md transition-all duration-300 ease-out hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500 hover:shadow-[0_12px_28px_rgba(0,0,0,0.85),0_0_18px_rgba(229,9,20,0.3)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
                   isSelectingThis
                     ? 'border-red-500 ring-2 ring-red-500 shadow-[0_0_30px_rgba(229,9,20,0.6)]'
                     : 'border-white/10'
@@ -381,7 +381,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                   key={item.nb}
                   disabled={Boolean(selectedId)}
                   onClick={() => void handleSelectVideo(item)}
-                  className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#0a0f1d] text-right shadow-md transition-all duration-300 ease-out hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500 hover:shadow-[0_12px_28px_rgba(0,0,0,0.85),0_0_18px_rgba(229,9,20,0.3)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                  className={`content-auto group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#0a0f1d] text-right shadow-md transition-all duration-300 ease-out hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500 hover:shadow-[0_12px_28px_rgba(0,0,0,0.85),0_0_18px_rgba(229,9,20,0.3)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
                     isSelectingThis
                       ? 'border-red-500 ring-2 ring-red-500 shadow-[0_0_30px_rgba(229,9,20,0.6)]'
                       : 'border-white/10'

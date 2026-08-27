@@ -5,11 +5,15 @@ const tunnelProxyBaseUrl = (process.env.TUNNEL_PROXY_BASE_URL || 'http://127.0.0
   .replace(/\/$/, '');
 
 const nextConfig = {
+  compress: true,
+  poweredByHeader: false,
   outputFileTracingRoot: __dirname,
   typescript: {
     ignoreBuildErrors: true,
   },
   images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 86400,
     remotePatterns: [
       {
         protocol: 'https',

@@ -878,5 +878,16 @@ button[data-provider="telegram"] {
   font-weight: 800 !important;
 }
 
+/* ------------------------------------------------------------- */
+/* HIGH-PERFORMANCE RENDERING & CONTENT VISIBILITY UTILITIES */
+/* ------------------------------------------------------------- */
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 320px;
+}
 
-
+.gpu-accelerated {
+  transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
