@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { useUnifiedAuth } from "@/components/auth/UnifiedAuthProvider";
+import { useFavorites } from "@/hooks/useFavorites";
 import FavoritesList from "./FavoritesList";
 import MyRoomsList from "./profile/MyRoomsList";
 import toast from "react-hot-toast";
@@ -11,9 +13,9 @@ import {
   TELEGRAM_CONTEXT_EVENT,
 } from "@/lib/telegramWebAppClient";
 
-const HeartIcon = () => <i className="fa-solid fa-heart text-pink-500"></i>;
-const FireIcon = () => <i className="fa-solid fa-fire text-purple-400"></i>;
-const UsersIcon = () => <i className="fa-solid fa-users text-blue-400"></i>;
+const HeartIcon = () => <i className="fa-solid fa-heart text-red-500"></i>;
+const FireIcon = () => <i className="fa-solid fa-fire text-red-500"></i>;
+const UsersIcon = () => <i className="fa-solid fa-users text-sky-400"></i>;
 const LogOutIcon = () => <i className="fa-solid fa-right-from-bracket text-red-500"></i>;
 
 function subscribeToTelegramContext(onStoreChange: () => void) {
@@ -35,8 +37,10 @@ interface UserNavProps {
 
 export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' }: UserNavProps = {}) {
   const { user, isLoaded, isTelegramUser, signOut } = useUnifiedAuth();
+  const { favorites } = useFavorites();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const isTelegramWebApp = useSyncExternalStore(
     subscribeToTelegramContext,
     isTelegramWebAppContext,
@@ -45,6 +49,24 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
   const [activeModal, setActiveModal] = useState<"favorites" | "my-rooms" | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Handle ESC key to close modal or dropdown
+  useEffect(() => {
+    if (!activeModal && !dropdownOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveModal(null);
+        setDropdownOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeModal, dropdownOpen]);
+
+  // Handle click outside dropdown
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -55,6 +77,18 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Body scroll locking when modal is open
+  useEffect(() => {
+    if (activeModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [activeModal]);
+
   if (!isLoaded || !user) return null;
 
   const isSmall = size === 'small';
@@ -64,21 +98,22 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
       <button
         type="button"
         onClick={() => setDropdownOpen(!dropdownOpen)}
+        aria-expanded={dropdownOpen}
+        aria-label="قائمة حساب المستخدم"
         className={`${
-          isSmall ? 'w-10 h-10 sm:w-11 sm:h-11' : 'w-12 h-12 sm:w-14 sm:h-14'
-        } border-2 border-white/25 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.8)] hover:scale-105 hover:border-red-500 hover:shadow-[0_0_25px_rgba(229,9,20,0.7)] transition-all duration-300 cursor-pointer overflow-hidden flex items-center justify-center bg-[#0b0f19]`}
+          isSmall ? 'size-10 sm:size-11' : 'size-12 sm:size-14'
+        } border-2 border-white/25 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.8)] hover:scale-105 hover:border-red-500 hover:shadow-[0_0_25px_rgba(229,9,20,0.7)] transition-all duration-300 cursor-pointer overflow-hidden flex items-center justify-center bg-[#0b0f19] active:scale-95`}
         title={user.name}
       >
         <UserAvatar imageUrl={user.imageUrl} name={user.name} className="size-full text-base sm:text-lg" />
       </button>
 
-
       {/* Dropdown Menu */}
       {dropdownOpen && (
-        <div className="absolute left-0 top-full mt-2 sm:mt-3 w-64 bg-[#06070a]/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] text-white p-3.5 z-[100] animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute left-0 top-full mt-2 sm:mt-3 w-64 bg-[#06070a]/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] text-white p-3.5 z-[100] animate-in fade-in zoom-in-95 duration-200" dir="rtl">
           <div className="flex items-center gap-3 p-2 pb-3 border-b border-white/10 mb-2">
             <UserAvatar imageUrl={user.imageUrl} name={user.name} className="size-10 border border-white/20 text-xs" />
-            <div className="flex flex-col min-w-0">
+            <div className="flex flex-col min-w-0 text-right">
               <span className="font-bold text-sm text-white truncate">{user.name}</span>
               <span className="text-xs text-sky-400 font-medium flex items-center gap-1">
                 <i className={isTelegramUser ? "fa-brands fa-telegram" : "fa-solid fa-user-shield"}></i>
@@ -87,7 +122,7 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
             </div>
           </div>
 
-          <div className="space-y-1 font-cairo">
+          <div className="space-y-1 font-cairo text-right">
             <button
               type="button"
               onClick={() => {
@@ -98,10 +133,12 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
                   window.location.href = '/rooms';
                 }
               }}
-              className="flex items-center gap-3 w-full text-right px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-white/10 transition-all text-white cursor-pointer"
+              className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-white/10 transition-all text-white cursor-pointer"
             >
-              <FireIcon />
-              <span>الرومات النشطة</span>
+              <div className="flex items-center gap-3">
+                <FireIcon />
+                <span>الرومات النشطة</span>
+              </div>
             </button>
 
             <button
@@ -114,10 +151,17 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
                   setActiveModal("favorites");
                 }
               }}
-              className="flex items-center gap-3 w-full text-right px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-white/10 transition-all text-white cursor-pointer"
+              className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-white/10 transition-all text-white cursor-pointer group"
             >
-              <HeartIcon />
-              <span>المفضلة</span>
+              <div className="flex items-center gap-3">
+                <HeartIcon />
+                <span>المفضلة</span>
+              </div>
+              {favorites.length > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-600/20 text-red-400 border border-red-500/30">
+                  {favorites.length}
+                </span>
+              )}
             </button>
 
             <button
@@ -130,10 +174,12 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
                   setActiveModal("my-rooms");
                 }
               }}
-              className="flex items-center gap-3 w-full text-right px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-white/10 transition-all text-white cursor-pointer"
+              className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-white/10 transition-all text-white cursor-pointer"
             >
-              <UsersIcon />
-              <span>غرف المشاهدة الخاصة بي</span>
+              <div className="flex items-center gap-3">
+                <UsersIcon />
+                <span>غرف المشاهدة الخاصة بي</span>
+              </div>
             </button>
 
             <div className="my-1.5 h-px bg-white/10" />
@@ -160,37 +206,61 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
         </div>
       )}
 
-      {/* Modal for Favorites / My Rooms */}
-      {activeModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="bg-[#0b0f19] border border-white/15 rounded-3xl w-full max-w-2xl max-h-[85vh] p-6 relative overflow-hidden flex flex-col shadow-2xl">
-            <button
-              type="button"
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 left-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all z-20 cursor-pointer"
-            >
-              <i className="fa-solid fa-xmark text-lg"></i>
-            </button>
+      {/* Bulletproof Portaled Modal for Favorites / My Rooms */}
+      {activeModal && mounted && typeof document !== "undefined" && createPortal(
+        <div 
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6" 
+          dir="rtl"
+        >
+          {/* Backdrop */}
+          <div 
+            onClick={() => setActiveModal(null)}
+            className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity animate-fade-in"
+          />
 
-            {activeModal === "favorites" && (
-              <div className="w-full h-full overflow-y-auto pt-2">
-                <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
-                  <HeartIcon /> المفضلة
-                </h2>
-                <FavoritesList />
-              </div>
-            )}
+          {/* Modal Container */}
+          <div 
+            role="dialog"
+            aria-modal="true"
+            className="relative w-full max-w-4xl max-h-[88vh] overflow-hidden rounded-3xl border border-white/15 bg-[#080d1a]/95 text-white shadow-[0_30px_90px_rgba(0,0,0,0.9),0_0_50px_rgba(229,9,20,0.25)] backdrop-blur-2xl animate-scaleIn flex flex-col"
+          >
+            {/* Ambient Top Glow */}
+            <div className="absolute -top-24 -right-24 size-60 rounded-full bg-red-600/20 blur-3xl pointer-events-none" />
 
-            {activeModal === "my-rooms" && (
-              <div className="w-full h-full overflow-y-auto pt-2">
-                <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
-                  <UsersIcon /> غرف المشاهدة الخاصة بي
-                </h2>
-                <MyRoomsList />
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
+              <div className="flex items-center gap-3">
+                <div className="size-11 rounded-2xl bg-red-600/15 border border-red-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(229,9,20,0.3)]">
+                  {activeModal === "favorites" ? <HeartIcon /> : <UsersIcon />}
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white">
+                    {activeModal === "favorites" ? "قائمة المفضلة" : "غرف المشاهدة الخاصة بي"}
+                  </h2>
+                  <p className="text-xs text-slate-400 font-medium">
+                    {activeModal === "favorites" ? "الأعمال التي قمت بحفظها للمشاهدة لاحقاً" : "سجل وإدارة غرف المشاهدة"}
+                  </p>
+                </div>
               </div>
-            )}
+
+              <button
+                type="button"
+                onClick={() => setActiveModal(null)}
+                aria-label="إغلاق النافذة"
+                className="size-9 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
+              >
+                <i className="fa-solid fa-xmark text-sm" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+              {activeModal === "favorites" && <FavoritesList />}
+              {activeModal === "my-rooms" && <MyRoomsList />}
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
