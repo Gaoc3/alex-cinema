@@ -378,9 +378,10 @@ export default function MyRoomsList() {
                     }}
                     disabled={deletingId === room.id}
                     title="حذف الغرفة"
-                    className="size-8 rounded-xl bg-white/5 border border-white/10 hover:bg-red-600/20 hover:text-red-400 hover:border-red-500/30 text-slate-400 flex items-center justify-center transition-all cursor-pointer disabled:opacity-50 active:scale-95"
+                    aria-label="حذف الغرفة"
+                    className="size-8 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-600 hover:border-red-500 text-red-400 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-50 active:scale-95 shadow-sm hover:shadow-[0_0_15px_rgba(239,68,68,0.4)] group/del"
                   >
-                    <i className="fa-solid fa-trash text-xs" />
+                    <i className="fa-solid fa-trash-can text-[11px] group-hover/del:scale-110 transition-transform" />
                   </button>
                 </div>
               </div>

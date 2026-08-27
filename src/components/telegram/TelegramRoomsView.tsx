@@ -493,9 +493,10 @@ export default function TelegramRoomsView({ onJoinRoom }: TelegramRoomsViewProps
                         type="button"
                         onClick={(e) => handleDeleteSingleRoom(room.id, e)}
                         title="حذف الغرفة"
-                        className="w-8 h-8 rounded-xl bg-white/5 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30 border border-white/10 active:scale-95 flex items-center justify-center text-gray-300 text-xs transition cursor-pointer"
+                        aria-label="حذف الغرفة"
+                        className="w-8 h-8 rounded-xl bg-red-500/10 hover:bg-red-600 hover:text-white border border-red-500/20 hover:border-red-500 active:scale-95 flex items-center justify-center text-red-400 text-xs transition-all duration-200 cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(239,68,68,0.4)] group/del"
                       >
-                        <i className="fa-solid fa-trash-can"></i>
+                        <i className="fa-solid fa-trash-can text-[11px] group-hover/del:scale-110 transition-transform"></i>
                       </button>
                       <button
                         type="button"

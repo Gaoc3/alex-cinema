@@ -1446,7 +1446,7 @@ export default function RoomSidebar({
                   disabled={isClosingRoom}
                   className="flex w-full items-center justify-center gap-2.5 py-3 px-4 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 hover:border-red-500/50 text-xs sm:text-sm font-bold text-red-300 transition disabled:opacity-50 cursor-pointer active:scale-[0.99]"
                 >
-                  <i className="fa-solid fa-trash-can text-red-400" aria-hidden="true" />
+                  <i className="fa-solid fa-power-off text-red-400" aria-hidden="true" />
                   <span>{isClosingRoom ? 'جارٍ إغلاق الغرفة...' : 'إغلاق الغرفة'}</span>
                 </button>
               )}

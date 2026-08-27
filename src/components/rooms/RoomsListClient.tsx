@@ -515,9 +515,10 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                           type="button"
                           onClick={(e) => handleDeleteSingleRoom(room.id, e)}
                           title="حذف الغرفة"
-                          className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30 cursor-pointer"
+                          aria-label="حذف الغرفة"
+                          className="flex size-9 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 transition-all duration-200 hover:bg-red-600 hover:text-white hover:border-red-500 hover:shadow-[0_0_15px_rgba(239,68,68,0.4)] cursor-pointer active:scale-95 group/del"
                         >
-                          <i className="fa-solid fa-trash-can text-xs" />
+                          <i className="fa-solid fa-trash-can text-xs group-hover/del:scale-110 transition-transform" />
                         </button>
                         <Link
                           href={`/room/${room.id}`}
