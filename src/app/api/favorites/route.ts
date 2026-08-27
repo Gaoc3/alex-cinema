@@ -39,30 +39,32 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Auto-heal existing favorites that have missing posterPath
-    const enrichedFavorites = await Promise.all(
-      favorites.map(async (fav) => {
-        if ((!fav.posterPath || fav.posterPath === 'null' || fav.posterPath === 'undefined') && fav.mediaId) {
+    // Background auto-heal for any legacy favorites missing posterPath without blocking the HTTP response
+    const missingPosters = favorites.filter(
+      (fav) => (!fav.posterPath || fav.posterPath === 'null' || fav.posterPath === 'undefined') && fav.mediaId
+    );
+
+    if (missingPosters.length > 0) {
+      Promise.allSettled(
+        missingPosters.map(async (fav) => {
           try {
             const details = await getVideoDetails(fav.mediaId);
             if (details) {
               const healedPoster = details.img || details.imgThumb || details.imgMediumThumb || null;
               const healedTitle = details.ar_title || details.en_title || fav.title;
               if (healedPoster) {
-                prisma.favorite.update({
+                await prisma.favorite.update({
                   where: { id: fav.id },
                   data: { posterPath: healedPoster, title: healedTitle },
-                }).catch(() => {});
-                return { ...fav, posterPath: healedPoster, title: healedTitle };
+                });
               }
             }
           } catch {}
-        }
-        return fav;
-      })
-    );
+        })
+      ).catch(() => {});
+    }
 
-    return NextResponse.json({ success: true, favorites: enrichedFavorites });
+    return NextResponse.json({ success: true, favorites });
   } catch (error) {
     console.error('Error fetching favorites:', error);
     return NextResponse.json({ success: false, error: 'Failed to fetch favorites' }, { status: 500 });

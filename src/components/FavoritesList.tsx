@@ -1,59 +1,24 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getImageUrl } from '@/utils/imageHelper';
 import FavoriteButton from '@/components/FavoriteButton';
-
-type Favorite = {
-  id: string;
-  mediaId: string;
-  mediaType: string;
-  title: string;
-  posterPath: string | null;
-};
+import { useFavorites } from '@/hooks/useFavorites';
 
 export default function FavoritesList() {
-  const [favorites, setFavorites] = useState<Favorite[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const { favorites, loading } = useFavorites();
 
   const handleBrowse = (e: React.MouseEvent) => {
     e.preventDefault();
     window.location.href = '/movies';
   };
 
-  useEffect(() => {
-    let isMounted = true;
-    async function fetchFavorites() {
-      try {
-        const res = await fetch(`/api/favorites?t=${Date.now()}`, { cache: 'no-store' });
-        const data = await res.json();
-        if (isMounted) {
-          if (data.success) {
-            setFavorites(data.favorites || []);
-          } else {
-            setError(true);
-          }
-        }
-      } catch (err) {
-        console.error('Favorites list fetch error:', err);
-        if (isMounted) setError(true);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    }
-    fetchFavorites();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  if (loading) {
+  if (loading && favorites.length === 0) {
     return (
       <div className="w-full flex items-center justify-center p-12">
-        <div className="w-10 h-10 border-4 border-alex-primary border-t-transparent rounded-full animate-spin"></div>
+        <div className="size-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }

@@ -5,6 +5,7 @@ import { decryptData } from '@/utils/cryptoHelper';
 import WatchLayout from './watch/WatchLayout';
 import { useUnifiedAuth } from './auth/UnifiedAuthProvider';
 import { useAuth } from '@clerk/nextjs';
+import { useFavorites } from '@/hooks/useFavorites';
 import toast from 'react-hot-toast';
 import type { WatchRoomHook } from '@/hooks/useWatchRoom';
 
@@ -70,7 +71,6 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
   const [activeEpisodeDetails, setActiveEpisodeDetails] = useState<EpisodeDetails | null>(null);
   const [isLoadingStreams, setIsLoadingStreams] = useState(false);
   const favoriteList: string[] = [];
-  const [isFavorite, setIsFavorite] = useState(false);
   const episodeRequestControllerRef = useRef<AbortController | null>(null);
   const episodeRequestIdRef = useRef(0);
 
@@ -127,83 +127,18 @@ export default function WatchContainer({ video, seasons, episodes, roomHook }: W
     }
   };
 
-  // Initialize favorite status using unified auth
-  const { isSignedIn, isLoaded, user } = useUnifiedAuth();
-  const { getToken } = useAuth();
-  const [isFavoriteSaving, setIsFavoriteSaving] = useState(false);
-
-  // Fetch initial favorite status
-  useEffect(() => {
-    const checkFavoriteStatus = async () => {
-      if (!isLoaded || (!isSignedIn && !user)) return;
-      try {
-        const token = await getToken().catch(() => null);
-        const headers: Record<string, string> = {};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        const mediaType = isSeries ? 'tv' : 'movie';
-        const params = new URLSearchParams({ mediaId: String(video.nb), mediaType });
-        const res = await fetch(`/api/favorites?${params.toString()}`, { headers, cache: 'no-store' });
-        const data = await res.json();
-        if (data.success && typeof data.isFavorite === 'boolean') {
-          setIsFavorite(data.isFavorite);
-        }
-      } catch (err) {
-        console.error("Failed to fetch favorites status", err);
-      }
-    };
-    checkFavoriteStatus();
-  }, [video.nb, isSeries, isLoaded, isSignedIn, user, getToken]);
+  // Centralized instant favorites management
+  const { isFavorite: checkIsFav, toggleFavorite: toggleFav } = useFavorites();
+  const mediaType = isSeries ? 'tv' : 'movie';
+  const isFavorite = checkIsFav(video.nb, mediaType);
 
   const toggleFavorite = async () => {
-    if (!isLoaded || (!isSignedIn && !user)) {
-      toast.error("يجب تسجيل الدخول لإضافة المفضلات ⚠️");
-      return;
-    }
-    if (isFavoriteSaving) return;
-
-    const desiredState = !isFavorite;
-    setIsFavoriteSaving(true);
-    setIsFavorite(desiredState);
-
-    try {
-      const token = await getToken().catch(() => null);
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const res = await fetch('/api/favorites', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ 
-          mediaId: video.nb, 
-          mediaType: isSeries ? 'tv' : 'movie',
-          title: video.ar_title || video.en_title,
-          posterPath: video.img,
-          isFavorite: desiredState,
-        })
-      });
-
-      const data = await res.json();
-      if (!data.success) {
-        setIsFavorite(isFavorite);
-        toast.error(data.error || 'حدث خطأ أثناء تعديل المفضلات');
-      } else {
-        const added = data.action === 'added';
-        setIsFavorite(added);
-        if (added) {
-          toast.success('تمت الإضافة للمفضلة بنجاح! ❤️');
-        } else {
-          toast('تمت الإزالة من المفضلة', { icon: '🗑️' });
-        }
-      }
-    } catch (err) {
-      console.error(err);
-      setIsFavorite(isFavorite);
-      toast.error('حدث خطأ أثناء الاتصال بالخادم');
-    } finally {
-      setIsFavoriteSaving(false);
-    }
+    await toggleFav({
+      mediaId: video.nb,
+      mediaType,
+      title: video.ar_title || video.en_title || 'عمل فني',
+      posterPath: video.img || null,
+    });
   };
 
   const fetchEpisodeDetails = useCallback(async (episodeId: string) => {

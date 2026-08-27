@@ -172,23 +172,23 @@ export default function Sidebar() {
       />
       
       <aside 
-        className={`fixed top-0 right-0 z-[60] flex flex-col bg-[#061520] sidebar overflow-hidden border-0 border-none shadow-[-12px_0_35px_rgba(0,0,0,0.85),-4px_0_12px_rgba(0,0,0,0.55)] h-screen ${
-          isMobileSidebarOpen ? 'w-60 max-w-[80vw]' : (isCollapsed ? 'w-20 xl:w-20' : 'w-60 xl:w-60')
+        className={`fixed top-0 right-0 z-[60] flex flex-col bg-[#050811]/98 sidebar overflow-hidden border-l border-white/[0.06] shadow-[-20px_0_60px_rgba(0,0,0,0.9)] h-screen backdrop-blur-2xl transition-all duration-300 ${
+          isMobileSidebarOpen ? 'w-72 sm:w-80 max-w-[85vw]' : (isCollapsed ? 'w-20 xl:w-20' : 'w-64 xl:w-64')
         }`} 
       >
 
         {/* Sidebar Header (Zero-Legacy Cinematic Style) */}
-        <div className="h-20 shrink-0 border-b border-white/[0.03] flex items-center justify-between pr-5 pl-3 w-full relative z-20">
+        <div className="h-20 shrink-0 border-b border-white/[0.06] flex items-center justify-between px-4 sm:px-5 w-full relative z-20">
           
           {/* Logo and Brand Name (Hidden on Collapsed) */}
-          <div className={`flex items-center gap-2.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-right ${isCollapsed ? 'opacity-0 max-w-0 overflow-hidden scale-90 pointer-events-none' : 'opacity-100 max-w-[300px] scale-100 delay-100'}`}>
+          <div className={`flex items-center gap-3 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-right ${isCollapsed ? 'opacity-0 max-w-0 overflow-hidden scale-90 pointer-events-none' : 'opacity-100 max-w-[300px] scale-100 delay-100'}`}>
             <Link href="/home" className="flex items-center gap-2.5 group" onClick={closeSidebar}>
-              <div className="w-10 h-10 shrink-0 rounded-full overflow-hidden flex items-center justify-center transition-all duration-300 border border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.4)] group-hover:shadow-[0_2px_12px_rgba(229,9,20,0.25)]">
-                <img src="/logo.svg" alt="AleX Cinema Logo" className="w-full h-full object-cover scale-[1.05]" />
+              <div className="size-10 shrink-0 rounded-2xl overflow-hidden flex items-center justify-center transition-all duration-300 border border-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.5)] group-hover:shadow-[0_0_15px_rgba(229,9,20,0.4)] group-hover:border-red-500/40">
+                <img src="/logo.svg" alt="AleX Cinema Logo" className="size-full object-cover scale-[1.05]" />
               </div>
               <div className="flex flex-col leading-none font-sans">
-                <span className="text-[17px] font-black font-en tracking-normal text-white">ALEX<span className="text-alex-primary">CINEMA</span></span>
-                <span className="text-[9px] text-gray-500 font-bold tracking-[0.1em] mt-0.5 uppercase">Premium</span>
+                <span className="text-[17px] font-black font-en tracking-normal text-white">ALEX<span className="text-red-500">CINEMA</span></span>
+                <span className="text-[9px] text-slate-400 font-bold tracking-[0.1em] mt-0.5 uppercase">Premium</span>
               </div>
             </Link>
           </div>
@@ -196,21 +196,21 @@ export default function Sidebar() {
           {/* Hamburger toggle button (Hidden on Collapsed) */}
           <button 
             onClick={toggleSidebar}
-            className={`shrink-0 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 active:scale-90 transition-all duration-300 cursor-pointer ${isCollapsed ? 'opacity-0 w-0 h-0 overflow-hidden scale-50 pointer-events-none' : 'opacity-100 w-10 h-10 scale-100 delay-100'}`}
-            aria-label="Toggle Sidebar"
+            className={`shrink-0 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all duration-300 cursor-pointer ${isCollapsed ? 'opacity-0 w-0 h-0 overflow-hidden scale-50 pointer-events-none' : 'opacity-100 size-10 scale-100 delay-100'}`}
+            aria-label="إغلاق / تبديل القائمة الجانبية"
           >
-            <span className="xl:hidden"><i className="fa-solid fa-xmark text-gray-300 text-lg"></i></span>
-            <span className="hidden xl:inline-block"><i className="fa-solid fa-bars text-gray-300 text-base"></i></span>
+            <span className="xl:hidden"><i className="fa-solid fa-xmark text-slate-200 text-lg"></i></span>
+            <span className="hidden xl:inline-block"><i className="fa-solid fa-bars text-slate-300 text-base"></i></span>
           </button>
 
           {/* Centered logo button (Shown ONLY on Collapsed) */}
           <div className={`w-full flex justify-center items-center absolute inset-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isCollapsed ? 'opacity-100 scale-100 delay-150 pointer-events-auto' : 'opacity-0 scale-50 pointer-events-none'}`}>
             <button 
               onClick={toggleSidebar}
-              className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
-              title="Expand Sidebar"
+              className="size-10 rounded-2xl overflow-hidden flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.5)] hover:border-red-500/40 hover:shadow-[0_0_15px_rgba(229,9,20,0.3)]"
+              title="توسيع القائمة الجانبية"
             >
-              <img src="/logo.svg" alt="AleX Cinema Logo" className="w-full h-full object-cover scale-[1.05]" />
+              <img src="/logo.svg" alt="AleX Cinema Logo" className="size-full object-cover scale-[1.05]" />
             </button>
           </div>
         </div>

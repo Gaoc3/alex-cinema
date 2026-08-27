@@ -573,6 +573,7 @@ body.preload nav#navbar {
     padding-left: 0 !important;
     padding-right: 0 !important;
     gap: 0 !important;
+    width: 100% !important;
     transition: justify-content 0.2s cubic-bezier(0.2, 0.9, 0.2, 1), gap 0.2s cubic-bezier(0.2, 0.9, 0.2, 1);
   }
   
@@ -580,7 +581,30 @@ body.preload nav#navbar {
     padding-left: 0 !important;
     padding-right: 0 !important;
     justify-content: center !important;
+    width: 100% !important;
     transition: padding 0.2s cubic-bezier(0.2, 0.9, 0.2, 1);
+  }
+
+  body.sidebar-collapsed .sidebar-submenu-container {
+    width: 100% !important;
+    align-items: center !important;
+  }
+
+  body.sidebar-collapsed .sidebar-submenu-container > div {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: center !important;
+  }
+
+  body.sidebar-collapsed .sidebar-item-content i {
+    margin: 0 auto !important;
+    text-align: center !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 2rem !important;
+    height: 2rem !important;
+    font-size: 1.15rem !important;
   }
 
   /* EXPANDED STATE: Only when body has .sidebar-expanded */

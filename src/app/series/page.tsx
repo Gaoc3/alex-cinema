@@ -494,7 +494,7 @@ function SeriesContent() {
         
         {loading ? (
           <div className="py-2 w-full">
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-x-6 gap-y-12">
+            <div className="grid grid-cols-2 min-[480px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3.5 sm:gap-4 md:gap-5 lg:gap-6">
               {Array.from({ length: 30 }).map((_, i) => (
                 <CardSkeleton key={i} />
               ))}
@@ -502,7 +502,7 @@ function SeriesContent() {
           </div>
         ) : series.length > 0 ? (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-x-6 gap-y-12">
+            <div className="grid grid-cols-2 min-[480px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3.5 sm:gap-4 md:gap-5 lg:gap-6">
                 {series.map((video, index) => (
                   <Link 
                     key={video.nb} 

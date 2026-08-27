@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import Image from 'next/image';
 import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
 import { useAuth } from '@clerk/nextjs';
+import { useFavorites } from '@/hooks/useFavorites';
 import toast from 'react-hot-toast';
 import { useTelegramSafeArea } from '@/lib/telegramWebAppClient';
 
@@ -27,8 +28,6 @@ export default function TelegramDetailsSheet({
   const [activeSeason, setActiveSeason] = useState<string>('1');
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isFavoriteSaving, setIsFavoriteSaving] = useState(false);
 
   // Pure Gesture Snap State ('half' vs 'full')
   const [snap, setSnap] = useState<SheetSnap>('half');
@@ -129,70 +128,18 @@ export default function TelegramDetailsSheet({
       .sort((a, b) => Number(a.episodeNummer || a.episodeNumber || a.episode_num || 0) - Number(b.episodeNummer || b.episodeNumber || b.episode_num || 0));
   }, [episodes, activeSeason]);
 
-  // Check Favorite Status
-  useEffect(() => {
-    if (!video || !isLoaded || (!isSignedIn && !user)) return;
-    let isMounted = true;
-    const checkFav = async () => {
-      try {
-        const token = await getToken().catch(() => null);
-        const headers: Record<string, string> = {};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        const mediaType = video.kind === '2' ? 'tv' : 'movie';
-        const params = new URLSearchParams({ mediaId: String(video.nb), mediaType });
-        const res = await fetch(`/api/favorites?${params.toString()}`, { headers, cache: 'no-store' });
-        const data = await res.json();
-        if (isMounted && data.success && typeof data.isFavorite === 'boolean') {
-          setIsFavorite(data.isFavorite);
-        }
-      } catch {}
-    };
-    void checkFav();
-    return () => { isMounted = false; };
-  }, [video, isLoaded, isSignedIn, user, getToken]);
+  // Centralized instant favorites
+  const { isFavorite: checkIsFav, toggleFavorite: toggleFav } = useFavorites();
+  const isFavorite = video ? checkIsFav(video.nb, video.kind === '2' ? 'tv' : 'movie') : false;
 
   const toggleFavorite = async () => {
     if (!video) return;
-    if (!isLoaded || (!isSignedIn && !user)) {
-      toast.error('يجب تسجيل الدخول لإضافة المفضلات ⚠️');
-      return;
-    }
-    if (isFavoriteSaving) return;
-
-    const desiredState = !isFavorite;
-    setIsFavoriteSaving(true);
-    setIsFavorite(desiredState);
-
-    try {
-      const token = await getToken().catch(() => null);
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const res = await fetch('/api/favorites', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          mediaId: video.nb,
-          mediaType: video.kind === '2' ? 'tv' : 'movie',
-          title: video.ar_title || video.en_title,
-          posterPath: video.img,
-          isFavorite: desiredState,
-        }),
-      });
-
-      const data = await res.json();
-      if (!data.success) {
-        setIsFavorite(isFavorite);
-        toast.error(data.error || 'حدث خطأ أثناء تعديل المفضلة');
-      } else {
-        toast(data.action === 'added' ? 'تمت الإضافة للمفضلة ❤️' : 'تمت الإزالة من المفضلة 🗑️');
-      }
-    } catch {
-      setIsFavorite(isFavorite);
-      toast.error('تعذر الاتصال بالخادم');
-    } finally {
-      setIsFavoriteSaving(false);
-    }
+    await toggleFav({
+      mediaId: video.nb,
+      mediaType: video.kind === '2' ? 'tv' : 'movie',
+      title: video.ar_title || video.en_title || 'عمل فني',
+      posterPath: video.img || null,
+    });
   };
 
   const handleCloseSmoothly = useCallback(() => {

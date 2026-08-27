@@ -1,19 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import TelegramMovieCard from './TelegramMovieCard';
 import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
+import { useFavorites } from '@/hooks/useFavorites';
 import UserAvatar from '@/components/UserAvatar';
-
-interface MovieItem {
-  nb: string;
-  ar_title: string;
-  en_title?: string;
-  stars?: string;
-  imgUrl: string;
-  kind?: string;
-}
 
 interface TelegramFavoritesViewProps {
   onSelectMovie: (id: string) => void;
@@ -21,40 +13,17 @@ interface TelegramFavoritesViewProps {
 
 export default function TelegramFavoritesView({ onSelectMovie }: TelegramFavoritesViewProps) {
   const { user, isTelegramUser } = useUnifiedAuth();
-  const [favorites, setFavorites] = useState<MovieItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { favorites: rawFavorites, loading } = useFavorites();
 
-  useEffect(() => {
-    let isMounted = true;
-    async function loadFavorites() {
-      try {
-        const res = await fetch(`/api/favorites?t=${Date.now()}`, { cache: 'no-store' });
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted) {
-            const list = Array.isArray(data) ? data : data?.favorites || [];
-            setFavorites(
-              list.map((item: any) => ({
-                nb: String(item.mediaId || item.videoNb || item.nb || item.id),
-                ar_title: item.title || item.ar_title || 'عمل مفضل',
-                stars: item.stars || '8.0',
-                imgUrl: item.posterPath || item.img || item.imgUrl || '/icon.svg',
-                kind: item.mediaType === 'tv' ? '2' : '1',
-              }))
-            );
-          }
-        }
-      } catch (err) {
-        console.error('Favorites fetch error:', err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    }
-    loadFavorites();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const favorites = React.useMemo(() => {
+    return rawFavorites.map((item) => ({
+      nb: String(item.mediaId || item.id),
+      ar_title: item.title || 'عمل مفضل',
+      stars: '8.0',
+      imgUrl: item.posterPath || '/icon.svg',
+      kind: item.mediaType === 'tv' ? '2' : '1',
+    }));
+  }, [rawFavorites]);
 
   return (
     <div className="flex flex-col gap-6 pb-32 animate-fade-in" dir="rtl">
