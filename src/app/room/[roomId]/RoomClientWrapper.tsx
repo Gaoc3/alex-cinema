@@ -340,7 +340,7 @@ export default function RoomClientWrapper({
   };
 
   return (
-    <div className="relative min-h-[100svh] overflow-x-clip bg-[#03060f] bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(229,9,20,0.16),rgba(6,18,33,0.5)_45%,#02040a_100%)] text-white selection:bg-red-600 selection:text-white" dir="rtl">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#03060f] bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(229,9,20,0.16),rgba(6,18,33,0.5)_45%,#02040a_100%)] text-white selection:bg-red-600 selection:text-white" dir="rtl">
       {/* Dynamic Ambient Background Glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         {bgImage ? (
@@ -355,7 +355,7 @@ export default function RoomClientWrapper({
         <div className="absolute -left-32 bottom-10 size-96 rounded-full bg-blue-600/12 blur-[140px]" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-7xl 2xl:max-w-[1560px] flex-col px-3 pb-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 lg:px-6">
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl 2xl:max-w-[1560px] flex-col px-3 pb-24 sm:pb-32 lg:pb-36 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 lg:px-6">
         {/* Luxury Top Header */}
         <header className="mb-4 flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0a0f1d]/85 p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
           {/* Right Section: Back button & Room Title */}

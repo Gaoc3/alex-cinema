@@ -307,34 +307,41 @@ button:disabled,
 
 /* Custom Luxury Scrollbar for the page and containers */
 html {
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
   scrollbar-width: thin;
-  scrollbar-color: rgba(229, 9, 20, 0.45) #03060f;
+  scrollbar-color: #e50914 #03060f;
   scroll-behavior: smooth;
 }
 
+body {
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+}
+
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 9px !important;
+  height: 9px !important;
 }
 
 ::-webkit-scrollbar-track {
-  background: #03060f;
+  background: #03060f !important;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(229, 9, 20, 0.5) 0%, rgba(138, 5, 12, 0.7) 100%);
-  border-radius: 9999px;
-  border: 1.5px solid #03060f;
+  background: linear-gradient(180deg, #e50914 0%, #a8050e 100%) !important;
+  border-radius: 9999px !important;
+  border: 2px solid #03060f !important;
   transition: all 0.25s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #e50914 0%, #b80009 100%);
-  box-shadow: 0 0 12px rgba(229, 9, 20, 0.7);
+  background: #ff1f2d !important;
+  box-shadow: 0 0 14px rgba(229, 9, 20, 0.9) !important;
 }
 
 ::-webkit-scrollbar-corner {
-  background: transparent;
+  background: transparent !important;
 }
 
 .btn-primary {

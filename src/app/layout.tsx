@@ -102,7 +102,7 @@ export default function RootLayout({
           <AILayoutEngine />
           <SecurityWrapper>
 
-          <div className="relative overflow-x-clip w-full min-h-screen flex flex-col z-10">
+          <div className="relative overflow-x-hidden w-full min-h-screen flex flex-col z-10">
             <ConditionalSidebar />
             <ConditionalNavbar />
 
