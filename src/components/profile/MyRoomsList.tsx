@@ -266,37 +266,31 @@ export default function MyRoomsList() {
           {filteredRooms.map((room) => (
             <div
               key={room.id}
-              className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#080d1a] transition-all duration-300 hover:-translate-y-1 hover:border-sky-500/50 hover:shadow-[0_12px_35px_rgba(56,189,248,0.2)] shadow-[0_6px_20px_rgba(0,0,0,0.6)]"
+              className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0a0f1d] hover:border-red-500/50 hover:shadow-[0_12px_35px_rgba(229,9,20,0.25)] transition-all duration-300 hover:-translate-y-1 shadow-[0_6px_20px_rgba(0,0,0,0.6)]"
             >
-              {/* Poster & Backdrop Banner */}
-              <Link href={`/room/${room.id}`} className="block relative aspect-[16/9] w-full overflow-hidden bg-[#080d1a]">
-                {room.moviePoster ? (
-                  <Image
-                    src={getImageUrl(room.moviePoster, 'backdrop')}
-                    alt={room.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="size-full flex items-center justify-center bg-white/5 text-3xl text-slate-600">
-                    <i className="fa-solid fa-film" />
-                  </div>
-                )}
+              {/* Poster Area */}
+              <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#0a0f1d]">
+                <Link href={`/room/${room.id}`} className="block size-full">
+                  {room.moviePoster ? (
+                    <Image
+                      src={getImageUrl(room.moviePoster, 'backdrop') || getImageUrl(room.moviePoster, 'poster') || '/icon.svg'}
+                      alt={room.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="size-full flex items-center justify-center bg-white/5 text-3xl text-slate-600">
+                      <i className="fa-solid fa-film" />
+                    </div>
+                  )}
 
-                {/* Seamless Gradient Overlay covering entire frame bottom */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#080d1a] via-[#080d1a]/60 to-transparent pointer-events-none z-10" />
+                  {/* Smooth organic cinema gradient fading directly into card background */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] via-[#0a0f1d]/50 to-transparent pointer-events-none z-10" />
+                </Link>
 
-                {/* Hover Play Overlay Pill */}
-                <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/40 backdrop-blur-[2px]">
-                  <span className="px-4 py-2 rounded-xl bg-red-600/90 text-white font-black text-xs shadow-[0_0_20px_rgba(229,9,20,0.7)] flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                    <i className="fa-solid fa-play text-[10px]" />
-                    <span>دخول الغرفة</span>
-                  </span>
-                </div>
-
-                {/* Interactive Status Toggle Badge (Host Control) */}
-                <div className="absolute top-3 right-3 flex items-center gap-1.5 z-30">
+                {/* Top Badges (Interactive Status & Privacy) */}
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 z-20">
                   {room.isActive ? (
                     <button
                       type="button"
@@ -305,7 +299,8 @@ export default function MyRoomsList() {
                       className="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-400 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.4)] flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 transition-all"
                     >
                       <span className="size-1.5 rounded-full bg-emerald-400 animate-ping" />
-                      <span>مباشر (اضغط للإغلاق)</span>
+                      <span>مباشر</span>
+                      <span className="text-[9px] opacity-75 font-normal">(اضغط للإغلاق)</span>
                     </button>
                   ) : (
                     <button
@@ -315,13 +310,13 @@ export default function MyRoomsList() {
                       className="px-2.5 py-1 rounded-full text-[10px] font-black bg-black/70 hover:bg-emerald-950/50 border border-white/20 hover:border-emerald-500/40 text-slate-300 hover:text-emerald-300 backdrop-blur-md flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 transition-all"
                     >
                       <i className="fa-solid fa-power-off text-[9px] text-slate-400" />
-                      <span>مغلقة (اضغط للفتح)</span>
+                      <span>مغلقة</span>
+                      <span className="text-[9px] opacity-60 font-normal">(اضغط للفتح)</span>
                     </button>
                   )}
                 </div>
 
-                {/* Interactive Privacy Toggle Badge */}
-                <div className="absolute top-3 left-3 z-30">
+                <div className="absolute top-3 left-3 z-20">
                   <button
                     type="button"
                     onClick={(e) => handleTogglePrivacy(room.id, room.isPrivate, e)}
@@ -336,53 +331,56 @@ export default function MyRoomsList() {
                     <span>{room.isPrivate ? 'خاصة' : 'عامة'}</span>
                   </button>
                 </div>
+              </div>
 
-                {/* Bottom Title on Image */}
-                <div className="absolute bottom-2 right-3 left-3 z-20">
-                  <h4 className="text-white font-black text-sm truncate group-hover:text-sky-400 transition-colors drop-shadow-md">
+              {/* Card Details & Actions */}
+              <div className="flex flex-1 flex-col p-4 pt-1">
+                <Link href={`/room/${room.id}`} className="block mb-3 group/title">
+                  <h3 className="text-white font-black text-sm truncate group-hover/title:text-red-400 transition-colors">
                     {room.title}
-                  </h4>
-                  <p className="text-slate-300 text-xs truncate mt-0.5 flex items-center gap-1 font-medium">
-                    <i className="fa-solid fa-film text-[10px] text-red-500" />
-                    <span>{room.movieTitle || 'لم يتم اختيار محتوى بعد'}</span>
+                  </h3>
+                  <p className="text-slate-400 text-xs truncate mt-1 flex items-center gap-1.5 font-medium">
+                    <i className="fa-solid fa-film text-[10px] text-red-500 shrink-0" />
+                    <span className="truncate">{room.movieTitle || 'لم يتم اختيار محتوى بعد'}</span>
                   </p>
-                </div>
-              </Link>
-
-              {/* Action Bar */}
-              <div className="p-3 bg-[#080d1a] flex items-center justify-between border-t border-white/5 relative z-10">
-                <Link
-                  href={`/room/${room.id}`}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-[#E50914] hover:from-red-500 hover:to-red-600 text-white font-black text-xs transition-all shadow-[0_2px_10px_rgba(229,9,20,0.35)] active:scale-95 cursor-pointer"
-                >
-                  <span>دخول</span>
-                  <i className="fa-solid fa-arrow-left text-[9px]" />
                 </Link>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={(e) => handleCopyLink(room.id, e)}
-                    title="نسخ رابط الغرفة"
-                    className="size-8 rounded-xl bg-white/5 border border-white/10 hover:bg-sky-500/20 hover:text-sky-400 hover:border-sky-500/30 text-slate-300 flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                {/* Action Bar */}
+                <div className="mt-auto flex items-center justify-between gap-2 pt-3 border-t border-white/[0.06]">
+                  <Link
+                    href={`/room/${room.id}`}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-gradient-to-r from-red-600 to-[#E50914] hover:from-red-500 hover:to-red-600 text-white font-black text-xs transition-all shadow-[0_2px_12px_rgba(229,9,20,0.35)] active:scale-98 cursor-pointer"
                   >
-                    <i className="fa-solid fa-link text-xs" />
-                  </button>
+                    <span>دخول الغرفة</span>
+                    <i className="fa-solid fa-arrow-left text-[9px]" />
+                  </Link>
 
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setDeleteTargetId(room.id);
-                    }}
-                    disabled={deletingId === room.id}
-                    title="حذف الغرفة"
-                    aria-label="حذف الغرفة"
-                    className="size-8 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-600 hover:border-red-500 text-red-400 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-50 active:scale-95 shadow-sm hover:shadow-[0_0_15px_rgba(239,68,68,0.4)] group/del"
-                  >
-                    <i className="fa-solid fa-trash-can text-[11px] group-hover/del:scale-110 transition-transform" />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopyLink(room.id, e)}
+                      title="نسخ رابط الغرفة"
+                      aria-label="نسخ رابط الغرفة"
+                      className="size-8 rounded-xl bg-white/5 border border-white/10 hover:bg-sky-500/20 hover:text-sky-400 hover:border-sky-500/30 text-slate-300 flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                    >
+                      <i className="fa-solid fa-link text-xs" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDeleteTargetId(room.id);
+                      }}
+                      disabled={deletingId === room.id}
+                      title="حذف الغرفة"
+                      aria-label="حذف الغرفة"
+                      className="size-8 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-600 hover:border-red-500 text-red-400 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-50 active:scale-95 shadow-sm hover:shadow-[0_0_12px_rgba(239,68,68,0.4)] group/del"
+                    >
+                      <i className="fa-solid fa-trash-can text-[11px] group-hover/del:scale-110 transition-transform" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
