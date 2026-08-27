@@ -276,7 +276,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                 key={item.nb}
                 disabled={Boolean(selectedId)}
                 onClick={() => void handleSelectVideo(item)}
-                className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#03060f] text-right shadow-lg transition-all duration-300 ease-out hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500/80 hover:shadow-[0_16px_36px_rgba(0,0,0,0.95),0_0_25px_rgba(229,9,20,0.4)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#0a0f1d] text-right shadow-md transition-all duration-300 ease-out hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500 hover:shadow-[0_12px_28px_rgba(0,0,0,0.85),0_0_18px_rgba(229,9,20,0.3)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
                   isSelectingThis
                     ? 'border-red-500 ring-2 ring-red-500 shadow-[0_0_30px_rgba(229,9,20,0.6)]'
                     : 'border-white/10'
@@ -284,7 +284,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                 aria-label={`اختيار ${mainTitle}`}
               >
                 {/* Poster Background Image */}
-                <div className="absolute inset-0 bg-[#03060f]">
+                <div className="absolute inset-0 bg-[#0a0f1d]">
                   <MediaPosterImage
                     video={item}
                     type="poster"
@@ -293,11 +293,11 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                   />
                 </div>
 
-                {/* Top Ambient Vignette */}
-                <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/75 to-transparent pointer-events-none z-[4]" />
+                {/* Subtle Top Badge Vignette */}
+                <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-black/50 to-transparent pointer-events-none z-[4]" />
 
-                {/* Continuous Organic Cinema Gradient Mask (Smooth, zero abrupt cutoff lines) */}
-                <div className="absolute -inset-x-1 -bottom-1 h-[85%] bg-gradient-to-t from-[#03060f] from-0% via-[#03060f]/95 via-25% via-[#03060f]/75 via-48% via-[#03060f]/25 via-70% to-transparent pointer-events-none z-[5]" />
+                {/* Clean Bottom Text Gradient (Only behind text, leaves poster bright and vibrant) */}
+                <div className="absolute -inset-x-1 -bottom-1 h-28 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none z-[5]" />
 
                 {/* Top Floating Glass Badges */}
                 <div className="absolute top-2.5 right-2.5 left-2.5 flex items-center justify-between z-10 pointer-events-none">
@@ -381,7 +381,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                   key={item.nb}
                   disabled={Boolean(selectedId)}
                   onClick={() => void handleSelectVideo(item)}
-                  className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#03060f] text-right shadow-lg transition-all duration-300 ease-out hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500/80 hover:shadow-[0_16px_36px_rgba(0,0,0,0.95),0_0_25px_rgba(229,9,20,0.4)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                  className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#0a0f1d] text-right shadow-md transition-all duration-300 ease-out hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500 hover:shadow-[0_12px_28px_rgba(0,0,0,0.85),0_0_18px_rgba(229,9,20,0.3)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
                     isSelectingThis
                       ? 'border-red-500 ring-2 ring-red-500 shadow-[0_0_30px_rgba(229,9,20,0.6)]'
                       : 'border-white/10'
@@ -389,7 +389,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                   aria-label={`اختيار ${mainTitle}`}
                 >
                   {/* Poster Background Image */}
-                  <div className="absolute inset-0 bg-[#03060f]">
+                  <div className="absolute inset-0 bg-[#0a0f1d]">
                     <MediaPosterImage
                       video={item}
                       type="poster"
@@ -398,11 +398,11 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                     />
                   </div>
 
-                  {/* Top Ambient Vignette */}
-                  <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/75 to-transparent pointer-events-none z-[4]" />
+                  {/* Subtle Top Badge Vignette */}
+                  <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-black/50 to-transparent pointer-events-none z-[4]" />
 
-                  {/* Continuous Organic Cinema Gradient Mask (Smooth, zero abrupt cutoff lines) */}
-                  <div className="absolute -inset-x-1 -bottom-1 h-[85%] bg-gradient-to-t from-[#03060f] from-0% via-[#03060f]/95 via-25% via-[#03060f]/75 via-48% via-[#03060f]/25 via-70% to-transparent pointer-events-none z-[5]" />
+                  {/* Clean Bottom Text Gradient (Only behind text, leaves poster bright and vibrant) */}
+                  <div className="absolute -inset-x-1 -bottom-1 h-28 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none z-[5]" />
 
                   {/* Top Floating Glass Badges */}
                   <div className="absolute top-2.5 right-2.5 left-2.5 flex items-center justify-between z-10 pointer-events-none">
