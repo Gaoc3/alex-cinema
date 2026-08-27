@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import { useUnifiedAuth } from "@/components/auth/UnifiedAuthProvider";
 import { useFavorites } from "@/hooks/useFavorites";
