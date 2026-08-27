@@ -138,8 +138,8 @@ export default function MyRoomsList() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-2 rtl" dir="rtl">
       {rooms.map((room) => (
-        <div key={room.id} className="relative group rounded-xl overflow-hidden shadow-lg bg-[#111] border border-white/10 flex flex-col">
-          <Link href={`/room/${room.id}`} className="block relative aspect-[16/9] w-full">
+        <div key={room.id} className="relative group rounded-2xl overflow-hidden shadow-xl bg-[#080d1a] border border-white/10 hover:border-red-500/50 transition-all duration-300 flex flex-col">
+          <Link href={`/room/${room.id}`} className="block relative aspect-[16/9] w-full overflow-hidden bg-[#080d1a]">
             {room.moviePoster ? (
               <Image
                 src={getImageUrl(room.moviePoster, 'backdrop')}
@@ -153,27 +153,28 @@ export default function MyRoomsList() {
                 <i className="fa-solid fa-users text-2xl text-gray-600"></i>
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-90 group-hover:opacity-100 transition-opacity"></div>
+            {/* Seamless Gradient Overlay */}
+            <div className="absolute -bottom-0.5 inset-x-0 h-3/4 bg-gradient-to-t from-[#080d1a] via-[#080d1a]/60 to-transparent pointer-events-none z-10" />
             
-            <div className="absolute top-2 right-2 flex gap-2">
-              <span className={`px-2 py-1 rounded text-[10px] font-bold ${room.isPrivate ? 'bg-red-500/80 text-white' : 'bg-green-500/80 text-white'}`}>
+            <div className="absolute top-2 right-2 flex gap-2 z-20">
+              <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black backdrop-blur-md ${room.isPrivate ? 'bg-red-500/80 text-white' : 'bg-green-500/80 text-white'}`}>
                 {room.isPrivate ? 'خاصة' : 'عامة'}
               </span>
-              <span className={`px-2 py-1 rounded text-[10px] font-bold ${room.isActive ? 'bg-red-600/80 text-white' : 'bg-gray-500/80 text-white'}`}>
+              <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black backdrop-blur-md ${room.isActive ? 'bg-red-600/80 text-white' : 'bg-gray-500/80 text-white'}`}>
                 {room.isActive ? 'نشطة' : 'مغلقة'}
               </span>
             </div>
 
-            <div className="absolute bottom-2 right-2 left-2">
-              <h4 className="text-white font-bold text-sm truncate drop-shadow-md">{room.title}</h4>
+            <div className="absolute bottom-2 right-3 left-3 z-20">
+              <h4 className="text-white font-black text-sm truncate drop-shadow-md">{room.title}</h4>
               <p className="text-gray-300 text-xs truncate mt-0.5">{room.movieTitle || 'لم يتم اختيار محتوى بعد'}</p>
             </div>
           </Link>
 
-          <div className="p-3 bg-[#161616] flex items-center justify-between border-t border-white/5">
+          <div className="p-3 bg-[#080d1a] flex items-center justify-between border-t border-white/5 relative z-10">
             <button
               onClick={(e) => handleCopyLink(room.id, e)}
-              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors cursor-pointer active:scale-95"
             >
               <i className="fa-solid fa-link text-[10px]"></i>
               نسخ الرابط

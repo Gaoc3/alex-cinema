@@ -338,10 +338,10 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
               {activeRooms.map((room) => (
                 <div
                   key={room.id}
-                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0e1424] hover:bg-[#12192c] transition-all duration-300 hover:-translate-y-1 hover:border-red-500/40 hover:shadow-[0_8px_25px_rgba(229,9,20,0.2)]"
+                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#080d1a] transition-all duration-300 hover:-translate-y-1 hover:border-red-500/50 hover:shadow-[0_12px_35px_rgba(229,9,20,0.25)]"
                 >
                   {/* Poster Image */}
-                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#161d31]">
+                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#080d1a]">
                     {room.moviePoster ? (
                       <Image
                         src={getImageUrl(room.moviePoster, 'poster') || '/icon.svg'}
@@ -355,18 +355,22 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                         <i className="fa-solid fa-film" aria-hidden="true" />
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0e1424] via-[#0e1424]/40 to-transparent" />
+                    {/* Seamless Gradient Overlay covering subpixel joint */}
+                    <div className="absolute -bottom-0.5 inset-x-0 h-3/4 bg-gradient-to-t from-[#080d1a] via-[#080d1a]/60 to-transparent pointer-events-none z-10" />
 
                     {/* Live Badge */}
-                    <div className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-black text-emerald-400 backdrop-blur-md">
-                      <span className="size-2 rounded-full bg-emerald-400 animate-ping" />
-                      <span className="size-2 rounded-full bg-emerald-400 -mr-2" />
+                    <div className="absolute right-3 top-3 z-20 flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-black/60 px-2.5 py-1 text-[11px] font-black text-emerald-400 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                      <span className="flex items-end gap-0.5 h-3">
+                        <span className="w-0.5 h-3 bg-emerald-400 rounded-full animate-pulse" />
+                        <span className="w-0.5 h-2 bg-emerald-400 rounded-full animate-ping" />
+                        <span className="w-0.5 h-3.5 bg-emerald-400 rounded-full animate-bounce" />
+                      </span>
                       <span>مباشر</span>
                     </div>
                   </div>
 
                   {/* Room Details */}
-                  <div className="flex flex-1 flex-col p-4">
+                  <div className="flex flex-1 flex-col p-4 relative z-10 bg-[#080d1a]">
                     <h3 className="mb-1 text-base font-black text-white line-clamp-1 group-hover:text-red-400 transition-colors">
                       {room.title}
                     </h3>
@@ -392,13 +396,13 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                         type="button"
                         onClick={(e) => handleCopyLink(room.id, e)}
                         title="مشاركة الرابط"
-                        className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition hover:bg-sky-500/20 hover:text-sky-400 hover:border-sky-500/30 cursor-pointer"
+                        className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition hover:bg-sky-500/20 hover:text-sky-400 hover:border-sky-500/30 cursor-pointer active:scale-95"
                       >
                         <i className="fa-solid fa-share-nodes text-xs" />
                       </button>
                       <Link
                         href={`/room/${room.id}`}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-[#E50914] px-4 py-2 text-xs font-black text-white transition hover:from-red-500 hover:to-red-600 shadow-[0_2px_10px_rgba(229,9,20,0.35)] active:scale-98"
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-[#E50914] px-4 py-2 text-xs font-black text-white transition hover:from-red-500 hover:to-red-600 shadow-[0_2px_10px_rgba(229,9,20,0.35)] active:scale-95"
                       >
                         <span>دخول</span>
                         <i className="fa-solid fa-arrow-left text-[9px]" />
@@ -444,7 +448,7 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                   className={`group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 ${
                     isSelected
                       ? 'border-red-500 bg-red-500/10 shadow-[0_0_20px_rgba(239,68,68,0.25)]'
-                      : 'border-white/10 bg-[#0e1424] hover:bg-[#12192c] hover:border-red-500/30 hover:-translate-y-1'
+                      : 'border-white/10 bg-[#080d1a] hover:border-red-500/40 hover:shadow-[0_10px_30px_rgba(229,9,20,0.2)] hover:-translate-y-1'
                   } ${isSelectionMode ? 'cursor-pointer' : ''}`}
                 >
                   {/* Custom Checkbox */}
@@ -463,7 +467,7 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                   )}
 
                   {/* Poster Image */}
-                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#161d31]">
+                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#080d1a]">
                     {room.moviePoster ? (
                       <Image
                         src={getImageUrl(room.moviePoster, 'poster') || '/icon.svg'}
@@ -477,10 +481,11 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                         <i className="fa-solid fa-film" aria-hidden="true" />
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0e1424] via-[#0e1424]/40 to-transparent" />
+                    {/* Seamless Gradient Overlay covering subpixel joint */}
+                    <div className="absolute -bottom-0.5 inset-x-0 h-3/4 bg-gradient-to-t from-[#080d1a] via-[#080d1a]/60 to-transparent pointer-events-none z-10" />
 
                     {/* Owner Badge */}
-                    <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/20 px-2.5 py-0.5 text-[11px] font-black text-sky-400 backdrop-blur-md">
+                    <div className="absolute left-3 top-3 z-20 flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-black/60 px-2.5 py-1 text-[11px] font-black text-sky-400 backdrop-blur-md">
                       <span>👑 غرفتك</span>
                     </div>
                   </div>
