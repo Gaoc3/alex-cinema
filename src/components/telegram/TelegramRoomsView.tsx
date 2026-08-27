@@ -111,7 +111,7 @@ export default function TelegramRoomsView({ onJoinRoom }: TelegramRoomsViewProps
 
       const result = await response.json();
       if (result.success) {
-        toast.success(result.message || `تم حذف ${selectedRoomIds.length} غرفة بنجاح 🗑️`);
+        toast.success(result.message || `تم حذف ${selectedRoomIds.length} غرفة بنجاح`);
         setUserRooms((prev) => prev.filter((r) => !selectedRoomIds.includes(r.id)));
         setSelectedRoomIds([]);
         setIsSelectionMode(false);
@@ -135,7 +135,7 @@ export default function TelegramRoomsView({ onJoinRoom }: TelegramRoomsViewProps
       });
       const data = await res.json();
       if (data.success) {
-        toast.success('تم حذف الغرفة بنجاح 🗑️');
+        toast.success('تم حذف الغرفة بنجاح');
         setUserRooms((prev) => prev.filter((r) => r.id !== roomId));
         fetchActiveRooms();
       } else {
@@ -150,7 +150,7 @@ export default function TelegramRoomsView({ onJoinRoom }: TelegramRoomsViewProps
     e.stopPropagation();
     const url = `https://t.me/outhcinax_bot/cinema?startapp=room_${roomId}`;
     navigator.clipboard.writeText(url);
-    toast.success('تم نسخ رابط الغرفة للمشاركة! 📋');
+    toast.success('تم نسخ رابط الغرفة للمشاركة');
   };
 
   const handleJoin = (roomId: string) => {
@@ -190,7 +190,7 @@ export default function TelegramRoomsView({ onJoinRoom }: TelegramRoomsViewProps
       {/* Create Room Banner */}
       <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-alex-primary/20 via-[#121929] to-[#0e1424] border border-alex-primary/30 flex items-center justify-between gap-3 shadow-xl">
         <div className="overflow-hidden">
-          <h3 className="text-sm sm:text-base font-black text-white mb-0.5">أنشئ غرفة مشاهدة جديدة 🍿</h3>
+          <h3 className="text-sm sm:text-base font-black text-white mb-0.5">أنشئ غرفة مشاهدة جديدة</h3>
           <p className="text-[11px] sm:text-xs text-gray-300 font-medium truncate">ادعُ أصدقاءك لمشاهدة أي فيلم في نفس اللحظة</p>
         </div>
         <CreateRoomButton onCreated={(roomId) => handleJoin(roomId)} />
@@ -339,7 +339,9 @@ export default function TelegramRoomsView({ onJoinRoom }: TelegramRoomsViewProps
                         unoptimized
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-lg">🎬</div>
+                      <div className="w-full h-full flex items-center justify-center text-gray-500 text-lg">
+                        <i className="fa-solid fa-film" />
+                      </div>
                     )}
                   </div>
                   <div className="overflow-hidden">
@@ -454,7 +456,9 @@ export default function TelegramRoomsView({ onJoinRoom }: TelegramRoomsViewProps
                           unoptimized
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-lg">🎬</div>
+                        <div className="w-full h-full flex items-center justify-center text-gray-500 text-lg">
+                          <i className="fa-solid fa-film" />
+                        </div>
                       )}
                     </div>
 
@@ -466,8 +470,9 @@ export default function TelegramRoomsView({ onJoinRoom }: TelegramRoomsViewProps
                         {room.movieTitle || 'فيلم مباشر'}
                       </p>
                       <div className="flex items-center gap-1.5 mt-1">
-                        <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-400 text-[10px] font-bold border border-sky-500/30">
-                          👑 غرفتك
+                        <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-400 text-[10px] font-bold border border-sky-500/30 flex items-center gap-1">
+                          <i className="fa-solid fa-crown text-amber-400 text-[10px]" />
+                          <span>غرفتك</span>
                         </span>
                       </div>
                     </div>

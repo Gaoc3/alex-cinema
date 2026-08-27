@@ -25,24 +25,25 @@ const allYearsRange = `1900,${new Date().getFullYear()}`;
 
 interface SearchTag {
   label: string;
+  icon?: string;
   query: string;
   type: 'anime' | 'turkish' | 'category' | 'new' | 'query';
   categoryId?: string;
 }
 
 const TRENDING_SEARCHES: SearchTag[] = [
-  { label: '🔥 أفلام 2026', query: 'أفلام 2026', type: 'new' },
-  { label: '🎌 أنمي مترجم', query: 'أنمي', type: 'anime' },
-  { label: '🇹🇷 مسلسلات تركية', query: 'مسلسلات تركية', type: 'turkish' },
-  { label: '💥 أكشن ومغامرات', query: 'أكشن', type: 'category', categoryId: '84' },
-  { label: '👻 أفلام رعب', query: 'رعب', type: 'category', categoryId: '70' },
-  { label: '😂 كوميديا', query: 'كوميديا', type: 'category', categoryId: '59' },
-  { label: '🕵️ جريمة وغموض', query: 'جريمة', type: 'category', categoryId: '60' },
-  { label: '🚀 خيال علمي', query: 'خيال علمي', type: 'category', categoryId: '78' },
-  { label: '🦇 باتمان', query: 'باتمان', type: 'query' },
-  { label: '⚔️ ون بيس', query: 'ون بيس', type: 'query' },
-  { label: '🕷️ سبايدرمان', query: 'سبايدر مان', type: 'query' },
-  { label: '🔫 جون ويك', query: 'جون ويك', type: 'query' },
+  { label: 'أفلام 2026', icon: 'fa-fire', query: 'أفلام 2026', type: 'new' },
+  { label: 'أنمي مترجم', icon: 'fa-dragon', query: 'أنمي', type: 'anime' },
+  { label: 'مسلسلات تركية', icon: 'fa-tv', query: 'مسلسلات تركية', type: 'turkish' },
+  { label: 'أكشن ومغامرات', icon: 'fa-bolt', query: 'أكشن', type: 'category', categoryId: '84' },
+  { label: 'أفلام رعب', icon: 'fa-ghost', query: 'رعب', type: 'category', categoryId: '70' },
+  { label: 'كوميديا', icon: 'fa-face-laugh-squint', query: 'كوميديا', type: 'category', categoryId: '59' },
+  { label: 'جريمة وغموض', icon: 'fa-mask', query: 'جريمة', type: 'category', categoryId: '60' },
+  { label: 'خيال علمي', icon: 'fa-rocket', query: 'خيال علمي', type: 'category', categoryId: '78' },
+  { label: 'باتمان', icon: 'fa-shield', query: 'باتمان', type: 'query' },
+  { label: 'ون بيس', icon: 'fa-skull-crossbones', query: 'ون بيس', type: 'query' },
+  { label: 'سبايدرمان', icon: 'fa-spider', query: 'سبايدر مان', type: 'query' },
+  { label: 'جون ويك', icon: 'fa-crosshairs', query: 'جون ويك', type: 'query' },
 ];
 
 const QUICK_CATEGORIES = [
@@ -376,9 +377,10 @@ export default function SearchBar() {
                         key={item.label}
                         type="button"
                         onClick={() => handleTagClick(item)}
-                        className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/5 hover:bg-[#e50914]/20 border border-white/10 hover:border-[#e50914]/40 text-gray-300 hover:text-white transition-all duration-200 active:scale-95 cursor-pointer shadow-sm"
+                        className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/5 hover:bg-[#e50914]/20 border border-white/10 hover:border-[#e50914]/40 text-gray-300 hover:text-white transition-all duration-200 active:scale-95 cursor-pointer shadow-sm flex items-center gap-1.5"
                       >
-                        {item.label}
+                        {item.icon && <i className={`fa-solid ${item.icon} text-[10px] text-red-500`} />}
+                        <span>{item.label}</span>
                       </button>
                     ))}
                   </div>

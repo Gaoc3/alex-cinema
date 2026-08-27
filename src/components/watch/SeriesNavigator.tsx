@@ -298,7 +298,7 @@ export default function SeriesNavigator({
                     }`}>
                       <div className="px-3 py-1 rounded-full bg-red-600 text-white text-[11px] font-black tracking-wide flex items-center gap-1.5 shadow-xl border border-white/20">
                         <i className="fa-solid fa-circle-play text-[10px] text-white" />
-                        <span>{isActiveEp ? 'جارٍ التشغيل 🔴' : 'تشغيل'}</span>
+                        <span>{isActiveEp ? 'جارٍ التشغيل' : 'تشغيل'}</span>
                       </div>
                     </div>
 

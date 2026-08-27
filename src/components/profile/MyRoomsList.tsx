@@ -86,7 +86,7 @@ export default function MyRoomsList() {
       const res = await toggleRoomActive(roomId, newStatus);
       if (res.success) {
         window.dispatchEvent(new CustomEvent('rooms-updated'));
-        toast.success(newStatus ? 'تم فتح الغرفة وبدء البث المباشر! 🟢🍿' : 'تم إغلاق الغرفة بنجاح! ⚪');
+        toast.success(newStatus ? 'تم فتح الغرفة وبدء البث المباشر' : 'تم إغلاق الغرفة بنجاح');
       } else {
         setRooms((prev) => prev.map((r) => r.id === roomId ? { ...r, isActive: currentStatus } : r));
         toast.error(res.error || 'تعذر تغيير حالة الغرفة');
@@ -107,7 +107,7 @@ export default function MyRoomsList() {
       const res = await toggleRoomPrivacy(roomId, newPrivate);
       if (res.success) {
         window.dispatchEvent(new CustomEvent('rooms-updated'));
-        toast.success(newPrivate ? 'تم تعيين الغرفة كغرفة خاصة 🔒' : 'تم تعيين الغرفة كغرفة عامة 🌐');
+        toast.success(newPrivate ? 'تم تعيين الغرفة كغرفة خاصة' : 'تم تعيين الغرفة كغرفة عامة');
       } else {
         setRooms((prev) => prev.map((r) => r.id === roomId ? { ...r, isPrivate: currentPrivate } : r));
         toast.error(res.error || 'تعذر تعديل الخصوصية');
@@ -123,7 +123,7 @@ export default function MyRoomsList() {
     e.stopPropagation();
     const url = `${window.location.origin}/room/${roomId}`;
     navigator.clipboard.writeText(url);
-    toast.success('تم نسخ رابط الغرفة بنجاح! 📋');
+    toast.success('تم نسخ رابط الغرفة بنجاح');
   };
 
   const handleConfirmDelete = async () => {
@@ -137,7 +137,7 @@ export default function MyRoomsList() {
       if (res.success) {
         setRooms((prev) => prev.filter((r) => r.id !== roomId));
         window.dispatchEvent(new CustomEvent('rooms-updated'));
-        toast.success('تم حذف الغرفة نهائياً 🗑️');
+        toast.success('تم حذف الغرفة نهائياً');
       } else {
         toast.error(res.error || 'حدث خطأ أثناء حذف الغرفة');
       }
@@ -168,9 +168,10 @@ export default function MyRoomsList() {
         <button
           type="button"
           onClick={() => { setError(false); setLoading(true); fetchRooms(); }}
-          className="px-4 py-2 bg-red-600/30 hover:bg-red-600/50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+          className="px-4 py-2 bg-red-600/30 hover:bg-red-600/50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
         >
-          إعادة المحاولة 🔄
+          <i className="fa-solid fa-rotate-right text-xs" />
+          <span>إعادة المحاولة</span>
         </button>
       </div>
     );
@@ -191,7 +192,7 @@ export default function MyRoomsList() {
           className="px-7 py-3 bg-gradient-to-r from-red-600 to-[#E50914] hover:from-red-500 hover:to-red-600 text-white font-black rounded-2xl transition-all shadow-[0_4px_25px_rgba(229,9,20,0.5)] hover:shadow-[0_0_30px_rgba(229,9,20,0.7)] active:scale-95 cursor-pointer text-xs sm:text-sm flex items-center gap-2"
         >
           <i className="fa-solid fa-plus" />
-          <span>إنشاء غرفة مشاهدة جديدة 🍿</span>
+          <span>إنشاء غرفة مشاهدة جديدة</span>
         </Link>
       </div>
     );
@@ -249,8 +250,9 @@ export default function MyRoomsList() {
           </button>
         </div>
 
-        <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
-          💡 انقر على الشارات للتحكم الفوري بالبث والخصوصية
+        <span className="text-[11px] text-slate-400 font-medium hidden sm:flex items-center gap-1.5">
+          <i className="fa-solid fa-circle-info text-sky-400 text-xs" />
+          <span>انقر على الشارات للتحكم الفوري بالبث والخصوصية</span>
         </span>
       </div>
 
@@ -282,14 +284,14 @@ export default function MyRoomsList() {
                   </div>
                 )}
 
-                {/* Seamless Gradient Overlay */}
-                <div className="absolute -bottom-0.5 inset-x-0 h-3/4 bg-gradient-to-t from-[#080d1a] via-[#080d1a]/60 to-transparent pointer-events-none z-10" />
+                {/* Seamless Gradient Overlay covering entire frame bottom */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#080d1a] via-[#080d1a]/60 to-transparent pointer-events-none z-10" />
 
                 {/* Hover Play Overlay Pill */}
                 <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/40 backdrop-blur-[2px]">
                   <span className="px-4 py-2 rounded-xl bg-red-600/90 text-white font-black text-xs shadow-[0_0_20px_rgba(229,9,20,0.7)] flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform">
                     <i className="fa-solid fa-play text-[10px]" />
-                    <span>دخول الغرفة 🍿</span>
+                    <span>دخول الغرفة</span>
                   </span>
                 </div>
 
@@ -303,7 +305,7 @@ export default function MyRoomsList() {
                       className="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-400 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.4)] flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 transition-all"
                     >
                       <span className="size-1.5 rounded-full bg-emerald-400 animate-ping" />
-                      <span>مباشر 🟢 (اضغط للإغلاق)</span>
+                      <span>مباشر (اضغط للإغلاق)</span>
                     </button>
                   ) : (
                     <button
@@ -313,7 +315,7 @@ export default function MyRoomsList() {
                       className="px-2.5 py-1 rounded-full text-[10px] font-black bg-black/70 hover:bg-emerald-950/50 border border-white/20 hover:border-emerald-500/40 text-slate-300 hover:text-emerald-300 backdrop-blur-md flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 transition-all"
                     >
                       <i className="fa-solid fa-power-off text-[9px] text-slate-400" />
-                      <span>مغلقة ⚪ (اضغط للفتح)</span>
+                      <span>مغلقة (اضغط للفتح)</span>
                     </button>
                   )}
                 </div>
@@ -324,13 +326,14 @@ export default function MyRoomsList() {
                     type="button"
                     onClick={(e) => handleTogglePrivacy(room.id, room.isPrivate, e)}
                     title={room.isPrivate ? "غرفة خاصة - انقر لتحويلها إلى عامة" : "غرفة عامة تظهر للجميع - انقر لجعلها خاصة"}
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-black backdrop-blur-md border cursor-pointer hover:scale-105 active:scale-95 transition-all ${
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-black backdrop-blur-md border cursor-pointer hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 ${
                       room.isPrivate
                         ? 'bg-red-500/20 hover:bg-red-500/30 border-red-500/40 text-red-400'
                         : 'bg-sky-500/20 hover:bg-sky-500/30 border-sky-500/40 text-sky-400'
                     }`}
                   >
-                    <span>{room.isPrivate ? '🔒 خاصة' : '🌐 عامة'}</span>
+                    <i className={room.isPrivate ? "fa-solid fa-lock text-[9px]" : "fa-solid fa-globe text-[9px]"} />
+                    <span>{room.isPrivate ? 'خاصة' : 'عامة'}</span>
                   </button>
                 </div>
 

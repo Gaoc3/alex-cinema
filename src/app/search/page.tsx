@@ -446,7 +446,7 @@ function SearchPageContent() {
                 className="text-[10px] text-slate-400 hover:text-white bg-white/10 px-1.5 py-0.5 rounded cursor-pointer mr-0.5"
                 title="إلغاء التقييم"
               >
-                ✕
+                <i className="fa-solid fa-xmark text-[9px]" />
               </button>
             )}
           </div>

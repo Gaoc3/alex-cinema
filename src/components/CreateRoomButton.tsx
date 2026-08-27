@@ -108,7 +108,7 @@ export default function CreateRoomButton({ className, onCreated }: CreateRoomBut
     if (isCreating) return;
 
     if (!isSignedIn && !user) {
-      toast.error('يجب تسجيل الدخول لإنشاء غرفة مشاهدة 🔒');
+      toast.error('يجب تسجيل الدخول لإنشاء غرفة مشاهدة');
       return;
     }
 
@@ -146,7 +146,7 @@ export default function CreateRoomButton({ className, onCreated }: CreateRoomBut
       if (data.success && (data.room?.id || data.roomId)) {
         setIsDialogOpen(false);
         setRoomName('');
-        toast.success('تم إنشاء الغرفة بنجاح! 🍿');
+        toast.success('تم إنشاء الغرفة بنجاح');
         const roomId = data.room?.id || data.roomId;
         if (onCreated) {
           onCreated(roomId);

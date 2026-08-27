@@ -671,7 +671,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
     if (!video) return;
 
     if (roomHook && !canControlPlayback) {
-      toast.error('التحكم بالمشغل وتشغيل/إيقاف الفيديو مخصص للمضيف والمشرفين فقط 🔒', { id: 'room-no-seek-perm' });
+      toast.error('التحكم بالمشغل وتشغيل/إيقاف الفيديو مخصص للمضيف والمشرفين فقط', { id: 'room-no-seek-perm' });
       return;
     }
 
@@ -688,7 +688,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   // Gesture Handlers
   const handleSeekForward = (seconds: number = 10) => {
     if (roomHook && !canControlPlayback) {
-      toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط 🔒', { id: 'room-no-seek-perm' });
+      toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط', { id: 'room-no-seek-perm' });
       return;
     }
     const video = videoRef.current;
@@ -701,7 +701,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   const handleSeekBackward = (seconds: number = 10) => {
     if (roomHook && !canControlPlayback) {
-      toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط 🔒', { id: 'room-no-seek-perm' });
+      toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط', { id: 'room-no-seek-perm' });
       return;
     }
     const video = videoRef.current;
@@ -872,7 +872,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
   // Seek time
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (roomHook && !canControlPlayback) {
-      toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط 🔒', { id: 'room-no-seek-perm' });
+      toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط', { id: 'room-no-seek-perm' });
       return;
     }
     const video = videoRef.current;
@@ -1185,7 +1185,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
         case ' ':
           e.preventDefault();
           if (roomHook && !canControlPlayback) {
-            toast.error('التحكم بالمشغل وتشغيل/إيقاف الفيديو مخصص للمضيف والمشرفين فقط 🔒', { id: 'room-no-seek-perm' });
+            toast.error('التحكم بالمشغل وتشغيل/إيقاف الفيديو مخصص للمضيف والمشرفين فقط', { id: 'room-no-seek-perm' });
             break;
           }
           if (video.paused || video.ended) {
@@ -1196,7 +1196,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           break;
         case 'ArrowLeft':
           if (roomHook && !canControlPlayback) {
-            toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط 🔒', { id: 'room-no-seek-perm' });
+            toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط', { id: 'room-no-seek-perm' });
             break;
           }
           e.preventDefault();
@@ -1204,7 +1204,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           break;
         case 'ArrowRight':
           if (roomHook && !canControlPlayback) {
-            toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط 🔒', { id: 'room-no-seek-perm' });
+            toast.error('التقديم والتأخير مخصص للمضيف والمشرفين فقط', { id: 'room-no-seek-perm' });
             break;
           }
           e.preventDefault();

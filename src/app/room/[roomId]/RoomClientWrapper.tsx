@@ -174,7 +174,7 @@ export default function RoomClientWrapper({
         return;
       }
       await navigator.clipboard.writeText(url);
-      toast.success('تم نسخ رابط الغرفة بنجاح 📋');
+      toast.success('تم نسخ رابط الغرفة بنجاح');
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
       toast.error('تعذر مشاركة الرابط');
@@ -545,7 +545,7 @@ export default function RoomClientWrapper({
                         className="mt-2 flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 hover:border-red-500/40 px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white transition-all shadow-md active:scale-95 cursor-pointer"
                       >
                         <i className="fa-solid fa-lightbulb text-amber-400" />
-                        <span>تصفح مكتبة الأفلام واقترح عملاً للمشاهدة 🍿</span>
+                        <span>تصفح مكتبة الأفلام واقترح عملاً للمشاهدة</span>
                       </button>
                     </div>
                   )}
@@ -579,7 +579,7 @@ export default function RoomClientWrapper({
                       className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-red-600/30 hover:brightness-110 active:scale-95 transition-all cursor-pointer"
                     >
                       <i className="fa-solid fa-magnifying-glass text-xs" />
-                      <span>فتح مكتبة العرض 🎬</span>
+                      <span>فتح مكتبة العرض</span>
                     </button>
                   </div>
                 )}

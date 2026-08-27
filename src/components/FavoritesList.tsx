@@ -159,7 +159,7 @@ export default function FavoritesList({ onItemClick, compact = false }: Favorite
               className="mt-2 px-5 py-2.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-400 hover:text-sky-300 border border-sky-500/30 text-xs font-bold transition-all active:scale-95 flex items-center gap-2"
             >
               <i className="fa-solid fa-tv text-xs" />
-              <span>تصفح المسلسلات 📺</span>
+              <span>تصفح مكتبة المسلسلات</span>
             </Link>
           </div>
         ) : activeTab === 'movie' ? (
@@ -177,7 +177,7 @@ export default function FavoritesList({ onItemClick, compact = false }: Favorite
               className="mt-2 px-5 py-2.5 rounded-xl bg-red-600/15 hover:bg-red-600/25 text-red-400 hover:text-red-300 border border-red-500/30 text-xs font-bold transition-all active:scale-95 flex items-center gap-2"
             >
               <i className="fa-solid fa-film text-xs" />
-              <span>تصفح الأفلام 🎬</span>
+              <span>تصفح مكتبة الأفلام</span>
             </Link>
           </div>
         ) : (

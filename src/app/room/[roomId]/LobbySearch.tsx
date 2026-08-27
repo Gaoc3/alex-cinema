@@ -157,12 +157,12 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
           const syncResult = onVideoSelected
             ? await onVideoSelected(item.nb, item.kind || '')
             : { ok: true };
-          toast.success(`تم اختيار «${item.ar_title || item.en_title}» للعرض! 🎬`);
+          toast.success(`تم اختيار «${item.ar_title || item.en_title}» للعرض`);
           if (onClose) onClose();
 
           const nextUrl = `/room/${roomId}?videoId=${item.nb}`;
           if (!syncResult.ok) {
-            toast('سيُعاد الاتصال بالغرفة لإكمال المزامنة', { icon: '🔄' });
+            toast('سيُعاد الاتصال بالغرفة لإكمال المزامنة', { icon: <i className="fa-solid fa-rotate text-red-500" /> });
             window.location.assign(nextUrl);
           } else {
             router.push(nextUrl);
@@ -238,24 +238,26 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
           <button
             type="button"
             onClick={() => setFilterType('movies')}
-            className={`cursor-pointer rounded-full px-4 py-1.5 text-xs font-bold transition-all duration-200 ${
+            className={`flex items-center gap-1.5 cursor-pointer rounded-full px-4 py-1.5 text-xs font-bold transition-all duration-200 ${
               filterType === 'movies'
                 ? 'bg-red-600 text-white shadow-md shadow-red-600/35 scale-105'
                 : 'border border-white/10 bg-white/[0.04] text-slate-400 hover:bg-white/10 hover:text-white'
             }`}
           >
-            🎬 أفلام ({results.filter((r) => r.kind !== '2').length})
+            <i className="fa-solid fa-film" />
+            أفلام ({results.filter((r) => r.kind !== '2').length})
           </button>
           <button
             type="button"
             onClick={() => setFilterType('series')}
-            className={`cursor-pointer rounded-full px-4 py-1.5 text-xs font-bold transition-all duration-200 ${
+            className={`flex items-center gap-1.5 cursor-pointer rounded-full px-4 py-1.5 text-xs font-bold transition-all duration-200 ${
               filterType === 'series'
                 ? 'bg-red-600 text-white shadow-md shadow-red-600/35 scale-105'
                 : 'border border-white/10 bg-white/[0.04] text-slate-400 hover:bg-white/10 hover:text-white'
             }`}
           >
-            📺 مسلسلات ({results.filter((r) => r.kind === '2').length})
+            <i className="fa-solid fa-tv" />
+            مسلسلات ({results.filter((r) => r.kind === '2').length})
           </button>
         </div>
       )}
@@ -362,7 +364,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
               <span className="flex size-6 items-center justify-center rounded-lg bg-red-600/20 text-red-500 border border-red-500/30">
                 <i className="fa-solid fa-fire text-xs" aria-hidden="true" />
               </span>
-              <span>الأكثر طلباً للمشاهدة الجماعية 🔥</span>
+              <span>الأكثر طلباً للمشاهدة الجماعية</span>
             </span>
             <span className="text-[10px] font-bold text-slate-400">اختر للبدء فوراً لجميع المشاركين</span>
           </div>

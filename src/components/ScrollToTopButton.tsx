@@ -39,7 +39,7 @@ export default function ScrollToTopButton() {
       type="button"
       onClick={scrollToTop}
       aria-label="العودة لأعلى الصفحة"
-      title="العودة للأعلى ⬆"
+      title="العودة لأعلى الصفحة"
       className="fixed bottom-6 left-6 z-40 size-11 rounded-2xl bg-[#080d1a]/90 hover:bg-red-600 text-slate-300 hover:text-white border border-white/15 hover:border-red-500/50 shadow-[0_8px_30px_rgba(0,0,0,0.8),0_0_25px_rgba(229,9,20,0.35)] backdrop-blur-xl flex items-center justify-center transition-all duration-300 active:scale-90 animate-fade-in cursor-pointer group"
     >
       <i className="fa-solid fa-arrow-up text-sm transform group-hover:-translate-y-0.5 transition-transform" />

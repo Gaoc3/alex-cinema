@@ -130,7 +130,7 @@ export default function TelegramHomeView({
         <div className="flex flex-col gap-3.5">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-base sm:text-xl font-black text-white flex items-center gap-2">
-              <span className="text-alex-primary text-base sm:text-xl">🔥</span>
+              <i className="fa-solid fa-fire text-alex-primary text-base sm:text-lg" />
               <span>الأفلام الأكثر شهرة</span>
             </h2>
             <button
@@ -159,7 +159,7 @@ export default function TelegramHomeView({
         <div className="flex flex-col gap-3.5">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-base sm:text-xl font-black text-white flex items-center gap-2">
-              <span className="text-alex-primary text-base sm:text-xl">📺</span>
+              <i className="fa-solid fa-tv text-sky-400 text-base sm:text-lg" />
               <span>المسلسلات الأكثر شهرة</span>
             </h2>
             <button

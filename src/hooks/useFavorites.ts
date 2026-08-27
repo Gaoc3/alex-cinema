@@ -118,7 +118,7 @@ export function useFavorites() {
       posterPath?: string | null;
     }) => {
       if (!isLoaded || (!isSignedIn && !user)) {
-        toast.error('يجب تسجيل الدخول لإضافة المفضلات ⚠️');
+        toast.error('يجب تسجيل الدخول لإضافة المفضلات');
         return false;
       }
 
@@ -152,9 +152,9 @@ export function useFavorites() {
       notifyListeners();
 
       if (desiredState) {
-        toast.success(`تمت إضافة ${item.title || 'العمل'} للمفضلة ❤️`, { id: `fav-${mediaIdStr}` });
+        toast.success(`تمت إضافة ${item.title || 'العمل'} إلى المفضلة`, { id: `fav-${mediaIdStr}` });
       } else {
-        toast(`تمت إزالة ${item.title || 'العمل'} من المفضلة`, { icon: '🗑️', id: `fav-${mediaIdStr}` });
+        toast(`تمت إزالة ${item.title || 'العمل'} من المفضلة`, { id: `fav-${mediaIdStr}` });
       }
 
       try {

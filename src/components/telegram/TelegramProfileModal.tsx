@@ -54,7 +54,7 @@ export default function TelegramProfileModal({
             aria-label="إغلاق"
             className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center text-gray-200 text-sm transition-all cursor-pointer shadow-sm"
           >
-            ✕
+            <i className="fa-solid fa-xmark" />
           </button>
         </div>
 
@@ -79,8 +79,9 @@ export default function TelegramProfileModal({
             <h3 className="text-lg sm:text-xl font-black text-white truncate">{displayName}</h3>
             <p className="text-xs sm:text-sm text-alex-primary font-bold truncate mt-0.5">{username}</p>
             <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black">
-                متصل بتليجرام ✓
+              <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black flex items-center gap-1">
+                <i className="fa-solid fa-check text-[10px]" />
+                <span>متصل بتليجرام</span>
               </span>
             </div>
           </div>
@@ -123,11 +124,17 @@ export default function TelegramProfileModal({
           </div>
           <div className="flex items-center justify-between">
             <span className="text-gray-400 font-bold">نوع الحساب:</span>
-            <span className="text-yellow-400 font-black">عضوية سينمائية مميزة ★</span>
+            <span className="text-yellow-400 font-black flex items-center gap-1">
+              <i className="fa-solid fa-star text-xs" />
+              <span>عضوية سينمائية مميزة</span>
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-gray-400 font-bold">مزامنة السحابة:</span>
-            <span className="text-emerald-400 font-black">تلقائية ومحمية 🔒</span>
+            <span className="text-emerald-400 font-black flex items-center gap-1">
+              <i className="fa-solid fa-shield-halved text-xs" />
+              <span>تلقائية ومحمية</span>
+            </span>
           </div>
         </div>
 

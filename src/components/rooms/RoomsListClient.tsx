@@ -125,7 +125,7 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
 
       const result = await response.json();
       if (result.success) {
-        toast.success(result.message || `تم حذف ${deletedIds.length} غرفة بنجاح 🗑️`);
+        toast.success(result.message || `تم حذف ${deletedIds.length} غرفة بنجاح`);
         setSelectedRoomIds([]);
         setIsSelectionMode(false);
         setShowConfirmModal(false);
@@ -160,7 +160,7 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
       });
       const data = await res.json();
       if (data.success) {
-        toast.success('تم حذف الغرفة بنجاح 🗑️');
+        toast.success('تم حذف الغرفة بنجاح');
         window.dispatchEvent(new CustomEvent('rooms-updated'));
         fetchActiveRooms();
         fetchUserRooms();
@@ -182,7 +182,7 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
     e.stopPropagation();
     const url = `${window.location.origin}/room/${roomId}`;
     navigator.clipboard.writeText(url);
-    toast.success('تم نسخ رابط الغرفة بنجاح! 📋');
+    toast.success('تم نسخ رابط الغرفة بنجاح');
   };
 
   return (
@@ -344,7 +344,7 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                   <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#080d1a]">
                     {room.moviePoster ? (
                       <Image
-                        src={getImageUrl(room.moviePoster, 'poster') || '/icon.svg'}
+                        src={getImageUrl(room.moviePoster, 'backdrop') || getImageUrl(room.moviePoster, 'poster') || '/icon.svg'}
                         alt={room.movieTitle || room.title}
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -356,7 +356,7 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                       </div>
                     )}
                     {/* Seamless Gradient Overlay covering subpixel joint */}
-                    <div className="absolute -bottom-0.5 inset-x-0 h-3/4 bg-gradient-to-t from-[#080d1a] via-[#080d1a]/60 to-transparent pointer-events-none z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#080d1a] via-[#080d1a]/60 to-transparent pointer-events-none z-10" />
 
                     {/* Live Badge */}
                     <div className="absolute right-3 top-3 z-20 flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-black/60 px-2.5 py-1 text-[11px] font-black text-emerald-400 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.3)]">
@@ -369,8 +369,8 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                     </div>
                   </div>
 
-                  {/* Room Details */}
-                  <div className="flex flex-1 flex-col p-4 relative z-10 bg-[#080d1a]">
+                  {/* Room Details - overlapping to eliminate subpixel gap */}
+                  <div className="flex flex-1 flex-col p-4 -mt-2 pt-4 relative z-10 bg-[#080d1a]">
                     <h3 className="mb-1 text-base font-black text-white line-clamp-1 group-hover:text-red-400 transition-colors">
                       {room.title}
                     </h3>
@@ -470,7 +470,7 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                   <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#080d1a]">
                     {room.moviePoster ? (
                       <Image
-                        src={getImageUrl(room.moviePoster, 'poster') || '/icon.svg'}
+                        src={getImageUrl(room.moviePoster, 'backdrop') || getImageUrl(room.moviePoster, 'poster') || '/icon.svg'}
                         alt={room.movieTitle || room.title}
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -482,16 +482,17 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                       </div>
                     )}
                     {/* Seamless Gradient Overlay covering subpixel joint */}
-                    <div className="absolute -bottom-0.5 inset-x-0 h-3/4 bg-gradient-to-t from-[#080d1a] via-[#080d1a]/60 to-transparent pointer-events-none z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#080d1a] via-[#080d1a]/60 to-transparent pointer-events-none z-10" />
 
                     {/* Owner Badge */}
                     <div className="absolute left-3 top-3 z-20 flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-black/60 px-2.5 py-1 text-[11px] font-black text-sky-400 backdrop-blur-md">
-                      <span>👑 غرفتك</span>
+                      <i className="fa-solid fa-crown text-amber-400 text-xs" />
+                      <span>غرفتك</span>
                     </div>
                   </div>
 
-                  {/* Room Details */}
-                  <div className="flex flex-1 flex-col p-4">
+                  {/* Room Details - overlapping to eliminate subpixel gap */}
+                  <div className="flex flex-1 flex-col p-4 -mt-2 pt-4 relative z-10 bg-[#080d1a]">
                     <h3 className="mb-1 text-base font-black text-white line-clamp-1 group-hover:text-red-400 transition-colors">
                       {room.title}
                     </h3>

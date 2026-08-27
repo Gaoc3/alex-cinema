@@ -66,7 +66,7 @@ export default function TelegramSearchView({ onSelectMovie }: TelegramSearchView
             onClick={() => setQuery('')}
             className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 flex items-center justify-center text-gray-200 text-sm transition-all"
           >
-            ✕
+            <i className="fa-solid fa-xmark text-xs" />
           </button>
         )}
       </div>

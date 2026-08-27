@@ -50,7 +50,7 @@ const WatchWithFriendsButton = ({ videoId }: { videoId: string }) => {
       const { createRoom } = await import('@/app/actions/room.actions');
       const res = await createRoom({ title: 'روم مشاهدة جماعية', movieId: videoId });
       if (res.success && res.roomId) {
-        toast.success('تم إنشاء روم المشاهدة بنجاح! 🍿');
+        toast.success('تم إنشاء غرفة المشاهدة بنجاح');
         // In Telegram WebApp, dispatch a custom event for in-app room navigation
         const isTelegramWebApp = typeof window !== 'undefined' && !!(window as any).Telegram?.WebApp?.initDataUnsafe;
         if (isTelegramWebApp) {
@@ -131,7 +131,7 @@ export default function ActionToolbar({
   const handleShare = () => {
     if (typeof window !== 'undefined') {
       navigator.clipboard.writeText(window.location.href);
-      toast.success('تم نسخ رابط الصفحة لمشاركتها! 🔗');
+      toast.success('تم نسخ رابط الصفحة لمشاركتها');
     }
   };
 
