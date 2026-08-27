@@ -74,7 +74,7 @@ const WatchWithFriendsButton = ({ videoId }: { videoId: string }) => {
       type="button"
       onClick={handleWatchWithFriends}
       disabled={isLoading}
-      className="flex-1 sm:flex-initial flex items-center justify-center gap-2 font-black text-xs sm:text-sm px-4 py-2.5 rounded-xl sm:rounded-2xl border border-purple-500/60 bg-purple-600 hover:bg-purple-500 text-white transition-all duration-300 cursor-pointer select-none shadow-[0_0_15px_rgba(147,51,234,0.4)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="flex-1 sm:flex-initial flex items-center justify-center gap-2 font-black text-xs sm:text-sm px-4 py-2.5 rounded-xl sm:rounded-2xl border border-red-500/60 bg-red-600 hover:bg-red-500 text-white transition-all duration-300 cursor-pointer select-none shadow-[0_0_18px_rgba(229,9,20,0.45)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {isLoading ? (
         <i className="fa-solid fa-spinner animate-spin text-xs sm:text-sm"></i>

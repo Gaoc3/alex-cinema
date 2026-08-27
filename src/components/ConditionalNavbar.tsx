@@ -1,16 +1,18 @@
 "use client";
 
 import { usePathname } from 'next/navigation';
-import React, { Suspense } from 'react';
+import React, { Suspense, useState } from 'react';
 import Link from "next/link";
 import SearchBar from "@/components/SearchBar";
 import SidebarToggle from "@/components/SidebarToggle";
 import CinematicLogo from "@/components/CinematicLogo";
 import UserNav from "@/components/UserNav";
+import HelpShortcutsModal from "@/components/modals/HelpShortcutsModal";
 import { useUnifiedAuth } from '@/components/auth/UnifiedAuthProvider';
 
 export default function ConditionalNavbar() {
   const pathname = usePathname();
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const { isSignedIn, isLoaded } = useUnifiedAuth();
   const isAuthPage = pathname?.startsWith('/sign-in')
     || pathname?.startsWith('/sign-up')
@@ -48,12 +50,23 @@ export default function ConditionalNavbar() {
               <div className="hidden xl:block flex-grow"></div>
 
               {/* Left side (RTL End): Search Input & User Actions */}
-              <div className="flex items-center justify-end gap-2 sm:gap-4">
+              <div className="flex items-center justify-end gap-2 sm:gap-3">
                   <div className="flex items-center shrink-0">
                       <Suspense fallback={<div className="w-10 h-10 rounded-xl bg-white/5 animate-pulse"></div>}>
                           <SearchBar />
                       </Suspense>
                   </div>
+
+                  {/* Quick Guide & Shortcuts Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsHelpOpen(true)}
+                    aria-label="دليل الاستخدام والاختصارات"
+                    title="دليل الاستخدام والاختصارات"
+                    className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition-all hover:bg-white/10 hover:text-white hover:border-red-500/40 hover:shadow-[0_0_15px_rgba(229,9,20,0.3)] active:scale-95"
+                  >
+                    <i className="fa-solid fa-circle-question text-base" />
+                  </button>
                   
                   <div className="flex items-center shrink-0 ms-auto min-h-[40px]">
                        {!isLoaded ? (
@@ -75,6 +88,7 @@ export default function ConditionalNavbar() {
           </div>
         </div>
       </nav>
+      <HelpShortcutsModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
       <script dangerouslySetInnerHTML={{
         __html: `
           window.addEventListener('scroll', () => {

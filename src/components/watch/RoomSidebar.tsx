@@ -731,7 +731,7 @@ export default function RoomSidebar({
                 className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-4.5 transition-all hover:bg-white/[0.06] hover:border-white/20 select-none group"
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/25 group-hover:scale-105 transition-transform">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-red-500/15 text-red-400 border border-red-500/25 group-hover:scale-105 transition-transform">
                     <i className="fa-solid fa-forward-step text-base" />
                   </div>
                   <div>

@@ -25,6 +25,10 @@ export function getImageUrl(
   if (!imgField) return '';
   const trimmed = imgField.trim();
   if (!trimmed) return '';
+  // Ignore raw server command/internal path leaks
+  if (trimmed.startsWith('/var/') || trimmed.startsWith('/usr/') || trimmed.includes('s3cmd') || trimmed.includes('s3md5')) {
+    return '';
+  }
   // Already a proxied/rewritten URL from sanitized server data
   if (trimmed.startsWith('/api/') || trimmed.startsWith('/tunnel/')) {
     return withImageCacheVersion(trimmed);

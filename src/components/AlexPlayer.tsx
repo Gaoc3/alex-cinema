@@ -2064,31 +2064,71 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
 
   // Fallback UI (e.g. No stream and no trailer)
   return (
-    <div className="aspect-video flex flex-col items-center justify-center bg-alex-card rounded-3xl border border-white/5">
-      <div className="w-24 h-24 rounded-full ios-glass flex items-center justify-center mb-6 text-4xl text-gray-500 shadow-inner">
-        <i className="fa-solid fa-video-slash"></i>
+    <div className="aspect-video flex flex-col items-center justify-center bg-[#070b16] rounded-3xl border border-white/10 p-6 text-center relative overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)]" dir="rtl">
+      <div className="absolute -top-20 -right-20 size-48 rounded-full bg-red-600/10 blur-3xl pointer-events-none" />
+      <div className="size-20 rounded-2xl bg-red-600/15 border border-red-500/30 flex items-center justify-center mb-4 text-3xl text-red-500 shadow-[0_0_30px_rgba(229,9,20,0.25)]">
+        <i className="fa-solid fa-triangle-exclamation"></i>
       </div>
-      <h2 className="text-2xl text-white font-black mb-2">البث غير متوفر حالياً</h2>
-      <p className="text-gray-400 font-medium">عذراً، لم نتمكن من العثور على مسار البث المباشر لهذا المحتوى.</p>
-      {currentStreamUrl && showStreamError && (
-        <div className="mt-4 flex flex-col items-center gap-3">
-          <p className="text-xs text-gray-500 font-mono max-w-md text-center">{lastErrorEvent}</p>
+      <h2 className="text-xl sm:text-2xl text-white font-black mb-2">تعذر تشغيل مسار البث المباشر</h2>
+      <p className="text-slate-400 font-medium text-xs sm:text-sm max-w-md mb-4">
+        قد يكون مزود البث الأصلي محجوباً أو يواجه ضغطاً مؤقتاً في منطقتك. يمكنك تجربة الحلول البديلة التالية:
+      </p>
+      
+      <div className="flex flex-wrap items-center justify-center gap-3 z-10">
+        {/* Solution 1: Tunnel Proxy */}
+        <button
+          type="button"
+          onClick={() => {
+            setShowStreamError(false);
+            setRetryCount(0);
+            setUseTunnelFallback(true);
+            toast.success('تم تفعيل بروكسي النفق البديل');
+          }}
+          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-xl font-bold text-xs sm:text-sm shadow-lg shadow-red-600/30 transition-all cursor-pointer active:scale-95"
+        >
+          <i className="fa-solid fa-shield-halved"></i>
+          <span>التشغيل عبر البروكسي البديل (Tunnel)</span>
+        </button>
+
+        {/* Solution 2: Next Resolution */}
+        {sortedStreams.length > 1 && (
           <button
+            type="button"
             onClick={() => {
-              setShowStreamError(false);
-              setRetryCount(0);
-              setCurrentStreamUrl((prev) => {
-                if (!prev) return prev;
-                const sep = prev.includes('?') ? '&' : '?';
-                return `${prev}${sep}_manual_retry=${Date.now()}`;
-              });
+              const otherStream = sortedStreams.find(s => s.url !== currentStreamUrl) || sortedStreams[0];
+              if (otherStream) {
+                setShowStreamError(false);
+                setRetryCount(0);
+                setSelectedQuality(otherStream.resolution);
+                setCurrentStreamUrl(otherStream.url);
+                toast.success(`تم التبديل إلى جودة ${otherStream.resolution}p`);
+              }
             }}
-            className="px-6 py-2 bg-alex-primary text-white rounded-xl font-bold text-sm hover:bg-alex-primary/80 transition-colors cursor-pointer outline-none focus:outline-none ring-0"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/15 border border-white/15 text-white rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer active:scale-95"
           >
-            إعادة المحاولة
+            <i className="fa-solid fa-sliders"></i>
+            <span>تبديل جودة البث</span>
           </button>
-        </div>
-      )}
+        )}
+
+        {/* Solution 3: Direct Retry */}
+        <button
+          type="button"
+          onClick={() => {
+            setShowStreamError(false);
+            setRetryCount(0);
+            setCurrentStreamUrl((prev) => {
+              if (!prev) return prev;
+              const sep = prev.includes('?') ? '&' : '?';
+              return `${prev}${sep}_manual_retry=${Date.now()}`;
+            });
+          }}
+          className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer active:scale-95"
+        >
+          <i className="fa-solid fa-rotate-right"></i>
+          <span>إعادة المحاولة</span>
+        </button>
+      </div>
     </div>
   );
 }

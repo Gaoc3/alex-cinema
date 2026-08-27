@@ -192,7 +192,7 @@ export default function TelegramHero({
       className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.9)] border border-white/20 group bg-[#090e18] select-none"
     >
       {/* Ambient Pulsing Glow */}
-      <div className="absolute -inset-2 bg-gradient-to-r from-alex-primary/30 via-purple-600/20 to-alex-primary/30 blur-3xl opacity-70 pointer-events-none"></div>
+      <div className="absolute -inset-2 bg-gradient-to-r from-alex-primary/30 via-red-700/20 to-alex-primary/30 blur-3xl opacity-70 pointer-events-none"></div>
 
       {/* Main Banner Clickable Area */}
       <div

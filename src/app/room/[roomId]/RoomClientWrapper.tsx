@@ -14,6 +14,7 @@ import RoomSidebar, { type RoomTab } from '@/components/watch/RoomSidebar';
 import { getVideoImageUrl } from '@/utils/imageHelper';
 import LobbySearch from './LobbySearch';
 import UserAvatar from '@/components/UserAvatar';
+import HelpShortcutsModal from '@/components/modals/HelpShortcutsModal';
 import { isTelegramWebAppContext } from '@/lib/telegramWebAppClient';
 
 interface RoomClientWrapperProps {
@@ -70,7 +71,7 @@ function RoomStateScreen({
       <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/15 bg-[#090e1d]/95 p-8 sm:p-10 text-center shadow-[0_30px_90px_rgba(0,0,0,0.9),0_0_50px_rgba(229,9,20,0.2)] backdrop-blur-2xl animate-scaleIn">
         {/* Ambient Glow */}
         <div className="absolute -top-24 -right-24 size-56 rounded-full bg-red-600/15 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 size-56 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 size-56 rounded-full bg-red-950/30 blur-3xl pointer-events-none" />
 
         <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-3xl border border-red-500/35 bg-red-600/20 text-3xl text-red-400 shadow-[0_0_35px_rgba(229,9,20,0.35)]">
           <i className={icon} aria-hidden="true" />
@@ -223,6 +224,7 @@ export default function RoomClientWrapper({
   }, []);
 
   const [isMediaSwitcherOpen, setIsMediaSwitcherOpen] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -460,6 +462,16 @@ export default function RoomClientWrapper({
 
             <button
               type="button"
+              onClick={() => setIsHelpModalOpen(true)}
+              className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-red-500/40 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 active:scale-95"
+              aria-label="دليل الاستخدام والاختصارات"
+              title="دليل الاستخدام والاختصارات"
+            >
+              <i className="fa-solid fa-circle-question text-sm" aria-hidden="true" />
+            </button>
+
+            <button
+              type="button"
               onClick={handleShareRoom}
               className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-red-600 text-white shadow-lg shadow-red-600/30 transition hover:bg-red-700 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
               aria-label="مشاركة رابط الغرفة"
@@ -521,10 +533,20 @@ export default function RoomClientWrapper({
                   {canChangeMedia ? (
                     <LobbySearch roomId={roomId} onVideoSelected={roomHook.changeVideo} />
                   ) : (
-                    <div className="flex justify-center items-center gap-2 py-4" role="status" aria-label="بانتظار المضيف">
-                      {[0, 150, 300].map((delay) => (
-                        <span key={delay} className="size-2.5 animate-pulse rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" style={{ animationDelay: `${delay}ms` }} />
-                      ))}
+                    <div className="flex flex-col justify-center items-center gap-3 py-3" role="status" aria-label="بانتظار المضيف">
+                      <div className="flex items-center gap-2">
+                        {[0, 150, 300].map((delay) => (
+                          <span key={delay} className="size-2.5 animate-pulse rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" style={{ animationDelay: `${delay}ms` }} />
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsMediaSwitcherOpen(true)}
+                        className="mt-2 flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 hover:border-red-500/40 px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white transition-all shadow-md active:scale-95 cursor-pointer"
+                      >
+                        <i className="fa-solid fa-lightbulb text-amber-400" />
+                        <span>تصفح مكتبة الأفلام واقترح عملاً للمشاهدة 🍿</span>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -619,6 +641,9 @@ export default function RoomClientWrapper({
           </div>,
           document.body
         )}
+
+        {/* Help & Shortcuts Modal */}
+        <HelpShortcutsModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
       </div>
     </div>
   );
