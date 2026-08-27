@@ -289,18 +289,15 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                     video={item}
                     type="poster"
                     sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
-                    className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+                    className="size-full object-cover"
                   />
                 </div>
 
-                {/* Top Vignette */}
-                <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-[4]" />
+                {/* Top Ambient Vignette */}
+                <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/75 to-transparent pointer-events-none z-[4]" />
 
-                {/* Solid Bottom Cap with Negative Inset (100% eliminates any bottom pixel bleed) */}
-                <div className="absolute -inset-x-2 -bottom-2 h-20 bg-[#03060f] pointer-events-none z-[5]" />
-
-                {/* Smooth Gradient Rising Upward */}
-                <div className="absolute -inset-x-2 -bottom-2 h-4/5 bg-gradient-to-t from-[#03060f] from-25% via-[#03060f]/90 via-55% to-transparent pointer-events-none z-[6]" />
+                {/* Continuous Organic Cinema Gradient Mask (Smooth, zero abrupt cutoff lines) */}
+                <div className="absolute -inset-x-1 -bottom-1 h-[85%] bg-gradient-to-t from-[#03060f] from-0% via-[#03060f]/95 via-25% via-[#03060f]/75 via-48% via-[#03060f]/25 via-70% to-transparent pointer-events-none z-[5]" />
 
                 {/* Top Floating Glass Badges */}
                 <div className="absolute top-2.5 right-2.5 left-2.5 flex items-center justify-between z-10 pointer-events-none">
@@ -397,18 +394,15 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                       video={item}
                       type="poster"
                       sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
-                      className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+                      className="size-full object-cover"
                     />
                   </div>
 
-                  {/* Top Vignette */}
-                  <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-[4]" />
+                  {/* Top Ambient Vignette */}
+                  <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/75 to-transparent pointer-events-none z-[4]" />
 
-                  {/* Solid Bottom Cap with Negative Inset (100% eliminates any bottom pixel bleed) */}
-                  <div className="absolute -inset-x-2 -bottom-2 h-20 bg-[#03060f] pointer-events-none z-[5]" />
-
-                  {/* Smooth Gradient Rising Upward */}
-                  <div className="absolute -inset-x-2 -bottom-2 h-4/5 bg-gradient-to-t from-[#03060f] from-25% via-[#03060f]/90 via-55% to-transparent pointer-events-none z-[6]" />
+                  {/* Continuous Organic Cinema Gradient Mask (Smooth, zero abrupt cutoff lines) */}
+                  <div className="absolute -inset-x-1 -bottom-1 h-[85%] bg-gradient-to-t from-[#03060f] from-0% via-[#03060f]/95 via-25% via-[#03060f]/75 via-48% via-[#03060f]/25 via-70% to-transparent pointer-events-none z-[5]" />
 
                   {/* Top Floating Glass Badges */}
                   <div className="absolute top-2.5 right-2.5 left-2.5 flex items-center justify-between z-10 pointer-events-none">
