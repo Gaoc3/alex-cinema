@@ -134,9 +134,9 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
                   window.location.href = '/rooms';
                 }
               }}
-              className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-white/10 transition-all text-white cursor-pointer"
+              className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-white/10 transition-all text-white cursor-pointer active:scale-[0.98]"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 pointer-events-none">
                 <FireIcon />
                 <span>الرومات النشطة</span>
               </div>
@@ -152,14 +152,14 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
                   setActiveModal("favorites");
                 }
               }}
-              className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-white/10 transition-all text-white cursor-pointer group"
+              className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-white/10 transition-all text-white cursor-pointer group active:scale-[0.98]"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 pointer-events-none">
                 <HeartIcon />
                 <span>المفضلة</span>
               </div>
               {favorites.length > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-600/20 text-red-400 border border-red-500/30">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-600/20 text-red-400 border border-red-500/30 pointer-events-none">
                   {favorites.length}
                 </span>
               )}
@@ -175,9 +175,9 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
                   setActiveModal("my-rooms");
                 }
               }}
-              className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-white/10 transition-all text-white cursor-pointer"
+              className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-white/10 transition-all text-white cursor-pointer active:scale-[0.98]"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 pointer-events-none">
                 <UsersIcon />
                 <span>غرف المشاهدة الخاصة بي</span>
               </div>
@@ -198,7 +198,7 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
                   toast.error(error instanceof Error ? error.message : "تعذر تسجيل الخروج.");
                 }
               }}
-              className="flex items-center gap-3 w-full text-right px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center gap-3 w-full text-right px-3 py-2.5 rounded-xl text-sm font-bold hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
             >
               <LogOutIcon />
               <span>{isSigningOut ? "جاري تسجيل الخروج..." : "تسجيل الخروج"}</span>
@@ -223,7 +223,7 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
           <div 
             role="dialog"
             aria-modal="true"
-            className="relative w-full max-w-4xl max-h-[88vh] overflow-hidden rounded-3xl border border-white/15 bg-[#060a14]/95 text-white shadow-[0_30px_90px_rgba(0,0,0,0.9),0_0_50px_rgba(229,9,20,0.25)] backdrop-blur-2xl animate-scaleIn flex flex-col"
+            className="relative w-full max-w-3xl max-h-[88vh] overflow-hidden rounded-3xl border border-white/15 bg-[#060a14]/95 text-white shadow-[0_30px_90px_rgba(0,0,0,0.9),0_0_50px_rgba(229,9,20,0.25)] backdrop-blur-2xl animate-scaleIn flex flex-col"
           >
             {/* Ambient Top Glow */}
             <div className="absolute -top-24 -right-24 size-60 rounded-full bg-red-600/20 blur-3xl pointer-events-none" />

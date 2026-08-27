@@ -142,13 +142,51 @@ export default function FavoritesList({ onItemClick, compact = false }: Favorite
         )}
       </div>
 
-      {/* Grid of Favorite Cards */}
+      {/* Grid of Favorite Cards or Tab Empty State */}
       {filteredFavorites.length === 0 ? (
-        <div className="py-12 text-center text-slate-400 text-xs font-bold">
-          لا توجد نتائج مطابقة لبحثك في المفضلة.
-        </div>
+        activeTab === 'tv' ? (
+          <div className="py-12 px-4 flex flex-col items-center justify-center text-center gap-3 bg-white/[0.02] border border-white/[0.05] rounded-3xl animate-fade-in">
+            <div className="size-14 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 text-2xl shadow-[0_0_20px_rgba(56,189,248,0.2)]">
+              <i className="fa-solid fa-tv" />
+            </div>
+            <h4 className="text-base font-black text-white">لا توجد مسلسلات في المفضلة بعد</h4>
+            <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
+              تصفح مكتبة المسلسلات الضخمة وأضف أعمالك المفضلة لمتابعة الحلقات بسهولة!
+            </p>
+            <Link
+              href="/series"
+              onClick={onItemClick}
+              className="mt-2 px-5 py-2.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-400 hover:text-sky-300 border border-sky-500/30 text-xs font-bold transition-all active:scale-95 flex items-center gap-2"
+            >
+              <i className="fa-solid fa-tv text-xs" />
+              <span>تصفح المسلسلات 📺</span>
+            </Link>
+          </div>
+        ) : activeTab === 'movie' ? (
+          <div className="py-12 px-4 flex flex-col items-center justify-center text-center gap-3 bg-white/[0.02] border border-white/[0.05] rounded-3xl animate-fade-in">
+            <div className="size-14 rounded-2xl bg-red-600/10 border border-red-500/20 flex items-center justify-center text-red-500 text-2xl shadow-[0_0_20px_rgba(229,9,20,0.2)]">
+              <i className="fa-solid fa-film" />
+            </div>
+            <h4 className="text-base font-black text-white">لا توجد أفلام في المفضلة بعد</h4>
+            <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
+              تصفح مكتبة الأفلام السينمائية وأضف أفضل العروض لمشاهدتها في أي وقت!
+            </p>
+            <Link
+              href="/movies"
+              onClick={onItemClick}
+              className="mt-2 px-5 py-2.5 rounded-xl bg-red-600/15 hover:bg-red-600/25 text-red-400 hover:text-red-300 border border-red-500/30 text-xs font-bold transition-all active:scale-95 flex items-center gap-2"
+            >
+              <i className="fa-solid fa-film text-xs" />
+              <span>تصفح الأفلام 🎬</span>
+            </Link>
+          </div>
+        ) : (
+          <div className="py-12 text-center text-slate-400 text-xs font-bold bg-white/[0.02] border border-white/[0.05] rounded-3xl">
+            لا توجد نتائج مطابقة لبحثك في المفضلة.
+          </div>
+        )
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4 p-0.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4.5 p-0.5">
           {filteredFavorites.map((fav) => {
             const isSeries = fav.mediaType === 'tv';
             const posterUrl = fav.posterPath ? getImageUrl(fav.posterPath, 'poster') : '/icon.svg';
