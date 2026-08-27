@@ -12,6 +12,7 @@ import ConditionalFooter from "@/components/ConditionalFooter";
 import TelegramAutoAuth from "@/components/auth/TelegramAutoAuth";
 import { UnifiedAuthProvider } from "@/components/auth/UnifiedAuthProvider";
 import ImageRecovery from "@/components/ImageRecovery";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 
 import { ClerkProvider } from '@clerk/nextjs'
 import { arSA } from '@clerk/localizations'
@@ -114,6 +115,7 @@ export default function RootLayout({
 
             {/* Footer */}
             <ConditionalFooter />
+            <ScrollToTopButton />
           </div>
           
           </SecurityWrapper>
