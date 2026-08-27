@@ -262,7 +262,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
 
       {/* Search Results Grid */}
       {filteredResults.length > 0 && (
-        <div className="custom-scrollbar grid w-full max-h-[min(58svh,34rem)] grid-cols-2 gap-3.5 min-[440px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 p-1.5 pb-8 text-right overflow-y-auto">
+        <div className="custom-scrollbar grid w-full max-h-[min(58svh,34rem)] grid-cols-2 gap-4 min-[440px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 px-2.5 pt-4 pb-8 text-right overflow-y-auto">
           {filteredResults.map((item) => {
             const isSelectingThis = selectedId === item.nb;
             const rawAr = (item.ar_title || '').trim();
@@ -276,7 +276,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                 key={item.nb}
                 disabled={Boolean(selectedId)}
                 onClick={() => void handleSelectVideo(item)}
-                className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden rounded-2xl border bg-[#0c1220] text-right shadow-md transition-all duration-300 ease-out hover:scale-[1.04] hover:-translate-y-1 hover:border-red-500/60 hover:shadow-[0_16px_36px_rgba(0,0,0,0.85),0_0_24px_rgba(229,9,20,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#070b14] text-right shadow-lg transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500/80 hover:shadow-[0_16px_36px_rgba(0,0,0,0.95),0_0_25px_rgba(229,9,20,0.4)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
                   isSelectingThis
                     ? 'border-red-500 ring-2 ring-red-500 shadow-[0_0_30px_rgba(229,9,20,0.6)]'
                     : 'border-white/10'
@@ -284,7 +284,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                 aria-label={`اختيار ${mainTitle}`}
               >
                 {/* Poster Background Image */}
-                <div className="absolute inset-0 bg-[#0a0f1d]">
+                <div className="absolute inset-0 bg-[#070b14]">
                   <MediaPosterImage
                     video={item}
                     type="poster"
@@ -293,19 +293,20 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                   />
                 </div>
 
-                {/* Cinematic Vignette & Bottom Ease Gradient */}
-                <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#060a14] via-[#060a14]/65 via-35% to-transparent opacity-90 transition-opacity duration-300 group-hover:opacity-95 pointer-events-none" />
+                {/* Deep Vignette & Seamless Bottom Protection (No white artifact) */}
+                <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-[4]" />
+                <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-[#040711] from-25% via-[#040711]/92 via-55% to-transparent pointer-events-none z-[5]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none z-[6]" />
 
                 {/* Top Floating Glass Badges */}
                 <div className="absolute top-2.5 right-2.5 left-2.5 flex items-center justify-between z-10 pointer-events-none">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/65 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-lg backdrop-blur-md">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/70 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-lg backdrop-blur-md">
                     <span className={`size-1.5 rounded-full ${item.kind === '2' ? 'bg-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.8)]' : 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]'}`} />
                     <span>{item.kind === '2' ? 'مسلسل' : 'فيلم'}</span>
                   </span>
 
                   {item.stars && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-black/65 px-2 py-0.5 text-[10px] font-black text-amber-300 shadow-lg backdrop-blur-md">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-black/70 px-2 py-0.5 text-[10px] font-black text-amber-300 shadow-lg backdrop-blur-md">
                       <i className="fa-solid fa-star text-[9px] text-amber-400" />
                       <span className="font-mono">{item.stars}</span>
                     </span>
@@ -365,7 +366,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
             <span className="text-[10px] font-bold text-slate-400">اختر للبدء فوراً لجميع المشاركين</span>
           </div>
 
-          <div className="custom-scrollbar grid w-full max-h-[min(54svh,32rem)] grid-cols-2 gap-3.5 min-[440px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 p-1.5 pb-8 text-right overflow-y-auto">
+          <div className="custom-scrollbar grid w-full max-h-[min(54svh,32rem)] grid-cols-2 gap-4 min-[440px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 px-2.5 pt-4 pb-8 text-right overflow-y-auto">
             {suggestions.map((item) => {
               const isSelectingThis = selectedId === item.nb;
               const rawAr = (item.ar_title || '').trim();
@@ -379,7 +380,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                   key={item.nb}
                   disabled={Boolean(selectedId)}
                   onClick={() => void handleSelectVideo(item)}
-                  className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden rounded-2xl border bg-[#0c1220] text-right shadow-md transition-all duration-300 ease-out hover:scale-[1.04] hover:-translate-y-1 hover:border-red-500/60 hover:shadow-[0_16px_36px_rgba(0,0,0,0.85),0_0_24px_rgba(229,9,20,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                  className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#070b14] text-right shadow-lg transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500/80 hover:shadow-[0_16px_36px_rgba(0,0,0,0.95),0_0_25px_rgba(229,9,20,0.4)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
                     isSelectingThis
                       ? 'border-red-500 ring-2 ring-red-500 shadow-[0_0_30px_rgba(229,9,20,0.6)]'
                       : 'border-white/10'
@@ -387,7 +388,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                   aria-label={`اختيار ${mainTitle}`}
                 >
                   {/* Poster Background Image */}
-                  <div className="absolute inset-0 bg-[#0a0f1d]">
+                  <div className="absolute inset-0 bg-[#070b14]">
                     <MediaPosterImage
                       video={item}
                       type="poster"
@@ -396,19 +397,20 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                     />
                   </div>
 
-                  {/* Cinematic Vignette & Bottom Ease Gradient */}
-                  <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#060a14] via-[#060a14]/65 via-35% to-transparent opacity-90 transition-opacity duration-300 group-hover:opacity-95 pointer-events-none" />
+                  {/* Deep Vignette & Seamless Bottom Protection (No white artifact) */}
+                  <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-[4]" />
+                  <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-[#040711] from-25% via-[#040711]/92 via-55% to-transparent pointer-events-none z-[5]" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none z-[6]" />
 
                   {/* Top Floating Glass Badges */}
                   <div className="absolute top-2.5 right-2.5 left-2.5 flex items-center justify-between z-10 pointer-events-none">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/65 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-lg backdrop-blur-md">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/70 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-lg backdrop-blur-md">
                       <span className={`size-1.5 rounded-full ${item.kind === '2' ? 'bg-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.8)]' : 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]'}`} />
                       <span>{item.kind === '2' ? 'مسلسل' : 'فيلم'}</span>
                     </span>
 
                     {item.stars && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-black/65 px-2 py-0.5 text-[10px] font-black text-amber-300 shadow-lg backdrop-blur-md">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-black/70 px-2 py-0.5 text-[10px] font-black text-amber-300 shadow-lg backdrop-blur-md">
                         <i className="fa-solid fa-star text-[9px] text-amber-400" />
                         <span className="font-mono">{item.stars}</span>
                       </span>
