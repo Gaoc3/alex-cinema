@@ -52,7 +52,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
             <Link 
               key={video.nb} 
               href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
-              className="group/card block relative snap-start"
+              className="content-auto group/card block relative snap-start"
               style={{ animationDelay: `${index * 25}ms` }}
             >
               {/* Poster Wrapper */}
@@ -62,7 +62,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
                   type="poster"
                   sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
                   className="movie-card-img transition-transform duration-700 group-hover/card:scale-110"
-                  loading="lazy"
+                  loading={index < 5 ? 'eager' : 'lazy'}
+                  priority={index < 3}
                 />
                 <div className="movie-card-overlay"></div>
 

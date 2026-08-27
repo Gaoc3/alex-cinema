@@ -134,7 +134,7 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
                 key={video.nb} 
                 href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
                 prefetch={false}
-                className="w-[calc((100%-1rem)/2)] sm:w-[calc((100%-1.25rem*3)/4)] md:w-[calc((100%-1.25rem*4)/5)] lg:w-[calc((100%-1.25rem*5)/6)] xl:w-[calc((100%-1.25rem*6)/7)] flex-shrink-0 group/card block relative transition-transform duration-200 ease-out hover:scale-[1.03]"
+                className="content-auto w-[calc((100%-1rem)/2)] sm:w-[calc((100%-1.25rem*3)/4)] md:w-[calc((100%-1.25rem*4)/5)] lg:w-[calc((100%-1.25rem*5)/6)] xl:w-[calc((100%-1.25rem*6)/7)] flex-shrink-0 group/card block relative transition-transform duration-200 ease-out hover:scale-[1.03]"
                 style={{ animationDelay: `${index * 25}ms`, contain: 'paint' }}
               >
                 {/* Poster Wrapper */}
@@ -144,7 +144,8 @@ export default function VideoSlider({ title, subtitle, videos, accentColor = 're
                     type="poster"
                     sizes="(max-width: 639px) 50vw, (max-width: 1023px) 25vw, 15vw"
                     className="movie-card-img transition-transform duration-700 group-hover/card:scale-110"
-                    loading="lazy"
+                    loading={index < 4 ? 'eager' : 'lazy'}
+                    priority={index < 2}
                   />
                   <div className="movie-card-overlay"></div>
 

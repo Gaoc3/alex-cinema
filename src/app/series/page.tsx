@@ -507,7 +507,7 @@ function SeriesContent() {
                   <Link 
                     key={video.nb} 
                     href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
-                    className="group/card block relative snap-start animate-fade-in-up active:scale-95 transition-transform duration-200"
+                    className="content-auto group/card block relative snap-start animate-fade-in-up active:scale-95 transition-transform duration-200"
                     style={{ animationDelay: `${index * 15}ms` }}
                   >
                     {/* Poster Wrapper */}
@@ -517,7 +517,8 @@ function SeriesContent() {
                         type="poster"
                         sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
                         className="movie-card-img transition-transform duration-700 group-hover/card:scale-105"
-                        loading="lazy"
+                        loading={index < 6 ? 'eager' : 'lazy'}
+                        priority={index < 4}
                       />
                       
                       {/* Dark overlay & Watch Play Badge */}
