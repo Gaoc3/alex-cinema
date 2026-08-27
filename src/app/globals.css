@@ -305,19 +305,36 @@ button:disabled,
   background: rgba(255, 255, 255, 0.2);
 }
 
-/* Custom Scrollbar for the page */
+/* Custom Luxury Scrollbar for the page and containers */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(229, 9, 20, 0.45) #03060f;
+  scroll-behavior: smooth;
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 7px;
+  height: 7px;
 }
+
 ::-webkit-scrollbar-track {
-  background: var(--background);
+  background: #03060f;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #1f2937;
-  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(229, 9, 20, 0.5) 0%, rgba(138, 5, 12, 0.7) 100%);
+  border-radius: 9999px;
+  border: 1.5px solid #03060f;
+  transition: all 0.25s ease;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #e50914;
+  background: linear-gradient(180deg, #e50914 0%, #b80009 100%);
+  box-shadow: 0 0 12px rgba(229, 9, 20, 0.7);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 .btn-primary {
@@ -649,12 +666,12 @@ body.sidebar-open .sidebar-overlay {
 /* Custom Scrollbar for results dropdown and lists */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  scrollbar-color: rgba(229, 9, 20, 0.45) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 /* Hide scrollbar arrow buttons globally and locally */
@@ -670,12 +687,14 @@ body.sidebar-open .sidebar-overlay {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(229, 9, 20, 0.35);
   border-radius: 9999px;
+  transition: all 0.2s ease;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(229, 9, 20, 0.7);
+  background: rgba(229, 9, 20, 0.85);
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.6);
 }
 
 /* Subtitle Settings (Controlled via CSS Variables from React) */

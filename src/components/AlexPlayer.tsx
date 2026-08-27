@@ -1636,7 +1636,7 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
           isFullscreen 
             ? 'h-full rounded-none border-none shadow-none'
             : roomHook
-              ? 'rounded-3xl overflow-visible shadow-[0_0_50px_rgba(229,9,20,0.15)] border border-white/10 aspect-video max-h-[min(48svh,390px)] sm:max-h-[min(52svh,430px)]'
+              ? 'rounded-3xl overflow-visible shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 aspect-video w-full'
               : 'rounded-3xl overflow-visible shadow-[0_0_50px_rgba(229,9,20,0.15)] hover:shadow-[0_0_60px_rgba(229,9,20,0.25)] border border-white/10 aspect-video'
         }`}
         style={{ aspectRatio: isFullscreen ? 'auto' : 16/9 }}
