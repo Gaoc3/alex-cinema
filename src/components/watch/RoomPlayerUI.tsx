@@ -57,6 +57,7 @@ function RoomPlayerContent({ video, seasons = [], episodes = [], roomHook }: Roo
   const initialEpisode = getInitialEpisode(sortedEpisodesList, roomHook?.remoteEpisodeId ?? null);
   const [activeEpisode, setActiveEpisode] = useState<SeriesEpisode | null>(initialEpisode);
   const [currentSeason, setCurrentSeason] = useState(initialEpisode?.season || '');
+  const [episodeRequest, setEpisodeRequest] = useState<EpisodeRequestState | null>(null);
   const activeEpisodeId = activeEpisode?.nb ?? null;
 
   // Gracefully sync episode when host or room changes remoteEpisodeId without destroying player instance
