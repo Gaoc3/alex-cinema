@@ -175,6 +175,30 @@ export async function toggleRoomPrivacy(roomId: string, isPrivate: boolean) {
   }
 }
 
+export async function toggleRoomActive(roomId: string, isActive: boolean) {
+  try {
+    const userSync = await syncUser();
+    if (!userSync.success || !userSync.user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const room = await prisma.room.findUnique({ where: { id: roomId } });
+    if (!room || room.hostId !== userSync.user.id) {
+      return { success: false, error: 'غير مصرح لك بالتحكم بحالة الغرفة' };
+    }
+
+    const updatedRoom = await prisma.room.update({
+      where: { id: roomId },
+      data: { isActive }
+    });
+
+    return { success: true, isActive: updatedRoom.isActive };
+  } catch (error) {
+    console.error("Error toggling room active status:", error);
+    return { success: false, error: 'حدث خطأ أثناء تغيير حالة الغرفة' };
+  }
+}
+
 export async function getActiveRooms() {
   try {
     const rooms = await prisma.room.findMany({

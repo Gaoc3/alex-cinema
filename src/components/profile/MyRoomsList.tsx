@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { getImageUrl } from "@/utils/imageHelper";
-import { getUserRooms, deleteRoom } from "@/app/actions/room.actions";
+import { getUserRooms, deleteRoom, toggleRoomActive, toggleRoomPrivacy } from "@/app/actions/room.actions";
 import { useClerk } from "@clerk/nextjs";
 import toast from 'react-hot-toast';
 import ConfirmModal from "@/components/ConfirmModal";
@@ -75,6 +75,48 @@ export default function MyRoomsList() {
     if (activeFilter === 'closed') return rooms.filter((r) => !r.isActive);
     return rooms;
   }, [rooms, activeFilter]);
+
+  const handleToggleActive = async (roomId: string, currentStatus: boolean, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newStatus = !currentStatus;
+    // Optimistic UI update
+    setRooms((prev) => prev.map((r) => r.id === roomId ? { ...r, isActive: newStatus } : r));
+    try {
+      const res = await toggleRoomActive(roomId, newStatus);
+      if (res.success) {
+        window.dispatchEvent(new CustomEvent('rooms-updated'));
+        toast.success(newStatus ? 'تم فتح الغرفة وبدء البث المباشر! 🟢🍿' : 'تم إغلاق الغرفة بنجاح! ⚪');
+      } else {
+        setRooms((prev) => prev.map((r) => r.id === roomId ? { ...r, isActive: currentStatus } : r));
+        toast.error(res.error || 'تعذر تغيير حالة الغرفة');
+      }
+    } catch {
+      setRooms((prev) => prev.map((r) => r.id === roomId ? { ...r, isActive: currentStatus } : r));
+      toast.error('حدث خطأ أثناء تغيير حالة الغرفة');
+    }
+  };
+
+  const handleTogglePrivacy = async (roomId: string, currentPrivate: boolean, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newPrivate = !currentPrivate;
+    // Optimistic UI update
+    setRooms((prev) => prev.map((r) => r.id === roomId ? { ...r, isPrivate: newPrivate } : r));
+    try {
+      const res = await toggleRoomPrivacy(roomId, newPrivate);
+      if (res.success) {
+        window.dispatchEvent(new CustomEvent('rooms-updated'));
+        toast.success(newPrivate ? 'تم تعيين الغرفة كغرفة خاصة 🔒' : 'تم تعيين الغرفة كغرفة عامة 🌐');
+      } else {
+        setRooms((prev) => prev.map((r) => r.id === roomId ? { ...r, isPrivate: currentPrivate } : r));
+        toast.error(res.error || 'تعذر تعديل الخصوصية');
+      }
+    } catch {
+      setRooms((prev) => prev.map((r) => r.id === roomId ? { ...r, isPrivate: currentPrivate } : r));
+      toast.error('حدث خطأ أثناء تعديل الخصوصية');
+    }
+  };
 
   const handleCopyLink = (roomId: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -207,13 +249,9 @@ export default function MyRoomsList() {
           </button>
         </div>
 
-        <Link
-          href="/rooms?create=true"
-          className="px-3 py-1.5 rounded-xl bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95"
-        >
-          <i className="fa-solid fa-plus text-[10px]" />
-          <span className="hidden sm:inline">إنشاء غرفة</span>
-        </Link>
+        <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+          💡 انقر على الشارات للتحكم الفوري بالبث والخصوصية
+        </span>
       </div>
 
       {/* Grid of Room Cards */}
@@ -255,28 +293,45 @@ export default function MyRoomsList() {
                   </span>
                 </div>
 
-                {/* Badges */}
-                <div className="absolute top-3 right-3 flex items-center gap-1.5 z-20">
+                {/* Interactive Status Toggle Badge (Host Control) */}
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 z-30">
                   {room.isActive ? (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 backdrop-blur-md shadow-[0_0_12px_rgba(16,185,129,0.3)] flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleActive(room.id, true, e)}
+                      title="الغرفة نشطة وبثها متاح - انقر للإغلاق"
+                      className="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-400 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.4)] flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                    >
                       <span className="size-1.5 rounded-full bg-emerald-400 animate-ping" />
-                      <span>مباشر الآن</span>
-                    </span>
+                      <span>مباشر 🟢 (اضغط للإغلاق)</span>
+                    </button>
                   ) : (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-black/60 border border-white/20 text-slate-400 backdrop-blur-md">
-                      مغلقة
-                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleActive(room.id, false, e)}
+                      title="الغرفة مغلقة - انقر لبدء البث وفتح الغرفة للجميع"
+                      className="px-2.5 py-1 rounded-full text-[10px] font-black bg-black/70 hover:bg-emerald-950/50 border border-white/20 hover:border-emerald-500/40 text-slate-300 hover:text-emerald-300 backdrop-blur-md flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                    >
+                      <i className="fa-solid fa-power-off text-[9px] text-slate-400" />
+                      <span>مغلقة ⚪ (اضغط للفتح)</span>
+                    </button>
                   )}
                 </div>
 
-                <div className="absolute top-3 left-3 z-20">
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black backdrop-blur-md border ${
-                    room.isPrivate
-                      ? 'bg-red-500/20 border-red-500/40 text-red-400'
-                      : 'bg-sky-500/20 border-sky-500/40 text-sky-400'
-                  }`}>
-                    {room.isPrivate ? '🔒 خاصة' : '🌐 عامة'}
-                  </span>
+                {/* Interactive Privacy Toggle Badge */}
+                <div className="absolute top-3 left-3 z-30">
+                  <button
+                    type="button"
+                    onClick={(e) => handleTogglePrivacy(room.id, room.isPrivate, e)}
+                    title={room.isPrivate ? "غرفة خاصة - انقر لتحويلها إلى عامة" : "غرفة عامة تظهر للجميع - انقر لجعلها خاصة"}
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-black backdrop-blur-md border cursor-pointer hover:scale-105 active:scale-95 transition-all ${
+                      room.isPrivate
+                        ? 'bg-red-500/20 hover:bg-red-500/30 border-red-500/40 text-red-400'
+                        : 'bg-sky-500/20 hover:bg-sky-500/30 border-sky-500/40 text-sky-400'
+                    }`}
+                  >
+                    <span>{room.isPrivate ? '🔒 خاصة' : '🌐 عامة'}</span>
+                  </button>
                 </div>
 
                 {/* Bottom Title on Image */}
