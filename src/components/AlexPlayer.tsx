@@ -1919,6 +1919,10 @@ export default function AlexPlayer({ videoData, onNextEpisode, roomHook }: AlexP
               onChange={handleProgressChange}
               disabled={Boolean(roomHook && !canControlPlayback)}
               aria-label="موضع تشغيل الفيديو"
+              aria-valuemin={0}
+              aria-valuemax={Math.round(duration || 100)}
+              aria-valuenow={Math.round(currentTime)}
+              aria-valuetext={`${formatTime(currentTime)} من ${formatTime(duration)}`}
               style={progressStyle}
               className={`flex-grow h-1 md:h-1.5 rounded-full appearance-none accent-alex-primary transition-all outline-none border-0 shadow-none bg-transparent ${
                 roomHook && !canControlPlayback ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:h-1.5 md:hover:h-2'

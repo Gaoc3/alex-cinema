@@ -1146,6 +1146,8 @@ export default function RoomSidebar({
 
               <div className="flex items-end gap-2">
                 <textarea
+                  id="chat-message-composer"
+                  name="chatMessage"
                   ref={composerRef}
                   value={inputText}
                   onChange={(event) => setInputText(event.target.value)}

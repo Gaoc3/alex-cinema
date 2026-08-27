@@ -227,12 +227,12 @@ export default function Sidebar() {
               onClick={(e) => handleNav(e, '/home')}
               className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] transition-all duration-300 ease-in-out active:scale-[0.97] sidebar-link-btn ${
                 isActive('/home') 
-                  ? 'bg-white/[0.08] text-white border-r-[3px] border-alex-primary font-black shadow-[0_4px_15px_rgba(0,0,0,0.15)]' 
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] border-r-[3px] border-transparent font-medium'
+                  ? 'bg-red-500/15 text-white font-black shadow-sm ring-1 ring-red-500/30' 
+                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] font-medium'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-house text-lg w-5 text-center"></i>
+                <i className="fa-solid fa-house text-lg w-5 text-center text-alex-primary"></i>
                 <span className="sidebar-label">الصفحة الرئيسية</span>
               </div>
             </Link>
@@ -276,12 +276,12 @@ export default function Sidebar() {
               }}
               className={`flex w-full items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] transition-all duration-300 ease-in-out active:scale-[0.97] sidebar-link-btn ${
                 pathname.startsWith('/room/')
-                  ? 'bg-purple-600/20 text-white border-r-[3px] border-purple-500 font-black shadow-[0_4px_15px_rgba(147,51,234,0.15)]' 
-                  : 'bg-transparent text-purple-400 hover:text-white hover:bg-purple-500/10 border-r-[3px] border-transparent font-medium'
+                  ? 'bg-red-500/15 text-white font-black shadow-sm ring-1 ring-red-500/30' 
+                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] font-medium'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-users text-lg w-5 text-center drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]"></i>
+                <i className="fa-solid fa-users text-lg w-5 text-center text-alex-primary"></i>
                 <span className="sidebar-label">إنشاء روم مشاهدة</span>
               </div>
             </button>
@@ -292,12 +292,12 @@ export default function Sidebar() {
               onClick={(e) => handleNav(e, '/rooms')}
               className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] transition-all duration-300 ease-in-out active:scale-[0.97] sidebar-link-btn ${
                 isActive('/rooms') 
-                  ? 'bg-purple-600/20 text-white border-r-[3px] border-purple-500 font-black shadow-[0_4px_15px_rgba(147,51,234,0.15)]' 
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] border-r-[3px] border-transparent font-medium'
+                  ? 'bg-red-500/15 text-white font-black shadow-sm ring-1 ring-red-500/30' 
+                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] font-medium'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-fire text-lg w-5 text-center text-purple-400"></i>
+                <i className="fa-solid fa-fire text-lg w-5 text-center text-alex-primary"></i>
                 <span className="sidebar-label">الرومات النشطة</span>
               </div>
             </Link>
@@ -308,12 +308,12 @@ export default function Sidebar() {
               onClick={(e) => handleNav(e, '/new-releases')}
               className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] transition-all duration-300 ease-in-out active:scale-[0.97] sidebar-link-btn ${
                 isActive('/new-releases')
-                  ? 'bg-white/[0.08] text-white border-r-[3px] border-alex-primary font-black shadow-[0_4px_15px_rgba(0,0,0,0.15)]' 
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] border-r-[3px] border-transparent font-medium'
+                  ? 'bg-red-500/15 text-white font-black shadow-sm ring-1 ring-red-500/30' 
+                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] font-medium'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
-                <i className="fa-solid fa-fire text-lg w-5 text-center text-orange-500"></i>
+                <i className="fa-solid fa-bolt text-lg w-5 text-center text-orange-500"></i>
                 <span className="sidebar-label">الإصدارات الجديدة</span>
               </div>
             </Link>
@@ -324,8 +324,8 @@ export default function Sidebar() {
               onClick={(e) => handleNav(e, '/movies?sort=popular')}
               className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] transition-all duration-300 ease-in-out active:scale-[0.97] sidebar-link-btn ${
                 pathname === '/movies' && isActive('/movies?sort=popular')
-                  ? 'bg-white/[0.08] text-white border-r-[3px] border-alex-primary font-black shadow-[0_4px_15px_rgba(0,0,0,0.15)]' 
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] border-r-[3px] border-transparent font-medium'
+                  ? 'bg-red-500/15 text-white font-black shadow-sm ring-1 ring-red-500/30' 
+                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] font-medium'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
@@ -338,8 +338,8 @@ export default function Sidebar() {
             <div className="sidebar-submenu-container flex flex-col">
               <div className={`w-full flex items-center justify-between px-2 rounded-xl transition-all duration-300 ease-in-out active:scale-[0.97] ${
                 pathname.startsWith('/movies') && !searchParams.get('sort') && !searchParams.get('category')
-                  ? 'bg-white/[0.08] text-white border-r-[3px] border-alex-primary font-black shadow-[0_4px_15px_rgba(0,0,0,0.15)]'
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] border-r-[3px] border-transparent font-medium'
+                  ? 'bg-red-500/15 text-white font-black shadow-sm ring-1 ring-red-500/30'
+                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] font-medium'
               }`}>
                 <Link 
                   href="/movies"
@@ -384,8 +384,8 @@ export default function Sidebar() {
             <div className="sidebar-submenu-container flex flex-col">
               <div className={`w-full flex items-center justify-between px-2 rounded-xl transition-all duration-300 ease-in-out active:scale-[0.97] ${
                 pathname.startsWith('/series') && !searchParams.get('sort') && !searchParams.get('category') && !searchParams.get('view')
-                  ? 'bg-white/[0.08] text-white border-r-[3px] border-alex-primary font-black shadow-[0_4px_15px_rgba(0,0,0,0.15)]'
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] border-r-[3px] border-transparent font-medium'
+                  ? 'bg-red-500/15 text-white font-black shadow-sm ring-1 ring-red-500/30'
+                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] font-medium'
               }`}>
                 <Link 
                   href="/series"
@@ -432,8 +432,8 @@ export default function Sidebar() {
               onClick={(e) => handleNav(e, '/series?category=57')}
               className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] transition-all duration-300 ease-in-out active:scale-[0.97] sidebar-link-btn ${
                 isActive('/series?category=57') 
-                  ? 'bg-white/[0.08] text-white border-r-[3px] border-alex-primary font-black shadow-[0_4px_15px_rgba(0,0,0,0.15)]' 
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] border-r-[3px] border-transparent font-medium'
+                  ? 'bg-red-500/15 text-white font-black shadow-sm ring-1 ring-red-500/30' 
+                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] font-medium'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
@@ -448,8 +448,8 @@ export default function Sidebar() {
               onClick={(e) => handleNav(e, '/series?view=episodes')}
               className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] transition-all duration-300 ease-in-out active:scale-[0.97] sidebar-link-btn ${
                 isActive('/series?view=episodes') 
-                  ? 'bg-white/[0.08] text-white border-r-[3px] border-alex-primary font-black shadow-[0_4px_15px_rgba(0,0,0,0.15)]' 
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] border-r-[3px] border-transparent font-medium'
+                  ? 'bg-red-500/15 text-white font-black shadow-sm ring-1 ring-red-500/30' 
+                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] font-medium'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
@@ -464,8 +464,8 @@ export default function Sidebar() {
               onClick={(e) => handleNav(e, '/movies?category=23')}
               className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] transition-all duration-300 ease-in-out active:scale-[0.97] sidebar-link-btn ${
                 isActive('/movies?category=23') 
-                  ? 'bg-white/[0.08] text-white border-r-[3px] border-alex-primary font-black shadow-[0_4px_15px_rgba(0,0,0,0.15)]' 
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] border-r-[3px] border-transparent font-medium'
+                  ? 'bg-red-500/15 text-white font-black shadow-sm ring-1 ring-red-500/30' 
+                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] font-medium'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
@@ -480,8 +480,8 @@ export default function Sidebar() {
               onClick={(e) => handleNav(e, '/movies?category=63')}
               className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] transition-all duration-300 ease-in-out active:scale-[0.97] sidebar-link-btn ${
                 isActive('/movies?category=63') 
-                  ? 'bg-white/[0.08] text-white border-r-[3px] border-alex-primary font-black shadow-[0_4px_15px_rgba(0,0,0,0.15)]' 
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] border-r-[3px] border-transparent font-medium'
+                  ? 'bg-red-500/15 text-white font-black shadow-sm ring-1 ring-red-500/30' 
+                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] font-medium'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
@@ -496,8 +496,8 @@ export default function Sidebar() {
               onClick={(e) => handleNav(e, '/movies?category=57')}
               className={`flex items-center justify-between px-4 ${paddingClass} rounded-xl text-[15px] transition-all duration-300 ease-in-out active:scale-[0.97] sidebar-link-btn ${
                 isActive('/movies?category=57') 
-                  ? 'bg-white/[0.08] text-white border-r-[3px] border-alex-primary font-black shadow-[0_4px_15px_rgba(0,0,0,0.15)]' 
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] border-r-[3px] border-transparent font-medium'
+                  ? 'bg-red-500/15 text-white font-black shadow-sm ring-1 ring-red-500/30' 
+                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/[0.04] font-medium'
               }`}
             >
               <div className="flex items-center gap-3.5 sidebar-item-content w-full">
