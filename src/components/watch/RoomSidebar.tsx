@@ -69,7 +69,7 @@ export default function RoomSidebar({
   currentSocketId,
   isHost,
   userRole = 'member',
-  userPermissions = { canKick: false, canBan: false, canSeek: false, canChangeMedia: false },
+  userPermissions = { canKick: false, canBan: false, canSeek: false, canChangeMedia: false, canToggleRoomStatus: false },
   setModeratorPermissions,
   removeModerator,
   kickUser,
@@ -81,7 +81,9 @@ export default function RoomSidebar({
 }: RoomSidebarProps) {
   const [inputText, setInputText] = useState('');
   const [isPrivate, setIsPrivate] = useState(initialPrivacy);
+  const [isRoomActive, setIsRoomActive] = useState(true);
   const [isToggling, setIsToggling] = useState(false);
+  const [isTogglingActive, setIsTogglingActive] = useState(false);
   const [isClosingRoom, setIsClosingRoom] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [showCloseRoomModal, setShowCloseRoomModal] = useState(false);
@@ -96,6 +98,7 @@ export default function RoomSidebar({
     canBan: false,
     canSeek: true,
     canChangeMedia: false,
+    canToggleRoomStatus: false,
   });
 
   useEffect(() => {
@@ -485,6 +488,32 @@ export default function RoomSidebar({
     }
   };
 
+  const handleToggleActive = async () => {
+    if ((!isHost && !userPermissions?.canToggleRoomStatus) || isTogglingActive) return;
+    const nextActive = !isRoomActive;
+    setIsRoomActive(nextActive);
+    setIsTogglingActive(true);
+    try {
+      const response = await fetch('/api/rooms/toggle-active', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, isActive: nextActive }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(nextActive ? 'تم فتح الغرفة وبدء البث المباشر للجميع' : 'تم إغلاق الغرفة وإيقاف البث مؤقتاً');
+      } else {
+        setIsRoomActive(!nextActive);
+        toast.error(data.error || 'تعذر تحديث حالة الغرفة');
+      }
+    } catch {
+      setIsRoomActive(!nextActive);
+      toast.error('تعذر تحديث حالة الغرفة');
+    } finally {
+      setIsTogglingActive(false);
+    }
+  };
+
   const handleConfirmCloseRoom = async () => {
     setShowCloseRoomModal(false);
     if (!isHost || isClosingRoom) return;
@@ -529,7 +558,7 @@ export default function RoomSidebar({
   const openModPermissionsModal = (member: RoomMember) => {
     setModPermissionsTarget(member);
     setPermissionsState(
-      member.permissions || { canKick: false, canBan: false, canSeek: true, canChangeMedia: false },
+      member.permissions || { canKick: false, canBan: false, canSeek: true, canChangeMedia: false, canToggleRoomStatus: false },
     );
   };
 
@@ -790,6 +819,41 @@ export default function RoomSidebar({
                   <span
                     className={`pointer-events-none inline-block size-6 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
                       permissionsState.canChangeMedia ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Open / Close Room Permission */}
+              <div 
+                onClick={() => setPermissionsState((prev) => ({ ...prev, canToggleRoomStatus: !prev.canToggleRoomStatus }))}
+                className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-4.5 transition-all hover:bg-white/[0.06] hover:border-white/20 select-none group"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 group-hover:scale-105 transition-transform">
+                    <i className="fa-solid fa-power-off text-base" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">فتح وإغلاق الغرفة (Open / Close Room)</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">السماح بفتح البث المباشر للجميع أو إغلاق الغرفة مؤقتاً</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  dir="ltr"
+                  aria-checked={permissionsState.canToggleRoomStatus}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPermissionsState((prev) => ({ ...prev, canToggleRoomStatus: !prev.canToggleRoomStatus }));
+                  }}
+                  className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none shadow-inner ${
+                    permissionsState.canToggleRoomStatus ? 'bg-red-600 shadow-[0_0_15px_rgba(229,9,20,0.5)]' : 'bg-slate-700/80'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block size-6 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                      permissionsState.canToggleRoomStatus ? 'translate-x-5' : 'translate-x-0'
                     }`}
                   />
                 </button>
@@ -1390,6 +1454,49 @@ export default function RoomSidebar({
                 </button>
               </div>
 
+              {/* Room Active / Live Status Toggle (Host & Authorized Moderators) */}
+              {(isHost || userPermissions?.canToggleRoomStatus) && (
+                <div className="flex items-center justify-between p-3.5 gap-3 hover:bg-white/[0.02] transition-colors border-b border-white/[0.06]">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`size-8 rounded-lg flex items-center justify-center shrink-0 text-xs ${isRoomActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/[0.04] text-slate-400'}`}>
+                      {isRoomActive ? (
+                        <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                      ) : (
+                        <i className="fa-solid fa-power-off text-xs" aria-hidden="true" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs sm:text-sm font-bold text-white">حالة الغرفة والبث</p>
+                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${isRoomActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-slate-400'}`}>
+                          {isRoomActive ? 'مباشر 🟢' : 'مغلقة ⚪'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        {isRoomActive ? 'الغرفة مفتوحة ومتاحة للمشاهدين' : 'الغرفة مغلقة ومخفية عن قوائم البث'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    dir="ltr"
+                    onClick={handleToggleActive}
+                    disabled={isTogglingActive}
+                    aria-checked={isRoomActive}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+                      isRoomActive ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-slate-700'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                        isRoomActive ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              )}
+
               {/* Private Room Toggle (Host Only) */}
               <div className="flex items-center justify-between p-3.5 gap-3 hover:bg-white/[0.02] transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
@@ -1421,10 +1528,10 @@ export default function RoomSidebar({
               </div>
             </div>
 
-            {!isHost && (
+            {!isHost && !userPermissions?.canToggleRoomStatus && (
               <p className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-[11px] leading-5 text-slate-400">
                 <i className="fa-solid fa-circle-info ml-1.5 text-slate-500" aria-hidden="true" />
-                إعدادات الخصوصية وإدارة المشاركين متاحة للمضيف فقط.
+                إعدادات الخصوصية وإدارة المشاركين متاحة للمضيف والمشرفين المخولين فقط.
               </p>
             )}
 
@@ -1527,7 +1634,11 @@ export default function RoomSidebar({
                 }}
                 className="flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-xl px-3 text-right text-xs font-bold text-red-400 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <i className="fa-regular fa-trash-can text-red-500 text-xs" aria-hidden="true" />
+                <svg className="size-3.5 text-red-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18" />
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                </svg>
                 <span>حذف</span>
               </button>
             )}

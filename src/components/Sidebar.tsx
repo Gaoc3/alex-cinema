@@ -177,11 +177,11 @@ export default function Sidebar() {
         }`} 
       >
 
-        {/* Sidebar Header (Zero-Legacy Cinematic Style) */}
+        {/* Sidebar Header */}
         <div className="h-20 shrink-0 border-b border-white/[0.06] flex items-center justify-between px-4 sm:px-5 w-full relative z-20">
           
-          {/* Logo and Brand Name (Hidden on Collapsed) */}
-          <div className={`flex items-center gap-3 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-right ${isCollapsed ? 'opacity-0 max-w-0 overflow-hidden scale-90 pointer-events-none' : 'opacity-100 max-w-[300px] scale-100 delay-100'}`}>
+          {/* Logo and Brand Name (Expanded View) */}
+          <div className="sidebar-expanded-header flex items-center justify-between w-full">
             <Link href="/home" className="flex items-center gap-2.5 group" onClick={closeSidebar}>
               <div className="size-10 shrink-0 rounded-2xl overflow-hidden flex items-center justify-center transition-all duration-300 border border-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.5)] group-hover:shadow-[0_0_15px_rgba(229,9,20,0.4)] group-hover:border-red-500/40">
                 <img src="/logo.svg" alt="AleX Cinema Logo" className="size-full object-cover scale-[1.05]" />
@@ -191,20 +191,20 @@ export default function Sidebar() {
                 <span className="text-[9px] text-slate-400 font-bold tracking-[0.1em] mt-0.5 uppercase">Premium</span>
               </div>
             </Link>
+
+            {/* Hamburger toggle button */}
+            <button 
+              onClick={toggleSidebar}
+              className="shrink-0 size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all duration-300 cursor-pointer"
+              aria-label="إغلاق / تبديل القائمة الجانبية"
+            >
+              <span className="xl:hidden"><i className="fa-solid fa-xmark text-slate-200 text-lg"></i></span>
+              <span className="hidden xl:inline-block"><i className="fa-solid fa-bars text-slate-300 text-base"></i></span>
+            </button>
           </div>
 
-          {/* Hamburger toggle button (Hidden on Collapsed) */}
-          <button 
-            onClick={toggleSidebar}
-            className={`shrink-0 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all duration-300 cursor-pointer ${isCollapsed ? 'opacity-0 w-0 h-0 overflow-hidden scale-50 pointer-events-none' : 'opacity-100 size-10 scale-100 delay-100'}`}
-            aria-label="إغلاق / تبديل القائمة الجانبية"
-          >
-            <span className="xl:hidden"><i className="fa-solid fa-xmark text-slate-200 text-lg"></i></span>
-            <span className="hidden xl:inline-block"><i className="fa-solid fa-bars text-slate-300 text-base"></i></span>
-          </button>
-
-          {/* Centered logo button (Shown ONLY on Collapsed) */}
-          <div className={`w-full flex justify-center items-center absolute inset-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isCollapsed ? 'opacity-100 scale-100 delay-150 pointer-events-auto' : 'opacity-0 scale-50 pointer-events-none'}`}>
+          {/* Centered logo button (Collapsed View) */}
+          <div className="sidebar-collapsed-header w-full justify-center items-center absolute inset-0">
             <button 
               onClick={toggleSidebar}
               className="size-10 rounded-2xl overflow-hidden flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.5)] hover:border-red-500/40 hover:shadow-[0_0_15px_rgba(229,9,20,0.3)]"

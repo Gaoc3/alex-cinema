@@ -304,7 +304,11 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
               onClick={() => setShowConfirmModal(true)}
               className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2 text-xs font-black text-white transition hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-lg active:scale-98"
             >
-              <i className="fa-solid fa-trash-can" aria-hidden="true" />
+              <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+              </svg>
               <span>حذف الغرف المحددة</span>
             </button>
           </div>
@@ -530,7 +534,11 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                           aria-label="حذف الغرفة"
                           className="flex size-9 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 transition-all duration-200 hover:bg-red-600 hover:text-white hover:border-red-500 hover:shadow-[0_0_15px_rgba(239,68,68,0.4)] cursor-pointer active:scale-95 group/del"
                         >
-                          <i className="fa-solid fa-trash-can text-xs group-hover/del:scale-110 transition-transform" />
+                          <svg className="size-3.5 group-hover/del:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                          </svg>
                         </button>
                         <Link
                           href={`/room/${room.id}`}

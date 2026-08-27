@@ -378,7 +378,11 @@ export default function MyRoomsList() {
                       aria-label="حذف الغرفة"
                       className="size-8 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-600 hover:border-red-500 text-red-400 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-50 active:scale-95 shadow-sm hover:shadow-[0_0_12px_rgba(239,68,68,0.4)] group/del"
                     >
-                      <i className="fa-solid fa-trash-can text-[11px] group-hover/del:scale-110 transition-transform" />
+                      <svg className="size-3.5 group-hover/del:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 6h18" />
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                      </svg>
                     </button>
                   </div>
                 </div>

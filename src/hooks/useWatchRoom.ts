@@ -15,6 +15,7 @@ export interface MemberPermissions {
   canBan: boolean;
   canSeek: boolean;
   canChangeMedia: boolean;
+  canToggleRoomStatus: boolean;
 }
 
 export interface RoomMember {
@@ -189,6 +190,7 @@ const DEFAULT_PERMISSIONS: MemberPermissions = {
   canBan: false,
   canSeek: false,
   canChangeMedia: false,
+  canToggleRoomStatus: false,
 };
 
 export function useWatchRoom(
@@ -201,7 +203,7 @@ export function useWatchRoom(
   const [userRole, setUserRole] = useState<'host' | 'moderator' | 'member'>(initIsHost ? 'host' : 'member');
   const [userPermissions, setUserPermissions] = useState<MemberPermissions>(
     initIsHost
-      ? { canKick: true, canBan: true, canSeek: true, canChangeMedia: true }
+      ? { canKick: true, canBan: true, canSeek: true, canChangeMedia: true, canToggleRoomStatus: true }
       : DEFAULT_PERMISSIONS,
   );
   const [connectionState, setConnectionState] = useState<RoomConnectionState>('connecting');
