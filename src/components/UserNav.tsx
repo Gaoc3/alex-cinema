@@ -222,40 +222,52 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
           <div 
             role="dialog"
             aria-modal="true"
-            className="relative w-full max-w-4xl max-h-[88vh] overflow-hidden rounded-3xl border border-white/15 bg-[#080d1a]/95 text-white shadow-[0_30px_90px_rgba(0,0,0,0.9),0_0_50px_rgba(229,9,20,0.25)] backdrop-blur-2xl animate-scaleIn flex flex-col"
+            className="relative w-full max-w-4xl max-h-[88vh] overflow-hidden rounded-3xl border border-white/15 bg-[#060a14]/95 text-white shadow-[0_30px_90px_rgba(0,0,0,0.9),0_0_50px_rgba(229,9,20,0.25)] backdrop-blur-2xl animate-scaleIn flex flex-col"
           >
             {/* Ambient Top Glow */}
             <div className="absolute -top-24 -right-24 size-60 rounded-full bg-red-600/20 blur-3xl pointer-events-none" />
 
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
-              <div className="flex items-center gap-3">
-                <div className="size-11 rounded-2xl bg-red-600/15 border border-red-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(229,9,20,0.3)]">
-                  {activeModal === "favorites" ? <HeartIcon /> : <UsersIcon />}
+            <div className="flex items-center justify-between border-b border-white/10 px-5 sm:px-7 py-4 sm:py-5 relative z-10">
+              <div className="flex items-center gap-3.5">
+                <div className="size-11 rounded-2xl bg-gradient-to-br from-red-600/25 to-red-950/40 border border-red-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(229,9,20,0.3)]">
+                  {activeModal === "favorites" ? <i className="fa-solid fa-heart text-red-500 text-lg"></i> : <UsersIcon />}
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-white">
-                    {activeModal === "favorites" ? "قائمة المفضلة" : "غرف المشاهدة الخاصة بي"}
+                  <h2 className="text-lg sm:text-xl font-black text-white">
+                    {activeModal === "favorites" ? "المفضلة السينمائية" : "غرف المشاهدة الخاصة بي"}
                   </h2>
-                  <p className="text-xs text-slate-400 font-medium">
-                    {activeModal === "favorites" ? "الأعمال التي قمت بحفظها للمشاهدة لاحقاً" : "سجل وإدارة غرف المشاهدة"}
+                  <p className="text-xs text-slate-400 font-medium mt-0.5">
+                    {activeModal === "favorites" ? "الأعمال المحفوظة في مكتبتك الخاصة" : "سجل وإدارة غرف المشاهدة"}
                   </p>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                aria-label="إغلاق النافذة"
-                className="size-9 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
-              >
-                <i className="fa-solid fa-xmark text-sm" />
-              </button>
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                {activeModal === "favorites" && (
+                  <Link
+                    href="/favorites"
+                    onClick={() => setActiveModal(null)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-red-600/20 text-slate-300 hover:text-red-400 border border-white/10 hover:border-red-500/30 text-xs font-bold transition-all"
+                  >
+                    <span>عرض الكل</span>
+                    <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setActiveModal(null)}
+                  aria-label="إغلاق النافذة"
+                  className="size-9 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                >
+                  <i className="fa-solid fa-xmark text-sm" />
+                </button>
+              </div>
             </div>
 
             {/* Modal Scrollable Body */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
-              {activeModal === "favorites" && <FavoritesList />}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-7 relative z-10">
+              {activeModal === "favorites" && <FavoritesList onItemClick={() => setActiveModal(null)} />}
               {activeModal === "my-rooms" && <MyRoomsList />}
             </div>
           </div>
