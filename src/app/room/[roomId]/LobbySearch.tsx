@@ -276,7 +276,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                 key={item.nb}
                 disabled={Boolean(selectedId)}
                 onClick={() => void handleSelectVideo(item)}
-                className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#03060f] text-right shadow-lg transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500/80 hover:shadow-[0_16px_36px_rgba(0,0,0,0.95),0_0_25px_rgba(229,9,20,0.4)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#03060f] text-right shadow-lg transition-all duration-300 ease-out hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500/80 hover:shadow-[0_16px_36px_rgba(0,0,0,0.95),0_0_25px_rgba(229,9,20,0.4)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
                   isSelectingThis
                     ? 'border-red-500 ring-2 ring-red-500 shadow-[0_0_30px_rgba(229,9,20,0.6)]'
                     : 'border-white/10'
@@ -289,7 +289,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                     video={item}
                     type="poster"
                     sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
-                    className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                    className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
                   />
                 </div>
 
@@ -384,7 +384,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                   key={item.nb}
                   disabled={Boolean(selectedId)}
                   onClick={() => void handleSelectVideo(item)}
-                  className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#03060f] text-right shadow-lg transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500/80 hover:shadow-[0_16px_36px_rgba(0,0,0,0.95),0_0_25px_rgba(229,9,20,0.4)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
+                  className={`group relative block aspect-[2/3] w-full cursor-pointer overflow-hidden isolate rounded-2xl border bg-[#03060f] text-right shadow-lg transition-all duration-300 ease-out hover:scale-[1.03] hover:-translate-y-1 hover:border-red-500/80 hover:shadow-[0_16px_36px_rgba(0,0,0,0.95),0_0_25px_rgba(229,9,20,0.4)] hover:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
                     isSelectingThis
                       ? 'border-red-500 ring-2 ring-red-500 shadow-[0_0_30px_rgba(229,9,20,0.6)]'
                       : 'border-white/10'
@@ -397,7 +397,7 @@ export default function LobbySearch({ roomId, onVideoSelected, onClose }: LobbyS
                       video={item}
                       type="poster"
                       sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
-                      className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                      className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
                     />
                   </div>
 
