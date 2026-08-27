@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { getImageUrl } from "@/utils/imageHelper";
 import { getUserRooms, deleteRoom } from "@/app/actions/room.actions";
 import { useClerk } from "@clerk/nextjs";
 import toast from 'react-hot-toast';
-
 import ConfirmModal from "@/components/ConfirmModal";
 
 interface RoomSummary {
@@ -30,16 +29,9 @@ export default function MyRoomsList() {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'closed'>('all');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-
-  const handleBrowse = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (closeUserProfile) {
-      closeUserProfile();
-    }
-    window.location.href = '/movies';
-  };
 
   const fetchRooms = async () => {
     try {
@@ -69,6 +61,20 @@ export default function MyRoomsList() {
     window.addEventListener('rooms-updated', handleRoomsUpdate);
     return () => window.removeEventListener('rooms-updated', handleRoomsUpdate);
   }, []);
+
+  const counts = useMemo(() => {
+    return {
+      all: rooms.length,
+      active: rooms.filter((r) => r.isActive).length,
+      closed: rooms.filter((r) => !r.isActive).length,
+    };
+  }, [rooms]);
+
+  const filteredRooms = useMemo(() => {
+    if (activeFilter === 'active') return rooms.filter((r) => r.isActive);
+    if (activeFilter === 'closed') return rooms.filter((r) => !r.isActive);
+    return rooms;
+  }, [rooms, activeFilter]);
 
   const handleCopyLink = (roomId: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -103,98 +109,227 @@ export default function MyRoomsList() {
 
   if (loading) {
     return (
-      <div className="w-full flex items-center justify-center p-12">
-        <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-full flex flex-col items-center justify-center py-16 gap-3">
+        <div className="size-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin shadow-[0_0_20px_rgba(56,189,248,0.4)]" />
+        <span className="text-xs text-slate-400 font-bold animate-pulse">جاري تحميل غرف المشاهدة...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="w-full flex items-center justify-center p-12 text-red-400 font-bold">
-        <p>حدث خطأ أثناء تحميل غرف المشاهدة.</p>
+      <div className="w-full flex flex-col items-center justify-center py-12 px-4 text-center gap-3 bg-red-950/20 border border-red-500/20 rounded-3xl" dir="rtl">
+        <div className="size-12 rounded-2xl bg-red-600/20 flex items-center justify-center text-red-400 text-xl">
+          <i className="fa-solid fa-triangle-exclamation" />
+        </div>
+        <p className="text-sm text-red-300 font-bold">حدث خطأ أثناء تحميل غرف المشاهدة.</p>
+        <button
+          type="button"
+          onClick={() => { setError(false); setLoading(true); fetchRooms(); }}
+          className="px-4 py-2 bg-red-600/30 hover:bg-red-600/50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+        >
+          إعادة المحاولة 🔄
+        </button>
       </div>
     );
   }
 
   if (rooms.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-        <div className="w-16 h-16 mb-4 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-          <i className="fa-solid fa-users text-3xl text-gray-400"></i>
+      <div className="flex flex-col items-center justify-center py-14 px-4 text-center" dir="rtl">
+        <div className="size-20 mb-5 rounded-3xl bg-gradient-to-b from-sky-500/20 to-blue-950/30 flex items-center justify-center border border-sky-500/25 shadow-[0_0_35px_rgba(56,189,248,0.25)]">
+          <i className="fa-solid fa-users text-3xl text-sky-400" />
         </div>
-        <h3 className="text-xl font-black text-white mb-2">لا توجد غرف مشاهدة</h3>
-        <p className="text-gray-400 text-sm max-w-[280px]">قم بإنشاء غرفة مشاهدة للأفلام والمسلسلات وتصفح المكتبة لدعوة أصدقائك.</p>
-        <button 
-          onClick={handleBrowse} 
-          className="mt-6 px-6 py-2.5 bg-[#e50914] hover:bg-[#b91c1c] text-white font-extrabold rounded-xl transition-all shadow-[0_4px_18px_rgba(229,9,20,0.5)] active:scale-95 cursor-pointer"
+        <h3 className="text-xl sm:text-2xl font-black text-white mb-2">لم تنشئ أي غرف مشاهدة بعد</h3>
+        <p className="text-slate-400 text-xs sm:text-sm max-w-sm leading-relaxed font-medium mb-6">
+          أنشئ غرفتك الخاصة الآن واستمتع بمشاهدة الأفلام والمسلسلات في بث متزامن وفوري مع أصدقائك!
+        </p>
+        <Link
+          href="/rooms?create=true"
+          className="px-7 py-3 bg-gradient-to-r from-red-600 to-[#E50914] hover:from-red-500 hover:to-red-600 text-white font-black rounded-2xl transition-all shadow-[0_4px_25px_rgba(229,9,20,0.5)] hover:shadow-[0_0_30px_rgba(229,9,20,0.7)] active:scale-95 cursor-pointer text-xs sm:text-sm flex items-center gap-2"
         >
-          تصفح مكتبة الأفلام
-        </button>
+          <i className="fa-solid fa-plus" />
+          <span>إنشاء غرفة مشاهدة جديدة 🍿</span>
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-2 rtl" dir="rtl">
-      {rooms.map((room) => (
-        <div key={room.id} className="relative group rounded-2xl overflow-hidden shadow-xl bg-[#080d1a] border border-white/10 hover:border-red-500/50 transition-all duration-300 flex flex-col">
-          <Link href={`/room/${room.id}`} className="block relative aspect-[16/9] w-full overflow-hidden bg-[#080d1a]">
-            {room.moviePoster ? (
-              <Image
-                src={getImageUrl(room.moviePoster, 'backdrop')}
-                alt={room.title}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                unoptimized
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-white/5">
-                <i className="fa-solid fa-users text-2xl text-gray-600"></i>
-              </div>
-            )}
-            {/* Seamless Gradient Overlay */}
-            <div className="absolute -bottom-0.5 inset-x-0 h-3/4 bg-gradient-to-t from-[#080d1a] via-[#080d1a]/60 to-transparent pointer-events-none z-10" />
-            
-            <div className="absolute top-2 right-2 flex gap-2 z-20">
-              <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black backdrop-blur-md ${room.isPrivate ? 'bg-red-500/80 text-white' : 'bg-green-500/80 text-white'}`}>
-                {room.isPrivate ? 'خاصة' : 'عامة'}
-              </span>
-              <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black backdrop-blur-md ${room.isActive ? 'bg-red-600/80 text-white' : 'bg-gray-500/80 text-white'}`}>
-                {room.isActive ? 'نشطة' : 'مغلقة'}
-              </span>
-            </div>
+    <div className="w-full flex flex-col gap-4" dir="rtl">
+      {/* Filter Tabs Bar */}
+      <div className="flex items-center justify-between gap-2 pb-3 border-b border-white/[0.08]">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveFilter('all')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeFilter === 'all'
+                ? 'bg-sky-500 text-white shadow-[0_0_15px_rgba(56,189,248,0.4)]'
+                : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <span>الكل</span>
+            <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeFilter === 'all' ? 'bg-black/30 text-white' : 'bg-white/10 text-slate-400'}`}>
+              {counts.all}
+            </span>
+          </button>
 
-            <div className="absolute bottom-2 right-3 left-3 z-20">
-              <h4 className="text-white font-black text-sm truncate drop-shadow-md">{room.title}</h4>
-              <p className="text-gray-300 text-xs truncate mt-0.5">{room.movieTitle || 'لم يتم اختيار محتوى بعد'}</p>
-            </div>
-          </Link>
+          <button
+            type="button"
+            onClick={() => setActiveFilter('active')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeFilter === 'active'
+                ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>نشطة</span>
+            <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeFilter === 'active' ? 'bg-black/30 text-white' : 'bg-white/10 text-slate-400'}`}>
+              {counts.active}
+            </span>
+          </button>
 
-          <div className="p-3 bg-[#080d1a] flex items-center justify-between border-t border-white/5 relative z-10">
-            <button
-              onClick={(e) => handleCopyLink(room.id, e)}
-              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors cursor-pointer active:scale-95"
-            >
-              <i className="fa-solid fa-link text-[10px]"></i>
-              نسخ الرابط
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setDeleteTargetId(room.id);
-              }}
-              disabled={deletingId === room.id}
-              className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-400 transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <i className="fa-solid fa-trash text-[10px]"></i>
-              {deletingId === room.id ? 'جاري الحذف...' : 'حذف'}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setActiveFilter('closed')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeFilter === 'closed'
+                ? 'bg-white/20 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
+                : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <span>مغلقة</span>
+            <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeFilter === 'closed' ? 'bg-black/30 text-white' : 'bg-white/10 text-slate-400'}`}>
+              {counts.closed}
+            </span>
+          </button>
         </div>
-      ))}
+
+        <Link
+          href="/rooms?create=true"
+          className="px-3 py-1.5 rounded-xl bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95"
+        >
+          <i className="fa-solid fa-plus text-[10px]" />
+          <span className="hidden sm:inline">إنشاء غرفة</span>
+        </Link>
+      </div>
+
+      {/* Grid of Room Cards */}
+      {filteredRooms.length === 0 ? (
+        <div className="py-12 text-center text-slate-400 text-xs font-bold bg-white/[0.02] border border-white/[0.05] rounded-3xl">
+          لا توجد غرف مطابقة لهذا التصنيف حالياً.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-0.5">
+          {filteredRooms.map((room) => (
+            <div
+              key={room.id}
+              className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#080d1a] transition-all duration-300 hover:-translate-y-1 hover:border-sky-500/50 hover:shadow-[0_12px_35px_rgba(56,189,248,0.2)] shadow-[0_6px_20px_rgba(0,0,0,0.6)]"
+            >
+              {/* Poster & Backdrop Banner */}
+              <Link href={`/room/${room.id}`} className="block relative aspect-[16/9] w-full overflow-hidden bg-[#080d1a]">
+                {room.moviePoster ? (
+                  <Image
+                    src={getImageUrl(room.moviePoster, 'backdrop')}
+                    alt={room.title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="size-full flex items-center justify-center bg-white/5 text-3xl text-slate-600">
+                    <i className="fa-solid fa-film" />
+                  </div>
+                )}
+
+                {/* Seamless Gradient Overlay */}
+                <div className="absolute -bottom-0.5 inset-x-0 h-3/4 bg-gradient-to-t from-[#080d1a] via-[#080d1a]/60 to-transparent pointer-events-none z-10" />
+
+                {/* Hover Play Overlay Pill */}
+                <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/40 backdrop-blur-[2px]">
+                  <span className="px-4 py-2 rounded-xl bg-red-600/90 text-white font-black text-xs shadow-[0_0_20px_rgba(229,9,20,0.7)] flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                    <i className="fa-solid fa-play text-[10px]" />
+                    <span>دخول الغرفة 🍿</span>
+                  </span>
+                </div>
+
+                {/* Badges */}
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 z-20">
+                  {room.isActive ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 backdrop-blur-md shadow-[0_0_12px_rgba(16,185,129,0.3)] flex items-center gap-1">
+                      <span className="size-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      <span>مباشر الآن</span>
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-black/60 border border-white/20 text-slate-400 backdrop-blur-md">
+                      مغلقة
+                    </span>
+                  )}
+                </div>
+
+                <div className="absolute top-3 left-3 z-20">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black backdrop-blur-md border ${
+                    room.isPrivate
+                      ? 'bg-red-500/20 border-red-500/40 text-red-400'
+                      : 'bg-sky-500/20 border-sky-500/40 text-sky-400'
+                  }`}>
+                    {room.isPrivate ? '🔒 خاصة' : '🌐 عامة'}
+                  </span>
+                </div>
+
+                {/* Bottom Title on Image */}
+                <div className="absolute bottom-2 right-3 left-3 z-20">
+                  <h4 className="text-white font-black text-sm truncate group-hover:text-sky-400 transition-colors drop-shadow-md">
+                    {room.title}
+                  </h4>
+                  <p className="text-slate-300 text-xs truncate mt-0.5 flex items-center gap-1 font-medium">
+                    <i className="fa-solid fa-film text-[10px] text-red-500" />
+                    <span>{room.movieTitle || 'لم يتم اختيار محتوى بعد'}</span>
+                  </p>
+                </div>
+              </Link>
+
+              {/* Action Bar */}
+              <div className="p-3 bg-[#080d1a] flex items-center justify-between border-t border-white/5 relative z-10">
+                <Link
+                  href={`/room/${room.id}`}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-[#E50914] hover:from-red-500 hover:to-red-600 text-white font-black text-xs transition-all shadow-[0_2px_10px_rgba(229,9,20,0.35)] active:scale-95 cursor-pointer"
+                >
+                  <span>دخول</span>
+                  <i className="fa-solid fa-arrow-left text-[9px]" />
+                </Link>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => handleCopyLink(room.id, e)}
+                    title="نسخ رابط الغرفة"
+                    className="size-8 rounded-xl bg-white/5 border border-white/10 hover:bg-sky-500/20 hover:text-sky-400 hover:border-sky-500/30 text-slate-300 flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                  >
+                    <i className="fa-solid fa-link text-xs" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDeleteTargetId(room.id);
+                    }}
+                    disabled={deletingId === room.id}
+                    title="حذف الغرفة"
+                    className="size-8 rounded-xl bg-white/5 border border-white/10 hover:bg-red-600/20 hover:text-red-400 hover:border-red-500/30 text-slate-400 flex items-center justify-center transition-all cursor-pointer disabled:opacity-50 active:scale-95"
+                  >
+                    <i className="fa-solid fa-trash text-xs" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <ConfirmModal
         isOpen={!!deleteTargetId}

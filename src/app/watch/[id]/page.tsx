@@ -101,13 +101,42 @@ export default async function WatchPage({
 
   if (!video) {
     return (
-      <div className="flex-grow flex items-center justify-center min-h-[60vh] animate-fade-in-up">
-        <div className="text-center ios-glass p-12 rounded-3xl relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0a0e17]/80"></div>
-          <i className="fa-solid fa-triangle-exclamation text-6xl text-alex-primary mb-6 drop-shadow-lg relative z-10 animate-pulse"></i>
-          <h1 className="text-3xl font-black text-white relative z-10 mb-2">عذراً، لم نتمكن من جلب تفاصيل الفيديو</h1>
-          <p className="text-gray-400 mb-8 relative z-10">قد يكون الرابط خاطئاً أو تم حذف المحتوى من المصدر.</p>
-          <Link href="/" className="inline-block btn-primary px-8 py-3.5 rounded-xl text-white font-bold shadow-lg hover-scale relative z-10">العودة للرئيسية</Link>
+      <div className="flex-grow flex items-center justify-center min-h-[75vh] px-4 py-16 animate-fade-in-up" dir="rtl">
+        <div className="relative w-full max-w-lg p-8 sm:p-10 rounded-3xl border border-white/15 bg-[#060a14]/95 backdrop-blur-2xl shadow-[0_30px_90px_rgba(0,0,0,0.9),0_0_50px_rgba(229,9,20,0.25)] text-center overflow-hidden">
+          {/* Ambient Glows */}
+          <div className="absolute -top-20 -right-20 size-48 rounded-full bg-red-600/20 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 size-48 rounded-full bg-blue-600/15 blur-3xl pointer-events-none" />
+
+          {/* Icon */}
+          <div className="relative z-10 size-20 mx-auto mb-6 rounded-3xl bg-gradient-to-b from-red-600/20 to-red-950/40 border border-red-500/30 flex items-center justify-center text-red-500 text-3xl shadow-[0_0_35px_rgba(229,9,20,0.3)]">
+            <i className="fa-solid fa-film text-3xl animate-pulse" />
+          </div>
+
+          <h1 className="relative z-10 text-2xl sm:text-3xl font-black text-white mb-3">
+            عذراً، لم نتمكن من جلب تفاصيل الفيديو
+          </h1>
+          <p className="relative z-10 text-slate-400 text-xs sm:text-sm leading-relaxed mb-8 max-w-sm mx-auto font-medium">
+            قد يكون هذا المحتوى غير متوفر حالياً في المصدر أو حدث تأخير مؤقت في خادم البث.
+          </p>
+
+          {/* Action CTAs */}
+          <div className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/movies"
+              className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-[#E50914] hover:from-red-500 hover:to-red-600 text-white font-black text-xs sm:text-sm shadow-[0_4px_25px_rgba(229,9,20,0.5)] hover:shadow-[0_0_30px_rgba(229,9,20,0.7)] transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              <i className="fa-solid fa-compass" />
+              <span>تصفح مكتبة الأفلام</span>
+            </Link>
+
+            <Link
+              href="/home"
+              className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10 text-xs sm:text-sm font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              <i className="fa-solid fa-house text-xs" />
+              <span>الرئيسية</span>
+            </Link>
+          </div>
         </div>
       </div>
     );

@@ -255,6 +255,16 @@ export default function UserNav({ onOpenFavorites, onOpenRooms, size = 'normal' 
                     <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
                   </Link>
                 )}
+                {activeModal === "my-rooms" && (
+                  <Link
+                    href="/rooms?create=true"
+                    onClick={() => setActiveModal(null)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-[#E50914] hover:from-red-500 hover:to-red-600 text-white shadow-[0_0_15px_rgba(229,9,20,0.5)] text-xs font-black transition-all active:scale-95"
+                  >
+                    <i className="fa-solid fa-plus text-[10px]" />
+                    <span className="hidden sm:inline">إنشاء غرفة</span>
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={() => setActiveModal(null)}
