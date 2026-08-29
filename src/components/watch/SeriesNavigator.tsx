@@ -278,7 +278,7 @@ export default function SeriesNavigator({
                     type="button"
                     onClick={() => setActiveEpisode(ep)}
                     disabled={!canSelectEpisodes}
-                    className={`relative aspect-[16/9] w-full rounded-2xl overflow-hidden border transition-all duration-300 cursor-pointer ${
+                    className={`relative aspect-[16/9] w-full rounded-2xl overflow-hidden border transition-all duration-300 cursor-pointer bg-[#070b13] isolate select-none ${
                       isActiveEp 
                         ? 'border-red-500 shadow-[0_6px_25px_rgba(229,9,20,0.45)] ring-1 ring-red-500/50 scale-[1.02]' 
                         : 'border-white/10 hover:border-red-500/50 hover:shadow-[0_6px_20px_rgba(0,0,0,0.6)] group-hover:scale-[1.02]'
@@ -288,12 +288,16 @@ export default function SeriesNavigator({
                     <img 
                       src={getImageUrl(videoImg, 'poster') || '/icon.svg'} 
                       alt={`الحلقة ${ep.episodeNummer}`}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform" 
                       loading="lazy"
                     />
+
+                    {/* Double-layer impenetrable obsidian mask eradicating any hover seam */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#070b13] via-[#070b13]/40 to-transparent pointer-events-none z-10" />
+                    <div className="absolute inset-x-0 bottom-0 h-3 bg-[#070b13] pointer-events-none z-10" />
                     
                     {/* Hover & Active Overlay */}
-                    <div className={`absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex items-center justify-center transition-all duration-300 ${
+                    <div className={`absolute inset-0 z-20 bg-black/40 backdrop-blur-[1px] flex items-center justify-center transition-all duration-300 ${
                       isActiveEp ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                     }`}>
                       <div className="px-3 py-1 rounded-full bg-red-600 text-white text-[11px] font-black tracking-wide flex items-center gap-1.5 shadow-xl border border-white/20">
@@ -303,7 +307,7 @@ export default function SeriesNavigator({
                     </div>
 
                     {isActiveEp && (
-                      <div className="absolute top-2 right-2 bg-red-600 text-white px-1.5 py-0.5 rounded-md text-[8px] font-black border border-white/20 backdrop-blur-md flex items-center gap-1 shadow-md">
+                      <div className="absolute top-2 right-2 z-20 bg-red-600 text-white px-1.5 py-0.5 rounded-md text-[8px] font-black border border-white/20 backdrop-blur-md flex items-center gap-1 shadow-md">
                         <span className="size-1.5 rounded-full bg-white animate-ping" />
                         مباشر
                       </div>

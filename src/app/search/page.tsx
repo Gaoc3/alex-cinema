@@ -67,7 +67,7 @@ function SearchPoster({ video }: { video: VideoItem }) {
       video={video}
       type="poster"
       sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
-      className="transition-transform duration-500 group-hover/card:scale-105"
+      className="transition-transform duration-500 group-hover/card:scale-105 will-change-transform"
     />
   );
 }
@@ -529,14 +529,15 @@ function SearchPageContent() {
                     href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
                     className="group/card block relative cursor-pointer"
                   >
-                    <div className="aspect-[2/3] w-full relative rounded-xl sm:rounded-2xl overflow-hidden border border-white/10 bg-slate-900 shadow-md group-hover/card:shadow-[0_8px_25px_rgba(229,9,20,0.3)] group-hover/card:border-alex-primary/40 transition-all duration-300">
+                    <div className="aspect-[2/3] w-full relative rounded-xl sm:rounded-2xl overflow-hidden border border-white/10 bg-[#070b13] isolate select-none shadow-md group-hover/card:shadow-[0_8px_25px_rgba(229,9,20,0.3)] group-hover/card:border-alex-primary/40 transition-all duration-300">
                       <SearchPoster video={video} />
                       
-                      {/* Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-60 group-hover/card:opacity-90 transition-opacity"></div>
+                      {/* Double-layer impenetrable obsidian mask eradicating any hover seam */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#070b13] via-[#070b13]/40 to-transparent pointer-events-none z-10"></div>
+                      <div className="absolute inset-x-0 bottom-0 h-4 bg-[#070b13] pointer-events-none z-10"></div>
 
                       {/* IMDb Badge */}
-                      <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-md border border-white/10 px-1.5 py-0.5 rounded-md flex items-center gap-1 z-10">
+                      <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-md border border-white/10 px-1.5 py-0.5 rounded-md flex items-center gap-1 z-20">
                         <span className="text-amber-400 text-[9px] font-black font-en">IMDb</span>
                         <span className="text-white text-[10px] font-bold font-en">{video.stars}</span>
                       </div>
@@ -597,14 +598,15 @@ function SearchPageContent() {
                     href={`/watch/${video.nb}?title=${encodeURIComponent(video.ar_title || video.en_title || '')}`}
                     className="group/card block relative cursor-pointer"
                   >
-                    <div className="aspect-[2/3] w-full relative rounded-xl sm:rounded-2xl overflow-hidden border border-white/10 bg-slate-900 shadow-md group-hover/card:shadow-[0_8px_25px_rgba(59,130,246,0.3)] group-hover/card:border-blue-500/40 transition-all duration-300">
+                    <div className="aspect-[2/3] w-full relative rounded-xl sm:rounded-2xl overflow-hidden border border-white/10 bg-[#070b13] isolate select-none shadow-md group-hover/card:shadow-[0_8px_25px_rgba(59,130,246,0.3)] group-hover/card:border-blue-500/40 transition-all duration-300">
                       <SearchPoster video={video} />
                       
-                      {/* Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-60 group-hover/card:opacity-90 transition-opacity"></div>
+                      {/* Double-layer impenetrable obsidian mask eradicating any hover seam */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#070b13] via-[#070b13]/40 to-transparent pointer-events-none z-10"></div>
+                      <div className="absolute inset-x-0 bottom-0 h-4 bg-[#070b13] pointer-events-none z-10"></div>
 
                       {/* IMDb Badge */}
-                      <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-md border border-white/10 px-1.5 py-0.5 rounded-md flex items-center gap-1 z-10">
+                      <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-md border border-white/10 px-1.5 py-0.5 rounded-md flex items-center gap-1 z-20">
                         <span className="text-amber-400 text-[9px] font-black font-en">IMDb</span>
                         <span className="text-white text-[10px] font-bold font-en">{video.stars}</span>
                       </div>

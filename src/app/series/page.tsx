@@ -511,18 +511,22 @@ function SeriesContent() {
                     style={{ animationDelay: `${index * 15}ms` }}
                   >
                     {/* Poster Wrapper */}
-                    <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden bg-[#141722]/50 border border-white/5 transition-all duration-300 ease-out group-hover/card:scale-[1.03] group-hover/card:shadow-[0_15px_35px_rgba(0,0,0,0.6)] group-hover/card:border-white/20">
+                    <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden bg-[#070b13] isolate select-none border border-white/5 transition-all duration-300 ease-out group-hover/card:scale-[1.03] group-hover/card:shadow-[0_15px_35px_rgba(0,0,0,0.6)] group-hover/card:border-white/20">
                       <MediaPosterImage 
                         video={video}
                         type="poster"
                         sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
-                        className="movie-card-img transition-transform duration-700 group-hover/card:scale-105"
+                        className="movie-card-img transition-transform duration-700 group-hover/card:scale-105 will-change-transform"
                         loading={index < 6 ? 'eager' : 'lazy'}
                         priority={index < 4}
                       />
+
+                      {/* Double-layer impenetrable obsidian mask eradicating any hover seam */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#070b13] via-[#070b13]/40 to-transparent pointer-events-none z-10"></div>
+                      <div className="absolute inset-x-0 bottom-0 h-4 bg-[#070b13] pointer-events-none z-10"></div>
                       
                       {/* Dark overlay & Watch Play Badge */}
-                      <div className="absolute inset-0 bg-black/45 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 z-10 flex items-center justify-center backdrop-blur-[1px]">
+                      <div className="absolute inset-0 z-20 bg-black/40 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[1px]">
                         <div className="px-3.5 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-white text-xs font-black tracking-wide flex items-center gap-1.5 transform scale-75 group-hover/card:scale-100 transition-transform duration-300">
                           <i className="fa-solid fa-play text-[9px] text-[#E50914] animate-pulse"></i>
                           <span>مشاهدة الحلقات</span>

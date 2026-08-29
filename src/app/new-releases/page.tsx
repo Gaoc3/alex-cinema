@@ -71,15 +71,17 @@ export default async function NewReleasesPage({ searchParams }: PageProps) {
                 style={{ animationDelay: `${index * 15}ms` }}
               >
                 {/* Poster Wrapper */}
-                <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-transparent movie-card-img-wrapper">
+                <div className="aspect-[2/3] w-full relative rounded-2xl overflow-hidden border border-white/5 bg-[#070b13] isolate select-none movie-card-img-wrapper">
                   <MediaPosterImage 
                     video={video}
                     type="poster"
                     sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
-                    className="movie-card-img transition-transform duration-700 group-hover/card:scale-110"
+                    className="movie-card-img transition-transform duration-700 group-hover/card:scale-110 will-change-transform"
                     loading="lazy"
                   />
-                  <div className="movie-card-overlay"></div>
+                  {/* Double-layer impenetrable obsidian mask eradicating any hover seam */}
+                  <div className="movie-card-overlay pointer-events-none z-10"></div>
+                  <div className="absolute inset-x-0 bottom-0 h-4 bg-[#070b13] pointer-events-none z-10"></div>
 
                   {/* Play Hover Indicator */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 transform scale-50 group-hover/card:opacity-100 group-hover/card:scale-100 transition-all duration-300 z-20">
