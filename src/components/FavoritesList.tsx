@@ -200,21 +200,22 @@ export default function FavoritesList({ onItemClick, compact = false }: Favorite
                 <Link
                   href={`/watch/${fav.mediaId}`}
                   onClick={onItemClick}
-                  className="block relative aspect-[2/3] w-full overflow-hidden bg-[#0a0f1d]"
+                  className="block relative aspect-[2/3] w-full overflow-hidden bg-[#070b13] isolate select-none"
                 >
                   <Image
                     src={posterUrl}
                     alt={fav.title}
                     fill
-                    className="object-cover group-hover/fav-card:scale-105 transition-transform duration-500"
+                    className="object-cover group-hover/fav-card:scale-105 transition-transform duration-500 will-change-transform"
                     unoptimized
                   />
 
-                  {/* Cinema Vignette Gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#070b13] via-transparent to-black/30 opacity-90 group-hover/fav-card:opacity-100 transition-opacity pointer-events-none" />
+                  {/* Double-layer impenetrable obsidian mask eradicating any hover seam */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#070b13] via-[#070b13]/60 to-transparent pointer-events-none z-10" />
+                  <div className="absolute inset-x-0 bottom-0 h-4 bg-[#070b13] pointer-events-none z-10" />
 
                   {/* Series or Movie Badge */}
-                  <div className="absolute bottom-2.5 right-2.5 z-10 pointer-events-none">
+                  <div className="absolute bottom-2.5 right-2.5 z-20 pointer-events-none">
                     <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black shadow-md ${
                       isSeries ? 'bg-red-600 text-white' : 'bg-black/70 backdrop-blur-md border border-white/15 text-slate-200'
                     }`}>
@@ -223,7 +224,7 @@ export default function FavoritesList({ onItemClick, compact = false }: Favorite
                   </div>
 
                   {/* Play Center Hover Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/fav-card:opacity-100 transition-all duration-300 bg-black/40 backdrop-blur-[1px]">
+                  <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover/fav-card:opacity-100 transition-all duration-300 bg-black/40 backdrop-blur-[1px]">
                     <div className="px-3 py-1.5 rounded-full bg-red-600 text-white text-xs font-black shadow-[0_0_20px_rgba(229,9,20,0.6)] flex items-center gap-1.5 transform scale-90 group-hover/fav-card:scale-100 transition-transform">
                       <i className="fa-solid fa-play text-[10px]" />
                       <span>شاهد الآن</span>
@@ -241,13 +242,13 @@ export default function FavoritesList({ onItemClick, compact = false }: Favorite
                   }}
                   aria-label={`إزالة ${fav.title} من المفضلة`}
                   title="إزالة من المفضلة"
-                  className="absolute top-2.5 left-2.5 size-8 rounded-full bg-black/70 hover:bg-red-600 text-white border border-white/20 hover:border-red-500 backdrop-blur-md flex items-center justify-center transition-all duration-200 z-20 cursor-pointer shadow-[0_2px_10px_rgba(0,0,0,0.6)] active:scale-90 group/btn"
+                  className="absolute top-2.5 left-2.5 size-8 rounded-full bg-black/70 hover:bg-red-600 text-white border border-white/20 hover:border-red-500 backdrop-blur-md flex items-center justify-center transition-all duration-200 z-30 cursor-pointer shadow-[0_2px_10px_rgba(0,0,0,0.6)] active:scale-90 group/btn"
                 >
                   <i className="fa-solid fa-heart text-xs text-red-500 group-hover/btn:text-white transition-colors" />
                 </button>
 
-                {/* Title and Metadata */}
-                <div className="p-3 flex flex-col gap-1">
+                {/* Title and Metadata - Physical Overlap eliminating any subpixel gap */}
+                <div className="p-3 -mt-3 pt-3 relative z-20 bg-[#070b13] flex flex-col gap-1">
                   <Link
                     href={`/watch/${fav.mediaId}`}
                     onClick={onItemClick}
