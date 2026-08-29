@@ -18,7 +18,7 @@ const ALLOWED_IMAGE_TYPES = new Set([
 const MAX_IMAGE_BYTES = 32 * 1024 * 1024;
 const MAX_CACHE_BYTES = 64 * 1024 * 1024;
 const MAX_CACHE_ITEMS = 512;
-const RETRY_DELAYS_MS = [0];
+const RETRY_DELAYS_MS = [0, 200];
 
 interface CachedImage {
   body: ArrayBuffer;
@@ -155,7 +155,7 @@ function placeholderResponse() {
     headers: {
       'Content-Type': 'image/svg+xml; charset=utf-8',
       'Cache-Control': 'private, no-store, max-age=0',
-      'Retry-After': '5',
+      'Retry-After': '2',
       'X-Alex-Image-Fallback': '1',
       'X-Content-Type-Options': 'nosniff',
     },
@@ -195,10 +195,14 @@ function buildImageCandidates(initialTarget: URL | null, fileParam: string | nul
   const cleanName = sanitizeFilename(rawFileName);
 
   if (cleanName) {
-    // Only verified, responsive Shabakaty CDN nodes
+    // Verified and resilient Shabakaty CDN nodes
     const baseHosts = [
       'cnth2.shabakaty.com',
+      'cnth1.shabakaty.com',
+      'cndw2.shabakaty.com',
+      'cndw1.shabakaty.com',
       'cinemana.shabakaty.com',
+      'cdn.shabakaty.com',
     ];
 
     const dirs = [
@@ -301,7 +305,7 @@ export async function GET(req: NextRequest) {
       for (const candidate of candidates) {
         try {
           const reqSignal = AbortSignal.any 
-            ? AbortSignal.any([controller.signal, AbortSignal.timeout(3500)])
+            ? AbortSignal.any([controller.signal, AbortSignal.timeout(6000)])
             : controller.signal;
           const response = await fetchWithRedirects(candidate.href, headers, 3, reqSignal);
           const image = await readValidImage(response);
