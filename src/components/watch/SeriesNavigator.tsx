@@ -137,11 +137,11 @@ export default function SeriesNavigator({
           </div>
         </div>
 
-        {/* ══════ Dedicated Luxury Seasons Navigation Track ══════ */}
+        {/* ══════ Dedicated Luxury Seasons Navigation Track (Dynamic Shrink-to-Fit) ══════ */}
         {seasons.length > 1 && (
-          <div className="relative w-full z-10">
+          <div className="relative w-full z-10 flex">
             <div 
-              className="flex items-center gap-2 overflow-x-auto hide-scrollbar scroll-smooth w-full py-1.5 px-1.5 bg-black/30 rounded-2xl border border-white/5"
+              className="inline-flex items-center gap-2 overflow-x-auto hide-scrollbar scroll-smooth max-w-full w-auto py-1.5 px-1.5 bg-black/40 rounded-2xl border border-white/8 backdrop-blur-md shadow-inner"
               style={{ touchAction: 'pan-x', overscrollBehaviorX: 'contain' }}
             >
               {seasons.map((s) => {
