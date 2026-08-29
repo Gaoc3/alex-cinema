@@ -106,49 +106,72 @@ export default function SeriesNavigator({
         {/* Subtle Ambient Red Halo */}
         <div className="absolute -top-16 -right-16 size-36 rounded-full bg-red-600/10 blur-2xl pointer-events-none" />
 
-        {/* ══════ Header Area: Title, Badges & Fully Dynamic Season Selector ══════ */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-white/10 pb-3 relative z-10 w-full">
-          {/* Title Area + Badges */}
-          <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
+        {/* ══════ Header Area: Title & Summary Badges ══════ */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3 relative z-10 w-full">
+          {/* Title + Badges */}
+          <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-4.5 bg-red-600 rounded-full shadow-[0_0_12px_rgba(229,9,20,0.7)]" />
-              <h3 className="text-sm sm:text-base font-black text-white whitespace-nowrap tracking-wide">حلقات المسلسل</h3>
+              <h3 className="text-sm sm:text-base font-black text-white whitespace-nowrap tracking-wide">
+                حلقات المسلسل
+              </h3>
             </div>
             
-            {/* Meta Count Badges */}
+            {/* Meta Badges */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <span className="bg-blue-500/15 border border-blue-500/30 text-blue-400 px-2 py-0.5 rounded-lg text-[10px] font-black">
+              <span className="bg-blue-500/15 border border-blue-500/30 text-blue-400 px-2.5 py-0.5 rounded-lg text-[11px] font-black">
                 {seasons.length} مواسم
               </span>
-              <span className="bg-amber-500/15 border border-amber-500/30 text-amber-400 px-2 py-0.5 rounded-lg text-[10px] font-black">
+              <span className="bg-amber-500/15 border border-amber-500/30 text-amber-400 px-2.5 py-0.5 rounded-lg text-[11px] font-black">
                 {episodes.length} حلقة
               </span>
             </div>
           </div>
 
-          {/* Season Selector - Fully Dynamic Adaptive Horizontal Track */}
-          {seasons.length > 0 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth w-full sm:w-auto py-0.5 max-w-full">
+          {/* Current Season Info Tag */}
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+            <span className="text-slate-400">المعروض حالياً:</span>
+            <span className="text-red-400 font-black">الموسم {currentSeason}</span>
+            <span className="text-slate-500">•</span>
+            <span className="text-slate-300 font-mono text-[11px]">{seasonEpisodes.length} حلقة</span>
+          </div>
+        </div>
+
+        {/* ══════ Dedicated Luxury Seasons Navigation Track ══════ */}
+        {seasons.length > 1 && (
+          <div className="relative w-full z-10">
+            <div 
+              className="flex items-center gap-2 overflow-x-auto hide-scrollbar scroll-smooth w-full py-1.5 px-1.5 bg-black/30 rounded-2xl border border-white/5"
+              style={{ touchAction: 'pan-x', overscrollBehaviorX: 'contain' }}
+            >
               {seasons.map((s) => {
                 const isSelected = currentSeason === s.season;
+                const count = s.episodes?.length || episodes.filter(e => String(e.season) === String(s.season)).length;
                 return (
                   <button
                     key={s.season}
                     type="button"
                     onClick={() => setCurrentSeason(s.season)}
-                    className={`min-h-[32px] px-3.5 py-1 rounded-xl text-xs font-black transition-all duration-200 flex items-center justify-center cursor-pointer select-none active:scale-95 shrink-0 ${
+                    className={`min-h-[34px] px-3.5 py-1 rounded-xl text-xs font-black transition-all duration-200 flex items-center gap-1.5 cursor-pointer select-none active:scale-95 shrink-0 ${
                       isSelected
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-[0_0_15px_rgba(229,9,20,0.45)] border border-red-500/40'
-                        : 'text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10'
+                        ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-[0_0_18px_rgba(229,9,20,0.5)] border border-red-500/50 scale-[1.02]'
+                        : 'text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20'
                     }`}
                   >
                     <span>الموسم {s.season}</span>
+                    {count > 0 && (
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${
+                        isSelected ? 'bg-black/40 text-white/90' : 'bg-white/10 text-slate-400'
+                      }`}>
+                        {count}
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* ══════ MOBILE VIEW (sm:hidden): Direct Episodes Stream ══════ */}
         <div key={`mobile-${currentSeason}`} className="flex flex-col gap-2 sm:hidden w-full">
