@@ -220,7 +220,7 @@ export default function Sidebar() {
           <div className={`px-4 ${layout.isShortScreen ? 'pt-3 pb-3' : 'pt-6 pb-6'} flex flex-col`} dir="rtl">
             <div className={`min-h-[${layout.isShortScreen ? '10px' : '16px'}]`} />
             {/* Navigation Section */}
-            <div className="space-y-2.5">
+            <div className="flex flex-col gap-2.5 sidebar-nav-container">
             {/* الصفحة الرئيسية */}
             <Link 
               href="/home" 

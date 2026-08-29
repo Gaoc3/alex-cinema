@@ -611,10 +611,18 @@ body.preload nav#navbar {
     pointer-events: auto !important;
   }
   
-  /* Precision alignment and center-locking for all icons ONLY when collapsed */
+  /* 1. Uniform 10px Mathematical Gap Container */
+  body.sidebar-collapsed:not(.sidebar-open) .sidebar-nav-container {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.625rem !important;
+    row-gap: 0.625rem !important;
+  }
+  
+  /* 2. Precision alignment and center-locking for all icons ONLY when collapsed */
   body.sidebar-collapsed:not(.sidebar-open) .sidebar-link-btn,
   body.sidebar-collapsed:not(.sidebar-open) .sidebar-submenu-container,
-  body.sidebar-collapsed:not(.sidebar-open) .sidebar-submenu-container > div {
+  body.sidebar-collapsed:not(.sidebar-open) .sidebar-submenu-container > div:first-child {
     width: 2.75rem !important;
     height: 2.75rem !important;
     min-width: 2.75rem !important;
@@ -622,7 +630,8 @@ body.preload nav#navbar {
     max-width: 2.75rem !important;
     max-height: 2.75rem !important;
     padding: 0 !important;
-    margin: 0 auto !important;
+    margin-inline: auto !important;
+    margin-block: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -653,6 +662,22 @@ body.preload nav#navbar {
 
   body.sidebar-collapsed:not(.sidebar-open) .sidebar-submenu-container button {
     display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  /* 3. Completely eliminate ghost submenus */
+  body.sidebar-collapsed:not(.sidebar-open) .sidebar-submenu,
+  body.sidebar-collapsed:not(.sidebar-open) .sidebar-submenu-container .sidebar-submenu,
+  body.sidebar-collapsed:not(.sidebar-open) .sidebar-submenu-container > div:nth-child(n+2) {
+    display: none !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
     visibility: hidden !important;
     pointer-events: none !important;
   }
