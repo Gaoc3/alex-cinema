@@ -269,14 +269,14 @@ export default function MyRoomsList() {
               className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0a0f1d] hover:border-red-500/50 hover:shadow-[0_12px_35px_rgba(229,9,20,0.25)] transition-all duration-300 hover:-translate-y-1 shadow-[0_6px_20px_rgba(0,0,0,0.6)]"
             >
               {/* Poster Area */}
-              <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#0a0f1d]">
+              <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#0a0f1d] isolate select-none">
                 <Link href={`/room/${room.id}`} className="block size-full">
                   {room.moviePoster ? (
                     <Image
                       src={getImageUrl(room.moviePoster, 'backdrop') || getImageUrl(room.moviePoster, 'poster') || '/icon.svg'}
                       alt={room.title}
                       fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500 will-change-transform"
                       unoptimized
                     />
                   ) : (
@@ -285,8 +285,9 @@ export default function MyRoomsList() {
                     </div>
                   )}
 
-                  {/* Smooth organic cinema gradient fading directly into card background */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] via-[#0a0f1d]/50 to-transparent pointer-events-none z-10" />
+                  {/* Double-layer impenetrable obsidian mask eradicating any hover seam */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] via-[#0a0f1d]/60 to-transparent pointer-events-none z-10" />
+                  <div className="absolute inset-x-0 bottom-0 h-4 bg-[#0a0f1d] pointer-events-none z-10" />
                 </Link>
 
                 {/* Top Badges (Interactive Status & Privacy) */}
@@ -333,8 +334,8 @@ export default function MyRoomsList() {
                 </div>
               </div>
 
-              {/* Card Details & Actions */}
-              <div className="flex flex-1 flex-col p-4 pt-1">
+              {/* Card Details & Actions - Physical Overlap eliminating any subpixel gap */}
+              <div className="flex flex-1 flex-col p-4 -mt-3 pt-3 relative z-20 bg-[#0a0f1d]">
                 <Link href={`/room/${room.id}`} className="block mb-3 group/title">
                   <h3 className="text-white font-black text-sm truncate group-hover/title:text-red-400 transition-colors">
                     {room.title}

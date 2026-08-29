@@ -345,14 +345,14 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                   className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0a0f1d] hover:border-red-500/50 hover:shadow-[0_12px_35px_rgba(229,9,20,0.25)] transition-all duration-300 hover:-translate-y-1 shadow-[0_6px_20px_rgba(0,0,0,0.6)]"
                 >
                   {/* Poster Area */}
-                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#0a0f1d]">
+                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#0a0f1d] isolate select-none">
                     <Link href={`/room/${room.id}`} className="block size-full">
                       {room.moviePoster ? (
                         <Image
                           src={getImageUrl(room.moviePoster, 'backdrop') || getImageUrl(room.moviePoster, 'poster') || '/icon.svg'}
                           alt={room.movieTitle || room.title}
                           fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform"
                           unoptimized
                         />
                       ) : (
@@ -360,8 +360,9 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                           <i className="fa-solid fa-film" aria-hidden="true" />
                         </div>
                       )}
-                      {/* Seamless organic gradient fading directly to card background */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] via-[#0a0f1d]/50 to-transparent pointer-events-none z-10" />
+                      {/* Double-layer impenetrable obsidian mask eradicating any hover seam */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] via-[#0a0f1d]/60 to-transparent pointer-events-none z-10" />
+                      <div className="absolute inset-x-0 bottom-0 h-4 bg-[#0a0f1d] pointer-events-none z-10" />
                     </Link>
 
                     {/* Live Badge */}
@@ -375,8 +376,8 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                     </div>
                   </div>
 
-                  {/* Room Details & Actions */}
-                  <div className="flex flex-1 flex-col p-4 pt-1">
+                  {/* Room Details & Actions - Physical Overlap eliminating any subpixel gap */}
+                  <div className="flex flex-1 flex-col p-4 -mt-3 pt-3 relative z-20 bg-[#0a0f1d]">
                     <Link href={`/room/${room.id}`} className="block mb-3 group/title">
                       <h3 className="text-base font-black text-white line-clamp-1 group-hover/title:text-red-400 transition-colors">
                         {room.title}
@@ -477,14 +478,14 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                   )}
 
                   {/* Poster Area */}
-                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#0a0f1d]">
+                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#0a0f1d] isolate select-none">
                     <Link href={`/room/${room.id}`} className="block size-full">
                       {room.moviePoster ? (
                         <Image
                           src={getImageUrl(room.moviePoster, 'backdrop') || getImageUrl(room.moviePoster, 'poster') || '/icon.svg'}
                           alt={room.movieTitle || room.title}
                           fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform"
                           unoptimized
                         />
                       ) : (
@@ -492,8 +493,9 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                           <i className="fa-solid fa-film" aria-hidden="true" />
                         </div>
                       )}
-                      {/* Seamless organic gradient fading directly to card background */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] via-[#0a0f1d]/50 to-transparent pointer-events-none z-10" />
+                      {/* Double-layer impenetrable obsidian mask eradicating any hover seam */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] via-[#0a0f1d]/60 to-transparent pointer-events-none z-10" />
+                      <div className="absolute inset-x-0 bottom-0 h-4 bg-[#0a0f1d] pointer-events-none z-10" />
                     </Link>
 
                     {/* Owner Badge */}
@@ -503,8 +505,8 @@ export default function RoomsListClient({ initialRooms, loadError }: RoomsListCl
                     </div>
                   </div>
 
-                  {/* Room Details & Actions */}
-                  <div className="flex flex-1 flex-col p-4 pt-1">
+                  {/* Room Details & Actions - Physical Overlap eliminating any subpixel gap */}
+                  <div className="flex flex-1 flex-col p-4 -mt-3 pt-3 relative z-20 bg-[#0a0f1d]">
                     <Link href={`/room/${room.id}`} className="block mb-3 group/title">
                       <h3 className="text-base font-black text-white line-clamp-1 group-hover/title:text-red-400 transition-colors">
                         {room.title}
