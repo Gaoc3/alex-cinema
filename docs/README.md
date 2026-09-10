@@ -1,34 +1,34 @@
-# 📚 مركز التوثيق الفني — AleX Cinema Technical Documentation
+# 📚 Technical Documentation Hub — AleX Cinema
 
-مرحباً بك في مركز التوثيق الفني لمنصة **AleX Cinema**. يحتوي هذا المجلد على الأدلة التشغيلية وخطط الاستعادة والنشر السحابي للمنظومة.
-
----
-
-## 📑 محتويات التوثيق (Documentation Index)
-
-| الوثيقة | المسار | الوصف والغرض |
-|:--------|:-------|:-------------|
-| 🐳 **دليل النشر عبر Docker** | [`DOCKER_DEPLOYMENT.md`](DOCKER_DEPLOYMENT.md) | الدليل الكامل لتشغيل ونشر كافة خدمات المنصة وحاوياتها وعقد الراوتر عبر Docker Compose. |
-| 🛡️ **خطة الطوارئ والاستعادة** | [`DISASTER_RECOVERY.md`](DISASTER_RECOVERY.md) | دليل العمليات عند انتهاء اشتراك السيرفر، فقد البيانات، أو استبدال الخوادم والراوترات. |
-| 🎨 **النظام التصميمي للواجهة** | [`../DESIGN.md`](../DESIGN.md) | معايير التصميم السينمائي الفاخر (Obsidian Theme)، الألوان، الخطوط، وقواعد الـ UI الصارمة. |
-| 🎯 **مواصفات ومتطلبات المنتج** | [`../PRODUCT.md`](../PRODUCT.md) | وثيقة أهداف المنصة، الجمهور المستهدف، الميزات الأساسية، ومبادئ العمل. |
-| 🧠 **ذاكرة المعمارية المركزية** | [`../PROJECT_MEMORY.md`](../PROJECT_MEMORY.md) | المرجع الشامل لجميع المنافذ، السيرفرات، شبكة الأنفاق، والمستودعات المترابطة. |
+Welcome to the **AleX Cinema** Technical Documentation Center. This directory provides operational runbooks, disaster recovery strategies, and cloud deployment guides for the platform ecosystem.
 
 ---
 
-## ⚡ أوامر سريعة (Quick Reference)
+## 📑 Documentation Index
 
-### النشر والتحديث (Docker Compose):
+| Document | Path | Scope & Purpose |
+|:---------|:-----|:----------------|
+| 🐳 **Docker Deployment Guide** | [`DOCKER_DEPLOYMENT.md`](DOCKER_DEPLOYMENT.md) | Comprehensive runbook for deploying all services, network containers, and router edges via Docker Compose. |
+| 🛡️ **Disaster Recovery Plan** | [`DISASTER_RECOVERY.md`](DISASTER_RECOVERY.md) | Standard Operating Procedures for VPS migration, data restoration, and failover management. |
+| 🎨 **UI Design System** | [`../DESIGN.md`](../DESIGN.md) | Obsidian cinema design tokens, color palette, typography hierarchy, and strict visual guidelines. |
+| 🎯 **Product Blueprint** | [`../PRODUCT.md`](../PRODUCT.md) | Platform goals, target demographics, key capabilities, and UX principles. |
+| 🧠 **Central Architecture Memory** | [`../PROJECT_MEMORY.md`](../PROJECT_MEMORY.md) | Definitive reference covering ports, services, hybrid tunnels, and ecosystem repositories. |
+
+---
+
+## ⚡ Quick Reference Commands
+
+### Deploy & Update Stack (Docker Compose):
 ```bash
 ./scripts/deploy-docker.sh
 ```
 
-### أخذ نسخة احتياطية من قاعدة البيانات:
+### Create Cryptographic Database Backup:
 ```bash
 ./scripts/backup-docker.sh
 ```
 
-### التحقق من صحة وجاهزية الخدمات:
+### Verify Service Health:
 ```bash
 ./scripts/verify-docker.sh
 ```

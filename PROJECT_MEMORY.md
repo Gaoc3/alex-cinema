@@ -1,128 +1,128 @@
-# 🧠 ذاكرة المشروع المركزية — ALE﻿X CINEMA MASTER ARCHITECTURE & MEMORY
+# 🧠 Central Project Memory — ALEX CINEMA MASTER ARCHITECTURE & MEMORY
 
-> **ملف المرجع الهندسي الشامل والنهائي لمنصة AleX Cinema والأنظمة المرتبطة بها.**
-> *تم إعداد هذا المستند ليكون الدليل الأساسي لأي مطور أو مساعد ذكاء اصطناعي يستأنف العمل على المشروع لضمان الحفاظ على المعمارية، الأمان، والتصميم القياسي.*
-
----
-
-## 📌 1. نظرة عامة على المنظومة (Ecosystem Overview)
-
-منصة **ALEX CINEMA** هي منصة سينمائية متطورة للمشاهدة الجماعية والفردية فائقة السرعة، متصلة بشبكة سحابية هجينة ومدمجة مع تطبيق تيليجرام (Telegram WebApp / Mini App)، مع خوادم بث مباشر وسيرفرات تزامن فوري وشبكة وكلاء (Proxies) متطورة لشبكة سينمانا/شبكتي.
-
-### شبكة المستودعات المترابطة (Repositories Map):
-1. **المستودع الرئيسي (Web + Sockets + Mini App):** [`Gaoc3/alex-cinema`](https://github.com/Gaoc3/alex-cinema) (الفرع الأساسي: `main`).
-2. **مستودع بوت التحميل والموسيقى (Mtsky-AI):** [`Gaoc3/AIBOT`](https://github.com/Gaoc3/AIBOT) (المجلد: `Mtsky-AI/`).
-3. **مستودع واجهة كلمات الأغاني (Lyrics API):** [`Gaoc3/Api-Lyrics`](https://github.com/Gaoc3/Api-Lyrics).
-
-### النطاقات وبيئة التشغيل:
-* **النطاق العام للإنتاج:** `https://cinax.live` و `https://www.cinax.live`
-* **نظام التشغيل المعتمد:** Ubuntu / Debian LTS (Linux)
-* **المسار الافتراضي على السيرفر:** `/root/alex-cinema` أو `/opt/alex-cinema`
+> **The comprehensive, definitive engineering reference for the AleX Cinema platform and its associated systems.**
+> *This document is designed to serve as the primary guide for any developer or AI assistant resuming work on the project to ensure architecture, security, and standard design specifications are rigorously maintained.*
 
 ---
 
-## 🏗️ 2. المعمارية السحابية والخدمات (Architecture & PM2 Processes)
+## 📌 1. Ecosystem Overview
 
-تدار خدمات المنصة إما عبر **Docker Compose** (النظام الموصى به) أو عبر **PM2**. فيما يلي جدول الخدمات الأساسية المعتمدة:
+The **ALEX CINEMA** platform is an advanced, ultra-fast cinematic streaming platform designed for both social group watching and individual viewing. It is connected to a hybrid cloud network and deeply integrated as a Telegram Mini App (Telegram WebApp), featuring live streaming servers, real-time synchronization servers, and a sophisticated proxy network for the Cinemana / Shabakaty network.
 
-| اسم الخدمة في PM2 | المنفذ / التقنية | المسار والملف الرئيسي | الوظيفة والدور الفني |
-|:------------------|:-----------------|:----------------------|:---------------------|
-| `cinemana` | Port `3000` (Next.js 16) | `/root/alex-cinema` | تطبيق الويب الرئيسي، واجهة المستخدم، و API Routes. |
-| `alex-socket` | Port `4000` (Socket.io) | `socket-server.js` | خادم الغرف الحية والمشاهدة التزامنية والدردشة الفورية. |
-| `alex-telegram-bot` | Python 3 + Telebot | `telegram_bot.py` | بوت تيليجرام الرسمي لتشغيل تطبيق الويب المصغر ومصادقة الحسابات. |
-| `alex-tunnel-watchdog`| Node.js Daemon (15s) | `tunnel_watchdog_vps.js` | مراقبة نفق شبكتي والتحقق الدوري من الاتصال السحابي. |
-| `lyrics-api` | Port `8000` (FastAPI/Flask) | `/root/lyrics_api` | خدمة جلب وتنسيق كلمات الأغاني المتزامنة. |
-| `yt-downloader-bot` | Python 3 + Pyrogram | `/root/AIBOT/Mtsky-AI` | بوت التحميل والذكاء الاصطناعي ورفع الملفات الضخمة عبر السيرفر المحلي. |
+### Repositories Map:
+1. **Core Repository (Web + Sockets + Mini App):** [`Gaoc3/alex-cinema`](https://github.com/Gaoc3/alex-cinema) (Primary branch: `main`).
+2. **Media Downloader & Music Bot (Mtsky-AI):** [`Gaoc3/AIBOT`](https://github.com/Gaoc3/AIBOT) (Directory: `Mtsky-AI/`).
+3. **Synchronized Lyrics API:** [`Gaoc3/Api-Lyrics`](https://github.com/Gaoc3/Api-Lyrics).
 
----
-
-## 🌐 3. شبكة الأنفاق وكسر الحظر الجغرافي (Shabakaty Reverse Tunnel & DNS)
-
-### آلية عمل النفق الهجين:
-1. **نفق SSH العكسي (Reverse SSH Tunnel):**
-   * يتم توجيه حركة المرور من راوتر أو جهاز لينكس داخل شبكة إيرثلنك (العراق) إلى خادم الـ VPS على المنفذ المحلي `8443` (`127.0.0.1:8443`).
-2. **اختطاف الـ DNS المحلي (`/etc/hosts`):**
-   * يتم توجيه كافة نطاقات `*.shabakaty.com` و `cinemana.shabakaty.com` و `cnth1..49` و `cndw1..49` في ملف `/etc/hosts` إلى `127.0.0.1`.
-3. **وسيط Nginx العكسي (`nginx_vps.conf`):**
-   * يستقبل طلبات `*.shabakaty.com` ويعيد توجيهها إلى `https://127.0.0.1:8443` مع تمرير ترويسات المصادقة (`Host`, `Referer`, `Bypass-Tunnel-Reminder`).
-   * يتعامل مع مسارات الفيديو `/tunnel/...` لتقديم كاش فائق السرعة وإعادة توجيه المسارات المباشرة.
-   * يوجه مسار `/socket.io/` إلى المنفذ `4000`، وباقي طلبات الموقع إلى تطبيق Next.js على المنفذ `3000`.
+### Domains & Runtime Environment:
+* **Production Public Domains:** `https://cinax.live` and `https://www.cinax.live`
+* **Supported Operating System:** Ubuntu / Debian LTS (Linux)
+* **Default Server Paths:** `/root/alex-cinema` or `/opt/alex-cinema`
 
 ---
 
-## 🤖 4. منظومة بوتات تيليجرام (Telegram Bots Ecosystem)
+## 🏗️ 2. Architecture & PM2 Processes
 
-### أ. بوت أليكس سينما الرسمي (`alex-telegram-bot`):
-* **الملف:** `telegram_bot.py` (يقرأ المتغيرات من `.env`).
-* **الميزات:**
-  * فتح المنصة فورياً كـ **Telegram Mini App** عبر زر `WebAppInfo(url="https://cinax.live/tg-app")`.
-  * استقبال أوامر البحث السريع، روابط مشاركة الغرف، ومزامنة هوية تيليجرام عبر `initData`.
-  * ترويسات أمان ومصادقة سحابية عبر `/api/auth/telegram`.
+Platform services are managed either via **Docker Compose** (recommended production setup) or via **PM2**. Below is the table of approved core services:
 
-### ب. بوت التحميل والموسيقى (`yt-downloader-bot` / Mtsky-AI):
-* **المستودع المستقل:** [`Gaoc3/AIBOT`](https://github.com/Gaoc3/AIBOT)
-* **المسار:** `/root/AIBOT/Mtsky-AI/main.py`
-* **الميزات:**
-  * يعتمد على سيرفر تيليجرام بوت محلي (`http://127.0.0.1:8081/bot{token}`) لتحميل ورفع ملفات ضخمة تصل إلى 2GB.
-  * تحميل الفيديوهات والصوتيات من YouTube بجودات متعددة، واستخراج الصوتيات، وجلب كلمات الأغاني.
+| PM2 Service Name | Port / Technology | Main Path & File | Function & Technical Role |
+|:-----------------|:------------------|:-----------------|:--------------------------|
+| `cinemana` | Port `3000` (Next.js 16) | `/root/alex-cinema` | Main web application, user interface, and API Routes. |
+| `alex-socket` | Port `4000` (Socket.io) | `socket-server.js` | Live rooms server, synchronized watch parties, and real-time chat. |
+| `alex-telegram-bot` | Python 3 + Telebot | `telegram_bot.py` | Official Telegram bot launching the Web Mini App and authenticating accounts. |
+| `alex-tunnel-watchdog` | Node.js Daemon (15s) | `tunnel_watchdog_vps.js` | Shabakaty tunnel health monitor and periodic cloud connection verifier. |
+| `lyrics-api` | Port `8000` (FastAPI/Flask) | `/root/lyrics_api` | Fetches, formats, and serves synchronized song lyrics. |
+| `yt-downloader-bot` | Python 3 + Pyrogram | `/root/AIBOT/Mtsky-AI` | Downloader & AI bot handling large file uploads via local server. |
 
 ---
 
-## 🎨 5. النظام التصميمي الصارم (Obsidian Cinema Design System)
+## 🌐 3. Shabakaty Reverse Tunnel & DNS (Bypassing Geo-Restrictions)
 
-تم بناء الواجهة وفق معايير بصرية صارمة ومحددة في وثيقة [`DESIGN.md`](DESIGN.md):
+### Hybrid Tunnel Mechanism:
+1. **Reverse SSH Tunnel:**
+   * Network traffic is routed from a router or Linux device inside the Earthlink network (Iraq) to the remote VPS server on local port `8443` (`127.0.0.1:8443`).
+2. **Local DNS Hijacking (`/etc/hosts`):**
+   * All domains matching `*.shabakaty.com`, `cinemana.shabakaty.com`, `cnth1..49`, and `cndw1..49` in `/etc/hosts` are pointed to `127.0.0.1`.
+3. **Nginx Reverse Proxy (`nginx_vps.conf`):**
+   * Receives `*.shabakaty.com` requests and proxies them to `https://127.0.0.1:8443` while passing required authentication headers (`Host`, `Referer`, `Bypass-Tunnel-Reminder`).
+   * Handles video paths `/tunnel/...` to provide high-speed caching and direct stream rewrites.
+   * Routes `/socket.io/` traffic to port `4000`, and all other web requests to Next.js on port `3000`.
 
-### الألوان الأساسية:
-* **خلفية الأوبسيديان العميقة (Deep Obsidian):** `#03060f` و `#070b13` و `#090e1d`.
-* **اللون التمييزي الأساسي (Ruby Red):** `#e50914` مع ظلال وتوهجات نيون قرمزي.
-* **الذهب والعنبر (Gold Stars):** `#fbbf24` / `#f59e0b`.
-* **الخطوط الرسمية:** خط `Cairo` العربي، وخط `SF Pro / Outfit` للأرقام واللغة الإنجليزية.
+---
 
-### القواعد الهندسية الصارمة (Strict UI Laws):
-1. **القضاء التام على خطوط ولحامات الهوفر (Zero Hover Seam Law):**
-   * يمنع ظهور أي خط لوني أو تسريب ضوء أسفل البوسترات أو الكروت أثناء التكبير (Hover).
-   * يتم تطبيق قناع أوبسيدياني مزدوج:
+## 🤖 4. Telegram Bots Ecosystem
+
+### A. Official AleX Cinema Bot (`alex-telegram-bot`):
+* **File:** `telegram_bot.py` (reads environment variables from `.env`).
+* **Features:**
+  * Launches the platform instantly as a **Telegram Mini App** via the `WebAppInfo(url="https://cinax.live/tg-app")` button.
+  * Handles instant search commands, room sharing links, and user identity synchronization via `initData`.
+  * Security headers and cloud verification via `/api/auth/telegram`.
+
+### B. Media Downloader & Music Bot (`yt-downloader-bot` / Mtsky-AI):
+* **Standalone Repository:** [`Gaoc3/AIBOT`](https://github.com/Gaoc3/AIBOT)
+* **Path:** `/root/AIBOT/Mtsky-AI/main.py`
+* **Features:**
+  * Relies on a local Telegram Bot API server (`http://127.0.0.1:8081/bot{token}`) to upload and download large files up to 2GB.
+  * Downloads video and audio from YouTube in multiple qualities, extracts audio streams, and retrieves synced lyrics.
+
+---
+
+## 🎨 5. Obsidian Cinema Design System
+
+The user interface is engineered adhering strictly to the visual specifications defined in [`DESIGN.md`](DESIGN.md):
+
+### Core Color Palette:
+* **Deep Obsidian Background:** `#03060f`, `#070b13`, and `#090e1d`.
+* **Primary Ruby Crimson Accent:** `#e50914` with vivid neon crimson glows and soft shadows.
+* **Gold & Amber Stars:** `#fbbf24` / `#f59e0b`.
+* **Typography:** `Cairo` for Arabic typography, and `SF Pro / Outfit` for numerical and English typography.
+
+### Strict UI Laws:
+1. **Zero Hover Seam Law:**
+   * Absolutely no color lines, borders, or light leakage may appear below poster cards during hover/scale states.
+   * Enforced via a dual obsidian mask:
      ```tsx
      <div className="absolute inset-0 bg-gradient-to-t from-[#070b13] via-[#070b13]/40 to-transparent pointer-events-none z-10" />
      <div className="absolute inset-x-0 bottom-0 h-3 bg-[#070b13] pointer-events-none z-10" />
      ```
-2. **السايدبار المصغر المتطابق رياضياً (Collapsed Sidebar 80px):**
-   * أبعاد كل زر وأيقونة موحدة: `44px × 44px` (`width: 2.75rem; height: 2.75rem;`).
-   * التباعد الرأسي بين كل أيقونة والتي تليها: **10px بالضبط** (`gap: 0.625rem !important`).
-   * القوائم الفرعية المخفية تعدم تماماً في السايدبار المصغر: `display: none !important; height: 0 !important;`.
-3. **شريط مواسم المسلسلات (Series Navigator):**
-   * الترويسة والشارات في صف علوي مستقل تماماً لمنع أي تزاحم بصري.
-   * شريط أزرار المواسم في مسار سفلي زجاجي مخصص بعرض كامل مع إخفاء شريط التمرير (`hide-scrollbar`).
+2. **Mathematically Aligned Collapsed Sidebar (80px):**
+   * Uniform button and icon dimensions: `44px × 44px` (`width: 2.75rem; height: 2.75rem;`).
+   * Vertical spacing between adjacent icons: **Exactly 10px** (`gap: 0.625rem !important`).
+   * Hidden submenus are completely obliterated in collapsed mode: `display: none !important; height: 0 !important;`.
+3. **Series Navigator Bar:**
+   * Header title and episode count badges occupy a completely independent top row to prevent visual clutter.
+   * Season selector buttons sit on a dedicated, full-width frosted glass bottom track with scrollbars hidden (`hide-scrollbar`).
 
 ---
 
-## 🔒 6. إدارة الصور والوسائط (Media & Image Proxy)
+## 🔒 6. Media & Image Proxy Management
 
-* **مسار البروكسي الداخلي:** `/api/img?type=poster&file=FILENAME`
-* **عقد الـ CDN المدعومة تلقائياً مع نظام التحويل التلقائي (Failover):**
+* **Internal Proxy Path:** `/api/img?type=poster&file=FILENAME`
+* **Supported CDN Nodes with Automatic Failover:**
   * `cnth2.shabakaty.com`
   * `cnth1.shabakaty.com`
   * `cndw2.shabakaty.com`
   * `cndw1.shabakaty.com`
   * `cinemana.shabakaty.com`
   * `cdn.shabakaty.com`
-* **تفريغ كاش الصور:** يتم تحديث رقم الإصدار `IMAGE_CACHE_VERSION` في `src/utils/imageHelper.ts` عند إجراء تعديلات بصرية جذرية.
+* **Image Cache Busting:** Update the `IMAGE_CACHE_VERSION` string in `src/utils/imageHelper.ts` whenever radical visual redesigns or cache flushes are required.
 
 ---
 
-## 🚀 7. إجراءات البناء والنشر والاستعادة (Deployment & Build Runbook)
+## 🚀 7. Deployment & Build Runbook
 
-### أ. التحقق من البناء محلياً:
+### A. Verify Local Build:
 ```bash
 npm run build
 ```
 
-### ب. النشر عبر Docker Compose (الإنتاج الحديث):
+### B. Modern Production Deployment (Docker Compose):
 ```bash
 ./scripts/deploy-docker.sh
 ```
 
-### ج. النشر التحديثي عبر PM2 (الإنتاج التقليدي):
+### C. Traditional Production Deployment (PM2):
 ```bash
 git pull origin main
 npm ci
@@ -135,9 +135,9 @@ pm2 save
 
 ---
 
-## 💡 8. تعليمات لأي مساعد ذكاء اصطناعي مستقبلي (Instructions for Future AI)
+## 💡 8. Instructions for Future AI Assistants
 
-1. **اقرأ هذا الملف أولاً (`PROJECT_MEMORY.md`)** فور بدء أي جلسة عمل جديدة لاستعادة السياق الكامل للمعمارية.
-2. **حافظ دائماً على هوية التصميم السينمائي الفاخر (Obsidian Red Luxury Theme)** ولا تقم بإدخال خلفيات رمادية أو ألوان تشوه التباين.
-3. **لا تقم بحفظ أو تضمين كلمات سر أو مفاتيح حقيقية** داخل ملفات المستودع أو ملفات الماركداون.
-4. **تأكد دائماً بعد أي تعديل** من خلو الكود من أخطاء الـ TypeScript وتطابق مسارات Next.js 16 قبل رفع التحديثات.
+1. **Read this file first (`PROJECT_MEMORY.md`)** immediately at the start of any new session to restore full architectural context.
+2. **Always preserve the luxury cinematic design identity (Obsidian Red Luxury Theme)**; never introduce washed-out grays or low-contrast backgrounds.
+3. **Never commit or include real credentials, passwords, or secrets** inside repository files or markdown documents.
+4. **Always verify after changes** that the codebase compiles cleanly without TypeScript errors and matches Next.js 16 route requirements before pushing updates.

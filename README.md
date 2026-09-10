@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🎬 AleX Cinema | أليكس سينما
-### المنصة السينمائية المتطورة للمشاهدة الفردية والجماعية التزامنية
-**The Next-Generation Social Streaming Platform & Watch Party Ecosystem**
+# 🎬 AleX Cinema
+### The Next-Generation Social Streaming Platform & Synchronized Watch Party Ecosystem
+**High-performance cinema streaming, real-time social watching, and native Telegram Mini App integration**
 
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.0-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![React 19](https://img.shields.io/badge/React-19.0-blue?style=for-the-badge&logo=react)](https://react.dev/)
@@ -13,44 +13,44 @@
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/)
 [![Telegram Mini App](https://img.shields.io/badge/Telegram-Mini_App-26A5E4?style=for-the-badge&logo=telegram)](https://telegram.org/)
 
-[الموقع الرسمي (Live)](https://cinax.live) • [التوثيق البرمجي (Docs)](docs/) • [خطة الطوارئ والاستعادة](docs/DISASTER_RECOVERY.md) • [نظام التصميم](DESIGN.md)
+[Official Website (Live)](https://cinax.live) • [Documentation (Docs)](docs/) • [Disaster Recovery Plan](docs/DISASTER_RECOVERY.md) • [Design System](DESIGN.md)
 
 </div>
 
 ---
 
-## 📖 نظرة عامة (Overview)
+## 📖 Overview
 
-منصة **AleX Cinema** هي منظومة ترفيهية سينمائية متكاملة مصممة لتقديم تجربة مشاهدة فائقة السرعة وعالية الدقة للأفلام والمسلسلات، مع دعم استثنائي للمشاهدة الجماعية التزامنية في الوقت الفعلي (**Synchronized Watch Parties**) والتكامل العميق كتطبيق مصغر داخل تيليجرام (**Telegram Mini App**).
+**AleX Cinema** is an enterprise-grade, theater-quality entertainment platform engineered for lightning-fast, high-definition streaming of films and series. It provides first-class support for **real-time synchronized watch parties** and deep native integration as a **Telegram Mini App**.
 
-تتميز المنصة بتصميمها السينمائي الفاخر المستوحى من حجر الأوبسيديان والنيون القرمزي (**Obsidian Luxury Red**)، وتعتمد على خوادم وسيطة وأنفاق اتصال سحابية متطورة لتقديم تدفقات وسائط مستقرة وخالية من الانقطاع.
-
----
-
-## ✨ أبرز المميزات (Key Features)
-
-### 👥 1. غرف المشاهدة الجماعية الحية (Synchronized Watch Party)
-* **تزامن فوري فائق الدقة (Zero-Lag Sync):** مزامنة لحظية للتشغيل، الإيقاف، التقديم، والترجيع بين كافة المشاهدين عبر WebSockets و Socket.io.
-* **دردشة تفاعلية مدمجة:** نظام دردشة حية مع تفاعلات الإيموجي العائمة، الردود، وشارات المشرفين والضيوف.
-* **إدارة الغرف:** إمكانية إنشاء غرف عامة أو خاصة برمز سري، ونقل التحكم بين المشرفين.
-
-### 📱 2. تكامل أصيل مع تيليجرام (Telegram Mini App Ecosystem)
-* تشغيل فوري وسلس كـ **Telegram WebApp** داخل التطبيق بدون الحاجة لمتصفح خارجي.
-* مصادقة موحدة وتلقائية عبر `Telegram WebApp InitData` مع نظام جلسات مشفر.
-* بوت تيليجرام ذكي لاستقبال أوامر البحث، مشاركة روابط الغرف، وبث المحتوى.
-
-### 🎥 3. مشغل سينمائي متقدم (AlexPlayer Engine)
-* مشغل فيديو مخصص يدعم جودات متعددة، تخطي شارة البداية، وتعديل سرعة البث.
-* دعم متعدد للترجمات والصوتيات مع مظهر داكن أنيق يمنع التشتت البصري.
-* التبديل التلقائي الذكي بين مصادر البث الاحتياطية (Failover Streaming).
-
-### 🌐 4. معمارية الأنفاق وكسر الحظر الجغرافي (Hybrid Reverse Tunnel)
-* وسيط Nginx متطور لإعادة توجيه وكاش الوسائط والصور عبر شبكات CDN متعددة.
-* نظام مراقبة دوري (Watchdog) للتحقق الدائم من جودة واتصال نفق الوسائط.
+Featuring a luxury dark cinematic design system (**Obsidian Luxury Red**), the platform leverages hybrid cloud reverse tunnels, edge caching proxies, and multi-CDN failover networks to deliver ultra-stable, zero-buffering media streams across distributed networks.
 
 ---
 
-## 🏗️ المعمارية التقنية (Architecture & Tech Stack)
+## ✨ Key Features
+
+### 👥 1. Synchronized Watch Parties
+* **Zero-Lag Real-Time Sync:** Frame-accurate synchronization for playback, pausing, seeking, and episode transitions across all room participants via WebSockets and Socket.io.
+* **Integrated Interactive Chat:** Live room chat featuring floating animated emoji reactions, replies, and distinctive roles for hosts, moderators, and viewers.
+* **Granular Room Administration:** Create public lobbies or passcode-protected private screening rooms with dynamic host-to-moderator permission delegation.
+
+### 📱 2. Native Telegram Mini App Ecosystem
+* Instant, seamless launch directly as a **Telegram WebApp** inside chat threads without external browser redirects.
+* Unified zero-click authentication utilizing cryptographic `Telegram WebApp InitData` session verification.
+* Intelligent companion Telegram bot for instant media search, room invitation sharing, and content broadcasting.
+
+### 🎥 3. Advanced AlexPlayer Engine
+* Custom-built HLS video player supporting adaptive multi-bitrate streaming, auto skip-intro, and variable playback speeds.
+* Multi-track audio and subtitle support wrapped in a distraction-free dark theater frame.
+* Intelligent automatic failover switching across redundant upstream streaming endpoints.
+
+### 🌐 4. Hybrid Reverse Tunnel Architecture
+* Nginx edge reverse proxy handling dynamic stream routing, URL rewriting, and caching across multiple CDN nodes.
+* Dedicated daemon watchdog ensuring 24/7 tunnel health, connection monitoring, and automatic failover.
+
+---
+
+## 🏗️ Architecture & Tech Stack
 
 ```mermaid
 graph TD
@@ -71,103 +71,103 @@ graph TD
     TgBot --> NextApp
 ```
 
-| المكون | التقنية المستخدمة | الدور والوظيفة |
-|:-------|:------------------|:---------------|
-| **Frontend & API** | Next.js 16 (React 19, TypeScript) | الواجهة السينمائية، صفحات التصفح، وواجهات البرمجة الخلفية. |
-| **Styling** | TailwindCSS + Obsidian Design System | تصميم داكن فاخر مع هوية بصرية مريحة للعين وخالية من تسريب الضوء. |
-| **Realtime Sync** | Node.js + Socket.io | خادم التزامن اللحظي للغرف والدردشة المباشرة. |
-| **Database & ORM** | PostgreSQL + Prisma ORM | حفظ بيانات الحسابات، الغرف، الرسائل، والمفضلات. |
-| **Authentication** | Clerk Auth + Telegram WebApp Auth | مصادقة آمنة ثنائية تدعم المتصفحات الرسمية وحسابات تيليجرام. |
-| **Bots & Tools** | Python 3 (Telebot / Pyrogram) | بوت المنصة الرسمي وبوت التحميل والموسيقى المساعد. |
-| **Containerization** | Docker & Docker Compose | إدارة الحاويات، عزل الخدمات، وسهولة النقل والاستعادة. |
+| Component | Technology | Role & Function |
+|:----------|:-----------|:----------------|
+| **Frontend & API** | Next.js 16 (React 19, TypeScript) | Cinematic user interface, catalog browsing, and backend API routes. |
+| **Styling** | TailwindCSS + Obsidian Design System | Luxury dark theme with high-contrast obsidian depth and crimson neon glows. |
+| **Realtime Sync** | Node.js + Socket.io | Ultra-low latency rooms server for synchronous playback and live chat. |
+| **Database & ORM** | PostgreSQL + Prisma ORM | Persistent storage for accounts, watch party rooms, messages, and bookmarks. |
+| **Authentication** | Clerk Auth + Telegram WebApp Auth | Secure dual authentication supporting modern web browsers and Telegram sessions. |
+| **Bots & Automation** | Python 3 (Telebot / Pyrogram) | Official Telegram companion bot and automated media ingestion tooling. |
+| **Containerization** | Docker & Docker Compose | Containerized service isolation, environment consistency, and one-command deployment. |
 
 ---
 
-## 📁 هيكل المشروع (Project Structure)
+## 📁 Project Structure
 
 ```text
 alex-cinema/
-├── docs/                       # التوثيق الفني وأدلة التشغيل والاستعادة
-│   ├── DISASTER_RECOVERY.md    # خطة الاستعادة والنقل في حالات الطوارئ
-│   └── DOCKER_DEPLOYMENT.md    # دليل النشر والتوزيع عبر Docker
-├── docker/                     # ملفات تكوين الحاويات والشبكات
-│   ├── caddy/                  # إعدادات خادم Caddy للتشفير التلقائي
-│   ├── nginx/                  # وسيط التوجيه وكاش الوسائط
-│   ├── postgres/               # نصوص النسخ الاحتياطي والاستعادة
-│   └── tunnel-sshd/            # خادم نفق الـ SSH العكسي
-├── prisma/                     # مخططات قاعدة البيانات ومسارات الترحيل
-│   ├── schema.prisma           # مخطط الجداول والعلاقات (Prisma Schema)
-│   └── migrations/             # سجل الترحيلات التاريخية
-├── public/                     # الملفات الثابتة، الشعارات، والأيقونات
-├── scripts/                    # أدوات الأتمتة، النسخ الاحتياطي، والنشر
-│   ├── backup-docker.sh        # سكريبت أخذ نسخة احتياطية من قاعدة البيانات
-│   ├── deploy-docker.sh        # سكريبت النشر الآمن للحاويات
-│   └── generate_bot_cover.js   # أداة توليد غلاف بوت التيليجرام
-├── src/                        # الكود المصدري للتطبيق
-│   ├── app/                    # مسارات Next.js App Router و API Routes
-│   │   ├── api/                # واجهات البرمجة (auth, rooms, img, proxy)
-│   │   ├── movies/             # متصفح الأفلام
-│   │   ├── series/             # متصفح المسلسلات والمواسم
-│   │   └── room/               # واجهة غرف المشاهدة الجماعية
-│   ├── components/             # مكونات الواجهة القابلة لإعادة الاستخدام
-│   │   ├── player/             # مشغل AlexPlayer المتطور
-│   │   ├── room/               # عناصر الدردشة والتحكم في الغرفة
-│   │   └── telegram/           # مكونات تطبيق تيليجرام المصغر
-│   └── lib/                    # المكتبات المساعدة، دوال التشفير، والمصادقة
-├── socket-server.js            # خادم السوكيت المستقل للمشاهدة الحية
-├── telegram_bot.py             # بوت التيليجرام الرسمي للمنصة
-├── tunnel_watchdog_vps.js      # مراقب استقرار نفق الوسائط
-├── compose.yaml                # تكوين خدمات الإنتاج عبر Docker Compose
-├── DESIGN.md                   # دليل المعايير التصميمية الصارمة (Design System)
-├── PRODUCT.md                  # وثيقة متطلبات المنتج وأهدافه
-└── PROJECT_MEMORY.md           # ملف الذاكرة المركزية والهندسة المعمارية
+├── docs/                       # Technical documentation, deployment, and recovery guides
+│   ├── DISASTER_RECOVERY.md    # Disaster recovery and server migration runbook
+│   └── DOCKER_DEPLOYMENT.md    # Production deployment guide via Docker Compose
+├── docker/                     # Container configuration and reverse proxy setups
+│   ├── caddy/                  # Caddy configuration for automatic TLS termination
+│   ├── nginx/                  # Media cache and reverse proxy rules
+│   ├── postgres/               # Database backup and restoration routines
+│   └── tunnel-sshd/            # Restricted reverse SSH tunnel daemon
+├── prisma/                     # Database schema definitions and migration history
+│   ├── schema.prisma           # Prisma schema with relational models
+│   └── migrations/             # Timestamped SQL migration files
+├── public/                     # Static assets, branding logos, and icons
+├── scripts/                    # Automation scripts for deployment and maintenance
+│   ├── backup-docker.sh        # Automated database backup and SHA-256 validation
+│   ├── deploy-docker.sh        # Safe zero-downtime containerized deployment script
+│   └── generate_bot_cover.js   # Dynamic Telegram bot branding generator
+├── src/                        # Main application source code
+│   ├── app/                    # Next.js App Router pages and API routes
+│   │   ├── api/                # Backend endpoints (auth, rooms, img proxy, etc.)
+│   │   ├── movies/             # Movie catalog and detail view routes
+│   │   ├── series/             # TV series and season navigation routes
+│   │   └── room/               # Real-time watch party room interface
+│   ├── components/             # Reusable UI component library
+│   │   ├── player/             # Custom AlexPlayer video engine
+│   │   ├── room/               # Watch party controls, participant lists, and chat
+│   │   └── telegram/           # Native Telegram Mini App bridge components
+│   └── lib/                    # Shared utilities, crypto helpers, and auth clients
+├── socket-server.js            # Standalone Socket.io real-time synchronization server
+├── telegram_bot.py             # Official Telegram companion bot
+├── tunnel_watchdog_vps.js      # Media tunnel stability and watchdog monitor
+├── compose.yaml                # Multi-container production Docker Compose definition
+├── DESIGN.md                   # Strict visual guidelines and design tokens
+├── PRODUCT.md                  # Product specifications and feature requirements
+└── PROJECT_MEMORY.md           # Core architectural memory and engineering reference
 ```
 
 ---
 
-## 🚀 البدء والتشغيل (Getting Started)
+## 🚀 Getting Started
 
-### متطلبات التشغيل الأساسية:
-* **Node.js:** الإصدار 18 أو أحدث (يوصى بـ Node 20/22).
-* **Python:** الإصدار 3.10 أو أحدث (لتشغيل البوت).
-* **PostgreSQL:** الإصدار 15 أو أحدث.
-* **Docker & Docker Compose:** (في حال التشغيل عبر الحاويات).
+### Prerequisites:
+* **Node.js:** v18.0 or newer (v20 / v22 recommended).
+* **Python:** v3.10 or newer (for companion bot).
+* **PostgreSQL:** v15 or newer.
+* **Docker & Docker Compose:** (for containerized setup).
 
-### 💻 التشغيل المحلي للتطوير (Local Development):
+### 💻 Local Development Setup:
 
-1. **استنساخ المستودع:**
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/Gaoc3/alex-cinema.git
    cd alex-cinema
    ```
 
-2. **تثبيت الحزم البرمجية:**
+2. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. **إعداد متغيرات البيئة:**
+3. **Configure environment variables:**
    ```bash
    cp .env.example .env
-   # قم بتعديل قيم .env ببيانات قاعدة البيانات ومفاتيح المصادقة الخاصة بك
+   # Edit .env with your database URL, Clerk keys, and secret tokens
    ```
 
-4. **تجهيز وترحيل قاعدة البيانات:**
+4. **Initialize database schema:**
    ```bash
    npx prisma generate
    npx prisma migrate deploy
    ```
 
-5. **بدء بيئة التطوير:**
-   * تشغيل تطبيق الويب:
+5. **Start development services:**
+   * Start web application:
      ```bash
      npm run dev
      ```
-   * تشغيل خادم السوكيت التزامني (في نافذة أخرى):
+   * Start real-time socket server (in a separate terminal):
      ```bash
      node socket-server.js
      ```
-   * تشغيل بوت التيليجرام (اختياري):
+   * Start Telegram companion bot (optional):
      ```bash
      pip install -r requirements-bot.txt
      python telegram_bot.py
@@ -175,26 +175,26 @@ alex-cinema/
 
 ---
 
-## 🐳 النشر السحابي بالإنتاج (Production Deployment)
+## 🐳 Production Deployment
 
-### الخيار الأول: النشر عبر Docker Compose (الموصى به)
-توفر المنصة حزمة Compose متكاملة تعزل كل خدمة في حاوية خاصة مع نسخ احتياطي وتشفير تلقائي:
+### Option 1: Docker Compose (Recommended)
+The platform includes an automated Compose stack isolating each service with health checks, automated backups, and SSL management:
 
 ```bash
-# 1. إعداد البيئة والحاويات
+# 1. Prepare host environment
 sudo ./scripts/install-docker-debian.sh
 ./scripts/prepare-docker.sh
 
-# 2. تعديل ملف المتغيرات
+# 2. Configure environment variables
 nano .env.docker
 
-# 3. إطلاق المنظومة بالكامل
+# 3. Launch full stack
 ./scripts/deploy-docker.sh
 ```
 
-للمزيد من تفاصيل النشر والربط بالراوتر، راجع [دليل النشر عبر Docker](docs/DOCKER_DEPLOYMENT.md).
+For advanced edge routing and router setup, consult the [Docker Deployment Guide](docs/DOCKER_DEPLOYMENT.md).
 
-### الخيار الثاني: النشر اليدوي عبر PM2
+### Option 2: Traditional Host Deployment (PM2)
 ```bash
 npm run build
 pm2 start socket-server.js --name alex-socket
@@ -205,13 +205,15 @@ pm2 save
 
 ---
 
-## 🛡️ الأمان والخصوصية (Security & Privacy)
+## 🛡️ Security & Privacy
 
-* **عزل الأسرار:** لا يتم حفظ أو رفع أي مفاتيح تشفير أو كلمات سر حقيقية داخل المستودع.
-* **حماية التوكنات:** توكنات الغرف والسوكيت مؤقتة ومحدودة الصلاحية (`SOCKET_AUTH_SECRET`).
-* **النسخ الاحتياطي الدوري:** سكريبتات دورية لإنشاء نسخ مشفرة لقاعدة البيانات والتحقق من بصمة التشفير `SHA-256`.
+* **Zero Secret Leakage:** No private keys, credentials, or production tokens are committed to source control.
+* **Ephemeral Tokens:** Watch party sessions and socket connections are secured with time-limited JWTs (`SOCKET_AUTH_SECRET`).
+* **Automated Backup & Verification:** Automated database backups with cryptographic `SHA-256` checksum verification.
 
-## 👨‍💻 المطور والمهندس المسؤول (Author & Lead Architect)
+---
+
+## 👨‍💻 Author & Lead Architect
 
 * **Hussain Ibrahim Ahmed (Gaoc3)**  
   *Systems & Backend Software Engineer | Distributed Infrastructure & DevOps*  
@@ -219,5 +221,6 @@ pm2 save
 
 ---
 
-## 📄 الترخيص (License)
-جميع الحقوق محفوظة لمنصة **AleX Cinema** © 2026.
+## 📄 License
+
+All rights reserved to **AleX Cinema** © 2026.

@@ -1,58 +1,58 @@
-# 🎬 وثيقة المنتج — AleX Cinema Product Blueprint
+# 🎬 Product Blueprint — AleX Cinema
 
 ---
 
-## 🎯 1. هوية المنتج والمستخدمون المستهدفون (Platform & Audience)
+## 🎯 1. Platform Identity & Target Audience
 
-### المنصة المستهدفة:
-* متصفحات الويب الحديثة (Desktop / Laptop / Mobile).
-* تطبيق تيليجرام المصغر (**Telegram Mini App**) مع تجربة مستخدم كاملة مدمجة داخل التطبيق.
+### Target Platform:
+* Modern Desktop, Laptop, and Mobile web browsers.
+* Seamless native **Telegram Mini App** embedded directly within Telegram client applications.
 
-### شريحة المستخدمين:
-* **عشاق السينما والمحتوى العربي والعالمي:** الباحثون عن تجربة مشاهدة سينمائية فاخرة وسريعة بدون إعلانات مزعجة أو تعقيد.
-* **مجموعات الأصدقاء والعائلات:** رواد غرف المشاهدة الجماعية المتزامنة (**Watch Parties**) الذين يشاركون التفاعل اللحظي والدردشة والرياكشنات أثناء متابعة العروض.
-
----
-
-## 💡 2. الغاية من المنتج (Product Purpose & Value Proposition)
-
-تقديم منصة بث وترفيه سينمائي متكاملة تجمع بين:
-1. **المشاهدة الفردية السلسة:** مكتبة ضخمة مصنفة بعناية مع مشغل وسائط فائق السرعة يدعم الجودات المتعددة والترجمات.
-2. **المشاهدة الاجتماعية التفاعلية:** غرف مشاهدة حية متزامنة لحظياً (Zero-Lag WebSockets) تتيح للأصدقاء الاستمتاع معاً كأنهم في صالة سينما حقيقية.
-3. **التكامل الفوري مع تيليجرام:** إمكانية الدخول ومشاهدة أي فيلم أو مسلسل بضغطة زر واحدة داخل محادثات تيليجرام.
+### Target Audience:
+* **Film & Series Enthusiasts:** Viewers seeking a high-definition, ad-free, theater-grade streaming experience with instant loading times.
+* **Friends & Family Communities:** Groups participating in real-time **Synchronized Watch Parties** with live chat, floating reactions, and shared viewing controls.
 
 ---
 
-## ⚡ 3. القدرات والميزات الأساسية (Core Capabilities)
+## 💡 2. Product Purpose & Value Proposition
 
-* **غرف المشاهدة التزامنية (Alex Watch Party):**
-  * تزامن لحظي بين كافة الحاضرين في (التشغيل، الإيقاف، التقديم، الترجيع، واختيار الحلقات).
-  * نظام أدوار محكم (صاحب الغرفة 👑، المشرفون 🛡️، والمشاهدون 👤).
-  * دردشة تفاعلية مدمجة مع شريط تفاعلات إيموجي عائمة.
-* **مشغل الوسائط المتقدم (AlexPlayer):**
-  * محرك تشغيل HLS متكيف مع سرعة الاتصال.
-  * دعم الترجمات المتعددة، تعديل سرعة التشغيل، وتخطي المقدمة (Skip Intro).
-* **نظام المصادقة الموحد (Unified Authentication):**
-  * تسجيل دخول عبر البريد أو منصات التواصل عبر Clerk.
-  * مصادقة تلقائية فورية لمستخدمي تيليجرام عبر `initData`.
-* **شبكة الأنفاق الهجينة (Failover CDN Tunnel):**
-  * كسر الحظر الجغرافي وتوفير سرعات تحميل قصوى عبر عقد كاش متعددة.
+AleX Cinema delivers a unified, premium entertainment ecosystem combining:
+1. **Frictionless Individual Viewing:** An extensive, meticulously curated catalog backed by an ultra-fast HLS media player supporting adaptive bitrates and multi-track subtitles.
+2. **Interactive Social Watching:** Zero-lag synchronized watch party rooms (via WebSockets) recreating an authentic theater screening experience with friends online.
+3. **Instant Telegram Mini App Access:** One-click launch from any Telegram conversation or group with seamless identity synchronization.
 
 ---
 
-## 💎 4. مبادئ المنتج الصارمة (Product Principles)
+## ⚡ 3. Core Capabilities
 
-1. **الهوية السينمائية الفاخرة (Luxury Cinema First):**
-   كل شاشة وعنصر تحكم وبوستر مصمم وفق ألوان الأوبسيديان والنيون القرمزي لتقديم إحساس صالة العرض الخاصة.
-2. **المزامنة اللحظية الحقيقية (True Zero-Lag Sync):**
-   تجربة المشاهدة الجماعية يجب ألا تتأثر باختلاف سرعات الأجهزة؛ خادم السوكيت يضمن تزامن الثواني والإطارات.
-3. **السهولة والوصول المباشر (Frictionless Experience):**
-   الوصول للمحتوى وبدء المشاهدة بدون أي خطوات إضافية أو انتظار.
+* **Synchronized Watch Parties (Alex Watch Party):**
+  * Frame-level synchronization across all viewers for play, pause, seek, and episode selection.
+  * Role hierarchy system: Room Host 👑, Moderators 🛡️, and Viewers 👤.
+  * Built-in interactive chat with floating emoji reaction bursts.
+* **Advanced Media Engine (AlexPlayer):**
+  * Adaptive bitrate HLS streaming tailored to network conditions.
+  * Multi-language audio and subtitle support, variable playback speeds, and intro skipping.
+* **Unified Authentication:**
+  * Secure email and OAuth login via Clerk.
+  * Frictionless cryptographic validation for Telegram users via `initData`.
+* **Hybrid Tunnel & Multi-CDN Proxy:**
+  * Bypasses geographic restrictions and delivers maximum streaming bandwidth via distributed edge caching nodes.
 
 ---
 
-## ♿ 5. سهولة الوصول والتوافق (Accessibility & Inclusion)
+## 💎 4. Product Principles
 
-* دعم كامل للغة العربية واتجاه الكتابة من اليمين إلى اليسار (**RTL**).
-* تباين لوني عالي ودقيق بين النصوص وعناصر التحكم يضمن القراءة المريحة في البيئة المظلمة.
-* تجربة متجاوبة بالكامل تتكيف بسلاسة بين شاشات الهواتف، الأجهزة اللوحية، والشاشات العريضة.
+1. **Luxury Cinema First:**
+   Every interface element, backdrop, card, and trigger is styled using deep obsidian blacks and crimson neon glows to produce an exclusive theater atmosphere.
+2. **True Zero-Lag Synchronization:**
+   Social watching must never suffer from client clock drift or desynchronization; the socket server maintains sub-second temporal alignment.
+3. **Frictionless Access:**
+   Immediate catalog access, rapid streaming startup, and zero unnecessary hurdles between discovery and playback.
+
+---
+
+## ♿ 5. Accessibility & Inclusion
+
+* Full RTL (Right-to-Left) layout support for Arabic alongside standard LTR for English.
+* High color contrast ratios between typographic elements and dark obsidian surfaces for comfortable viewing in dark environments.
+* Fully responsive layout adapting smoothly from mobile devices to ultra-wide desktop monitors.

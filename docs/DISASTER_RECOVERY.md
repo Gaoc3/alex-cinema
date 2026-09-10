@@ -1,18 +1,18 @@
-# خطة الاستعادة والترحيل
+# 🛡️ Disaster Recovery & Server Migration Runbook
 
-هذا المستند هو قائمة تنفيذ عند فقد الخادم، انتهاء الاشتراك، أو استبدال الراوتر.
+This document serves as the operational execution checklist in the event of VPS failure, host termination, or router/edge hardware replacement.
 
-## الهدف التشغيلي
+## 🎯 Operational Recovery Objectives
 
-- هدف فقد البيانات يعتمد على تكرار النسخ الخارجية. النسخ اليومي يعني RPO حتى
-  24 ساعة.
-- الهدف العملي للاستعادة على خادم جاهز هو 30-60 دقيقة، إضافة إلى وقت نقل
-  النسخة وقلب DNS.
-- لا تعتبر الخطة صالحة قبل إجراء استعادة تجريبية على قاعدة منفصلة.
+- **Recovery Point Objective (RPO):** Dictated by external backup frequency. Daily offsite snapshots guarantee an RPO <= 24 hours.
+- **Recovery Time Objective (RTO):** 30 to 60 minutes onto a provisioned Linux host, plus backup transfer and DNS propagation time.
+- **Validation Requirement:** A disaster recovery plan is not considered certified until a dry-run test restore has completed successfully on an isolated target environment.
 
-## ما يجب حفظه خارج الخادم
+---
 
-احتفظ بنسخة مشفرة ومحدودة الصلاحيات من الآتي:
+## 🔐 Critical Offsite Assets (Keep Securely Stored Off-Host)
+
+Maintain an encrypted, restricted-access vault containing:
 
 ```text
 .env.docker
@@ -24,154 +24,81 @@ backups/alex-cinema-*.dump
 backups/alex-cinema-*.dump.sha256
 ```
 
-احتفظ أيضًا بملكية أو وصول إداري إلى:
+Ensure administrative access to the following third-party management consoles:
+- GitHub Repository (`Gaoc3/alex-cinema`).
+- DNS / Cloudflare Zone Control.
+- Clerk Production Instance.
+- Telegram BotFather and OIDC applications.
+- Remote PostgreSQL encrypted backup storage.
+- Earthlink Router / Edge Bridge.
 
-- GitHub repository.
-- DNS/Cloudflare.
-- Clerk production instance.
-- Telegram BotFather and OIDC application.
-- PostgreSQL backup storage.
-- Earthlink router or bridge.
+> **Security Rule:** Never commit secrets, private SSH keys, or environment files into version control.
 
-لا تحفظ الأسرار داخل المستودع حتى لو كان خاصًا.
+---
 
-## سيناريو فقد الخادم بالكامل
+## 🚨 Scenario 1: Complete VPS Host Loss
 
-1. أنشئ VPS بنظام Ubuntu أو Debian.
-2. اسمح بالمنافذ `22`, `80`, `443`, `2222` فقط حسب سياسة الإدارة.
-3. اخفض TTL أو جهز سجل اختبار قبل قلب DNS.
-4. استنسخ المستودع وثبّت Docker.
-5. استعد `.env.docker` وملف `authorized_keys` فقط إلى مساراتهما.
-6. شغّل `scripts/deploy-docker.sh`.
-7. انقل أحدث backup وتحقق من SHA-256.
-8. نفذ الاستعادة المحمية.
-9. شغّل migrations، ثم أعد تشغيل التطبيق وخادم الغرف.
-10. حدث `known_hosts` على جهاز Earthlink بعد التحقق من بصمة الخادم الجديد.
-11. عدّل `VPS_HOST` وشغّل Compose الخاص بالراوتر.
-12. نفذ مصفوفة القبول قبل قلب DNS.
+1. Provision a fresh Ubuntu or Debian LTS VPS.
+2. Configure firewall rules to allow only inbound ports: `22`, `80`, `443`, and `2222`.
+3. Lower DNS TTL in advance or prepare a test subdomain prior to cutting over public DNS.
+4. Clone the repository and install Docker:
+   ```bash
+   git clone https://github.com/Gaoc3/alex-cinema.git /opt/alex-cinema
+   cd /opt/alex-cinema
+   sudo ./scripts/install-docker-debian.sh
+   ```
+5. Restore `.env.docker` and `docker/tunnel-sshd/secrets/authorized_keys` to their respective paths.
+6. Initialize the stack via `./scripts/deploy-docker.sh`.
+7. Transfer the latest verified database dump and validate its checksum:
+   ```bash
+   sha256sum -c backups/alex-cinema-YYYYMMDDTHHMMSSZ.dump.sha256
+   ```
+8. Perform database restoration:
+   ```bash
+   RESTORE_FILE=/backups/alex-cinema-YYYYMMDDTHHMMSSZ.dump \
+   CONFIRM_RESTORE=RESTORE_ALEX_CINEMA \
+   docker compose --env-file .env.docker --profile restore run --rm db-restore
+   docker compose --env-file .env.docker run --rm migrate
+   docker compose --env-file .env.docker restart app socket
+   ```
+9. Update `known_hosts` on the Earthlink edge device after verifying the new VPS host fingerprint.
+10. Update `VPS_HOST` and restart the edge router Compose stack.
+11. Run verification smoke tests prior to switching production DNS.
 
-الأوامر المرجعية:
+---
 
-```bash
-git clone https://github.com/Gaoc3/alex-cinema.git /opt/alex-cinema
-cd /opt/alex-cinema
-sudo ./scripts/install-docker-debian.sh
-./scripts/deploy-docker.sh
-sha256sum -c backups/alex-cinema-YYYYMMDDTHHMMSSZ.dump.sha256
-```
+## 🔄 Scenario 2: Edge Router Replacement Only
 
-الاستعادة:
+When only the local edge device or router is replaced, no VPS or database changes are necessary.
 
-```bash
-RESTORE_FILE=/backups/alex-cinema-YYYYMMDDTHHMMSSZ.dump \
-CONFIRM_RESTORE=RESTORE_ALEX_CINEMA \
-docker compose --env-file .env.docker --profile restore run --rm db-restore
-docker compose --env-file .env.docker run --rm migrate
-docker compose --env-file .env.docker restart app socket
-```
+1. Connect the new Linux host or Docker-enabled router to the local Earthlink ISP network.
+2. Copy `compose.router.yaml` and the `docker/router/` directory.
+3. Restore the private SSH tunnel key (`id_ed25519`) and `known_hosts`.
+4. Configure `.env.router` with the current public VPS host address.
+5. Launch the router stack and inspect connection logs:
+   ```bash
+   docker compose --env-file .env.router -f compose.router.yaml up -d --build
+   docker compose --env-file .env.router -f compose.router.yaml logs -f
+   ```
 
-## سيناريو استبدال الراوتر فقط
+> If the private key is lost, generate a new keypair and replace the public key in `docker/tunnel-sshd/secrets/authorized_keys` on the VPS, then rebuild `tunnel-sshd`.
 
-لا تحتاج إلى تغيير قاعدة البيانات أو الخادم.
+---
 
-1. أوصل جهاز Linux أو راوتر Docker بشبكة Earthlink.
-2. انسخ `compose.router.yaml` و`docker/router/`.
-3. استعد مفتاح النفق الخاص و`known_hosts`.
-4. اضبط `.env.router` بعنوان VPS الحالي.
-5. شغّل الحزمة وتحقق من السجلات.
+## 💾 Scenario 3: Database Migration Only
 
-```bash
-docker compose --env-file .env.router -f compose.router.yaml up -d --build
-docker compose --env-file .env.router -f compose.router.yaml logs -f
-```
-
-إذا فُقد مفتاح الراوتر، ولّد زوجًا جديدًا ولا تستعد القديم من مصدر غير موثوق.
-استبدل المفتاح العام داخل الملف التالي ثم أعد إنشاء `tunnel-sshd`.
-
-```text
-docker/tunnel-sshd/secrets/authorized_keys
-```
-
-## سيناريو نقل قاعدة البيانات فقط
-
-1. أنشئ backup من المصدر.
-2. تحقق من checksum.
-3. أوقف الكتابة أو ضع نافذة صيانة قصيرة.
-4. أنشئ backup نهائيًا بعد إيقاف الكتابة.
-5. استعده إلى قاعدة الهدف.
-6. حدث `DATABASE_URL`.
-7. شغّل `prisma migrate deploy`.
-8. اختبر عدد المستخدمين والغرف والرسائل والمفضلة.
-
-لا تستخدم أمر baseline إلا لقاعدة قديمة مؤكدة تحتوي المخطط نفسه ولم تسجل
-ترحيل baseline. القاعدة الجديدة يجب أن تنفذ جميع migrations بصورة طبيعية.
-
-## مصفوفة القبول
-
-| الفحص | النتيجة المطلوبة |
-|---|---|
-| `docker compose ps` | الخدمات الدائمة healthy/running و`migrate` ناجح |
-| `/healthz` | HTTP 200 |
-| `/api/health` | HTTP 200 مع PostgreSQL |
-| DNS العام | عنوان VPS الجديد |
-| TLS | شهادة صالحة واسم نطاق مطابق |
-| Telegram bot | `getMe` ناجح ولا يوجد polling conflict |
-| Telegram Mini App | دخول أول مرة وتبديل الحساب |
-| Clerk | تسجيل ودخول وخروج وإعادة توجيه صحيحة |
-| Shabakaty API | HTTP 2xx عبر النفق |
-| الصور | بلا عناصر تالفة |
-| الفيديو | Range/206 والتخطي والتكبير |
-| الغرف | دخول مستخدمين ومزامنة |
-| الدردشة | حفظ بعد reload ورد وحذف |
-| backup | ملف dump وchecksum في مخزن خارجي |
-
-## الرجوع عند فشل الإصدار
-
-قبل كل إصدار سجل رقم Git والصورة ووقت backup.
-
-```bash
-git rev-parse HEAD
-./scripts/backup-docker.sh
-```
-
-إذا كانت migrations متوافقة رجوعًا، ارجع إلى رقم Git السابق وأعد البناء.
-
-```bash
-git checkout PREVIOUS_GOOD_SHA
-./scripts/deploy-docker.sh
-```
-
-إذا غيّرت migrations البيانات بصورة غير متوافقة، أوقف الكتابة واستعد backup
-السابق أولًا. لا تفترض أن إرجاع الكود يعيد قاعدة البيانات.
-
-عند فشل قطع DNS، أعد السجل إلى عنوان الخادم السابق خلال فترة TTL، وأبقِ خدمة
-Telegram polling على خادم واحد فقط.
-
-## مراقبة دورية
-
-أسبوعيًا:
-
-- راجع حالة الحاويات ومحاولات إعادة التشغيل.
-- راجع انتهاء مساحة القرص.
-- تحقق من وجود backup خارجي حديث.
-- اختبر `/healthz` وSocket.io والنفق.
-
-شهريًا:
-
-- نفذ استعادة تجريبية في مشروع Compose منفصل.
-- راجع صلاحيات GitHub وCloudflare وClerk وBotFather.
-- حدّث صور الأساس بعد اختبارها.
-- دوّر المفاتيح عند الاشتباه أو تغير المشغلين.
-
-## إلغاء الخادم القديم
-
-لا تحذفه مباشرة بعد النقل. احتفظ به في وضع لا يقبل الكتابة حتى يمر وقت مراقبة
-متفق عليه، ثم:
-
-1. خذ backup نهائيًا.
-2. تحقق من وصول النسخة الخارجية.
-3. أوقف PM2 والبوت والنفق القديم.
-4. ألغِ مفاتيح SSH القديمة.
-5. امسح الأسرار والبيانات وفق سياسة المزود.
-6. أغلق الاشتراك بعد اجتياز الاستعادة الجديدة.
-
+1. Generate a consistent database backup on the source host:
+   ```bash
+   ./scripts/backup-docker.sh
+   ```
+2. Verify the SHA-256 checksum of the generated archive.
+3. Enable temporary maintenance mode or suspend write operations.
+4. Transfer the verified dump to the target database host.
+5. Restore the snapshot and execute pending migrations:
+   ```bash
+   RESTORE_FILE=/backups/alex-cinema-latest.dump \
+   CONFIRM_RESTORE=RESTORE_ALEX_CINEMA \
+   docker compose --env-file .env.docker --profile restore run --rm db-restore
+   docker compose --env-file .env.docker run --rm migrate
+   ```
+6. Restart the application and real-time socket services.

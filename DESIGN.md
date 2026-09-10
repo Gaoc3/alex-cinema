@@ -104,7 +104,7 @@ A focused cinema-grade palette emphasizing depth, readability, and crimson accen
 
 ### Hierarchy
 - **Display** (900 Black, clamp(1.75rem, 4vw, 2.75rem), line-height 1.2): Hero titles and grand room headers.
-- **Headline** (800 Bold, 1.5rem, line-height 1.3): Section headers (e.g. "الأكثر طلباً للمشاهدة الجماعية").
+- **Headline** (800 Bold, 1.5rem, line-height 1.3): Section headers (e.g. "Most Popular Watch Parties").
 - **Title** (700 Bold, 1.125rem, line-height 1.4): Media card titles and modal headers.
 - **Body** (500 Medium, 0.875rem, line-height 1.6): Chat messages, descriptions, and metadata.
 - **Label** (700 Bold, 0.75rem, letter-spacing normal): Floating badges, timestamps, and quality tags.
