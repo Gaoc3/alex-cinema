@@ -211,6 +211,12 @@ pm2 save
 * **حماية التوكنات:** توكنات الغرف والسوكيت مؤقتة ومحدودة الصلاحية (`SOCKET_AUTH_SECRET`).
 * **النسخ الاحتياطي الدوري:** سكريبتات دورية لإنشاء نسخ مشفرة لقاعدة البيانات والتحقق من بصمة التشفير `SHA-256`.
 
+## 👨‍💻 المطور والمهندس المسؤول (Author & Lead Architect)
+
+* **Hussain Ibrahim Ahmed (Gaoc3)**  
+  *Systems & Backend Software Engineer | Distributed Infrastructure & DevOps*  
+  [LinkedIn](https://www.linkedin.com/in/zack-accer) • [GitHub](https://github.com/Gaoc3) • [Email](mailto:secon2636@gmail.com)
+
 ---
 
 ## 📄 الترخيص (License)
